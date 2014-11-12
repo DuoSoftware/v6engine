@@ -1,0 +1,54 @@
+{
+	"name": "DbName",
+	"Value": "MySql",
+	"children": [
+		{
+			"name": "Db",
+			"Value": "DuoV6",
+			"children": [
+				{
+					"name": "Username",
+					"Value": "Duov6"
+				},
+				{
+					"name": "Password",
+					"Value": "123",
+					"children": [
+						{
+							"name": "tables",
+							"Value": "Auth"
+						},
+						{
+							"name": "tables",
+							"Value": "Config"
+						},
+						{
+							"name": "tables",
+							"Value": "derective"
+						},
+						{
+							"name": "tables",
+							"Value": "Users"
+						},
+						{
+							"name": "tables",
+							"Value": "Canves"
+						},
+						{
+							"name": "tables",
+							"Value": "RabbitMQ"
+						},
+						{
+							"name": "tables",
+							"Value": "test table 2 "
+						},
+						{
+							"name": "tables",
+							"Value": "test table 3"
+						}
+					]
+				}
+			]
+		}
+	]
+}
