@@ -2,6 +2,8 @@ package repositories
 
 import (
 	"duov6.com/objectstore/messaging"
+	"github.com/twinj/uuid"
+	"time"
 )
 
 func getDefaultNotImplemented() RepositoryResponse {
@@ -9,24 +11,24 @@ func getDefaultNotImplemented() RepositoryResponse {
 }
 
 func FillControlHeaders(request *messaging.ObjectRequest) {
-
+	currentTime := time.Now().Local().String()
 	if request.Controls.Multiplicity == "single" {
 		controlObject := messaging.ControlHeaders{}
-		controlObject.Version = "xxx-xxx-xxx-xxx"
+		controlObject.Version = uuid.NewV1().String()
 		controlObject.Namespace = request.Controls.Namespace
 		controlObject.Class = request.Controls.Class
 		controlObject.Tenant = "123"
-		controlObject.LastUdated = "xx/xx/xxxx xx:xx:xx"
+		controlObject.LastUdated = string(currentTime)
 
 		request.Body.Object["__osHeaders"] = controlObject
 	} else {
 		for _, obj := range request.Body.Objects {
 			controlObject := messaging.ControlHeaders{}
-			controlObject.Version = "xxx-xxx-xxx-xxx"
+			controlObject.Version = uuid.NewV1().String()
 			controlObject.Namespace = request.Controls.Namespace
 			controlObject.Class = request.Controls.Class
 			controlObject.Tenant = "123"
-			controlObject.LastUdated = "xx/xx/xxxx xx:xx:xx"
+			controlObject.LastUdated = string(currentTime)
 
 			obj["__osHeaders"] = controlObject
 		}

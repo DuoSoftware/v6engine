@@ -93,7 +93,7 @@ func setOneElastic(request *messaging.ObjectRequest) RepositoryResponse {
 
 	conn := getConnection()(request)
 
-	_, err := conn.Index(request.Controls.Class, request.Controls.Class, getNoSqlKey(request), nil, request.Body)
+	_, err := conn.Index(request.Controls.Class, request.Controls.Class, getNoSqlKey(request), nil, request.Body.Object)
 
 	if err != nil {
 		response.GetErrorResponse("Elastic Search Single Insert Error : " + err.Error())
@@ -145,7 +145,21 @@ func (repository ElasticRepository) DeleteMultiple(request *messaging.ObjectRequ
 }
 
 func (repository ElasticRepository) DeleteSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	return getDefaultNotImplemented()
+	fmt.Println("elastic search single insert")
+	response := RepositoryResponse{}
+
+	conn := getConnection()(request)
+
+	_, err := conn.Delete(request.Controls.Class, request.Controls.Class, getNoSqlKey(request), nil)
+
+	if err != nil {
+		response.GetErrorResponse("Elastic Search single delete error : " + err.Error())
+	} else {
+		response.IsSuccess = true
+		response.Message = "Successfully deleted one in elastic search"
+	}
+
+	return response
 }
 
 func (repository ElasticRepository) Special(request *messaging.ObjectRequest) RepositoryResponse {
