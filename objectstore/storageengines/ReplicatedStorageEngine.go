@@ -3,7 +3,6 @@ package storageengines
 import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
-	"fmt"
 )
 
 type ReplicatedStorageEngine struct {
@@ -21,47 +20,57 @@ func (r ReplicatedStorageEngine) Store(request *messaging.ObjectRequest) (respon
 		successAction = 1
 		failAction = 2
 		if request.Controls.Multiplicity == "single" {
+			request.Log("Getting settings for single insert")
 			engineMappings = request.Configuration.StoreConfiguration["INSERT-SINGLE"]
 		} else {
-			fmt.Println("Getting multi insert store config")
+			request.Log("Getting settings for multiple insert")
 			engineMappings = request.Configuration.StoreConfiguration["INSERT-MULTIPLE"]
 		}
 	case "read-all":
 		successAction = 3
 		failAction = 1
+		request.Log("Getting settings for get all")
 		engineMappings = request.Configuration.StoreConfiguration["GET-ALL"]
 	case "read-key":
 		successAction = 3
 		failAction = 1
+		request.Log("Getting settings for get by key")
 		engineMappings = request.Configuration.StoreConfiguration["GET-KEY"]
 	case "read-keyword":
 		successAction = 3
 		failAction = 1
+		request.Log("Getting settings for get by keyword")
 		engineMappings = request.Configuration.StoreConfiguration["GET-QUERY"]
 	case "read-filter":
 		successAction = 3
 		failAction = 1
+		request.Log("Getting settings for get by filtering")
 		engineMappings = request.Configuration.StoreConfiguration["GET-SEARCH"]
 
 	case "update":
 		successAction = 1
 		failAction = 2
 		if request.Controls.Multiplicity == "single" {
+			request.Log("Getting settings for single update")
 			engineMappings = request.Configuration.StoreConfiguration["UPDATE-SINGLE"]
 		} else {
+			request.Log("Getting settings for multiple update")
 			engineMappings = request.Configuration.StoreConfiguration["UPDATE-MULTIPLE"]
 		}
 	case "delete":
 		successAction = 1
 		failAction = 2
 		if request.Controls.Multiplicity == "single" {
+			request.Log("Getting settings for single delete")
 			engineMappings = request.Configuration.StoreConfiguration["DELETE-SINGLE"]
 		} else {
+			request.Log("Getting settings for multiple delete")
 			engineMappings = request.Configuration.StoreConfiguration["DELETE-MULTIPLE"]
 		}
 	case "special":
 		successAction = 3
 		failAction = 1
+		request.Log("Getting settings for special operation")
 		engineMappings = request.Configuration.StoreConfiguration["SPECIAL"]
 
 	}
@@ -80,9 +89,8 @@ func getRepositories(engineMappings map[string]string) []repositories.AbstractRe
 
 	count := -1
 
-	for k, v := range engineMappings {
+	for _, v := range engineMappings {
 		count++
-		fmt.Println(k)
 		absRepository := repositories.Create(v)
 		outRepositories[count] = absRepository
 	}
@@ -93,12 +101,15 @@ func getRepositories(engineMappings map[string]string) []repositories.AbstractRe
 func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []repositories.AbstractRepository, successAction int, failAction int) (response repositories.RepositoryResponse) {
 
 	canRollback := false
-	for index, repository := range repositoryList {
-		fmt.Println(index)
+	for _, repository := range repositoryList {
+
+		request.Log("Executing repository : " + repository.GetRepositoryName())
+
 		tmpResponse := repositories.Execute(request, repository)
 		canBreak := false
 
 		if tmpResponse.IsSuccess {
+			request.Log("Executing repository : " + repository.GetRepositoryName() + " - Success")
 			switch successAction {
 			case 1:
 				response = tmpResponse
@@ -108,6 +119,7 @@ func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []rep
 				canBreak = true
 			}
 		} else {
+			request.Log("Executing repository : " + repository.GetRepositoryName() + " - Failed")
 			switch failAction {
 			case 1:
 				continue
@@ -124,14 +136,12 @@ func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []rep
 			break
 		}
 
-		fmt.Println(tmpResponse.Message)
-
 		//1 = COMMIT, 2 = ROLLBACK, 3 = BREAK
 
 	}
 
 	if canRollback {
-		fmt.Println("Rollbacking!!!")
+		request.Log("Transaction failed Rollbacking!!!")
 	}
 	return
 }

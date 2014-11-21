@@ -34,6 +34,14 @@ func getObjectRequest(headerToken string, headerNamespace string, headerClass st
 	objectRequest.Controls = messaging.RequestControls{SecurityToken: headerToken, Namespace: headerNamespace, Class: headerClass}
 	configObject := configuration.ConfigurationManager{}.Get(headerToken, headerNamespace, headerClass)
 	objectRequest.Configuration = configObject
+
+	objectRequest.IsLogEnabled = true
+	var initialSlice []string
+	initialSlice = make([]string, 0)
+	objectRequest.MessageStack = initialSlice
+
+	//objectRequest.IsLogEnabled = false
+
 	var extraMap map[string]interface{}
 	extraMap = make(map[string]interface{})
 	objectRequest.Extras = extraMap

@@ -19,6 +19,12 @@ func (c MockConfigurationDownloader) DownloadConfiguration() StoreConfiguration 
 	couchmap["Password"] = ""
 	config.ServerConfiguration["COUCH"] = couchmap
 
+	var elasticmap map[string]string
+	elasticmap = make(map[string]string)
+	elasticmap["Host"] = "127.0.0.1"
+	elasticmap["Port"] = "9200"
+	config.ServerConfiguration["ELASTIC"] = elasticmap
+
 	var getAllMap map[string]string
 	getAllMap = make(map[string]string)
 	getAllMap["1"] = "ELASTIC"

@@ -42,8 +42,13 @@ func (m *StoreModifier) AndStoreMany(objs []interface{}) *StoreModifier {
 }
 
 func (m *StoreModifier) Ok() {
+	if m.Request.Controls.Multiplicity == "single" {
+		m.Request.Controls.Id = m.Request.Body.Object[m.Request.Body.Parameters.KeyProperty].(string)
+	}
+
 	dispatcher := endpoints.Dispatcher{}
 	response := dispatcher.Dispatch(m.Request)
+
 	fmt.Println(response.IsSuccess)
 }
 

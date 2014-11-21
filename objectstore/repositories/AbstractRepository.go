@@ -16,5 +16,6 @@ type AbstractRepository interface {
 	DeleteMultiple(request *messaging.ObjectRequest) RepositoryResponse
 	DeleteSingle(request *messaging.ObjectRequest) RepositoryResponse
 	Special(request *messaging.ObjectRequest) RepositoryResponse
+	GetRepositoryName() string
 	Test(request *messaging.ObjectRequest)
 }

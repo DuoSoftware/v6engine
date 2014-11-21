@@ -9,4 +9,13 @@ type ObjectRequest struct {
 	Body          RequestBody
 	Configuration configuration.StoreConfiguration
 	Extras        map[string]interface{}
+
+	IsLogEnabled bool
+	MessageStack []string
+}
+
+func (o *ObjectRequest) Log(message string) {
+	if o.IsLogEnabled {
+		o.MessageStack = append(o.MessageStack, message)
+	}
 }

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-martini/martini"
+	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
 )
@@ -15,9 +16,15 @@ type HTTPService struct {
 }
 
 func (h *HTTPService) Start() {
-	fmt.Println("Object Store Listening on Port : 8090")
+	fmt.Println("Object Store Listening on Port : 3000")
 	m := martini.Classic()
-
+	m.Use(cors.Allow(&cors.Options{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"securityToken", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 	//READ BY KEY
 	m.Get("/:namespace/:class/:id", handleRequest)
 	//READ BY KEYWORD
@@ -39,10 +46,8 @@ func handleRequest(params martini.Params, res http.ResponseWriter, req *http.Req
 
 	if isSuccess {
 		res.WriteHeader(200)
-		fmt.Println("Success")
 	} else {
 		res.WriteHeader(500)
-		fmt.Println("Failed!!!")
 	}
 
 	fmt.Fprintf(res, "%s", responseMessage)
@@ -61,7 +66,7 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 	message, isSuccess := getObjectRequest(r, &objectRequest, params)
 
 	if isSuccess == false {
-		responseMessage = getQueryResponseString("Invalid Query Request", message, false)
+		responseMessage = getQueryResponseString("Invalid Query Request", message, false, objectRequest.MessageStack)
 	} else {
 
 		dispatcher := Dispatcher{}
@@ -72,11 +77,11 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 			if repResponse.Body != nil {
 				responseMessage = string(repResponse.Body)
 			} else {
-				responseMessage = getQueryResponseString("Successfully completed request", repResponse.Message, isSuccess)
+				responseMessage = getQueryResponseString("Successfully completed request", repResponse.Message, isSuccess, objectRequest.MessageStack)
 			}
 
 		} else {
-			responseMessage = getQueryResponseString("Error occured while processing", repResponse.Message, isSuccess)
+			responseMessage = getQueryResponseString("Error occured while processing", repResponse.Message, isSuccess, objectRequest.MessageStack)
 		}
 
 	}
@@ -84,10 +89,13 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 	return
 }
 
-func getQueryResponseString(mainError string, reason string, isSuccess bool) string {
+func getQueryResponseString(mainError string, reason string, isSuccess bool, messageStack []string) string {
 	response := messaging.ResponseBody{}
 	response.IsSuccess = isSuccess
 	response.Message = mainError + " : " + reason
+	if messageStack != nil {
+		response.Stack = messageStack
+	}
 
 	result, err := json.Marshal(&response)
 
@@ -104,6 +112,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 	isSuccess = true
 
 	headerToken := r.Header.Get("securityToken")
+	headerLog := r.Header.Get("log")
 
 	var headerOperation string
 	headerMultipliciry := r.Header.Get("multiplicity")
@@ -117,6 +126,15 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 	if len(headerToken) == 0 {
 		isSuccess = false
 		missingFields = missingFields + "securityToken"
+	}
+
+	if len(headerLog) != 0 {
+		objectRequest.IsLogEnabled = true
+		var initialSlice []string
+		initialSlice = make([]string, 0)
+		objectRequest.MessageStack = initialSlice
+	} else {
+		objectRequest.IsLogEnabled = false
 	}
 
 	var requestBody messaging.RequestBody
