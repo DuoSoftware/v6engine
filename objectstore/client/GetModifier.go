@@ -1,8 +1,8 @@
 package client
 
 import (
-	"duov6.com/objectstore/endpoints"
 	"duov6.com/objectstore/messaging"
+	"duov6.com/objectstore/processors"
 	"duov6.com/objectstore/repositories"
 )
 
@@ -41,7 +41,7 @@ func (m *GetModifier) Aggregate(key string) *GetModifier {
 }
 
 func (m *GetModifier) Ok() (output []byte, err string) {
-	dispatcher := endpoints.Dispatcher{}
+	dispatcher := processors.Dispatcher{}
 	var repResponse repositories.RepositoryResponse = dispatcher.Dispatch(m.Request)
 	output = repResponse.Body
 	return

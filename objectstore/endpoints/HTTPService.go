@@ -1,8 +1,10 @@
 package endpoints
 
 import (
+	"duov6.com/authlib"
 	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/messaging"
+	"duov6.com/objectstore/processors"
 	"duov6.com/objectstore/repositories"
 	"encoding/json"
 	"fmt"
@@ -69,7 +71,7 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 		responseMessage = getQueryResponseString("Invalid Query Request", message, false, objectRequest.MessageStack)
 	} else {
 
-		dispatcher := Dispatcher{}
+		dispatcher := processors.Dispatcher{}
 		var repResponse repositories.RepositoryResponse = dispatcher.Dispatch(&objectRequest)
 		isSuccess = repResponse.IsSuccess
 
@@ -141,79 +143,100 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 
 	if isSuccess {
 
-		if r.Method != "GET" {
-			rb, rerr := ioutil.ReadAll(r.Body)
+		isTokenValid, _ := validateSecurityToken(headerToken)
 
-			if rerr != nil {
-				message = "Error converting request : " + rerr.Error()
-				isSuccess = false
-			} else {
+		if isTokenValid {
 
-				err := json.Unmarshal(rb, &requestBody)
+			if r.Method != "GET" {
+				rb, rerr := ioutil.ReadAll(r.Body)
 
-				if err != nil {
-					message = "JSON Parse error in Request : " + err.Error()
+				if rerr != nil {
+					message = "Error converting request : " + rerr.Error()
 					isSuccess = false
 				} else {
-					objectRequest.Body = requestBody
-				}
-			}
-		}
 
-		if isSuccess {
+					err := json.Unmarshal(rb, &requestBody)
 
-			canAddHeader := true
-			switch r.Method {
-			case "GET": //read keyword, and unique key
-				if len(headerId) != 0 {
-					headerOperation = "read-key"
-				} else if len(headerKeyword) != 0 {
-					objectRequest.Body = messaging.RequestBody{}
-					objectRequest.Body.Query = messaging.Query{Parameters: headerKeyword}
-					headerOperation = "read-keyword"
-				} else if len(headerNamespace) != 0 && len(headerClass) != 0 {
-					headerOperation = "read-all"
-				}
-				canAddHeader = false
-			case "POST": //read query, read special, insert
-				if len(requestBody.Object) != 0 || len(requestBody.Objects) != 0 {
-					fmt.Println("Inset by POST : " + objectRequest.Body.Parameters.KeyProperty)
-					headerOperation = "insert"
-					if len(objectRequest.Body.Object) != 0 {
-						headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
+					if err != nil {
+						message = "JSON Parse error in Request : " + err.Error()
+						isSuccess = false
+					} else {
+						objectRequest.Body = requestBody
 					}
-				} else if &requestBody.Query != nil {
-					headerOperation = "read-filter"
+				}
+			}
+
+			if isSuccess {
+
+				canAddHeader := true
+				switch r.Method {
+				case "GET": //read keyword, and unique key
+					if len(headerId) != 0 {
+						headerOperation = "read-key"
+					} else if len(headerKeyword) != 0 {
+						objectRequest.Body = messaging.RequestBody{}
+						objectRequest.Body.Query = messaging.Query{Parameters: headerKeyword}
+						headerOperation = "read-keyword"
+					} else if len(headerNamespace) != 0 && len(headerClass) != 0 {
+						headerOperation = "read-all"
+					}
 					canAddHeader = false
+				case "POST": //read query, read special, insert
+					if len(requestBody.Object) != 0 || len(requestBody.Objects) != 0 {
+						fmt.Println("Inset by POST : " + objectRequest.Body.Parameters.KeyProperty)
+						headerOperation = "insert"
+						if len(objectRequest.Body.Object) != 0 {
+							headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
+						}
+					} else if &requestBody.Query != nil {
+						headerOperation = "read-filter"
+						canAddHeader = false
+					}
+
+				case "PUT": //update
+					headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
+					headerOperation = "update"
+
+				case "DELETE": //delete
+					headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
+					headerOperation = "delete"
 				}
 
-			case "PUT": //update
-				headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
-				headerOperation = "update"
+				if len(objectRequest.Body.Objects) != 0 {
+					headerMultipliciry = "multiple"
+				} else if len(objectRequest.Body.Object) != 0 {
+					headerMultipliciry = "single"
+				}
 
-			case "DELETE": //delete
-				headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
-				headerOperation = "delete"
+				objectRequest.Controls = messaging.RequestControls{SecurityToken: headerToken, Namespace: headerNamespace, Class: headerClass, Multiplicity: headerMultipliciry, Id: headerId, Operation: headerOperation}
+
+				configObject := configuration.ConfigurationManager{}.Get(headerToken, headerNamespace, headerClass)
+				objectRequest.Configuration = configObject
+
+				if canAddHeader {
+					repositories.FillControlHeaders(objectRequest)
+				}
 			}
 
-			if len(objectRequest.Body.Objects) != 0 {
-				headerMultipliciry = "multiple"
-			} else if len(objectRequest.Body.Object) != 0 {
-				headerMultipliciry = "single"
-			}
-
-			objectRequest.Controls = messaging.RequestControls{SecurityToken: headerToken, Namespace: headerNamespace, Class: headerClass, Multiplicity: headerMultipliciry, Id: headerId, Operation: headerOperation}
-
-			configObject := configuration.ConfigurationManager{}.Get(headerToken, headerNamespace, headerClass)
-			objectRequest.Configuration = configObject
-
-			if canAddHeader {
-				repositories.FillControlHeaders(objectRequest)
-			}
+		} else {
+			isSuccess = false
+			message = "Access token not validated." + missingFields
 		}
-
 	} else {
 		message = "Missing attributes in request header : " + missingFields
+	}
+
+	return
+}
+
+func validateSecurityToken(token string) (isValidated bool, cert authlib.AuthCertificate) {
+	isValidated = true
+
+	handler := authlib.AuthHandler{}
+	cert, error := handler.GetSession(token)
+
+	if len(error) != 0 {
+		isValidated = false
 	}
 
 	return
