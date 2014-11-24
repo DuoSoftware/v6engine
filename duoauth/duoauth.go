@@ -46,6 +46,7 @@ func webServer() {
 func runRestFul() {
 	gorest.RegisterService(new(authlib.Auth))
 	gorest.RegisterService(new(applib.AppSvc))
+	//gorest.ResponseBuilder().AddHeader("key", "value")
 	c := authlib.GetConfig()
 	if c.Https_Enabled {
 		err := http.ListenAndServeTLS(":3048", c.Cirtifcate, c.PrivateKey, gorest.Handle())
@@ -56,6 +57,7 @@ func runRestFul() {
 	} else {
 		err := http.ListenAndServe(":3048", gorest.Handle())
 		if err != nil {
+			//term.
 			term.Write(err.Error(), term.Error)
 			return
 		}

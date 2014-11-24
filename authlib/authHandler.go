@@ -11,12 +11,12 @@ import (
 )
 
 type AuthHandler struct {
-	Config AuthConfig
+	//Config AuthConfig
 }
 
 func newAuthHandler() *AuthHandler {
 	authhld := new(AuthHandler)
-	authhld.Config = GetConfig()
+	//authhld.Config = GetConfig()
 	return authhld
 }
 

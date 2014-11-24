@@ -2,6 +2,8 @@ package applib
 
 import (
 	"code.google.com/p/gorest"
+	//"duov6.com/authlib"
+	///"duov6.com/term"
 	"encoding/json"
 )
 
@@ -30,9 +32,11 @@ func (app AppSvc) Get(ApplicationID string) (a Application) {
 	var h Apphanler
 	a, err := h.Get(ApplicationID)
 	if err != "" {
+
 		app.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
 		return
 	}
+
 	return
 }
 
