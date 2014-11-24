@@ -21,7 +21,7 @@ func (c MockConfigurationDownloader) DownloadConfiguration() StoreConfiguration 
 
 	var elasticmap map[string]string
 	elasticmap = make(map[string]string)
-	elasticmap["Host"] = "127.0.0.1"
+	elasticmap["Host"] = "192.168.2.42"
 	elasticmap["Port"] = "9200"
 	config.ServerConfiguration["ELASTIC"] = elasticmap
 
