@@ -1,111 +1,58 @@
 package config
 
 import (
-	"bufio"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
-	//"strconv"
-	"strings"
+	"path/filepath"
 )
 
-type File struct {
-	m        map[string]string
-	Filename string
-}
+func Add(v interface{}, name string) (err error) {
+	name = name + ".config"
+	dataset, _ := json.Marshal(v)
 
-//Config.txt file load for modifications
-func (c *File) loadfile() {
-	configFile := c.Filename
-	if c.m == nil {
-		c.m = make(map[string]string)
-	}
-	//file open
-	file, err := os.Open(configFile)
-	if file != nil {
-		fmt.Println(file)
-	} else {
-		fmt.Println("File cannot Open", file, err)
-	}
-	//read file
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		//split key and value
-		if scanner.Text() != "" {
-			stringSlice := strings.Split(scanner.Text(), "---->")
-			c.m[stringSlice[0]] = stringSlice[1]
-		}
-	}
-}
-
-//add new key and value if key exist value will update
-func (c *File) Add(Key, Value string) {
-	if c.m == nil {
-		c.m = make(map[string]string)
-	}
-	c.m[Key] = Value
-	fmt.Println(Key, Value)
-}
-
-//return value to given key
-func (c *File) Get(Key string) string {
-	if c.m == nil {
-		c.m = make(map[string]string)
-	}
-	result := c.m[Key]
-	if result == "" {
-		fmt.Println("Key Not Found ")
-	} else {
-		fmt.Println(c.m[Key], "is the value of .", Key)
-	}
-	return c.m[Key]
-}
-
-//delete data relevent to given key from config.txt
-func (c *File) Delete(Key string) {
-	if c.m == nil {
-		c.m = make(map[string]string)
-	}
-	delete(c.m, Key)
-
-}
-
-//write modified data to config.txt
-func (c *File) writetoFile() {
-	configFile := c.Filename
-
-	if c.m == nil {
-		c.m = make(map[string]string)
-	}
-
-	file, err := os.Open(configFile)
-
+	file, err := os.Open(name)
 	if err != nil {
 		fmt.Println(err, file)
 	}
-	if _, err := os.Stat(configFile); os.IsNotExist(err) {
-		_, err := os.Create(configFile)
+	if _, err := os.Stat(name); os.IsNotExist(err) {
+		_, err := os.Create(name)
 		if err == nil {
-			fmt.Printf("%s file  created ... \n", configFile)
+			fmt.Printf("%s file created ... \n", name)
 		} else {
 			fmt.Printf("file cannot create please check file location ")
 		}
 	}
 
-	file1, err := os.OpenFile(configFile, os.O_WRONLY, 0600)
+	file1, err := os.OpenFile(name, os.O_WRONLY, 0600)
 	if err != nil {
 		// panic(err)
 		fmt.Printf("Appended into file not success please check again \n")
 	}
 	defer file.Close()
-	//fmt.Println(c.m,"before write to file 23")
-	for k, v := range c.m {
-		//fmt.Println(k,v,"\n")
-		if _, err = file1.WriteString(k + "---->" + "<" + v + ">\n"); err != nil {
-			panic(err)
-		}
+	if _, err = file1.WriteString(string(dataset)); err != nil {
+		panic(err)
 	}
+	return err
 }
 
-func func_name() {
+func Get(name string) (out []byte, err error) {
+	name = name + ".config"
+	file, e := ioutil.ReadFile(name)
+	if e != nil {
 
+		err = e
+		out = nil
+		return
+	}
+	err = nil
+	out = file
+	return
+}
+
+func GetConfigs() []string {
+	files1, _ := filepath.Glob("*.config")
+
+	return files1
 }
