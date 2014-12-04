@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"duov6.com/objectstore/messaging"
+	"encoding/json"
 	"github.com/twinj/uuid"
 	"time"
 )
@@ -43,4 +44,15 @@ func getNoSqlKey(request *messaging.ObjectRequest) string {
 func getNoSqlKeyById(request *messaging.ObjectRequest, obj map[string]interface{}) string {
 	key := request.Controls.Namespace + "." + request.Controls.Class + "." + obj[request.Body.Parameters.KeyProperty].(string)
 	return key
+}
+
+func getStringByObject(request *messaging.ObjectRequest, obj map[string]interface{}) string {
+
+	result, err := json.Marshal(obj)
+
+	if err == nil {
+		return string(result)
+	} else {
+		return "{}"
+	}
 }

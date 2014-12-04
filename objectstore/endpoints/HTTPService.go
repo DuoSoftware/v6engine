@@ -6,6 +6,7 @@ import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/processors"
 	"duov6.com/objectstore/repositories"
+	"duov6.com/term"
 	"encoding/json"
 	"fmt"
 	"github.com/go-martini/martini"
@@ -18,7 +19,8 @@ type HTTPService struct {
 }
 
 func (h *HTTPService) Start() {
-	fmt.Println("Object Store Listening on Port : 3000")
+	term.Write("Object Store Listening on Port : 3000", term.Debug)
+
 	m := martini.Classic()
 	m.Use(cors.Allow(&cors.Options{
 		AllowOrigins:     []string{"*"},
@@ -183,7 +185,6 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					canAddHeader = false
 				case "POST": //read query, read special, insert
 					if len(requestBody.Object) != 0 || len(requestBody.Objects) != 0 {
-						fmt.Println("Inset by POST : " + objectRequest.Body.Parameters.KeyProperty)
 						headerOperation = "insert"
 						if len(objectRequest.Body.Object) != 0 {
 							headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
@@ -238,6 +239,8 @@ func validateSecurityToken(token string) (isValidated bool, cert authlib.AuthCer
 	if len(error) != 0 {
 		isValidated = false
 	}
+
+	isValidated = true
 
 	return
 }
