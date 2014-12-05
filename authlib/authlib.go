@@ -1,8 +1,8 @@
 package authlib
 
 import (
-	"code.google.com/p/gorest"
 	"duov6.com/common"
+	"duov6.com/gorest"
 	"encoding/json"
 )
 
@@ -49,7 +49,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 	if err == "" {
 		//fmt.Println("login succeful")
 		//securityToken := common.GetGUID()
-		outCrt.ClientIP = GetClientIP()
+		outCrt.ClientIP = A.Context.Request().RemoteAddr
 		outCrt.DataCaps = GetDataCaps(domain, u.UserID)
 		outCrt.Email = u.EmailAddress
 		outCrt.UserID = u.UserID
@@ -73,6 +73,7 @@ func (A Auth) Autherize(SecurityToken string, ApplicationID string) (a AuthCerti
 	if err == "" {
 		if h.AppAutherize(ApplicationID, c.UserID) == true {
 			a = c
+			a.ClientIP = A.Context.Request().RemoteAddr
 			a.SecurityToken = common.GetGUID()
 			h.AddSession(a)
 			return a

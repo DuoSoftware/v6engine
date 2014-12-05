@@ -3,7 +3,9 @@ package common
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"math/rand"
+	"os"
 	"os/exec"
 )
 
@@ -46,4 +48,30 @@ func RandomString(l int) string {
 
 func randInt(min int, max int) int {
 	return min + rand.Intn(max-min)
+}
+
+func SaveFile(fileName, Text string) (err error) {
+
+	if _, err := os.Stat(fileName); os.IsNotExist(err) {
+		_, err := os.Create(fileName)
+		if err == nil {
+			fmt.Printf("%s file created ... \n", fileName)
+		} else {
+			fmt.Printf("file cannot create please check file location ")
+		}
+	}
+	//os.OP
+	file1, err := os.OpenFile(fileName, os.O_RDWR|os.O_APPEND, 0660)
+	if err != nil {
+		// panic(err)
+		fmt.Printf("Appended into file not success please check again \n")
+	}
+	//defer file.Close()
+	if _, err = file1.WriteString(string(Text)); err != nil {
+		fmt.Printf("Failed to write log \n" + err.Error())
+		//panic(err)
+	}
+	defer file1.Close()
+	return err
+
 }

@@ -1,16 +1,14 @@
 package term
 
 import (
+	"bufio"
 	"duov6.com/config"
 	"duov6.com/updater"
 	"encoding/json"
 	"fmt"
-	//"log"
-	"bufio"
+	"os"
 	"os/exec"
 	"time"
-
-	"os"
 )
 
 const (
@@ -44,6 +42,7 @@ const (
 	Information = 0
 	Debug       = 2
 	Splash      = 3
+	Blank       = 4
 )
 
 var Config TerminalConfig
@@ -77,6 +76,7 @@ func SetupConfig() {
 	if Read("Do want to Debug (y/n)") == "y" {
 		Config.DebugLine = true
 	} else {
+
 		Config.DebugLine = false
 	}
 
@@ -107,21 +107,23 @@ func Read(Lable string) string {
 func Write(Lable string, mType int) {
 	//var S string
 	switch mType {
-	case 1:
+	case Error:
 		//log.Printf(format, ...)
 		if Config.ErrorLine {
 			fmt.Println(time.Now().String() + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
 		}
-	case 0:
+	case Information:
 		if Config.InformationLine {
 			fmt.Println(FgGreen + time.Now().String() + " Information! " + Lable + Reset)
 		}
-	case 2:
+	case Debug:
 		if Config.DebugLine {
 			fmt.Println(FgBlue + time.Now().String() + " Debug! " + Lable + Reset)
 		}
-	case 3:
+	case Splash:
 		fmt.Println(FgBlack + BgWhite + Lable + Reset)
+	case Blank:
+		fmt.Println(Lable)
 	default:
 		fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
 	}

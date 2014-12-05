@@ -1,7 +1,7 @@
 package applib
 
 import (
-	"code.google.com/p/gorest"
+	"duov6.com/gorest"
 	//"duov6.com/authlib"
 	///"duov6.com/term"
 	"encoding/json"

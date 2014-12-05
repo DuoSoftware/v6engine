@@ -1,0 +1,58 @@
+    <div ng-controller="authCtrl">
+
+      <article class="module width_full">
+        <header>
+          <h3>{{pageName}}</h3>
+        </header>
+        <div class="module_content">
+          <form class="post_message" name="Auth">
+            <table width="100%">
+              <tbody>
+                <tr>
+                  <td>User Name</td>
+                  <td> <input name="UserName" ng-model="FileContent.UserName" type="text">
+                  </td>
+                </tr>
+                <tr>
+                  <td>Password</td>
+                  <td> <input name="Password" ng-model="FileContent.Password" type="password">
+                  </td>
+                </tr>
+                <tr>
+                  <td>Https Enabled</td>
+                  <td> <input name="Https_Enabled" ng-model="FileContent.Https_Enabled" type="checkbox"> </td>
+                </tr>
+                <tr>
+                  <td>Certificate
+                  </td>
+                  <td> <input name="Cirtifcate" ng-model="FileContent.Cirtifcate" type="text">
+                  </td>
+                </tr>
+                <tr>
+                  <td>Private Key</td>
+                  <td> <input name="PrivateKey" ng-model="FileContent.PrivateKey" type="text">
+                  </td>
+                </tr>
+                <tr>
+                  <td>SMTP Server</td>
+                  <td> <input name="Smtpserver" ng-model="FileContent.Smtpserver" type="text">
+                  </td>
+                </tr>
+                <tr>
+                  <td>SMTP Username</td>
+                  <td> <input name="Smtpusername" ng-model="FileContent.Smtpusername" type="text">
+                  </td>
+                </tr>
+                <tr>
+                  <td>SMTP Password</td>
+                  <td> <input name="Smtppassword" ng-model="FileContent.Smtppassword" type="password">
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <input value="Save" ng-click="submit()" class="alt_btn" type="submit"> <input value="Reset"
+              type="submit"> </form>  
+        </div>
+      </article>
+    </div>
+   
