@@ -1,8 +1,9 @@
 package client
 
 import (
-	"duov6.com/objectstore/endpoints"
 	"duov6.com/objectstore/messaging"
+	"duov6.com/objectstore/processors"
+	"duov6.com/objectstore/repositories"
 	"fmt"
 	"github.com/fatih/structs"
 )
@@ -46,7 +47,10 @@ func (m *StoreModifier) Ok() {
 		m.Request.Controls.Id = m.Request.Body.Object[m.Request.Body.Parameters.KeyProperty].(string)
 	}
 
-	dispatcher := endpoints.Dispatcher{}
+	dispatcher := processors.Dispatcher{}
+
+	repositories.FillControlHeaders(m.Request)
+
 	response := dispatcher.Dispatch(m.Request)
 
 	fmt.Println(response.IsSuccess)
