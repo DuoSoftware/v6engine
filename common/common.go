@@ -2,6 +2,7 @@ package common
 
 import (
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"math/rand"
@@ -73,5 +74,25 @@ func SaveFile(fileName, Text string) (err error) {
 	}
 	defer file1.Close()
 	return err
+
+}
+
+func EncodeToBase64(message string) (retour string) {
+
+	base64Byte := make([]byte, base64.StdEncoding.EncodedLen(len(message)))
+
+	base64.StdEncoding.Encode(base64Byte, []byte(message))
+
+	return string(base64Byte)
+
+}
+
+func DecodeFromBase64(message string) (retour string) {
+
+	base64Text := make([]byte, base64.StdEncoding.DecodedLen(len(message)))
+
+	base64.StdEncoding.Decode(base64Text, []byte(message))
+
+	return string(base64Text)
 
 }

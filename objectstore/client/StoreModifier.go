@@ -21,7 +21,6 @@ func (m *StoreModifier) WithKeyField(field string) *StoreModifier {
 func (m *StoreModifier) AndStoreOne(obj interface{}) *StoreModifier {
 
 	m.Request.Controls.Multiplicity = "single"
-
 	bodyMap := structs.Map(obj)
 	m.Request.Body.Object = bodyMap
 
@@ -42,6 +41,12 @@ func (m *StoreModifier) AndStoreMany(objs []interface{}) *StoreModifier {
 	return m
 }
 
+func (m *StoreModifier) AndStoreMapInterface(objs []map[string]interface{}) *StoreModifier {
+	m.Request.Controls.Multiplicity = "multiple"
+	m.Request.Body.Objects = objs
+	return m
+}
+
 func (m *StoreModifier) Ok() {
 	if m.Request.Controls.Multiplicity == "single" {
 		m.Request.Controls.Id = m.Request.Body.Object[m.Request.Body.Parameters.KeyProperty].(string)
@@ -50,6 +55,18 @@ func (m *StoreModifier) Ok() {
 	dispatcher := processors.Dispatcher{}
 
 	repositories.FillControlHeaders(m.Request)
+
+	response := dispatcher.Dispatch(m.Request)
+
+	fmt.Println(response.IsSuccess)
+}
+
+func (m *StoreModifier) FileOk() {
+	if m.Request.Controls.Multiplicity == "single" {
+		m.Request.Controls.Id = m.Request.Body.Object[m.Request.Body.Parameters.KeyProperty].(string)
+	}
+
+	dispatcher := processors.Dispatcher{}
 
 	response := dispatcher.Dispatch(m.Request)
 

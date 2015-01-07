@@ -16,9 +16,7 @@ func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis
 
 	isError = false
 
-	host := request.Configuration.ServerConfiguration["REDIS"]["Host"]
-	port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
-	client, err := goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=10s&maxidle=1")
+	client, err := goredis.DialURL("tcp://@127.0.0.1:6379/0?timeout=10s&maxidle=1")
 	if err != nil {
 		isError = true
 		errorMessage = err.Error()

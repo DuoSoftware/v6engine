@@ -2,25 +2,35 @@ package endpoints
 
 import (
 	"duov6.com/authlib"
+	"duov6.com/common"
+	"duov6.com/objectstore/client"
 	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/processors"
 	"duov6.com/objectstore/repositories"
-	"duov6.com/term"
 	"encoding/json"
 	"fmt"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/cors"
+	"github.com/toqueteos/webbrowser"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"strings"
 )
 
 type HTTPService struct {
 }
 
-func (h *HTTPService) Start() {
-	term.Write("Object Store Listening on Port : 3000", term.Debug)
+type FileData struct {
+	Id       string
+	FileName string
+	Body     string
+}
 
+func (h *HTTPService) Start() {
+	fmt.Println("Object Store Listening on Port : 3000")
 	m := martini.Classic()
 	m.Use(cors.Allow(&cors.Options{
 		AllowOrigins:     []string{"*"},
@@ -36,6 +46,8 @@ func (h *HTTPService) Start() {
 	//READ ADVANCED, INSERT
 	m.Post("/:namespace/:class", handleRequest)
 
+	//FILE RECIEVER
+	m.Post("/:namespace/:class/:id", uploadHandler)
 	//UPDATE
 	m.Put("/:namespace/:class", handleRequest)
 	//DELETE
@@ -44,12 +56,104 @@ func (h *HTTPService) Start() {
 	m.Run()
 }
 
+func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+
+	// the FormFile function takes in the POST input id file
+	file, header, err := r.FormFile("file")
+
+	if err != nil {
+		fmt.Print(w)
+		fmt.Println(err.Error())
+		return
+	}
+
+	out, err := os.Create(header.Filename)
+	if err != nil {
+		fmt.Print(w)
+		fmt.Println(", Unable to create the file for writing. Check your write access privilege")
+		return
+	}
+
+	// write the content from POST to the file
+	_, err = io.Copy(out, file)
+	if err != nil {
+		fmt.Print(w)
+		fmt.Println(err.Error())
+	}
+
+	file2, err2 := ioutil.ReadFile(header.Filename)
+
+	if err2 != nil {
+		panic(err2)
+	}
+
+	convertedBody := string(file2[:])
+	base64Body := common.EncodeToBase64(convertedBody)
+
+	obj := FileData{}
+	obj.Id = params["id"]
+	obj.FileName = header.Filename
+	obj.Body = base64Body
+
+	headerToken := r.Header.Get("securityToken")
+
+	client.Go(headerToken, params["namespace"], params["class"]).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
+
+	fmt.Fprintf(w, "File uploaded successfully : ")
+	fmt.Fprintf(w, header.Filename)
+
+	//close the files
+	err = out.Close()
+	err = file.Close()
+
+	if err != nil {
+		panic(err)
+	}
+
+	//remove the temporary stored file from the disk
+	err2 = os.Remove(header.Filename)
+
+	if err2 != nil {
+		fmt.Println(err2)
+	}
+}
+
 func handleRequest(params martini.Params, res http.ResponseWriter, req *http.Request) { // res and req are injected by Martini
+
+	// Start setting up Content-Types
+	if checkIfFile(params) == "NAF" {
+		// NAF = Not A File.
+		res.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	} else if checkIfFile(params) == "txt" {
+		res.Header().Set("Content-Type", "text/txt")
+	} else if checkIfFile(params) == "docx" {
+		res.Header().Set("Content-Type", "document/word")
+	} else if checkIfFile(params) == "xlsx" {
+		res.Header().Set("Content-Type", "document/excel")
+	} else if checkIfFile(params) == "pptx" {
+		res.Header().Set("Content-Type", "document/powerpoint")
+	} else if checkIfFile(params) == "png" {
+		res.Header().Set("Content-Type", "image/png")
+	} else if checkIfFile(params) == "jpg" {
+		res.Header().Set("Content-Type", "image/jpg")
+	} else if checkIfFile(params) == "gif" {
+		res.Header().Set("Content-Type", "image/gif")
+	} else if checkIfFile(params) == "wav" {
+		res.Header().Set("Content-Type", "audio/wav")
+	} else if checkIfFile(params) == "mp3" {
+		res.Header().Set("Content-Type", "audio/mp3")
+	} else if checkIfFile(params) == "wmv" {
+		res.Header().Set("Content-Type", "audio/wmv")
+	} else {
+		res.Header().Set("Content-Type", "text/other")
+	}
+	// End setting up Content-Types
 
 	responseMessage, isSuccess := dispatchRequest(req, params)
 
 	if isSuccess {
 		res.WriteHeader(200)
+
 	} else {
 		res.WriteHeader(500)
 	}
@@ -80,6 +184,20 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 		if isSuccess {
 			if repResponse.Body != nil {
 				responseMessage = string(repResponse.Body)
+
+				file := FileData{}
+
+				json.Unmarshal(repResponse.Body, &file)
+
+				if file.FileName == "" {
+					fmt.Println("This is Not A File : Executing Standard Proceedure")
+				} else {
+					fmt.Println("This is A File : Executing Get Requested File Proceedure")
+					pathToStore := "D:/FileServer/"      //Server Path
+					pathToRedirect := "ftp://127.0.0.1/" //Server IP
+					GetRequestedFile(file, pathToStore, pathToRedirect)
+				}
+
 			} else {
 				responseMessage = getQueryResponseString("Successfully completed request", repResponse.Message, isSuccess, objectRequest.MessageStack)
 			}
@@ -185,6 +303,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					canAddHeader = false
 				case "POST": //read query, read special, insert
 					if len(requestBody.Object) != 0 || len(requestBody.Objects) != 0 {
+						fmt.Println("Inset by POST : " + objectRequest.Body.Parameters.KeyProperty)
 						headerOperation = "insert"
 						if len(objectRequest.Body.Object) != 0 {
 							headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
@@ -216,6 +335,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 
 				if canAddHeader {
 					repositories.FillControlHeaders(objectRequest)
+
 				}
 			}
 
@@ -243,4 +363,22 @@ func validateSecurityToken(token string) (isValidated bool, cert authlib.AuthCer
 	isValidated = true
 
 	return
+}
+
+func checkIfFile(params martini.Params) (fileType string) {
+
+	var tempArray []string
+	tempArray = strings.Split(params["id"], ".")
+	if len(tempArray) > 1 {
+		fileType = tempArray[len(tempArray)-1]
+	} else {
+		fileType = "NAF"
+	}
+	return
+}
+
+func GetRequestedFile(file FileData, pathToStore string, pathToRedirect string) {
+	temp := common.DecodeFromBase64(file.Body)
+	ioutil.WriteFile("D:/FileServer/"+file.FileName, []byte(temp), 0666)
+	webbrowser.Open("ftp://127.0.0.1/" + file.FileName)
 }

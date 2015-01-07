@@ -68,7 +68,7 @@ func registerService(root string, h interface{}) {
 		}
 		return
 	}
-
+	//log.Println(_manager().endpoints)
 	panic(ERROR_INVALID_INTERFACE)
 }
 
@@ -79,7 +79,7 @@ func mapFieldsToMethods(t reflect.Type, f reflect.StructField, typeFullName stri
 		ep := makeEndPointStruct(reflect.StructTag(temp), serviceRoot)
 		ep.parentTypeName = typeFullName
 		ep.name = f.Name
-
+		//ep.
 		var method reflect.Method
 		methodName := strings.ToUpper(f.Name[:1]) + f.Name[1:]
 

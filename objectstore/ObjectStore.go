@@ -1,9 +1,10 @@
 package main
 
 import (
+	"duov6.com/fws"
 	"duov6.com/objectstore/endpoints"
 	"duov6.com/objectstore/unittesting"
-	"duov6.com/term"
+	"fmt"
 )
 
 func main() {
@@ -18,12 +19,23 @@ func main() {
 }
 
 func initialize() {
+	fws.Attach("ObjectStore")
+
 	httpServer := endpoints.HTTPService{}
 	httpServer.Start()
 }
 
 func splash() {
 
-	term.SplashScreen("splash.art")
-
+	fmt.Println("")
+	fmt.Println("")
+	fmt.Println("                                                 ~~")
+	fmt.Println("    ____             _____ __                  | ][ |")
+	fmt.Println("   / __ \\__  ______ / ___// /_____  ________     ~~")
+	fmt.Println("  / / / / / / / __ \\__ \\/ __/ __ \\/ ___/ _ \\")
+	fmt.Println(" / /_/ / /_/ / /_/ /__/ / /_/ /_/ / /  /  __/")
+	fmt.Println("/_____/\\__,_/\\____/____/\\__/\\____/_/   \\___/ ")
+	fmt.Println("")
+	fmt.Println("")
+	fmt.Println("")
 }

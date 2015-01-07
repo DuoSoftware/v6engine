@@ -46,6 +46,7 @@ const (
 )
 
 var Config TerminalConfig
+var currentPlugin TermPlugin
 
 func GetConfig() TerminalConfig {
 	b, err := config.Get("Terminal")
@@ -117,15 +118,19 @@ func Write(Lable string, mType int) {
 			fmt.Println(FgGreen + time.Now().String() + " Information! " + Lable + Reset)
 		}
 	case Debug:
-		if Config.DebugLine {
-			fmt.Println(FgBlue + time.Now().String() + " Debug! " + Lable + Reset)
-		}
+		//if Config.DebugLine {
+		fmt.Println(FgBlue + time.Now().String() + " Debug! " + Lable + Reset)
+		//}
 	case Splash:
 		fmt.Println(FgBlack + BgWhite + Lable + Reset)
 	case Blank:
 		fmt.Println(Lable)
 	default:
 		fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
+	}
+
+	if currentPlugin != nil {
+		currentPlugin.Log(Lable, mType)
 	}
 }
 
@@ -158,6 +163,14 @@ func StartCommandLine() {
 		}
 		s = Read("Command ")
 	}
+}
+
+func AddPlugin(t TermPlugin) {
+	currentPlugin = t
+}
+
+func RemovePlugin(t TermPlugin) {
+	currentPlugin = nil
 }
 
 type TerminalConfig struct {
