@@ -178,7 +178,7 @@ func ExecuteSingleWorker(request *messaging.ServiceRequest, worker AbstractWorke
 
 func startAtomicListening(request *messaging.ServiceRequest) (response messaging.ServiceResponse) {
 	fmt.Println("1")
-	conn, err := amqp.Dial("amqp://admin:admin@192.168.1.194:5672/")
+	conn, err := amqp.Dial("amqp://guest:guest@192.168.1.194:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 
 	ch, err := conn.Channel()

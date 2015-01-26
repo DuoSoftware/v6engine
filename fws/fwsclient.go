@@ -27,9 +27,12 @@ type FWSClient struct {
 	writer   *bufio.Writer
 	listener func(s messaging.FWSTCPCommand)
 
-	events    map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{})
-	commands  map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{})
-	Resources map[string]interface{}
+	events         map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{})
+	commands       map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{})
+	CommandMaps    []CommandMap
+	StatMetadata   []StatMetadata
+	ConfigMetadata []ConfigMetadata
+	Resources      map[string]interface{}
 }
 
 var curentClient *FWSClient
@@ -54,6 +57,9 @@ func NewFWSClient(host string) (client *FWSClient, e error) {
 		c.events = make(map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{}))
 		c.commands = make(map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{}))
 		c.Resources = make(map[string]interface{})
+		c.CommandMaps = make([]CommandMap, 0)
+		c.StatMetadata = make([]StatMetadata, 0)
+		c.ConfigMetadata = make([]ConfigMetadata, 0)
 
 		curentClient = c
 		client = c
@@ -216,4 +222,16 @@ func (client *FWSClient) Subscribe(typ string, name string, proc func(from strin
 	} else {
 		client.events[name] = proc
 	}
+}
+
+func (client *FWSClient) AddCommandMetadata(m CommandMap) {
+	client.CommandMaps = append(client.CommandMaps, m)
+}
+
+func (client *FWSClient) AddStatMetadata(m StatMetadata) {
+	client.StatMetadata = append(client.StatMetadata, m)
+}
+
+func (client *FWSClient) AddConfigMetadata(m ConfigMetadata) {
+	client.ConfigMetadata = append(client.ConfigMetadata, m)
 }

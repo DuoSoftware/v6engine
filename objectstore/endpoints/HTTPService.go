@@ -1,8 +1,9 @@
 package endpoints
 
 import (
+	"duov6.com/FileServer"
+	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
-	"duov6.com/common"
 	"duov6.com/objectstore/client"
 	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/messaging"
@@ -12,11 +13,13 @@ import (
 	"fmt"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/cors"
-	"github.com/toqueteos/webbrowser"
-	"io"
+	"github.com/tealeg/xlsx"
+	//"io"
 	"io/ioutil"
+	//"log"
 	"net/http"
-	"os"
+	//	"os"
+	//"reflect"
 	"strings"
 )
 
@@ -58,63 +61,19 @@ func (h *HTTPService) Start() {
 
 func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
 
-	// the FormFile function takes in the POST input id file
-	file, header, err := r.FormFile("file")
+	var sendRequest = FileServerMessaging.FileRequest{}
+	sendRequest.WebRequest = r
+	sendRequest.WebResponse = w
+	sendRequest.Parameters = params
 
-	if err != nil {
-		fmt.Print(w)
-		fmt.Println(err.Error())
-		return
-	}
+	exe := FileServer.FileManager{}
 
-	out, err := os.Create(header.Filename)
-	if err != nil {
-		fmt.Print(w)
-		fmt.Println(", Unable to create the file for writing. Check your write access privilege")
-		return
-	}
+	fileResponse := exe.Store(&sendRequest)
 
-	// write the content from POST to the file
-	_, err = io.Copy(out, file)
-	if err != nil {
-		fmt.Print(w)
-		fmt.Println(err.Error())
-	}
-
-	file2, err2 := ioutil.ReadFile(header.Filename)
-
-	if err2 != nil {
-		panic(err2)
-	}
-
-	convertedBody := string(file2[:])
-	base64Body := common.EncodeToBase64(convertedBody)
-
-	obj := FileData{}
-	obj.Id = params["id"]
-	obj.FileName = header.Filename
-	obj.Body = base64Body
-
-	headerToken := r.Header.Get("securityToken")
-
-	client.Go(headerToken, params["namespace"], params["class"]).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
-
-	fmt.Fprintf(w, "File uploaded successfully : ")
-	fmt.Fprintf(w, header.Filename)
-
-	//close the files
-	err = out.Close()
-	err = file.Close()
-
-	if err != nil {
-		panic(err)
-	}
-
-	//remove the temporary stored file from the disk
-	err2 = os.Remove(header.Filename)
-
-	if err2 != nil {
-		fmt.Println(err2)
+	if fileResponse.IsSuccess == true {
+		fmt.Fprintf(w, "File uploaded successfully : ")
+	} else {
+		fmt.Fprintf(w, "Aborted")
 	}
 }
 
@@ -185,17 +144,20 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 			if repResponse.Body != nil {
 				responseMessage = string(repResponse.Body)
 
-				file := FileData{}
+				if checkIfFile(params) != "NAF" {
+					var sendRequest = FileServerMessaging.FileRequest{}
+					sendRequest.Body = repResponse.Body
+					sendRequest.FilePath = ""
 
-				json.Unmarshal(repResponse.Body, &file)
+					exe := FileServer.FileManager{}
 
-				if file.FileName == "" {
-					fmt.Println("This is Not A File : Executing Standard Proceedure")
-				} else {
-					fmt.Println("This is A File : Executing Get Requested File Proceedure")
-					pathToStore := "D:/FileServer/"      //Server Path
-					pathToRedirect := "ftp://127.0.0.1/" //Server IP
-					GetRequestedFile(file, pathToStore, pathToRedirect)
+					fileResponse := exe.Download(&sendRequest)
+
+					if fileResponse.IsSuccess == true {
+						fmt.Println(fileResponse.Message)
+					} else {
+						fmt.Println(fileResponse.Message)
+					}
 				}
 
 			} else {
@@ -377,8 +339,61 @@ func checkIfFile(params martini.Params) (fileType string) {
 	return
 }
 
-func GetRequestedFile(file FileData, pathToStore string, pathToRedirect string) {
-	temp := common.DecodeFromBase64(file.Body)
-	ioutil.WriteFile("D:/FileServer/"+file.FileName, []byte(temp), 0666)
-	webbrowser.Open("ftp://127.0.0.1/" + file.FileName)
+func getExcelFileName(path string) (fileName string) {
+	subsets := strings.Split(path, "\\")
+	subfilenames := strings.Split(subsets[len(subsets)-1], ".")
+	fileName = subfilenames[0]
+	return
+}
+
+func SaveExcelEntries(excelFileName string) {
+	fmt.Println("Inserting Records to Database....")
+	rowcount := 0
+	colunmcount := 0
+	var exceldata []map[string]interface{}
+	var colunName []string
+
+	//log.Printf("Received a message: %s", file)
+	//file read
+	xlFile, error := xlsx.OpenFile(excelFileName)
+
+	if error == nil {
+		for _, sheet := range xlFile.Sheets {
+			rowcount = (sheet.MaxRow - 1)
+			colunmcount = sheet.MaxCol
+			colunName = make([]string, colunmcount)
+			for _, row := range sheet.Rows {
+				for j, cel := range row.Cells {
+					colunName[j] = cel.String()
+				}
+				break
+			}
+
+			exceldata = make(([]map[string]interface{}), rowcount)
+
+			if error == nil {
+				for _, sheet := range xlFile.Sheets {
+					for rownumber, row := range sheet.Rows {
+						currentRow := make(map[string]interface{})
+						if rownumber != 0 {
+							exceldata[rownumber-1] = currentRow
+							for cellnumber, cell := range row.Cells {
+								exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+							}
+						}
+					}
+				}
+			}
+
+			//fmt.Println(exceldata)
+
+			Id := colunName[0]
+
+			client.Go("token", "com.duosoftware.com", getExcelFileName(excelFileName)+sheet.Name).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
+
+		}
+	}
+
+	return
+
 }

@@ -1,0 +1,45 @@
+    <div ng-controller="apiDocsCtrl">
+      
+      <article class="module width_full">
+        <header>
+          <h3>{{FileContent.Name}}</h3>
+        </header>
+        <div class="module_content">
+        <h3>Description</h3>
+        <p>{{FileContent.Description}}</p>
+        <h3>Methods</h3>
+         <article class="module width_full" ng-repeat="item in FileContent.Methods">
+        <header>
+          <h4>{{item.Name}}</h4>
+        </header>
+        <div class="module_content">
+        <h3>Description</h3>
+        <p>{{item.Description}}</p>
+        <h3>Method</h3>
+        <p>{{item.Method}}</p>
+        <h3>URL</h3>
+        <p>{{item.URI}}</p>
+         <h3>Out put</h3>
+         {{item.OutPutType}}
+        <code width="300">{"Name":"AuthSvc",
+        					"Description":"New authedication machanisum",
+        					"Methods":
+        					[{"Name":"Login",
+        					"Description":"Loging Methded to login customer",
+        					"Method":"/Login/{username:string}/{password:string}/{domain:string}",
+        					"URI":"GET",
+        					"OutPutBody":"output",
+        					"OutPutType":"AuthCertificate",
+        					"InParameters":[]}]}
+        </code>
+         
+        </div>
+        </article>
+        </div>
+         
+          
+            
+        </div>
+      </article>
+    </div>
+   

@@ -2,6 +2,8 @@ package repositories
 
 import (
 	"duov6.com/objectstore/messaging"
+	"encoding/json"
+	"fmt"
 	"github.com/xuyu/goredis"
 )
 
@@ -28,8 +30,42 @@ func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis
 }
 
 func (repository RedisRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("GetAll not implemented in Redis repository")
-	return getDefaultNotImplemented()
+	response := RepositoryResponse{}
+	client, isError, errorMessage := getRedisConnection(request)
+
+	if isError == true {
+		response.GetErrorResponse(errorMessage)
+	} else {
+		//key := getNoSqlKey(request) //request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
+		key := request.Controls.Namespace + "." + request.Controls.Class + "." + "*"
+		//client := getConnection()
+		//value, err := client.Get(key)
+		value, err := client.Keys(key)
+		//value2, err2 := client.Scan(0, key, 5)
+		fmt.Print("Key : ")
+		fmt.Println(key)
+
+		if err != nil {
+			response.IsSuccess = false
+			request.Log("Error getting value by key for All object in Redis : " + key + ", " + err.Error())
+			response.GetErrorResponse("Error getting value by key for All objects in Redis" + err.Error())
+		}
+
+		byteValue, _ := json.Marshal(value)
+
+		if err != nil {
+			response.IsSuccess = false
+			request.Log("Error getting value by key for All object in Redis : " + key + ", " + err.Error())
+			response.GetErrorResponse("Error getting value by key for all objects in Redis" + err.Error())
+		} else {
+			response.IsSuccess = true
+			response.GetResponseWithBody(byteValue)
+			response.Message = "Successfully retrieved all object in Redis"
+			request.Log(response.Message)
+		}
+
+	}
+	return response
 }
 
 func (repository RedisRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {

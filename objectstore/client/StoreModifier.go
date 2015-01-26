@@ -6,6 +6,7 @@ import (
 	"duov6.com/objectstore/repositories"
 	"fmt"
 	"github.com/fatih/structs"
+	//"strconv"
 )
 
 type StoreModifier struct {
@@ -72,11 +73,18 @@ func (m *StoreModifier) FileOk() {
 
 	fmt.Println(response.IsSuccess)
 }
-
 func NewStoreModifier(request *messaging.ObjectRequest) *StoreModifier {
 	modifier := StoreModifier{Request: request}
 	modifier.Request = request
 	modifier.Request.Controls.Operation = "insert"
+	modifier.Request.Body = messaging.RequestBody{}
+	return &modifier
+}
+
+func NewStoreModifierWithOperation(request *messaging.ObjectRequest, operation string) *StoreModifier {
+	modifier := StoreModifier{Request: request}
+	modifier.Request = request
+	modifier.Request.Controls.Operation = operation
 	modifier.Request.Body = messaging.RequestBody{}
 	return &modifier
 }

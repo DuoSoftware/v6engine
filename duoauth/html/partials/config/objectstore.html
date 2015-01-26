@@ -1,0 +1,113 @@
+
+<div ng-controller="">
+
+	<article class="module width_full">
+		<header>
+			<h3>{{pageNumber}}</h3>
+		</header>
+			<div class="module_content">
+				<form class="post_message" name="Auth">
+					<table width="100%">
+					<tbody>
+					<tr>
+						<td width="50%">Couchbase Url</td>
+						<td><input name="couchbase_Url" ng-model="FileContent.couchbase_Url" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Couchbase Bucket</td>
+						<td><input name="couchbase_Bucket" ng-model="FileContent.couchbase_Bucket" type="text"></td>
+					</tr>
+
+					<tr> 
+	                  	 <td width="50%">Couchbase UserName</td>
+	                     <td> <input name="couchbase_Username" ng-model="FileContent.couchbase_Username" type="text"> </td>
+                	</tr>
+
+                	<tr>
+	                  	 <td width="50%">Couchbase Password</td>
+	                     <td> <input name="couchbase_Password" ng-model="FileContent.couchbase_Password" type="password"> </td>
+                	</tr>
+
+                	<tr>
+						<td width="50%">Elastic Host</td>
+						<td><input name="elastic_Host" ng-model="FileContent.elastic_Host" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Elastic Port</td>
+						<td><input name="elastic_Port" ng-model="FileContent.elastic_Port" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Redis Host</td>
+						<td><input name="redis_Host" ng-model="FileContent.redis_Host" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Redies Port</td>
+						<td><input name="radies_Port" ng-model="FileContent.radies_Port" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Mongo Url</td>
+						<td><input name="mongo_Url" ng-model="FileContent.mongo_Url" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Priorities GET ALL</td>
+						<td><input name="priorities_Get_All" ng-model="FileContent.priorities_Get_All" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Priorities GET SEARCH</td>
+						<td><input name="priorities_Get_Search" ng-model="FileContent.prioritiesGetSearch" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Priorities GET KEY</td>
+						<td><input name="priorities_Get_Key" ng-model="FileContent.priorities_Get_Key" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Priorities GET QUERY</td>
+						<td><input name="priorities_Get_Query" ng-model="FileContent.priorities_Get_Query" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Priorities INSERT MULTIPLE</td>
+						<td><input name="priorities_Insert_Multiple" ng-model="FileContent.priorities_Insert_Multiple" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Priorities INSERT SINGLE</td>
+						<td><input name="priorities_Insert_Single" ng-model="FileContent.priorities_Insert_Single" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Priorities UPDATE SINGLE</td>
+						<td><input name="Priorities_Update_Single" ng-model="FileContent.Priorities_Update_Single" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Priorities UPDATE MULTIPLE</td>
+						<td><input name="priorities_Update_Multiple" ng-model="FileContent.priorities_Update_Multiple" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Priorities DELETE SINGLE</td>
+						<td><input name="priorities_Delete_Single" ng-model="FileContent.priorities_Delete_Single" type="text"></td>
+					</tr>
+
+					<tr>
+						<td width="50%">Priorities DELETE MULTIPLE</td>
+						<td><input name="priorities_Delete_Multiple" ng-model="FileContent.priorities_Delete_Multiple" type="text"></td>
+					</tr>
+
+					</tbody>
+					</table>
+					<input value="Save" ng-click="submit()" class="alt_btn" type="submit"> 
+				</form>
+			</div>
+	</article>
+</div>

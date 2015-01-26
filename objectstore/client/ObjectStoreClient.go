@@ -23,6 +23,10 @@ func (o *ObjectStoreClient) StoreObject() *StoreModifier {
 	return NewStoreModifier(o.Request)
 }
 
+func (o *ObjectStoreClient) StoreObjectWithOperation(operation string) *StoreModifier {
+	return NewStoreModifierWithOperation(o.Request, operation)
+}
+
 func Go(securityToken string, namespace string, class string) *ObjectStoreClient {
 	client := ObjectStoreClient{}
 	requestObject := getObjectRequest(securityToken, namespace, class)

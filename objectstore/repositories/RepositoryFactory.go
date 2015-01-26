@@ -15,6 +15,8 @@ func Create(code string) AbstractRepository {
 		repository = CassandraRepository{}
 	case "HIVE":
 		repository = HiveRepository{}
+	case "REDISExcel":
+		repository = RedisExcelRepository{}
 	}
 	return repository
 }

@@ -1,0 +1,546 @@
+*{
+	box-sizing: border-box;
+	-moz-box-sizing:border-box;
+	font-family: sans-serif;
+	margin: 0px;
+	padding: 0px;
+
+	-webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* top navigation section*/
+
+#main_wrapper{
+    position:absolute;
+    top:0;
+    left:0;  
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#topnavigation{
+    width: 100%;
+    height: 47px;
+    background-color: black;
+    color: white;
+    display: block;
+    position: fixed;
+    z-index: 9000;
+    text-transform: uppercase;
+    font-size: 12px;
+    -webkit-box-shadow:0 4px 10px #818181;
+       -moz-box-shadow:0 4px 10px #818181;
+            box-shadow:0 4px 10px #818181;
+}
+
+#logo{
+    display: inline-block;
+    float: left;
+}
+
+#logo-image{
+    height: 46px;
+    width: 46px;
+    border: 1px solid black;
+}
+
+#canvasfunctions{
+    float: right;
+    position: relative;
+    display: inline-block;
+    padding: 5px;
+}
+
+#canvasfunctions button{
+    display: inline-block;
+    padding: 8px;
+    width: 70px;
+}
+
+#searchArea{
+    float: right;
+    position: relative;
+    padding: 6px;
+    right: 5px;
+}
+
+#searchCriteria{
+    width: 250px;
+    /*height: 25px;*/
+}
+
+#selectedFlow{
+    float: left;
+    left: 200px;
+    position: relative;
+}
+
+#selectedFlow p{
+    margin-top: 15px;
+    margin-left: 0px;
+}
+
+#selectedFlow p span{
+    color: red;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/*#topmenu{
+    float: left;
+    position: relative;
+}
+
+#topmenu ul{
+    list-style-type: none;
+    margin: 0px;
+    padding: 15px;
+}
+
+#topmenu li{
+    display: inline;
+    padding: 17px;
+}
+
+#topmenu li:hover{
+    background-color: #df191a;
+    cursor: pointer;
+}
+
+#topmenu ul li{
+    list-style-type: none;
+    margin: 0px;
+    padding: 15px;
+}*/
+
+/* Main Navigation */
+#nav {
+    display: inline;
+    position:relative;
+    margin:0; 
+    padding:0px;
+}
+
+ul#navigation {
+    position:relative;
+    float:left;
+    border-left:0px solid #c4dbe7;
+    list-style-type: none;
+    margin: 0px;
+    padding: 0px;
+    border-right:0px solid #c4dbe7;
+}
+
+ul#navigation li {
+    display:inline;
+    font-size:12px;
+    font-weight:bold;
+    margin:0;
+    padding:0;
+    float:left;
+    position:relative;
+    border-top:0px solid #c4dbe7;
+    border-bottom:0px solid #c4dbe7;
+}
+
+ul#navigation li a {
+    padding:15px 15px;
+    color:white;
+    /*text-shadow:1px 1px 0px #fff;*/
+    text-decoration:none;
+    display:inline-block;
+    border-right:0px solid #fff;
+    border-left:0px solid #C2C2C2;
+    border-top:0px solid #fff;
+    background: black;
+    
+    -webkit-transition:color 0.2s linear, background 0.2s linear;   
+    -moz-transition:color 0.2s linear, background 0.2s linear;  
+    -o-transition:color 0.2s linear, background 0.2s linear;    
+    transition:color 0.2s linear, background 0.2s linear;   
+}
+
+ul#navigation li a:hover {
+    background:#df191a;
+    color:#282828;
+}
+
+ul#navigation li a.first {
+    border-left: 0 none;
+}
+
+ul#navigation li a.last {
+    border-right: 0 none;
+}
+
+ul#navigation li:hover > a {
+    background:#df191a;
+}
+
+/* Drop-Down Navigation */
+ul#navigation li:hover > ul
+{
+/*these 2 styles are very important, 
+being the ones which make the drop-down to appear on hover */
+    visibility:visible;
+    opacity:1;
+}
+
+ul#navigation ul, ul#navigation ul li ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;    
+/*the next 2 styles are very important, 
+being the ones which make the drop-down to stay hidden */
+    visibility:hidden;
+    opacity:0;
+    position: absolute;
+    z-index: 99999;
+    width:180px;
+    background:#f8f8f8;
+    box-shadow:1px 1px 3px #ccc;
+/* css3 transitions for smooth hover effect */
+    -webkit-transition:opacity 0.2s linear, visibility 0.2s linear; 
+    -moz-transition:opacity 0.2s linear, visibility 0.2s linear; 
+    -o-transition:opacity 0.2s linear, visibility 0.2s linear; 
+    transition:opacity 0.2s linear, visibility 0.2s linear;     
+}
+
+ul#navigation ul {
+    top: 47px;
+    left: 0px;
+}
+
+ul#navigation ul li ul {
+    top: 0;
+    left: 181px; /* strong related to width:180px; from above */
+}
+
+ul#navigation ul li {
+    clear:both;
+    width:100%;
+    border:0 none;
+    border-bottom:1px solid #c9c9c9;
+}
+
+ul#navigation ul li a {
+    background:black;
+    padding:7px 15px;
+    color:white;
+    /*text-shadow:1px 1px 0px #fff;*/
+    text-decoration:none;
+    display:inline-block;
+    border:0 none;
+    float:left;
+    clear:both;
+    width:100%;
+}
+
+
+
+/* The following is regarding the plumb styles*/
+
+#container {
+    border: 1px solid blue;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background-image: url("../images/background-section.gif");
+    background-size: 80px 80px;
+    zoom: 100%;
+    overflow: auto;
+}
+
+.item {
+    max-width: 200px;
+    overflow: visible;
+    position: absolute;
+    border: 1px solid grey;
+    border-radius: 4px;
+    background-color: #BDC3C7;
+    padding: 5px;
+    -webkit-box-shadow:0 4px 10px #818181;
+       -moz-box-shadow:0 4px 10px #818181;
+            box-shadow:0 4px 10px #818181;
+}
+
+.title {
+	padding: 5px;
+	cursor: move;
+    font-size: 13px;
+    font-style: italic;
+    font-weight: bold;
+}
+
+.connect {
+    display: inline-block;
+    float: right;
+	width: 15px;
+	height: 15px;
+	background-color: white;
+	cursor: pointer;
+}
+
+.variables {
+    display: inline-block;
+    float: left;
+    width: 15px;
+    height: 15px;
+    background-color: yellow;
+    cursor: pointer;
+}
+
+svg{
+    cursor: default;
+}
+
+svg path{
+    stroke:#6C7A89;
+    stroke-width:3px;
+}
+
+/* toolbox control styling*/
+
+#toolboxControl{
+    left: -250px;
+    width: 250px;
+    height: 80%;
+    float: left;
+    position: absolute;
+    display: block;
+    background-color: #BDC3C7;
+    z-index: 8990;
+    top:90px;
+    border: 2px solid black;
+    -webkit-box-shadow:0 4px 10px #818181;
+       -moz-box-shadow:0 4px 10px #818181;
+            box-shadow:0 4px 10px #818181;
+}
+
+#variablepanel{
+    right: -250px;
+    width: 250px;
+    height: 80%;
+    float: right;
+    position: absolute;
+    display: block;
+    background-color: #BDC3C7;
+    z-index: 8990;
+    top:90px;
+    border: 2px solid black;
+    -webkit-box-shadow:0 4px 10px #818181;
+       -moz-box-shadow:0 4px 10px #818181;
+            box-shadow:0 4px 10px #818181;
+}
+
+#toolbaropener{
+    position: absolute;
+    float: left;
+    display: block;
+    background-color: black;
+    color: white;
+    cursor: pointer;
+    border: 0px solid black;
+    z-index: 8989;
+    vertical-align:middle;
+    top: 35%;
+    left: 246px;
+    -webkit-box-shadow:0 4px 10px #818181;
+       -moz-box-shadow:0 4px 10px #818181;
+            box-shadow:0 4px 10px #818181;
+}
+
+#variableOpener{
+    position: absolute;
+    float: left;
+    display: block;
+    background-color: black;
+    color: white;
+    cursor: pointer;
+    border: 0px solid black;
+    z-index: 8989;
+    vertical-align:middle;
+    top: 35%;
+    right: 246px;
+    -webkit-box-shadow:0 4px 10px #818181;
+       -moz-box-shadow:0 4px 10px #818181;
+            box-shadow:0 4px 10px #818181;
+}
+
+#closebox, #vclosebox{
+    display: none;
+}
+
+#openbox, #closebox{
+    padding: 50px 7px;
+}
+
+#vopenbox, #vclosebox{
+    padding: 50px 7px;
+}
+
+
+.menu-item{
+    margin:0px;
+    padding: 2px;
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+    color: black;
+    background-color: #ECECEC;
+    display: block;
+    border-bottom: 1px solid #DEDEDE; 
+}
+
+.toolheader{
+    display: inline-block;
+    height: 15px;
+    width: 15px;
+    padding: 2px;
+    left: 10px;
+}
+
+.toolcontent{
+    display: inline-block;
+    color: grey;
+    top: 5px;
+}
+
+/** according styles */
+
+#accordion{
+    float: left;
+    width:100%;
+    height: 100%;
+    overflow: auto;
+}
+#accordion ul{list-style:none;margin:0;padding:0;}
+.accordion{display:none;}
+.accordion:target{display:block;}
+#accordion ul li a{text-decoration:none;display:block;padding:10px;}
+.accordion{padding:4px;}
+
+#accordion ul{
+/*box-shadow*/
+-webkit-box-shadow:0 4px 10px #818181;
+   -moz-box-shadow:0 4px 10px #818181;
+        box-shadow:0 4px 10px #818181;
+/*border-radius*/
+-webkit-border-radius:5px;
+   -moz-border-radius:5px;
+        border-radius:5px;
+}
+#accordion ul li a{
+background:#fff;
+border-bottom:1px solid #818181;
+color:#747474;
+font-size: 12px;
+}
+.accordion{
+background:#fdfdfd;
+color:#999;
+}
+.accordion:target{
+border-top:2px solid #ff4848;
+}
+
+/* zoom contol styling */
+
+#zoomcontrols{
+    float: right;
+    position: relative;
+    top: 90px;
+    right: 20px;
+    z-index: 8988;
+}
+
+#zoomin, #zoomout, #zoomreset{
+    border: 1px solid black;
+    width: 32px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    background-color: black;
+    color: white;
+    display: block;
+    position: relative;
+    cursor: pointer;
+    -webkit-box-shadow:0 4px 10px #818181;
+       -moz-box-shadow:0 4px 10px #818181;
+            box-shadow:0 4px 10px #818181;
+}
+
+
+/**************************************************************/
+
+.summary {
+    padding: 10px;
+    cursor: move;
+    font-weight: bold;
+    font-size: 120%;
+}
+
+/*.menu-item {
+    position: absolute;        
+    border: 1px solid black;
+    width: 150px;
+    font-size: 80%;
+    background-color:#FFFFFF;
+    text-align: center;
+    -moz-box-shadow: 2px 2px 3px 1px #AAA;
+    -webkit-box-shadow: 2px 2px 3px 1px #AAA;
+    box-shadow: 2px 2px 3px 1px #AAA;
+}*/
+
+#menu-container {
+    float: left;
+    border: 2px solid gray;
+    border-right: 4px solid gray;
+    width: 200px;
+    height: 497px;
+    background-color: #F3F2F4;
+}
+
+#variablelist {
+
+}
+
+.valiableitem {
+    padding: 7px;
+    background-color: #ECECEC;
+    border-bottom: 1px solid #DEDEDE; 
+}
+
+.varibaleKey {
+    color: grey;
+    font-size: 11px;
+    margin-left: 3px;
+    position: absolute;
+}
+
+.variableValue {
+    width: 100%;
+    font-size: 12px;
+}
+
+#variableTools{
+    background-color: white;
+    padding: 7px;
+}
+
+#closeBtn{
+    background-color: lightgrey;
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    text-align: center;
+    float: right;
+    cursor: pointer;
+    line-height: 15px;
+    color: grey;
+}

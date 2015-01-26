@@ -88,6 +88,17 @@ func Get(name string) (out []byte, err error) {
 	return
 }
 
+func GetMap(name string) (out map[string]interface{}, err error) {
+	out = make(map[string]interface{})
+
+	bytes, err := Get(name)
+	if err == nil {
+		err = json.Unmarshal(bytes, &out)
+	}
+
+	return
+}
+
 func GetConfigs() []string {
 	files1, _ := filepath.Glob("*.config")
 

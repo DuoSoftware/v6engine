@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns='http://www.w3.org/1999/xhtml' xmlns:v="urn:schemas-microsoft-com:vml" lang="en">
+	<head>
+		<title>Duo Process Designer</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" type="text/css" href="css/style.css">
+		<!--<link rel="stylesheet" type="text/css" href="css/animate.css">-->
+		<link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.0/css/bootstrap.css">
+		<link rel="shortcut icon" href="http://duosoftware.atlassian.net/s/en_US-xr35dg/64005/22/_/favicon.ico">
+		<!--<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+		<script src="https://jsplumbtoolkit.com/js/dom.jsPlumb-1.7.0-min.js"></script>-->
+		<script type="text/javascript" src="js/jquery-1.9.0-min.js"></script>
+		<script type="text/javascript" src="js/jquery-ui-1.9.2-min.js"></script>
+		<script type="text/javascript" src="js/jquery.jsPlumb-1.4.1-all-min.js"></script>
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.20/angular.js"></script>
+	</head>
+
+	<body ng-app="processdesigner" ng-controller="mainController">
+		<div id="main_wrapper">
+
+			<div id="topnavigation">
+
+				<div id="logo">
+					<img src="images/logo.png" id="logo-image">
+				</div>
+
+				<nav id="nav">
+				    <ul id="navigation">
+				        <li><a href="#" class="first">Home</a></li>
+				        <li><a href="#">Diagram</a>
+				        	<ul>
+				                <li><a href="#">New Diagram</a></li>
+				            </ul>
+				        </li>
+				        <li><a href="#">Settings &raquo;</a>
+				            <ul>
+				                <li><a href="#">Lock Toolbox</a></li>
+				                <li><a href="#">Lock Variables</a></li>
+				                <!--<li><a href="#">Identity & Branding &raquo;</a>
+				                    <ul>
+				                        <li><a href="#">Business Cards</a></li>
+				                        <li><a href="#">Brochures</a></li>
+				                        <li><a href="#">Envelopes</a></li>
+				                        <li><a href="#">Flyers</a></li>
+				                    </ul>                 
+				                </li>                 
+				                <li><a href="#">Wordpress</a></li>-->
+				            </ul>
+				        </li>
+				        <li><a href="#">Help</a></li>
+				    </ul>
+				</nav>
+
+				<div id="selectedFlow">
+					<p>Flow : <span>Usgr_Management.duo</span></p>
+				</div>
+
+				<div id="canvasfunctions">
+					<button type="button" class="btn btn-success">SAVE</button>
+					<button type="button" class="btn btn-danger" ng-click="init();">RESET</button>
+				</div>
+
+				<div id="searchArea">
+					<input type="search" id="searchCriteria" class="form-control" ng-model="searchCriteria" placeholder="Search here...">
+				</div>
+				
+			</div>
+			
+			<div id="toolboxControl">
+				<div id="toolbaropener">
+					<div id="openbox" ng-click="openBox()">></div>
+					<div id="closebox" ng-click="closeBox()"><</div>
+				</div>
+				<div id="accordion">
+				  <ul>
+				    <li>
+				      <a href="#controlflow">Control Flow</a>
+				      <div id="controlflow" class="accordion">
+				      	
+				      	<!--<div id="menu-container">
+							<div plumb-menu-item class="menu-item" ng-repeat="module in library" ng-style="{ 'left':module.x, 'top':module.y }"
+								data-identifier="{{module.library_id}}" draggable>
+								<div class="summary">{{module.title}}</div>
+							</div>
+						</div>-->
+
+				      	<input ng-model="searchCommonValue" class="form-control" type="search" placeholder="Search controls...">
+				        <div plumb-menu-item ng-repeat="x in library | filter : searchCommonValue" class="menu-item" data-identifier="{{x.library_id}}" data-title="{{x.title}}" draggable>
+				        	<img class="toolheader" src="{{x.icon}}">
+				        	<div class="toolcontent">{{x.title}}</div>
+				        </div>
+
+				      </div>
+				    </li>
+				    <li>
+				      <a href="#flowchart">Flowchart</a>
+				      <div id="flowchart" class="accordion">
+				        
+				        <input ng-model="searchFlowchart" class="form-control" type="search" placeholder="Search controls...">
+				        <div ng-repeat="x in flowchartlist | filter : searchFlowchart" class="toolboxitem" draggable>
+				        	<img class="toolheader" src="{{x.icon}}">
+				        	<div class="toolcontent">{{x.name}}</div>
+				        </div>
+
+				      </div>
+				    </li>    
+				    <li>
+				      <a href="#general">General</a>
+				      <div id="general" class="accordion">
+				        
+				      </div>
+				    </li>
+				    <li>
+				      <a href="#flows">Flows</a>
+				      <div id="flows" class="accordion">
+				        
+				      </div>
+				    </li>
+				    <li>
+				      <a href="#activities">Activities</a>
+				      <div id="activities" class="accordion">
+				      	
+				      	<input ng-model="searchActivityValue" class="form-control" type="search" placeholder="Search activities...">
+				        <div ng-repeat="x in activitylist | filter : searchActivityValue" class="toolboxitem" draggable="true">
+				        	<img class="toolheader" src="{{x.icon}}">
+				        	<div class="toolcontent">{{x.name}}</div>
+				        </div>
+				        
+				      </div>
+				    </li>
+				  </ul>
+				</div>
+
+			</div>
+
+			<div id="variablepanel">
+				<div id="variableOpener">
+					<div id="vopenbox" ng-click="vopenBox()"><</div>
+					<div id="vclosebox" ng-click="vcloseBox()">></div>
+				</div>
+				<div id="variableTools">
+					<button type="button" class="btn">Add Variable</button>
+					<button type="button" class="btn">Clear</button>
+				</div>
+				<div id="variablelist">
+
+			        <div class="valiableitem" ng-repeat="variable in variableslist">
+			        	<div class="varibaleKey">{{variable.Key}}</div>
+				        <div id="closeBtn"><p>x</p></div>
+				        <input class="variableValue" type="text" value="{{variable.Value}}">
+			        </div>
+
+				</div>
+			</div>
+
+			<div id="zoomcontrols">
+				<input id="zoomin" type="button" value="+" ng-click="ZoomIn()" />
+				<input id="zoomout" type="button" value="-" ng-click="ZoomOut()" />   
+                <input id="zoomreset" type="button" value="#" ng-click="Zoomorg()" /> 
+			</div>
+
+			<div id="container" class="drop-container" ng-click="addEvent($event)" droppable>
+
+				<div plumb-item class="item" ng-repeat="module in schema" ng-style="{ 'left':module.x, 'top':module.y }"
+					data-identifier="{{module.schema_id}}">
+					<div class="title">{{module.title}}</div>
+					<div plumb-connect class="connect"></div>
+					<div class="variables" ng-click="openvariablebox(module);"></div>
+				</div>
+
+			</div>
+
+			<div post-render></div>
+			<span ng-init="init()"></span>
+
+			<script type="text/javascript" src="js/app.js"></script>
+			<script type="text/javascript" src="js/plumb.js"></script>
+		</div>
+	</body>
+</html>

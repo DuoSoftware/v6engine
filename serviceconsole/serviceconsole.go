@@ -1,6 +1,7 @@
 package main
 
 import (
+	"duov6.com/fws"
 	"duov6.com/serviceconsole/configuration"
 	"duov6.com/serviceconsole/messaging"
 	"duov6.com/serviceconsole/processmanager"
@@ -14,6 +15,7 @@ type serviceconsole struct {
 }
 
 func (service *serviceconsole) Begin() {
+	fws.Attach("ServiceConsoleWorker")
 
 	var tempConf = configuration.MockServiceConfigurationDownloader{}
 	var storedServiceConfiguration = configuration.StoreServiceConfiguration{}
@@ -33,4 +35,5 @@ func (service *serviceconsole) Begin() {
 func main() {
 	var service = serviceconsole{}
 	service.Begin()
+
 }
