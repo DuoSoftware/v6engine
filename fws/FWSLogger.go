@@ -29,6 +29,6 @@ func consumeLogLines(l FWSLogger) {
 
 	select {
 	case i := <-l.logChannel:
-		client.ClientCommand("a", "log", "output", i)
+		client.ClientCommand(client.ListenerName, "log", "output", i)
 	}
 }

@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"duov6.com/agent/core"
 	"duov6.com/fws"
 	"fmt"
 )
@@ -10,14 +9,17 @@ func GetInfo(from string, name string, data map[string]interface{}, resources ma
 
 	fmt.Println(data)
 
-	agent := resources["agent"].(*core.Agent)
+	client := resources["client"].(*fws.FWSClient)
 
 	agentInfo := AgentInfo{}
-	agentInfo.CommandMaps = agent.Client.CommandMaps
-	agentInfo.StatMetadata = agent.Client.StatMetadata
-	agentInfo.ConfigMetadata = agent.Client.ConfigMetadata
+	agentInfo.CommandMaps = client.CommandMaps
+	agentInfo.StatMetadata = client.StatMetadata
+	agentInfo.ConfigMetadata = client.ConfigMetadata
 
-	agent.Client.ClientCommand(agent.ListnerName, "agent", "test", agentInfo)
+	if agent.ListnerName != "" {
+		agent.Client.ClientCommand(agent.ListnerName, "agent", "test", agentInfo)
+	}
+
 }
 
 type AgentInfo struct {

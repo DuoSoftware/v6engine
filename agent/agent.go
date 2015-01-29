@@ -29,6 +29,8 @@ func main() {
 			c, err := fws.NewFWSClient(settings["cebUrl"].(string))
 			if err == nil {
 				c.Resources["agent"] = a
+				c.Resources["client"] = c
+
 				a.Client = c
 
 				if c == nil {

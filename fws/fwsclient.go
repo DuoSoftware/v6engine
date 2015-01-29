@@ -29,6 +29,7 @@ type FWSClient struct {
 	StatMetadata   []StatMetadata
 	ConfigMetadata []ConfigMetadata
 	Resources      map[string]interface{}
+	ListenerName   string
 }
 
 var curentClient *FWSClient
