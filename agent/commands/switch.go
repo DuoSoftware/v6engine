@@ -15,7 +15,11 @@ func AgentSwitch(from string, name string, data map[string]interface{}, resource
 
 	agent = resources["agent"].(*core.Agent)
 	var attrib = data["state"].(string)
-	var isStat = data["enableStats"].(bool)
+	isStat := false
+
+	if data["enableStats"] != nil {
+		isStat = data["enableStats"].(bool)
+	}
 
 	if attrib == "on" {
 		agent.ListnerName = from

@@ -20,6 +20,9 @@ func main() {
 
 func initialize() {
 	fws.Attach("ObjectStore")
+	fws.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
+		fmt.Println("Store Configuration Successfully Loaded...")
+	})
 
 	httpServer := endpoints.HTTPService{}
 	httpServer.Start()

@@ -14,19 +14,19 @@ import (
 )
 
 func main() {
-	a := &core.Agent{}
 
-	c, err := fws.NewFWSClient("192.168.2.42:5000")
+	data, err := ioutil.ReadFile("./agent.config")
 
 	if err == nil {
-
-		data, err := ioutil.ReadFile("./config/config.json")
+		var settings map[string]interface{}
+		settings = make(map[string]interface{})
+		err := json.Unmarshal(data, &settings)
 
 		if err == nil {
-			var settings map[string]interface{}
-			settings = make(map[string]interface{})
-			err := json.Unmarshal(data, &settings)
 
+			a := &core.Agent{}
+
+			c, err := fws.NewFWSClient(settings["cebUrl"].(string))
 			if err == nil {
 				c.Resources["agent"] = a
 				a.Client = c
@@ -49,15 +49,15 @@ func main() {
 				forever := make(chan bool)
 				<-forever
 			} else {
-				fmt.Println("Configuration file is not in correct JSON format : " + err.Error())
+				fmt.Println("TCP Connection Error : " + err.Error())
 			}
 
 		} else {
-			fmt.Println("Error accessing configuration file : " + err.Error())
+			fmt.Println("Configuration file is not in correct JSON format : " + err.Error())
 		}
 
 	} else {
-		fmt.Println("TCP Connection Error : " + err.Error())
+		fmt.Println("Error accessing configuration file ./agent.config : " + err.Error())
 	}
 
 }

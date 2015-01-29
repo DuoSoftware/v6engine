@@ -8,11 +8,6 @@ import (
 	"net"
 )
 
-type RegisterTCPCommand struct {
-	UserName      string `json:"userName"`
-	SecurityToken string `json:"securityToken"`
-}
-
 /*
    { to: 'Agent 1',
      command: 'matricMessage',
@@ -27,6 +22,7 @@ type FWSClient struct {
 	writer   *bufio.Writer
 	listener func(s messaging.FWSTCPCommand)
 
+	agentName      string
 	events         map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{})
 	commands       map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{})
 	CommandMaps    []CommandMap
@@ -75,10 +71,21 @@ func NewFWSClient(host string) (client *FWSClient, e error) {
 				if fwsCommandName == "agentCommand" {
 					var subData = data["data"].(map[string]interface{})
 
-					fromUser := subData["from"].(string)
+					var fromUser string
 
+					if subData["from"] != nil {
+						fromUser = subData["from"].(string)
+					} else {
+						fromUser = "UNKNOWN"
+					}
 					var commandName = subData["command"].(string)
-					var commandData = subData["data"].(map[string]interface{})
+					var commandData map[string]interface{}
+
+					if subData["data"] != nil {
+						commandData = subData["data"].(map[string]interface{})
+					} else {
+						commandData = make(map[string]interface{})
+					}
 
 					c.execute("command", fromUser, commandName, commandData, c.Resources)
 					/*
@@ -101,9 +108,14 @@ func NewFWSClient(host string) (client *FWSClient, e error) {
 
 func (client *FWSClient) execute(typ string, from string, name string, data map[string]interface{}, resources map[string]interface{}) {
 	if typ == "command" {
-		client.commands[name](from, name, data, resources)
+		if client.commands[name] != nil {
+			client.commands[name](from, name, data, resources)
+		}
+
 	} else {
-		client.events[name](from, name, data, resources)
+		if client.events[name] != nil {
+			client.events[name](from, name, data, resources)
+		}
 	}
 }
 
@@ -115,7 +127,7 @@ func (client *FWSClient) read() {
 				line, _ := client.reader.ReadBytes('|')
 
 				commandObject := messaging.FWSTCPCommand{}
-
+				//fmt.Println("RECIEVE : ", string(line[:len(line)-1]))
 				err := json.Unmarshal(line[:len(line)-1], &commandObject)
 				if err != nil {
 					fmt.Println("Error : " + err.Error())
@@ -146,11 +158,14 @@ func (client *FWSClient) Msg(message string) {
 
 func (client *FWSClient) Register(userName string, securityToken string) {
 
+	client.agentName = userName
 	tcpComm := messaging.FWSTCPCommand{}
 	tcpComm.Command = "register"
 	regComm := messaging.RegisterTCPCommand{}
 	regComm.SecurityToken = securityToken
 	regComm.UserName = userName
+	regComm.ResourceClass = "server"
+
 	tcpComm.Data = regComm
 
 	byteSet, err := json.Marshal(&tcpComm)
@@ -199,6 +214,40 @@ func (client *FWSClient) ClientCommand(to string, class string, typ string, data
 		PersistIfOffline bool        `json:"persistIfOffline"`
 		AlwaysPersist    bool        `json:"alwaysPersist"`
 	*/
+
+	byteSet, err := json.Marshal(&tcpComm)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	message := string(byteSet[:len(byteSet)])
+
+	client.outgoing <- string(message)
+
+}
+
+func (client *FWSClient) ServerCommand(name string, data map[string]interface{}) {
+	invoke(client, name, "command", data)
+}
+
+func (client *FWSClient) ServerEvent(name string, data map[string]interface{}) {
+	invoke(client, name, "event", data)
+}
+
+func invoke(client *FWSClient, name string, typ string, data map[string]interface{}) {
+	//client.outgoing <- message
+
+	tcpComm := messaging.FWSTCPCommand{}
+	tcpComm.Command = "command"
+
+	fwsCommand := messaging.CommandTCPCommand{}
+	fwsCommand.Name = name
+	fwsCommand.Type = typ
+	data["from"] = client.agentName
+	fwsCommand.Data = data
+
+	tcpComm.Data = fwsCommand
 
 	byteSet, err := json.Marshal(&tcpComm)
 
