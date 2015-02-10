@@ -1,0 +1,286 @@
+package repositories
+
+import (
+	"duov6.com/objectstore/messaging"
+	"encoding/json"
+	"fmt"
+	"github.com/xuyu/goredis"
+)
+
+type RedisExcelRepository struct {
+}
+
+func (repository RedisExcelRepository) GetRepositoryName() string {
+	return "Redis"
+}
+
+func getRedisExcelConnection(request *messaging.ObjectRequest) (client *goredis.Redis, isError bool, errorMessage string) {
+
+	isError = false
+
+	client, err := goredis.DialURL("tcp://@127.0.0.1:6379/0?timeout=10s&maxidle=1")
+	if err != nil {
+		isError = true
+		errorMessage = err.Error()
+		request.Log("Error! Can't connect to server!error")
+
+	}
+	request.Log("Reusing existing GoRedis connection")
+	return
+}
+
+func (repository RedisExcelRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+	client, isError, errorMessage := getRedisExcelConnection(request)
+
+	if isError == true {
+		response.GetErrorResponse(errorMessage)
+	} else {
+		//key := getNoSqlKey(request) //request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
+		key := request.Controls.Namespace + "." + request.Controls.Class + "." + "*"
+		//client := getConnection()
+		//value, err := client.Get(key)
+		value, err := client.Keys(key)
+		//value2, err2 := client.Scan(0, key, 5)
+		fmt.Print("Key : ")
+		fmt.Println(key)
+
+		if err != nil {
+			response.IsSuccess = false
+			request.Log("Error getting value by key for All object in Redis : " + key + ", " + err.Error())
+			response.GetErrorResponse("Error getting value by key for All objects in Redis" + err.Error())
+		}
+
+		byteValue, _ := json.Marshal(value)
+
+		if err != nil {
+			response.IsSuccess = false
+			request.Log("Error getting value by key for All object in Redis : " + key + ", " + err.Error())
+			response.GetErrorResponse("Error getting value by key for all objects in Redis" + err.Error())
+		} else {
+			response.IsSuccess = true
+			response.GetResponseWithBody(byteValue)
+			response.Message = "Successfully retrieved all object in Redis"
+			request.Log(response.Message)
+		}
+
+	}
+	return response
+}
+
+func (repository RedisExcelRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("GetSearch not implemented in Redis repository")
+	return getDefaultNotImplemented()
+}
+
+func (repository RedisExcelRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("GetQuery not implemented in Redis repository")
+	return getDefaultNotImplemented()
+}
+
+func (repository RedisExcelRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+	client, isError, errorMessage := getRedisExcelConnection(request)
+
+	if isError == true {
+		response.GetErrorResponse(errorMessage)
+	} else {
+		key := getNoSqlKey(request) //request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
+
+		//client := getConnection()
+		value, err := client.Get(key)
+
+		if err != nil {
+			response.IsSuccess = false
+			request.Log("Error getting value by key for object in Redis : " + key + ", " + err.Error())
+			response.GetErrorResponse("Error getting value by key for one object in Redis" + err.Error())
+		}
+		//convert ASCII output to string
+		//result := string(value[:])
+		if err != nil {
+			response.IsSuccess = false
+			request.Log("Error getting value by key for object in Redis : " + key + ", " + err.Error())
+			response.GetErrorResponse("Error getting value by key for one object in Redis" + err.Error())
+		} else {
+			response.IsSuccess = true
+			response.GetResponseWithBody(value)
+			response.Message = "Successfully retrieved one object in Redis"
+			request.Log(response.Message)
+		}
+
+	}
+	return response
+}
+
+func (repository RedisExcelRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
+	return setManyRedisExcel(request)
+}
+
+func (repository RedisExcelRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
+	return setOneRedisExcel(request)
+}
+
+func setOneRedisExcel(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+	client, isError, errorMessage := getRedisExcelConnection(request)
+
+	if isError == true {
+		response.GetErrorResponse(errorMessage)
+	} else {
+		key := request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
+
+		value := getStringByObject(request, request.Body.Object)
+
+		err := client.Set(key, value, 0, 0, false, false)
+
+		if err != nil {
+			response.IsSuccess = false
+			request.Log("Error inserting/updating object in Redis : " + key + ", " + err.Error())
+			response.GetErrorResponse("Error inserting/updating one object in Redis" + err.Error())
+		} else {
+			response.IsSuccess = true
+			response.Message = "Successfully inserted/updated one object in Redis"
+			request.Log(response.Message)
+		}
+	}
+
+	return response
+}
+
+func setManyRedisExcel(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+	client, isError, errorMessage := getRedisExcelConnection(request)
+
+	if isError == true {
+		response.GetErrorResponse(errorMessage)
+	} else {
+
+		isError := false
+
+		for _, object := range request.Body.Objects {
+			key := getNoSqlKeyById(request, object)
+
+			value := getStringByObject(request, object)
+			err := client.Set(key, value, 0, 0, false, false)
+
+			if err != nil {
+				isError = true
+				errorMessage = err.Error()
+				break
+			}
+		}
+
+		if isError == true {
+			response.IsSuccess = false
+			request.Log("Error inserting/updating multiple objects in Redis : " + errorMessage)
+			response.GetErrorResponse("Error inserting/updating multiple objects in Redis" + errorMessage)
+		} else {
+			response.IsSuccess = true
+			response.Message = "Successfully inserted/updated multiple objects in Redis"
+			request.Log(response.Message)
+		}
+	}
+
+	return response
+}
+
+func (repository RedisExcelRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
+	return setManyRedis(request)
+}
+
+func (repository RedisExcelRepository) UpdateSingle(request *messaging.ObjectRequest) RepositoryResponse {
+	return setOneRedis(request)
+}
+
+func (repository RedisExcelRepository) DeleteMultiple(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+	client, isError, errorMessage := getRedisExcelConnection(request)
+
+	if isError == true {
+		response.GetErrorResponse(errorMessage)
+	} else {
+
+		isError := false
+
+		for _, object := range request.Body.Objects {
+			key := getNoSqlKeyById(request, object)
+
+			//value := getStringByObject(request, object)
+			//err := client.Set(key, value, 0, 0, false, false)
+			reply, err := client.ExecuteCommand("DEL", key)
+			err2 := reply.OKValue()
+			if err != nil {
+				isError = true
+				errorMessage = err.Error()
+				response.IsSuccess = false
+				request.Log("Error deleting object in Redis!" + err2.Error())
+				response.GetErrorResponse("Error deleting object in Redis!" + err2.Error())
+				break
+			} else {
+				response.IsSuccess = true
+				response.Message = "Successfully deleted multiple objects in Redis"
+				request.Log("Successfully deleted all objects in Redis!")
+			}
+		}
+
+		if isError == true {
+			response.IsSuccess = false
+			request.Log("Error deleting multiple objects in Redis : " + errorMessage)
+			response.GetErrorResponse("Error deleting multiple objects in Redis" + errorMessage)
+		} else {
+			response.IsSuccess = true
+			response.Message = "Successfully deleted multiple objects in Redis"
+			request.Log(response.Message)
+		}
+	}
+
+	return response
+}
+
+func (repository RedisExcelRepository) DeleteSingle(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+	client, isError, errorMessage := getRedisConnection(request)
+
+	if isError == true {
+		response.GetErrorResponse(errorMessage)
+	} else {
+		key := request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
+
+		//value := getStringByObject(request, request.Body.Object)
+
+		isAvailable, err := client.Exists(key)
+		if err != nil {
+			response.IsSuccess = false
+			request.Log("Error deleting object in Redis : " + key + ", " + err.Error())
+			response.GetErrorResponse("Error deleting one object in Redis" + err.Error())
+		}
+		if isAvailable {
+			reply, err := client.ExecuteCommand("DEL", key)
+			err2 := reply.OKValue()
+			if err != nil {
+				response.IsSuccess = false
+				request.Log("Error deleting object in Redis!" + err2.Error())
+				response.GetErrorResponse("Error deleting object in Redis!" + err2.Error())
+			} else {
+				response.IsSuccess = true
+				request.Log("Successfully deleted object in Redis!")
+			}
+		} else {
+			response.IsSuccess = false
+			response.Message = "No such value available to delete"
+			request.Log(response.Message)
+		}
+
+	}
+
+	return response
+}
+
+func (repository RedisExcelRepository) Special(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("Special not implemented in Redis repository")
+	return getDefaultNotImplemented()
+}
+
+func (repository RedisExcelRepository) Test(request *messaging.ObjectRequest) {
+
+}

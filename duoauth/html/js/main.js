@@ -1,5 +1,5 @@
 'use strict';
-var uri = "http://192.168.2.40"
+var uri = "http://192.168.0.132"
 var port ="3048"
 
 function getURI() {
@@ -14,9 +14,21 @@ AuthApp.config(function($routeProvider){
 				templateUrl: 'partials/dashboard.html',
 				controller: 'dashboardCtrl',
 			})
-			.when('/dashboard/:file',{
-				templateUrl: 'partials/dashboard.html',
+			.when('/Process',{
+				templateUrl: 'partials/Process.html',
 				controller: 'dashboardCtrl'
+			})
+			.when('/apidoc/:servicename',{
+				templateUrl: 'partials/api.html',
+				controller: 'apiDocsCtrl'
+			})
+			.when('/servers',{
+				templateUrl: 'partials/servers.html',
+				controller: 'configCtrl'
+			})
+			.when('/docker',{
+				templateUrl: 'partials/docker.html',
+				controller: 'configCtrl'
 			})
 			.when('/config',{
 				templateUrl: 'partials/config.html',
@@ -24,6 +36,10 @@ AuthApp.config(function($routeProvider){
 			})
 			.when('/config/Auth.config',{
 				templateUrl: 'partials/config/Auth.html',//+$routeParams.file.substring(0, $routeParams.file.length - 7)+".html",
+				controller: 'authCtrl'
+			})
+			.when('/config/ObjectStore.config',{
+				templateUrl: 'partials/config/objectstore.html',//+$routeParams.file.substring(0, $routeParams.file.length - 7)+".html",
 				controller: 'authCtrl'
 			})
 			.when('/config/Terminal.config',{
@@ -36,6 +52,41 @@ AuthApp.config(function($routeProvider){
 			});
 	});
 
+AuthApp.controller('apiDocsCtrl',['$scope','$http','$routeParams','$v6urls', function($scope, $http, $routeParams,$v6urls){
+		$scope.ctr="configCtrl"
+		$scope.pageClass = 'page-config';
+		$scope.pageName  = 'Api Documents';
+		$scope.apiname=$routeParams.servicename;
+		console.log($routeParams)
+		if($scope.apidocs==null)
+		{		
+			$http({
+				method: 'GET',
+				url: getURI()+ '/API/List/',
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			}).success(function(data, status, headers, config){
+				$scope.apidocs = data;
+				console.log(data);
+			}).error(function(data, status, headers, config){
+				console.log(data);
+			}); 
+		}
+		if($routeParams.servicename!=null)
+		{
+			$scope.apiname=$routeParams.servicename;
+			$http({
+				method: 'GET',
+				url: getURI()+'/API/Get/'+$routeParams.servicename,
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			}).success(function(data, status, headers, config){
+				$scope.FileContent = data;
+				console.log(data);
+			}).error(function(data, status, headers, config){
+				console.log(data);
+			}); 
+			//$scope.FileContent=$routeParams.page;
+		}
+	}]);
 
 AuthApp.controller('configCtrl',['$scope','$http','$routeParams','$v6urls', function($scope, $http, $routeParams,$v6urls){
 		$scope.ctr="configCtrl"
@@ -157,10 +208,9 @@ AuthApp.controller('dashboardCtrl',['$scope','$http','$routeParams','$interval',
         },
         axisX: {
         	title:"Time",
-            labelFontSize: 16,
+            labelFontSize: 16
         },
-        data: [              
-            {
+        data: [{
                 type: "line",
                 xValueType: "dateTime",
                 name: "Sucessful calls",
@@ -187,8 +237,7 @@ AuthApp.controller('dashboardCtrl',['$scope','$http','$routeParams','$interval',
         	title:"Time",
             labelFontSize: 16,
         },
-        data: [              
-            {
+        data: [{
                 type: "line",
                 xValueType: "dateTime",
                 name: "Sucessful calls",

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"duov6.com/apisvc"
 	"duov6.com/applib"
 	"duov6.com/authlib"
 	"duov6.com/config"
@@ -81,6 +82,8 @@ func runRestFul() {
 	gorest.RegisterService(new(applib.AppSvc))
 	gorest.RegisterService(new(config.ConfigSvc))
 	gorest.RegisterService(new(statservice.StatSvc))
+	gorest.RegisterService(new(apisvc.ApiSvc))
+
 	c := authlib.GetConfig()
 	if c.Https_Enabled {
 		err := http.ListenAndServeTLS(":3048", c.Cirtifcate, c.PrivateKey, gorest.Handle())

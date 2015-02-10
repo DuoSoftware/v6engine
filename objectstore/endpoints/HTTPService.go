@@ -1,26 +1,39 @@
 package endpoints
 
 import (
+	"duov6.com/FileServer"
+	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
+	"duov6.com/objectstore/client"
 	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/processors"
 	"duov6.com/objectstore/repositories"
-	"duov6.com/term"
 	"encoding/json"
 	"fmt"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/cors"
+	"github.com/tealeg/xlsx"
+	//"io"
 	"io/ioutil"
+	//"log"
 	"net/http"
+	//	"os"
+	//"reflect"
+	"strings"
 )
 
 type HTTPService struct {
 }
 
-func (h *HTTPService) Start() {
-	term.Write("Object Store Listening on Port : 3000", term.Debug)
+type FileData struct {
+	Id       string
+	FileName string
+	Body     string
+}
 
+func (h *HTTPService) Start() {
+	fmt.Println("Object Store Listening on Port : 3000")
 	m := martini.Classic()
 	m.Use(cors.Allow(&cors.Options{
 		AllowOrigins:     []string{"*"},
@@ -36,6 +49,8 @@ func (h *HTTPService) Start() {
 	//READ ADVANCED, INSERT
 	m.Post("/:namespace/:class", handleRequest)
 
+	//FILE RECIEVER
+	m.Post("/:namespace/:class/:id", uploadHandler)
 	//UPDATE
 	m.Put("/:namespace/:class", handleRequest)
 	//DELETE
@@ -44,12 +59,60 @@ func (h *HTTPService) Start() {
 	m.Run()
 }
 
+func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+
+	var sendRequest = FileServerMessaging.FileRequest{}
+	sendRequest.WebRequest = r
+	sendRequest.WebResponse = w
+	sendRequest.Parameters = params
+
+	exe := FileServer.FileManager{}
+
+	fileResponse := exe.Store(&sendRequest)
+
+	if fileResponse.IsSuccess == true {
+		fmt.Fprintf(w, "File uploaded successfully : ")
+	} else {
+		fmt.Fprintf(w, "Aborted")
+	}
+}
+
 func handleRequest(params martini.Params, res http.ResponseWriter, req *http.Request) { // res and req are injected by Martini
+
+	// Start setting up Content-Types
+	if checkIfFile(params) == "NAF" {
+		// NAF = Not A File.
+		res.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	} else if checkIfFile(params) == "txt" {
+		res.Header().Set("Content-Type", "text/txt")
+	} else if checkIfFile(params) == "docx" {
+		res.Header().Set("Content-Type", "document/word")
+	} else if checkIfFile(params) == "xlsx" {
+		res.Header().Set("Content-Type", "document/excel")
+	} else if checkIfFile(params) == "pptx" {
+		res.Header().Set("Content-Type", "document/powerpoint")
+	} else if checkIfFile(params) == "png" {
+		res.Header().Set("Content-Type", "image/png")
+	} else if checkIfFile(params) == "jpg" {
+		res.Header().Set("Content-Type", "image/jpg")
+	} else if checkIfFile(params) == "gif" {
+		res.Header().Set("Content-Type", "image/gif")
+	} else if checkIfFile(params) == "wav" {
+		res.Header().Set("Content-Type", "audio/wav")
+	} else if checkIfFile(params) == "mp3" {
+		res.Header().Set("Content-Type", "audio/mp3")
+	} else if checkIfFile(params) == "wmv" {
+		res.Header().Set("Content-Type", "audio/wmv")
+	} else {
+		res.Header().Set("Content-Type", "text/other")
+	}
+	// End setting up Content-Types
 
 	responseMessage, isSuccess := dispatchRequest(req, params)
 
 	if isSuccess {
 		res.WriteHeader(200)
+
 	} else {
 		res.WriteHeader(500)
 	}
@@ -80,6 +143,23 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 		if isSuccess {
 			if repResponse.Body != nil {
 				responseMessage = string(repResponse.Body)
+
+				if checkIfFile(params) != "NAF" {
+					var sendRequest = FileServerMessaging.FileRequest{}
+					sendRequest.Body = repResponse.Body
+					sendRequest.FilePath = ""
+
+					exe := FileServer.FileManager{}
+
+					fileResponse := exe.Download(&sendRequest)
+
+					if fileResponse.IsSuccess == true {
+						fmt.Println(fileResponse.Message)
+					} else {
+						fmt.Println(fileResponse.Message)
+					}
+				}
+
 			} else {
 				responseMessage = getQueryResponseString("Successfully completed request", repResponse.Message, isSuccess, objectRequest.MessageStack)
 			}
@@ -185,6 +265,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					canAddHeader = false
 				case "POST": //read query, read special, insert
 					if len(requestBody.Object) != 0 || len(requestBody.Objects) != 0 {
+						fmt.Println("Inset by POST : " + objectRequest.Body.Parameters.KeyProperty)
 						headerOperation = "insert"
 						if len(objectRequest.Body.Object) != 0 {
 							headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
@@ -216,6 +297,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 
 				if canAddHeader {
 					repositories.FillControlHeaders(objectRequest)
+
 				}
 			}
 
@@ -243,4 +325,75 @@ func validateSecurityToken(token string) (isValidated bool, cert authlib.AuthCer
 	isValidated = true
 
 	return
+}
+
+func checkIfFile(params martini.Params) (fileType string) {
+
+	var tempArray []string
+	tempArray = strings.Split(params["id"], ".")
+	if len(tempArray) > 1 {
+		fileType = tempArray[len(tempArray)-1]
+	} else {
+		fileType = "NAF"
+	}
+	return
+}
+
+func getExcelFileName(path string) (fileName string) {
+	subsets := strings.Split(path, "\\")
+	subfilenames := strings.Split(subsets[len(subsets)-1], ".")
+	fileName = subfilenames[0]
+	return
+}
+
+func SaveExcelEntries(excelFileName string) {
+	fmt.Println("Inserting Records to Database....")
+	rowcount := 0
+	colunmcount := 0
+	var exceldata []map[string]interface{}
+	var colunName []string
+
+	//log.Printf("Received a message: %s", file)
+	//file read
+	xlFile, error := xlsx.OpenFile(excelFileName)
+
+	if error == nil {
+		for _, sheet := range xlFile.Sheets {
+			rowcount = (sheet.MaxRow - 1)
+			colunmcount = sheet.MaxCol
+			colunName = make([]string, colunmcount)
+			for _, row := range sheet.Rows {
+				for j, cel := range row.Cells {
+					colunName[j] = cel.String()
+				}
+				break
+			}
+
+			exceldata = make(([]map[string]interface{}), rowcount)
+
+			if error == nil {
+				for _, sheet := range xlFile.Sheets {
+					for rownumber, row := range sheet.Rows {
+						currentRow := make(map[string]interface{})
+						if rownumber != 0 {
+							exceldata[rownumber-1] = currentRow
+							for cellnumber, cell := range row.Cells {
+								exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+							}
+						}
+					}
+				}
+			}
+
+			//fmt.Println(exceldata)
+
+			Id := colunName[0]
+
+			client.Go("token", "com.duosoftware.com", getExcelFileName(excelFileName)+sheet.Name).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
+
+		}
+	}
+
+	return
+
 }

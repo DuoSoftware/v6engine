@@ -4,7 +4,7 @@ import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
-	"duov6.com/term"
+	"fmt"
 	"strconv"
 )
 
@@ -21,13 +21,15 @@ func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.Rep
 		storageEngine = storageengines.ReplicatedStorageEngine{}
 	case "SINGLE":
 		storageEngine = storageengines.SingleStorageEngine{}
+	case "QUEUED":
+		storageEngine = storageengines.QueuedStorageEngine{}
 	}
 
 	var outResponse repositories.RepositoryResponse = storageEngine.Store(request)
 
 	if request.IsLogEnabled {
 		for index, element := range request.MessageStack {
-			term.Write("S-"+strconv.Itoa(index)+" : "+element, term.Error)
+			fmt.Println("S-" + strconv.Itoa(index) + " : " + element)
 		}
 	}
 

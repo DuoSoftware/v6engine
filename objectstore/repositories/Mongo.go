@@ -58,12 +58,12 @@ func (repository MongoRepository) GetAll(request *messaging.ObjectRequest) Repos
 }
 
 func (repository MongoRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("DeleteMultiple not implemented in Mongo Db repository")
+	request.Log("Get Search not implemented in Mongo Db repository")
 	return getDefaultNotImplemented()
 }
 
 func (repository MongoRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("DeleteMultiple not implemented in Mongo Db repository")
+	request.Log("Get Query not implemented in Mongo Db repository")
 	return getDefaultNotImplemented()
 }
 
@@ -284,7 +284,7 @@ func (repository MongoRepository) DeleteSingle(request *messaging.ObjectRequest)
 }
 
 func (repository MongoRepository) Special(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("DeleteMultiple not implemented in Mongo Db repository")
+	request.Log("Special not implemented in Mongo Db repository")
 	return getDefaultNotImplemented()
 }
 

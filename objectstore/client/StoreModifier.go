@@ -6,6 +6,7 @@ import (
 	"duov6.com/objectstore/repositories"
 	"fmt"
 	"github.com/fatih/structs"
+	//"strconv"
 )
 
 type StoreModifier struct {
@@ -21,7 +22,6 @@ func (m *StoreModifier) WithKeyField(field string) *StoreModifier {
 func (m *StoreModifier) AndStoreOne(obj interface{}) *StoreModifier {
 
 	m.Request.Controls.Multiplicity = "single"
-
 	bodyMap := structs.Map(obj)
 	m.Request.Body.Object = bodyMap
 
@@ -42,6 +42,12 @@ func (m *StoreModifier) AndStoreMany(objs []interface{}) *StoreModifier {
 	return m
 }
 
+func (m *StoreModifier) AndStoreMapInterface(objs []map[string]interface{}) *StoreModifier {
+	m.Request.Controls.Multiplicity = "multiple"
+	m.Request.Body.Objects = objs
+	return m
+}
+
 func (m *StoreModifier) Ok() {
 	if m.Request.Controls.Multiplicity == "single" {
 		m.Request.Controls.Id = m.Request.Body.Object[m.Request.Body.Parameters.KeyProperty].(string)
@@ -56,10 +62,29 @@ func (m *StoreModifier) Ok() {
 	fmt.Println(response.IsSuccess)
 }
 
+func (m *StoreModifier) FileOk() {
+	if m.Request.Controls.Multiplicity == "single" {
+		m.Request.Controls.Id = m.Request.Body.Object[m.Request.Body.Parameters.KeyProperty].(string)
+	}
+
+	dispatcher := processors.Dispatcher{}
+
+	response := dispatcher.Dispatch(m.Request)
+
+	fmt.Println(response.IsSuccess)
+}
 func NewStoreModifier(request *messaging.ObjectRequest) *StoreModifier {
 	modifier := StoreModifier{Request: request}
 	modifier.Request = request
 	modifier.Request.Controls.Operation = "insert"
+	modifier.Request.Body = messaging.RequestBody{}
+	return &modifier
+}
+
+func NewStoreModifierWithOperation(request *messaging.ObjectRequest, operation string) *StoreModifier {
+	modifier := StoreModifier{Request: request}
+	modifier.Request = request
+	modifier.Request.Controls.Operation = operation
 	modifier.Request.Body = messaging.RequestBody{}
 	return &modifier
 }

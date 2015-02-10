@@ -1,5 +1,5 @@
-  <div ng-controller="dashboardCtrl">
-   <article class="stats_graph"> <div  id="chartContainer" style="height: 300px; width: 100%;">
+ <div ng-controller="dashboardCtrl">
+ <article class="stats_graph"> <div  id="chartContainer" style="height: 300px; width: 100%;">
   </div> </article>
           <article class="stats_overview">
             <div class="overview_today">
@@ -8,7 +8,7 @@
               <p class="overview_type">Total Hits</p>
               <p class="overview_count">{{DataSucess.TotalSize/1024 | number:2}}</p>
               <p class="overview_type">Total Data KB</p>
-              <p class="overview_count">{{DataSucess.TotalElapsedTime/3600000 |number:0}}:{{(DataSucess.TotalElapsedTime-(int(DataSucess.TotalElapsedTime/3600000)*3600000)/60000 |number:0}}:{{DataSucess.TotalElapsedTime-int(DataSucess.TotalElapsedTime/3600000)/1000 |number:0}}</p>
+              <p class="overview_count">{{DataSucess.TotalElapsedTime/3600000 |number:0}}:{{DataSucess.TotalElapsedTime/60000 |number:0}}:{{DataSucess.TotalElapsedTime}}
               <p class="overview_type">Total time</p>
             </div>
             <div class="overview_today">
@@ -17,11 +17,15 @@
               <p class="overview_type">Total Hits</p>
              <p class="overview_count">{{DataError.TotalSize/1024 | number:2}}</p>
               <p class="overview_type">Total Data KB</p>
-              <p class="overview_count">{{DataError.TotalElapsedTime/3600000 |number:0}}:{{DataError.TotalElapsedTime/60000 |number:0}}:{{DataError.TotalElapsedTime/1000 |number:0}}</p>
+              <p class="overview_count">{{DataError.TotalElapsedTime/3600000 |number:0}}:{{DataError.TotalElapsedTime/60000 |number:0}}:{{DataError.TotalElapsedTime}}
               <p class="overview_type">Total time</p>
             </div>
   </article>
 
-  <div  id="chartContainer" style="height: 300px; width: 100%;"/>
-  <div  id="chartTransfer" style="height: 300px; width: 100%;"/>
+  <div  id="chartContainer" style="height: 300px; width: 100%;">
+  </div>  
+  <div  id="chartTransfer" style="height: 300px; width: 100%;">
+  </div>
+  <div  id="chartTimeTaken" style="height: 300px; width: 100%;">
+  </div>
   </div>
