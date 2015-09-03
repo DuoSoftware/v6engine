@@ -1,0 +1,1748 @@
+2015-05-14 @ 16:20:25
+Starting replicated storage engine
+2015-05-14 @ 16:20:25
+Getting settings for get by key
+2015-05-14 @ 16:20:25
+Executing repository : Elastic Search
+2015-05-14 @ 16:20:25
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:20:25
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:20:25
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:20:25
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:20:25
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:20:25
+Starting replicated storage engine
+2015-05-14 @ 16:20:25
+Getting settings for multiple insert
+2015-05-14 @ 16:20:25
+Executing repository : Elastic Search
+2015-05-14 @ 16:20:25
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:20:25
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:20:25
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:20:42
+Starting replicated storage engine
+2015-05-14 @ 16:20:42
+Getting settings for get by key
+2015-05-14 @ 16:20:42
+Executing repository : Elastic Search
+2015-05-14 @ 16:20:42
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:20:42
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:20:42
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:20:42
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:20:42
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:20:42
+Starting replicated storage engine
+2015-05-14 @ 16:20:42
+Getting settings for multiple insert
+2015-05-14 @ 16:20:42
+Executing repository : Elastic Search
+2015-05-14 @ 16:20:42
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:20:42
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:20:42
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:22:45
+Starting replicated storage engine
+2015-05-14 @ 16:22:45
+Getting settings for get by key
+2015-05-14 @ 16:22:45
+Executing repository : Elastic Search
+2015-05-14 @ 16:22:45
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:22:45
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:22:45
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:22:45
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:22:45
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:22:45
+Starting replicated storage engine
+2015-05-14 @ 16:22:45
+Getting settings for multiple insert
+2015-05-14 @ 16:22:45
+Executing repository : Elastic Search
+2015-05-14 @ 16:22:45
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:22:45
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:22:45
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:27:43
+Starting replicated storage engine
+2015-05-14 @ 16:27:43
+Getting settings for get by key
+2015-05-14 @ 16:27:43
+Executing repository : Elastic Search
+2015-05-14 @ 16:27:43
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:27:43
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:27:43
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:27:44
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:27:44
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:27:44
+Starting replicated storage engine
+2015-05-14 @ 16:27:44
+Getting settings for multiple insert
+2015-05-14 @ 16:27:44
+Executing repository : Elastic Search
+2015-05-14 @ 16:27:44
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:27:44
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:27:44
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:27:49
+Starting replicated storage engine
+2015-05-14 @ 16:27:49
+Getting settings for get by key
+2015-05-14 @ 16:27:49
+Executing repository : Elastic Search
+2015-05-14 @ 16:27:49
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:27:49
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:27:49
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:27:50
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:27:50
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:27:50
+Starting replicated storage engine
+2015-05-14 @ 16:27:50
+Getting settings for multiple insert
+2015-05-14 @ 16:27:50
+Executing repository : Elastic Search
+2015-05-14 @ 16:27:50
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:27:50
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:27:50
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:27:57
+Starting replicated storage engine
+2015-05-14 @ 16:27:57
+Getting settings for get by key
+2015-05-14 @ 16:27:57
+Executing repository : Elastic Search
+2015-05-14 @ 16:27:57
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:27:57
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:27:57
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:27:59
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:27:59
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:27:59
+Starting replicated storage engine
+2015-05-14 @ 16:27:59
+Getting settings for multiple insert
+2015-05-14 @ 16:27:59
+Executing repository : Elastic Search
+2015-05-14 @ 16:27:59
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:27:59
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:27:59
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:28:56
+Starting replicated storage engine
+2015-05-14 @ 16:28:56
+Getting settings for get by key
+2015-05-14 @ 16:28:56
+Executing repository : Elastic Search
+2015-05-14 @ 16:28:56
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:28:56
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:28:56
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:28:56
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:28:56
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:28:56
+Starting replicated storage engine
+2015-05-14 @ 16:28:56
+Getting settings for multiple insert
+2015-05-14 @ 16:28:56
+Executing repository : Elastic Search
+2015-05-14 @ 16:28:56
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:28:56
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:28:56
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:29:34
+Starting replicated storage engine
+2015-05-14 @ 16:29:34
+Getting settings for get by key
+2015-05-14 @ 16:29:34
+Executing repository : Elastic Search
+2015-05-14 @ 16:29:34
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:29:34
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:29:34
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:29:34
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:29:34
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:29:34
+Starting replicated storage engine
+2015-05-14 @ 16:29:34
+Getting settings for multiple insert
+2015-05-14 @ 16:29:34
+Executing repository : Elastic Search
+2015-05-14 @ 16:29:34
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:29:34
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:29:34
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:32:28
+Starting replicated storage engine
+2015-05-14 @ 16:32:28
+Getting settings for get by key
+2015-05-14 @ 16:32:28
+Executing repository : Elastic Search
+2015-05-14 @ 16:32:28
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:32:28
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:32:28
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:32:28
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:32:28
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:32:28
+Starting replicated storage engine
+2015-05-14 @ 16:32:28
+Getting settings for multiple insert
+2015-05-14 @ 16:32:28
+Executing repository : Elastic Search
+2015-05-14 @ 16:32:28
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:32:28
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:32:28
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:32:33
+Starting replicated storage engine
+2015-05-14 @ 16:32:33
+Getting settings for get by key
+2015-05-14 @ 16:32:33
+Executing repository : Elastic Search
+2015-05-14 @ 16:32:33
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:32:33
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:32:33
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:32:34
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:32:34
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:32:34
+Starting replicated storage engine
+2015-05-14 @ 16:32:34
+Getting settings for multiple insert
+2015-05-14 @ 16:32:34
+Executing repository : Elastic Search
+2015-05-14 @ 16:32:34
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:32:34
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:32:34
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:33:04
+Starting replicated storage engine
+2015-05-14 @ 16:33:04
+Getting settings for get by key
+2015-05-14 @ 16:33:04
+Executing repository : Elastic Search
+2015-05-14 @ 16:33:04
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:33:04
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:33:04
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:33:04
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:33:04
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:33:04
+Starting replicated storage engine
+2015-05-14 @ 16:33:04
+Getting settings for multiple insert
+2015-05-14 @ 16:33:04
+Executing repository : Elastic Search
+2015-05-14 @ 16:33:04
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:33:04
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:33:04
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:34:07
+Starting replicated storage engine
+2015-05-14 @ 16:34:07
+Getting settings for get by key
+2015-05-14 @ 16:34:07
+Executing repository : Elastic Search
+2015-05-14 @ 16:34:07
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:34:07
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:34:07
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:34:08
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:34:08
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:34:08
+Starting replicated storage engine
+2015-05-14 @ 16:34:08
+Getting settings for multiple insert
+2015-05-14 @ 16:34:08
+Executing repository : Elastic Search
+2015-05-14 @ 16:34:08
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:34:08
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:34:08
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:35:12
+Starting replicated storage engine
+2015-05-14 @ 16:35:12
+Getting settings for get by key
+2015-05-14 @ 16:35:12
+Executing repository : Elastic Search
+2015-05-14 @ 16:35:12
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:35:12
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:35:12
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:35:13
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:35:13
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:35:13
+Starting replicated storage engine
+2015-05-14 @ 16:35:13
+Getting settings for multiple insert
+2015-05-14 @ 16:35:13
+Executing repository : Elastic Search
+2015-05-14 @ 16:35:13
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:35:13
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:35:13
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:38:19
+Starting replicated storage engine
+2015-05-14 @ 16:38:19
+Getting settings for get by key
+2015-05-14 @ 16:38:19
+Executing repository : Elastic Search
+2015-05-14 @ 16:38:19
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:38:19
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:38:19
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:38:19
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:38:19
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:38:19
+Starting replicated storage engine
+2015-05-14 @ 16:38:19
+Getting settings for multiple insert
+2015-05-14 @ 16:38:19
+Executing repository : Elastic Search
+2015-05-14 @ 16:38:19
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:38:19
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:38:19
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:38:24
+Starting replicated storage engine
+2015-05-14 @ 16:38:24
+Getting settings for get by key
+2015-05-14 @ 16:38:24
+Executing repository : Elastic Search
+2015-05-14 @ 16:38:24
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:38:24
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:38:24
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:38:24
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:38:24
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:38:24
+Starting replicated storage engine
+2015-05-14 @ 16:38:24
+Getting settings for multiple insert
+2015-05-14 @ 16:38:24
+Executing repository : Elastic Search
+2015-05-14 @ 16:38:24
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:38:24
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:38:24
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:40:56
+Starting replicated storage engine
+2015-05-14 @ 16:40:56
+Getting settings for get by key
+2015-05-14 @ 16:40:56
+Executing repository : Elastic Search
+2015-05-14 @ 16:40:56
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:40:56
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:40:56
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:40:58
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:40:58
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:40:58
+Starting replicated storage engine
+2015-05-14 @ 16:40:58
+Getting settings for multiple insert
+2015-05-14 @ 16:40:58
+Executing repository : Elastic Search
+2015-05-14 @ 16:40:58
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:40:58
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:40:58
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:41:54
+Starting replicated storage engine
+2015-05-14 @ 16:41:54
+Getting settings for get by key
+2015-05-14 @ 16:41:54
+Executing repository : Elastic Search
+2015-05-14 @ 16:41:54
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:41:54
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:41:54
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:41:54
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:41:54
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:41:54
+Starting replicated storage engine
+2015-05-14 @ 16:41:54
+Getting settings for multiple insert
+2015-05-14 @ 16:41:54
+Executing repository : Elastic Search
+2015-05-14 @ 16:41:54
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:41:54
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:41:54
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:42:56
+Starting replicated storage engine
+2015-05-14 @ 16:42:56
+Getting settings for get by key
+2015-05-14 @ 16:42:56
+Executing repository : Elastic Search
+2015-05-14 @ 16:42:56
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:42:56
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:42:56
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:42:58
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:42:58
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:42:58
+Starting replicated storage engine
+2015-05-14 @ 16:42:58
+Getting settings for multiple insert
+2015-05-14 @ 16:42:58
+Executing repository : Elastic Search
+2015-05-14 @ 16:42:58
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:42:58
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:42:58
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:43:46
+Starting replicated storage engine
+2015-05-14 @ 16:43:46
+Getting settings for get by key
+2015-05-14 @ 16:43:46
+Executing repository : Elastic Search
+2015-05-14 @ 16:43:46
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:43:46
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:43:46
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:43:46
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:43:46
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:43:46
+Starting replicated storage engine
+2015-05-14 @ 16:43:46
+Getting settings for multiple insert
+2015-05-14 @ 16:43:46
+Executing repository : Elastic Search
+2015-05-14 @ 16:43:46
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:43:46
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:43:46
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:43:50
+Starting replicated storage engine
+2015-05-14 @ 16:43:50
+Getting settings for get by key
+2015-05-14 @ 16:43:50
+Executing repository : Elastic Search
+2015-05-14 @ 16:43:50
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:43:50
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:43:50
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:43:50
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:43:50
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:43:50
+Starting replicated storage engine
+2015-05-14 @ 16:43:50
+Getting settings for multiple insert
+2015-05-14 @ 16:43:50
+Executing repository : Elastic Search
+2015-05-14 @ 16:43:50
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:43:50
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:43:50
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:44:27
+Starting replicated storage engine
+2015-05-14 @ 16:44:27
+Getting settings for get by key
+2015-05-14 @ 16:44:27
+Executing repository : Elastic Search
+2015-05-14 @ 16:44:27
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:44:27
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:44:27
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:44:27
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:44:28
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:44:28
+Starting replicated storage engine
+2015-05-14 @ 16:44:28
+Getting settings for multiple insert
+2015-05-14 @ 16:44:28
+Executing repository : Elastic Search
+2015-05-14 @ 16:44:28
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:44:28
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:44:28
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:47:32
+Starting replicated storage engine
+2015-05-14 @ 16:47:32
+Getting settings for get by key
+2015-05-14 @ 16:47:32
+Executing repository : Elastic Search
+2015-05-14 @ 16:47:32
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:47:32
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:47:32
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:47:32
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:47:32
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:47:32
+Starting replicated storage engine
+2015-05-14 @ 16:47:32
+Getting settings for multiple insert
+2015-05-14 @ 16:47:32
+Executing repository : Elastic Search
+2015-05-14 @ 16:47:32
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:47:32
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:47:32
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:48:30
+Starting replicated storage engine
+2015-05-14 @ 16:48:30
+Getting settings for get by key
+2015-05-14 @ 16:48:30
+Executing repository : Elastic Search
+2015-05-14 @ 16:48:30
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:48:30
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:48:30
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:48:30
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:48:30
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:48:30
+Starting replicated storage engine
+2015-05-14 @ 16:48:30
+Getting settings for multiple insert
+2015-05-14 @ 16:48:30
+Executing repository : Elastic Search
+2015-05-14 @ 16:48:30
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:48:30
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:48:30
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:48:30
+Successfully inserted bulk to Elastic Search
+2015-05-14 @ 16:48:30
+Executing repository : Elastic Search - Success
+2015-05-14 @ 16:50:28
+Starting replicated storage engine
+2015-05-14 @ 16:50:28
+Getting settings for get by key
+2015-05-14 @ 16:50:28
+Executing repository : Elastic Search
+2015-05-14 @ 16:50:28
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:50:28
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:50:28
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:50:28
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:50:28
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:50:28
+Starting replicated storage engine
+2015-05-14 @ 16:50:28
+Getting settings for multiple insert
+2015-05-14 @ 16:50:28
+Executing repository : Elastic Search
+2015-05-14 @ 16:50:28
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:50:28
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:50:28
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:50:28
+Successfully inserted bulk to Elastic Search
+2015-05-14 @ 16:50:28
+Executing repository : Elastic Search - Success
+2015-05-14 @ 16:58:08
+Starting replicated storage engine
+2015-05-14 @ 16:58:08
+Getting settings for get by key
+2015-05-14 @ 16:58:08
+Executing repository : Elastic Search
+2015-05-14 @ 16:58:08
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:58:08
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:58:08
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.51f858566171112eed37b237fcd88da2
+2015-05-14 @ 16:58:08
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:58:08
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:58:54
+Starting replicated storage engine
+2015-05-14 @ 16:58:54
+Getting settings for get by key
+2015-05-14 @ 16:58:54
+Executing repository : Elastic Search
+2015-05-14 @ 16:58:54
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:58:54
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:58:54
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 16:58:54
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:58:54
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 16:58:54
+Starting replicated storage engine
+2015-05-14 @ 16:58:54
+Getting settings for multiple insert
+2015-05-14 @ 16:58:54
+Executing repository : Elastic Search
+2015-05-14 @ 16:58:54
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:58:54
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:58:54
+Starting Elastic Search bulk insert
+2015-05-14 @ 16:58:54
+Successfully inserted bulk to Elastic Search
+2015-05-14 @ 16:58:54
+Executing repository : Elastic Search - Success
+2015-05-14 @ 16:58:54
+Starting replicated storage engine
+2015-05-14 @ 16:58:54
+Getting settings for get by key
+2015-05-14 @ 16:58:54
+Executing repository : Elastic Search
+2015-05-14 @ 16:58:54
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 16:58:54
+Reusing existing Elastic Search connection
+2015-05-14 @ 16:58:54
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.51f858566171112eed37b237fcd88da2
+2015-05-14 @ 16:58:54
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 16:58:54
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 17:27:48
+Starting replicated storage engine
+2015-05-14 @ 17:27:48
+Getting settings for get by key
+2015-05-14 @ 17:27:48
+Executing repository : Elastic Search
+2015-05-14 @ 17:27:48
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:27:48
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:27:48
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 17:27:48
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 17:27:48
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 17:27:48
+Starting replicated storage engine
+2015-05-14 @ 17:27:48
+Getting settings for single insert
+2015-05-14 @ 17:27:48
+Executing repository : Elastic Search
+2015-05-14 @ 17:27:48
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:27:48
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:27:48
+Inserting single object to Elastic Search : com.duosoftware.tenant.authorized.0847f6636f535d5114bb2e2ee8d201dc
+2015-05-14 @ 17:27:49
+Successfully inserted one to elastic search
+2015-05-14 @ 17:27:49
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:27:49
+Starting replicated storage engine
+2015-05-14 @ 17:27:49
+Getting settings for single insert
+2015-05-14 @ 17:27:49
+Executing repository : Elastic Search
+2015-05-14 @ 17:27:49
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:27:49
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:27:49
+Inserting single object to Elastic Search : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 17:27:49
+Successfully inserted one to elastic search
+2015-05-14 @ 17:27:49
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:27:49
+Starting replicated storage engine
+2015-05-14 @ 17:27:49
+Getting settings for get by key
+2015-05-14 @ 17:27:49
+Executing repository : Elastic Search
+2015-05-14 @ 17:27:49
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:27:49
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:27:49
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.0847f6636f535d5114bb2e2ee8d201dc
+2015-05-14 @ 17:27:49
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:27:49
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:29:32
+Starting replicated storage engine
+2015-05-14 @ 17:29:32
+Getting settings for get by key
+2015-05-14 @ 17:29:32
+Executing repository : Elastic Search
+2015-05-14 @ 17:29:32
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:29:32
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:29:32
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 17:29:32
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:29:32
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:29:32
+Starting replicated storage engine
+2015-05-14 @ 17:29:32
+Getting settings for get by key
+2015-05-14 @ 17:29:32
+Executing repository : Elastic Search
+2015-05-14 @ 17:29:32
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:29:32
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:29:32
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.f263f0db8d786e5633f0586c45e13e9f
+2015-05-14 @ 17:29:32
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 17:29:32
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 17:29:50
+Starting replicated storage engine
+2015-05-14 @ 17:29:50
+Getting settings for get by key
+2015-05-14 @ 17:29:50
+Executing repository : Elastic Search
+2015-05-14 @ 17:29:50
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:29:50
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:29:50
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.0847f6636f535d5114bb2e2ee8d201dc
+2015-05-14 @ 17:29:50
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:29:50
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:38:05
+Starting replicated storage engine
+2015-05-14 @ 17:38:05
+Getting settings for get by key
+2015-05-14 @ 17:38:05
+Executing repository : Elastic Search
+2015-05-14 @ 17:38:05
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:38:05
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:38:05
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.0847f6636f535d5114bb2e2ee8d201dc
+2015-05-14 @ 17:38:06
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:38:06
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:42:20
+Starting replicated storage engine
+2015-05-14 @ 17:42:20
+Getting settings for get by key
+2015-05-14 @ 17:42:20
+Executing repository : Elastic Search
+2015-05-14 @ 17:42:20
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:42:20
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:42:20
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.0847f6636f535d5114bb2e2ee8d201dc
+2015-05-14 @ 17:42:20
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:42:20
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:43:00
+Starting replicated storage engine
+2015-05-14 @ 17:43:00
+Getting settings for get by key
+2015-05-14 @ 17:43:00
+Executing repository : Elastic Search
+2015-05-14 @ 17:43:00
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:43:00
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:43:00
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.0847f6636f535d5114bb2e2ee8d201dc
+2015-05-14 @ 17:43:00
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:43:00
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:43:42
+Starting replicated storage engine
+2015-05-14 @ 17:43:42
+Getting settings for get by key
+2015-05-14 @ 17:43:42
+Executing repository : Elastic Search
+2015-05-14 @ 17:43:42
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:43:42
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:43:42
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 17:43:42
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:43:42
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:43:42
+Starting replicated storage engine
+2015-05-14 @ 17:43:42
+Getting settings for get by key
+2015-05-14 @ 17:43:42
+Executing repository : Elastic Search
+2015-05-14 @ 17:43:42
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:43:42
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:43:42
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.0847f6636f535d5114bb2e2ee8d201dc
+2015-05-14 @ 17:43:42
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:43:42
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:43:53
+Starting replicated storage engine
+2015-05-14 @ 17:43:53
+Getting settings for get by key
+2015-05-14 @ 17:43:53
+Executing repository : Elastic Search
+2015-05-14 @ 17:43:53
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:43:53
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:43:53
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 17:43:53
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:43:53
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:43:53
+Starting replicated storage engine
+2015-05-14 @ 17:43:53
+Getting settings for single insert
+2015-05-14 @ 17:43:53
+Executing repository : Elastic Search
+2015-05-14 @ 17:43:53
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:43:53
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:43:53
+Inserting single object to Elastic Search : com.duosoftware.tenant.authorized.b296ee17ab7a0086c8e63f975e8e86f1
+2015-05-14 @ 17:43:53
+Successfully inserted one to elastic search
+2015-05-14 @ 17:43:53
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:43:53
+Starting replicated storage engine
+2015-05-14 @ 17:43:53
+Getting settings for single insert
+2015-05-14 @ 17:43:53
+Executing repository : Elastic Search
+2015-05-14 @ 17:43:53
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:43:53
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:43:53
+Inserting single object to Elastic Search : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 17:43:53
+Successfully inserted one to elastic search
+2015-05-14 @ 17:43:53
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:43:53
+Starting replicated storage engine
+2015-05-14 @ 17:43:53
+Getting settings for get by key
+2015-05-14 @ 17:43:53
+Executing repository : Elastic Search
+2015-05-14 @ 17:43:53
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:43:53
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:43:53
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.0847f6636f535d5114bb2e2ee8d201dc
+2015-05-14 @ 17:43:53
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:43:53
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:44:19
+Starting replicated storage engine
+2015-05-14 @ 17:44:19
+Getting settings for get by key
+2015-05-14 @ 17:44:19
+Executing repository : Elastic Search
+2015-05-14 @ 17:44:19
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:44:19
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:44:19
+Elastic Search Get By Key : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 17:44:19
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:44:19
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:44:19
+Starting replicated storage engine
+2015-05-14 @ 17:44:19
+Getting settings for single insert
+2015-05-14 @ 17:44:19
+Executing repository : Elastic Search
+2015-05-14 @ 17:44:19
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:44:19
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:44:19
+Inserting single object to Elastic Search : com.duosoftware.tenant.authorized.b296ee17ab7a0086c8e63f975e8e86f1
+2015-05-14 @ 17:44:19
+Successfully inserted one to elastic search
+2015-05-14 @ 17:44:19
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:44:19
+Starting replicated storage engine
+2015-05-14 @ 17:44:19
+Getting settings for single insert
+2015-05-14 @ 17:44:19
+Executing repository : Elastic Search
+2015-05-14 @ 17:44:19
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:44:19
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:44:19
+Inserting single object to Elastic Search : com.duosoftware.tenant.users.ssss
+2015-05-14 @ 17:44:19
+Successfully inserted one to elastic search
+2015-05-14 @ 17:44:19
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:44:19
+Starting replicated storage engine
+2015-05-14 @ 17:44:19
+Getting settings for get by key
+2015-05-14 @ 17:44:19
+Executing repository : Elastic Search
+2015-05-14 @ 17:44:19
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:44:19
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:44:19
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.0847f6636f535d5114bb2e2ee8d201dc
+2015-05-14 @ 17:44:19
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:44:19
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:44:56
+Starting replicated storage engine
+2015-05-14 @ 17:44:56
+Getting settings for get by key
+2015-05-14 @ 17:44:56
+Executing repository : Elastic Search
+2015-05-14 @ 17:44:56
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:44:56
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:44:56
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.b296ee17ab7a0086c8e63f975e8e86f1
+2015-05-14 @ 17:44:56
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:44:56
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:45:47
+Starting replicated storage engine
+2015-05-14 @ 17:45:47
+Getting settings for get by key
+2015-05-14 @ 17:45:47
+Executing repository : Elastic Search
+2015-05-14 @ 17:45:47
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:45:47
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:45:47
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.b296ee17ab7a0086c8e63f975e8e86f1
+2015-05-14 @ 17:45:47
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 17:45:47
+Executing repository : Elastic Search - Success
+2015-05-14 @ 17:46:08
+Starting replicated storage engine
+2015-05-14 @ 17:46:08
+Getting settings for get by key
+2015-05-14 @ 17:46:08
+Executing repository : Elastic Search
+2015-05-14 @ 17:46:08
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 17:46:08
+Reusing existing Elastic Search connection
+2015-05-14 @ 17:46:08
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.e9bd9c0f9f9f17d2d8788b5efe4efecc
+2015-05-14 @ 17:46:08
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 17:46:08
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:10:16
+Starting replicated storage engine
+2015-05-14 @ 18:10:16
+Getting settings for get by key
+2015-05-14 @ 18:10:16
+Executing repository : Elastic Search
+2015-05-14 @ 18:10:16
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:10:16
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:10:16
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha.duoweb.info
+2015-05-14 @ 18:10:16
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:10:16
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:10:16
+Starting replicated storage engine
+2015-05-14 @ 18:10:16
+Getting settings for get by key
+2015-05-14 @ 18:10:16
+Executing repository : Elastic Search
+2015-05-14 @ 18:10:16
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:10:16
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:10:16
+Elastic Search Get By Key : com.duosoftware.tenant.users.lasitha.duoweb.info
+2015-05-14 @ 18:10:16
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:10:16
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:10:16
+Starting replicated storage engine
+2015-05-14 @ 18:10:16
+Getting settings for single insert
+2015-05-14 @ 18:10:16
+Executing repository : Elastic Search
+2015-05-14 @ 18:10:16
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:10:16
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:10:16
+Inserting single object to Elastic Search : com.duosoftware.tenant.authorized.23d3f49b1e994fd33037f27c718b483a
+2015-05-14 @ 18:10:16
+Successfully inserted one to elastic search
+2015-05-14 @ 18:10:16
+Executing repository : Elastic Search - Success
+2015-05-14 @ 18:10:16
+Starting replicated storage engine
+2015-05-14 @ 18:10:16
+Getting settings for single insert
+2015-05-14 @ 18:10:16
+Executing repository : Elastic Search
+2015-05-14 @ 18:10:16
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:10:16
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:10:16
+Inserting single object to Elastic Search : com.duosoftware.tenant.users.lasitha.duoweb.info
+2015-05-14 @ 18:10:16
+Successfully inserted one to elastic search
+2015-05-14 @ 18:10:16
+Executing repository : Elastic Search - Success
+2015-05-14 @ 18:10:16
+Starting replicated storage engine
+2015-05-14 @ 18:10:16
+Getting settings for get by key
+2015-05-14 @ 18:10:16
+Executing repository : Elastic Search
+2015-05-14 @ 18:10:16
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:10:16
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:10:16
+Elastic Search Get By Key : com.duosoftware.auth.tenant.tenant_creation
+2015-05-14 @ 18:10:16
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:10:16
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:11:35
+Starting replicated storage engine
+2015-05-14 @ 18:11:35
+Getting settings for get by key
+2015-05-14 @ 18:11:35
+Executing repository : Elastic Search
+2015-05-14 @ 18:11:35
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:11:35
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:11:35
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha.duoweb.info
+2015-05-14 @ 18:11:35
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:11:35
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:11:35
+Starting replicated storage engine
+2015-05-14 @ 18:11:35
+Getting settings for get by key
+2015-05-14 @ 18:11:35
+Executing repository : Elastic Search
+2015-05-14 @ 18:11:35
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:11:35
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:11:35
+Elastic Search Get By Key : com.duosoftware.tenant.authorized.e9bd9c0f9f9f17d2d8788b5efe4efecc
+2015-05-14 @ 18:11:35
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:11:36
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:12:07
+Starting replicated storage engine
+2015-05-14 @ 18:12:07
+Getting settings for get by key
+2015-05-14 @ 18:12:07
+Executing repository : Elastic Search
+2015-05-14 @ 18:12:07
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:12:07
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:12:07
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha.duoweb.info
+2015-05-14 @ 18:12:08
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:12:08
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:13:34
+Starting replicated storage engine
+2015-05-14 @ 18:13:34
+Getting settings for get by key
+2015-05-14 @ 18:13:34
+Executing repository : Elastic Search
+2015-05-14 @ 18:13:34
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:13:34
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:13:34
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha.duoweb.info
+2015-05-14 @ 18:13:34
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:13:34
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:13:34
+Starting replicated storage engine
+2015-05-14 @ 18:13:34
+Getting settings for get by key
+2015-05-14 @ 18:13:34
+Executing repository : Elastic Search
+2015-05-14 @ 18:13:34
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:13:34
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:13:34
+Elastic Search Get By Key : com.duosoftware.tenant.users.lasitha.duoweb.info
+2015-05-14 @ 18:13:34
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 18:13:34
+Executing repository : Elastic Search - Success
+2015-05-14 @ 18:13:34
+Starting replicated storage engine
+2015-05-14 @ 18:13:34
+Getting settings for get by key
+2015-05-14 @ 18:13:34
+Executing repository : Elastic Search
+2015-05-14 @ 18:13:34
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:13:34
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:13:34
+Elastic Search Get By Key : com.duosoftware.auth.tenant.tenant_creation
+2015-05-14 @ 18:13:34
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:13:34
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:17:57
+Starting replicated storage engine
+2015-05-14 @ 18:17:57
+Getting settings for get by key
+2015-05-14 @ 18:17:57
+Executing repository : Elastic Search
+2015-05-14 @ 18:17:57
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:17:57
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:17:57
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha.duoweb.info
+2015-05-14 @ 18:17:57
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:17:57
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:17:57
+Starting replicated storage engine
+2015-05-14 @ 18:17:57
+Getting settings for get by key
+2015-05-14 @ 18:17:57
+Executing repository : Elastic Search
+2015-05-14 @ 18:17:57
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:17:57
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:17:57
+Elastic Search Get By Key : com.duosoftware.tenant.users.lasitha.duoweb.info
+2015-05-14 @ 18:17:57
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 18:17:57
+Executing repository : Elastic Search - Success
+2015-05-14 @ 18:17:57
+Starting replicated storage engine
+2015-05-14 @ 18:17:57
+Getting settings for get by key
+2015-05-14 @ 18:17:57
+Executing repository : Elastic Search
+2015-05-14 @ 18:17:57
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:17:57
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:17:57
+Elastic Search Get By Key : com.duosoftware.auth.tenant.tenant_creation
+2015-05-14 @ 18:17:57
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:17:57
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:17:57
+Starting replicated storage engine
+2015-05-14 @ 18:17:57
+Getting settings for single insert
+2015-05-14 @ 18:17:57
+Executing repository : Elastic Search
+2015-05-14 @ 18:17:57
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:17:57
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:17:57
+Inserting single object to Elastic Search : com.duosoftware.tenant.tenants.lasitha.duoweb.info
+2015-05-14 @ 18:17:57
+Successfully inserted one to elastic search
+2015-05-14 @ 18:17:57
+Executing repository : Elastic Search - Success
+2015-05-14 @ 18:17:57
+Starting replicated storage engine
+2015-05-14 @ 18:17:57
+Getting settings for get by key
+2015-05-14 @ 18:17:57
+Executing repository : Elastic Search
+2015-05-14 @ 18:17:57
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:17:57
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:17:57
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha.duoweb.info
+2015-05-14 @ 18:17:57
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 18:17:57
+Executing repository : Elastic Search - Success
+2015-05-14 @ 18:20:22
+Starting replicated storage engine
+2015-05-14 @ 18:20:22
+Getting settings for get by key
+2015-05-14 @ 18:20:22
+Executing repository : Elastic Search
+2015-05-14 @ 18:20:22
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:20:22
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:20:22
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha.duoweb.info
+2015-05-14 @ 18:20:22
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 18:20:22
+Executing repository : Elastic Search - Success
+2015-05-14 @ 18:20:22
+Starting replicated storage engine
+2015-05-14 @ 18:20:22
+Getting settings for get by key
+2015-05-14 @ 18:20:22
+Executing repository : Elastic Search
+2015-05-14 @ 18:20:22
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:20:22
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:20:22
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha.duoweb.info
+2015-05-14 @ 18:20:22
+Successfully retrieved object from Elastic Search
+2015-05-14 @ 18:20:22
+Executing repository : Elastic Search - Success
+2015-05-14 @ 18:20:47
+Starting replicated storage engine
+2015-05-14 @ 18:20:47
+Getting settings for get by key
+2015-05-14 @ 18:20:47
+Executing repository : Elastic Search
+2015-05-14 @ 18:20:47
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:20:47
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:20:47
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha1.duoweb.info
+2015-05-14 @ 18:20:47
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:20:47
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:20:47
+Starting replicated storage engine
+2015-05-14 @ 18:20:47
+Getting settings for get by key
+2015-05-14 @ 18:20:47
+Executing repository : Elastic Search
+2015-05-14 @ 18:20:47
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:20:47
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:20:47
+Elastic Search Get By Key : com.duosoftware.tenant.users.lasitha1.duoweb.info
+2015-05-14 @ 18:20:47
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:20:47
+Executing repository : Elastic Search - Failed
+2015-05-14 @ 18:20:47
+Starting replicated storage engine
+2015-05-14 @ 18:20:47
+Getting settings for single insert
+2015-05-14 @ 18:20:47
+Executing repository : Elastic Search
+2015-05-14 @ 18:20:47
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:20:47
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:20:47
+Inserting single object to Elastic Search : com.duosoftware.tenant.authorized.6f59c80cfe45c988db0a14f189b2290c
+2015-05-14 @ 18:20:47
+Successfully inserted one to elastic search
+2015-05-14 @ 18:20:47
+Executing repository : Elastic Search - Success
+2015-05-14 @ 18:20:47
+Starting replicated storage engine
+2015-05-14 @ 18:20:47
+Getting settings for single insert
+2015-05-14 @ 18:20:47
+Executing repository : Elastic Search
+2015-05-14 @ 18:20:47
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:20:47
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:20:47
+Inserting single object to Elastic Search : com.duosoftware.tenant.users.lasitha1.duoweb.info
+2015-05-14 @ 18:20:47
+Successfully inserted one to elastic search
+2015-05-14 @ 18:20:47
+Executing repository : Elastic Search - Success
+2015-05-14 @ 18:20:47
+Starting replicated storage engine
+2015-05-14 @ 18:20:47
+Getting settings for get by key
+2015-05-14 @ 18:20:47
+Executing repository : Elastic Search
+2015-05-14 @ 18:20:47
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-14 @ 18:20:47
+Reusing existing Elastic Search connection
+2015-05-14 @ 18:20:47
+Elastic Search Get By Key : com.duosoftware.auth.tenant.tenant_creation
+2015-05-14 @ 18:20:47
+Error retrieving object from elastic search : record not found
+2015-05-14 @ 18:20:47
+Executing repository : Elastic Search - Failed
+2015-05-15 @ 11:07:22
+Starting replicated storage engine
+2015-05-15 @ 11:07:22
+Getting settings for get by key
+2015-05-15 @ 11:07:22
+Executing repository : Elastic Search
+2015-05-15 @ 11:07:22
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:07:22
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:07:22
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha1.duoweb.info
+2015-05-15 @ 11:07:22
+Error retrieving object from elastic search : record not found
+2015-05-15 @ 11:07:22
+Executing repository : Elastic Search - Failed
+2015-05-15 @ 11:07:22
+Starting replicated storage engine
+2015-05-15 @ 11:07:22
+Getting settings for get by key
+2015-05-15 @ 11:07:22
+Executing repository : Elastic Search
+2015-05-15 @ 11:07:22
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:07:22
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:07:22
+Elastic Search Get By Key : com.duosoftware.tenant.users.lasitha1.duoweb.info
+2015-05-15 @ 11:07:22
+Successfully retrieved object from Elastic Search
+2015-05-15 @ 11:07:22
+Executing repository : Elastic Search - Success
+2015-05-15 @ 11:07:22
+Starting replicated storage engine
+2015-05-15 @ 11:07:22
+Getting settings for get by key
+2015-05-15 @ 11:07:22
+Executing repository : Elastic Search
+2015-05-15 @ 11:07:22
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:07:22
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:07:22
+Elastic Search Get By Key : com.duosoftware.auth.tenant.tenant_creation
+2015-05-15 @ 11:07:22
+Error retrieving object from elastic search : record not found
+2015-05-15 @ 11:07:22
+Executing repository : Elastic Search - Failed
+2015-05-15 @ 11:07:26
+Starting replicated storage engine
+2015-05-15 @ 11:07:26
+Getting settings for single insert
+2015-05-15 @ 11:07:26
+Executing repository : Elastic Search
+2015-05-15 @ 11:07:26
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:07:26
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:07:26
+Inserting single object to Elastic Search : com.duosoftware.tenant.tenants.lasitha1.duoweb.info
+2015-05-15 @ 11:07:26
+Successfully inserted one to elastic search
+2015-05-15 @ 11:07:26
+Executing repository : Elastic Search - Success
+2015-05-15 @ 11:07:26
+Starting replicated storage engine
+2015-05-15 @ 11:07:26
+Getting settings for get by key
+2015-05-15 @ 11:07:26
+Executing repository : Elastic Search
+2015-05-15 @ 11:07:26
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:07:26
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:07:26
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha.duoweb.info
+2015-05-15 @ 11:07:26
+Successfully retrieved object from Elastic Search
+2015-05-15 @ 11:07:26
+Executing repository : Elastic Search - Success
+2015-05-15 @ 11:08:51
+Starting replicated storage engine
+2015-05-15 @ 11:08:51
+Getting settings for get by key
+2015-05-15 @ 11:08:51
+Executing repository : Elastic Search
+2015-05-15 @ 11:08:51
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:08:51
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:08:51
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha1.duoweb.info
+2015-05-15 @ 11:08:52
+Successfully retrieved object from Elastic Search
+2015-05-15 @ 11:08:52
+Executing repository : Elastic Search - Success
+2015-05-15 @ 11:08:52
+Starting replicated storage engine
+2015-05-15 @ 11:08:52
+Getting settings for get by key
+2015-05-15 @ 11:08:52
+Executing repository : Elastic Search
+2015-05-15 @ 11:08:52
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:08:52
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:08:52
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha.duoweb.info
+2015-05-15 @ 11:08:52
+Successfully retrieved object from Elastic Search
+2015-05-15 @ 11:08:52
+Executing repository : Elastic Search - Success
+2015-05-15 @ 11:09:14
+Starting replicated storage engine
+2015-05-15 @ 11:09:14
+Getting settings for get by key
+2015-05-15 @ 11:09:14
+Executing repository : Elastic Search
+2015-05-15 @ 11:09:14
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:09:14
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:09:14
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha2.duoweb.info
+2015-05-15 @ 11:09:14
+Error retrieving object from elastic search : record not found
+2015-05-15 @ 11:09:14
+Executing repository : Elastic Search - Failed
+2015-05-15 @ 11:09:14
+Starting replicated storage engine
+2015-05-15 @ 11:09:14
+Getting settings for get by key
+2015-05-15 @ 11:09:14
+Executing repository : Elastic Search
+2015-05-15 @ 11:09:14
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:09:14
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:09:14
+Elastic Search Get By Key : com.duosoftware.tenant.users.lasitha2.duoweb.info
+2015-05-15 @ 11:09:14
+Error retrieving object from elastic search : record not found
+2015-05-15 @ 11:09:14
+Executing repository : Elastic Search - Failed
+2015-05-15 @ 11:09:14
+Starting replicated storage engine
+2015-05-15 @ 11:09:14
+Getting settings for single insert
+2015-05-15 @ 11:09:14
+Executing repository : Elastic Search
+2015-05-15 @ 11:09:14
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:09:14
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:09:14
+Inserting single object to Elastic Search : com.duosoftware.tenant.authorized.f9a3fa2380afdf6643a76d9483bb2e40
+2015-05-15 @ 11:09:14
+Successfully inserted one to elastic search
+2015-05-15 @ 11:09:14
+Executing repository : Elastic Search - Success
+2015-05-15 @ 11:09:14
+Starting replicated storage engine
+2015-05-15 @ 11:09:14
+Getting settings for single insert
+2015-05-15 @ 11:09:14
+Executing repository : Elastic Search
+2015-05-15 @ 11:09:14
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:09:14
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:09:14
+Inserting single object to Elastic Search : com.duosoftware.tenant.users.lasitha2.duoweb.info
+2015-05-15 @ 11:09:14
+Successfully inserted one to elastic search
+2015-05-15 @ 11:09:14
+Executing repository : Elastic Search - Success
+2015-05-15 @ 11:09:14
+Starting replicated storage engine
+2015-05-15 @ 11:09:14
+Getting settings for get by key
+2015-05-15 @ 11:09:14
+Executing repository : Elastic Search
+2015-05-15 @ 11:09:14
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:09:14
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:09:14
+Elastic Search Get By Key : com.duosoftware.auth.tenant.tenant_creation
+2015-05-15 @ 11:09:14
+Error retrieving object from elastic search : record not found
+2015-05-15 @ 11:09:14
+Executing repository : Elastic Search - Failed
+2015-05-15 @ 11:09:20
+Starting replicated storage engine
+2015-05-15 @ 11:09:20
+Getting settings for single insert
+2015-05-15 @ 11:09:20
+Executing repository : Elastic Search
+2015-05-15 @ 11:09:20
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:09:20
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:09:20
+Inserting single object to Elastic Search : com.duosoftware.tenant.tenants.lasitha2.duoweb.info
+2015-05-15 @ 11:09:20
+Successfully inserted one to elastic search
+2015-05-15 @ 11:09:20
+Executing repository : Elastic Search - Success
+2015-05-15 @ 11:09:20
+Starting replicated storage engine
+2015-05-15 @ 11:09:20
+Getting settings for get by key
+2015-05-15 @ 11:09:20
+Executing repository : Elastic Search
+2015-05-15 @ 11:09:20
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-15 @ 11:09:20
+Reusing existing Elastic Search connection
+2015-05-15 @ 11:09:20
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha2.duoweb.info
+2015-05-15 @ 11:09:20
+Successfully retrieved object from Elastic Search
+2015-05-15 @ 11:09:20
+Executing repository : Elastic Search - Success
+2015-05-16 @ 20:28:46
+Starting replicated storage engine
+2015-05-16 @ 20:28:46
+Getting settings for get by key
+2015-05-16 @ 20:28:46
+Executing repository : Elastic Search
+2015-05-16 @ 20:28:46
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-16 @ 20:28:46
+Reusing existing Elastic Search connection
+2015-05-16 @ 20:28:46
+Elastic Search Get By Key : com.duosoftware.tenant.tenants.lasitha2.duoweb.info
+2015-05-18 @ 12:53:52
+Starting replicated storage engine
+2015-05-18 @ 12:53:52
+Getting settings for get by key
+2015-05-18 @ 12:53:52
+Executing repository : Elastic Search
+2015-05-18 @ 12:53:52
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-18 @ 12:53:52
+Reusing existing Elastic Search connection
+2015-05-18 @ 12:53:52
+Elastic Search Get By Key : com.duosoftware.auth.users.admin@duosoftware.com
+2015-05-18 @ 12:53:55
+Error retrieving object from elastic search : Get http://192.168.1.201:9222/com.duosoftware.auth/users/com.duosoftware.auth.users.admin@duosoftware.com: dial tcp 192.168.1.201:9222: no route to host
+2015-05-18 @ 12:53:55
+Executing repository : Elastic Search - Failed
+2015-05-18 @ 12:58:31
+Starting replicated storage engine
+2015-05-18 @ 12:58:31
+Getting settings for get by key
+2015-05-18 @ 12:58:31
+Executing repository : Elastic Search
+2015-05-18 @ 12:58:31
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-05-18 @ 12:58:31
+Reusing existing Elastic Search connection
+2015-05-18 @ 12:58:31
+Elastic Search Get By Key : com.duosoftware.auth.users.admin@duosoftware.com
+2015-05-18 @ 12:58:39
+Error retrieving object from elastic search : record not found
+2015-05-18 @ 12:58:39
+Executing repository : Elastic Search - Failed
