@@ -1,0 +1,15 @@
+{
+  "name":"Sample Command",
+  "code":"samplecommand",
+  "parameters":[
+      { "key":"SampleKey1",
+        "caption":"Sample Key",
+        "description":"Description of Sample Key"
+      },
+      {
+        "key":"SampleKey2",
+        "caption":"Sample Key 2",
+        "description":"Description of Sample Key 2"
+      }
+    ]
+}
