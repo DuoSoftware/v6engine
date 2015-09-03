@@ -1,0 +1,170 @@
+2015-04-23 @ 15:35:32
+Starting replicated storage engine
+2015-04-23 @ 15:35:32
+Getting settings for get by keyword
+2015-04-23 @ 15:35:32
+Executing repository : Elastic Search
+2015-04-23 @ 15:35:32
+Establishing new connection for Elastic Search 10.132.55.162:9200
+2015-04-23 @ 15:35:32
+Reusing existing Elastic Search connection
+2015-04-23 @ 15:38:55
+Starting replicated storage engine
+2015-04-23 @ 15:38:55
+Getting settings for get by keyword
+2015-04-23 @ 15:38:55
+Executing repository : Elastic Search
+2015-04-23 @ 15:38:55
+Establishing new connection for Elastic Search 192.168.1.201:9201
+2015-04-23 @ 15:38:55
+Reusing existing Elastic Search connection
+2015-04-23 @ 15:38:55
+Error retrieving object from elastic search : Post http://192.168.1.201:9201/com.duosoftware.auth/users/_search: dial tcp 192.168.1.201:9201: connection refused
+2015-04-23 @ 15:38:55
+Error Query : {from: 0, size: 100000, query:{query_string : {query : lasitha.senanayake@gmail.com}}}
+2015-04-23 @ 15:38:55
+Executing repository : Elastic Search - Failed
+2015-04-23 @ 15:38:55
+Starting replicated storage engine
+2015-04-23 @ 15:38:55
+Getting settings for get by key
+2015-04-23 @ 15:38:55
+Executing repository : Elastic Search
+2015-04-23 @ 15:38:55
+Establishing new connection for Elastic Search 192.168.1.201:9201
+2015-04-23 @ 15:38:55
+Reusing existing Elastic Search connection
+2015-04-23 @ 15:38:55
+Elastic Search Get By Key : com.duosoftware.auth.email.user-activate
+2015-04-23 @ 15:38:55
+Error retrieving object from elastic search : Get http://192.168.1.201:9201/com.duosoftware.auth/email/com.duosoftware.auth.email.user-activate: dial tcp 192.168.1.201:9201: connection refused
+2015-04-23 @ 15:38:55
+Executing repository : Elastic Search - Failed
+2015-04-23 @ 15:42:09
+Starting replicated storage engine
+2015-04-23 @ 15:42:09
+Getting settings for get by keyword
+2015-04-23 @ 15:42:09
+Executing repository : Elastic Search
+2015-04-23 @ 15:42:09
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-04-23 @ 15:42:09
+Reusing existing Elastic Search connection
+2015-04-23 @ 15:42:09
+Error retrieving object from elastic search : record not found
+2015-04-23 @ 15:42:09
+Error Query : {from: 0, size: 100000, query:{query_string : {query : lasitha.senanayake@gmail.com}}}
+2015-04-23 @ 15:42:09
+Executing repository : Elastic Search - Failed
+2015-04-23 @ 15:42:09
+Starting replicated storage engine
+2015-04-23 @ 15:42:09
+Getting settings for get by key
+2015-04-23 @ 15:42:09
+Executing repository : Elastic Search
+2015-04-23 @ 15:42:09
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-04-23 @ 15:42:09
+Reusing existing Elastic Search connection
+2015-04-23 @ 15:42:09
+Elastic Search Get By Key : com.duosoftware.auth.email.user-activate
+2015-04-23 @ 15:42:09
+Error retrieving object from elastic search : record not found
+2015-04-23 @ 15:42:09
+Executing repository : Elastic Search - Failed
+2015-04-23 @ 15:49:45
+Starting replicated storage engine
+2015-04-23 @ 15:49:45
+Getting settings for get by keyword
+2015-04-23 @ 15:49:45
+Executing repository : Elastic Search
+2015-04-23 @ 15:49:45
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-04-23 @ 15:49:45
+Reusing existing Elastic Search connection
+2015-04-23 @ 15:49:45
+Error retrieving object from elastic search : record not found
+2015-04-23 @ 15:49:45
+Error Query : {from: 0, size: 100000, query:{query_string : {query : lasitha.senanayake@gmail.com}}}
+2015-04-23 @ 15:49:45
+Executing repository : Elastic Search - Failed
+2015-04-23 @ 15:49:45
+Starting replicated storage engine
+2015-04-23 @ 15:49:45
+Getting settings for get by key
+2015-04-23 @ 15:49:45
+Executing repository : Elastic Search
+2015-04-23 @ 15:49:45
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-04-23 @ 15:49:45
+Reusing existing Elastic Search connection
+2015-04-23 @ 15:49:45
+Elastic Search Get By Key : com.duosoftware.auth.email.user_activate
+2015-04-23 @ 15:49:45
+Error retrieving object from elastic search : record not found
+2015-04-23 @ 15:49:45
+Executing repository : Elastic Search - Failed
+2015-04-23 @ 15:52:38
+Starting replicated storage engine
+2015-04-23 @ 15:52:38
+Getting settings for get by keyword
+2015-04-23 @ 15:52:38
+Executing repository : Elastic Search
+2015-04-23 @ 15:52:39
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-04-23 @ 15:52:39
+Reusing existing Elastic Search connection
+2015-04-23 @ 15:52:39
+Error retrieving object from elastic search : record not found
+2015-04-23 @ 15:52:39
+Error Query : {from: 0, size: 100000, query:{query_string : {query : lasitha.senanayake@gmail.com}}}
+2015-04-23 @ 15:52:39
+Executing repository : Elastic Search - Failed
+2015-04-23 @ 15:52:39
+Starting replicated storage engine
+2015-04-23 @ 15:52:39
+Getting settings for get by key
+2015-04-23 @ 15:52:39
+Executing repository : Elastic Search
+2015-04-23 @ 15:52:39
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-04-23 @ 15:52:39
+Reusing existing Elastic Search connection
+2015-04-23 @ 15:52:39
+Elastic Search Get By Key : com.duosoftware.auth.email.user_activate
+2015-04-23 @ 15:52:39
+Error retrieving object from elastic search : record not found
+2015-04-23 @ 15:52:39
+Executing repository : Elastic Search - Failed
+2015-04-23 @ 15:52:43
+Starting replicated storage engine
+2015-04-23 @ 15:52:43
+Getting settings for single insert
+2015-04-23 @ 15:52:43
+Executing repository : Elastic Search
+2015-04-23 @ 15:52:43
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-04-23 @ 15:52:43
+Reusing existing Elastic Search connection
+2015-04-23 @ 15:52:43
+Inserting single object to Elastic Search : com.duosoftware.auth.activation.GcYexOwxGP
+2015-04-23 @ 15:52:43
+Successfully inserted one to elastic search
+2015-04-23 @ 15:52:43
+Executing repository : Elastic Search - Success
+2015-04-23 @ 15:52:43
+Starting replicated storage engine
+2015-04-23 @ 15:52:43
+Getting settings for single insert
+2015-04-23 @ 15:52:43
+Executing repository : Elastic Search
+2015-04-23 @ 15:52:43
+Establishing new connection for Elastic Search 192.168.1.201:9222
+2015-04-23 @ 15:52:43
+Reusing existing Elastic Search connection
+2015-04-23 @ 15:52:43
+Inserting single object to Elastic Search : com.duosoftware.auth.users.lasitha.senanayake@gmail.com
+2015-04-23 @ 15:52:43
+Successfully inserted one to elastic search
+2015-04-23 @ 15:52:43
+Executing repository : Elastic Search - Success
