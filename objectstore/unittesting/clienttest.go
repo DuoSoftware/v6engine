@@ -24,3 +24,5 @@ type Account struct {
 	name    string
 	address string
 }
+
+//client.Go("4651687654b", "com.duosoftware.com", "account").StoreObject().WithKeyField("Id").AndStoreOne(obj).Ok()

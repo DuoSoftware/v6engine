@@ -2,7 +2,7 @@ package processmanager
 
 import (
 	"duov6.com/serviceconsole/messaging"
-	//"fmt"
+	"fmt"
 	"log"
 )
 
@@ -14,15 +14,11 @@ func (worker WorkFlowWorker2) GetWorkerName() string {
 }
 
 func (worker WorkFlowWorker2) ExecuteWorker(request *messaging.ServiceRequest) messaging.ServiceResponse {
-	//fmt.Println("Not Implemented in WorkFlowWorker2")
-
+	fmt.Println("Not Implemented in WorkFlow Reconnect in RabbitMQ.")
 	var temp = messaging.ServiceResponse{}
 	if request.Body != nil {
 		log.Printf("Received a message: %s", request.Body)
-		temp.IsSuccess = true
-	} else {
-		temp.IsSuccess = false
 	}
-
+	temp.IsSuccess = false
 	return temp
 }

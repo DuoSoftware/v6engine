@@ -1,5 +1,5 @@
 package configuration
 
 type AbstractConfigDownloader interface {
-	DownloadConfiguration() StoreConfiguration
+	DownloadConfiguration(securityToken string, namespace string, class string) StoreConfiguration
 }

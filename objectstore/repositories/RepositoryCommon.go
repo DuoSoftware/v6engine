@@ -4,6 +4,8 @@ import (
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
 	"github.com/twinj/uuid"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -12,14 +14,15 @@ func getDefaultNotImplemented() RepositoryResponse {
 }
 
 func FillControlHeaders(request *messaging.ObjectRequest) {
-	currentTime := time.Now().Local().String()
+	//currentTime := time.Now().Local().String()
+	currentTime := getTime()
 	if request.Controls.Multiplicity == "single" {
 		controlObject := messaging.ControlHeaders{}
 		controlObject.Version = uuid.NewV1().String()
 		controlObject.Namespace = request.Controls.Namespace
 		controlObject.Class = request.Controls.Class
 		controlObject.Tenant = "123"
-		controlObject.LastUdated = string(currentTime)
+		controlObject.LastUdated = currentTime
 
 		request.Body.Object["__osHeaders"] = controlObject
 	} else {
@@ -29,11 +32,24 @@ func FillControlHeaders(request *messaging.ObjectRequest) {
 			controlObject.Namespace = request.Controls.Namespace
 			controlObject.Class = request.Controls.Class
 			controlObject.Tenant = "123"
-			controlObject.LastUdated = string(currentTime)
-
+			controlObject.LastUdated = currentTime
 			obj["__osHeaders"] = controlObject
 		}
 	}
+}
+
+func getTime() (retTime string) {
+	currentTime := time.Now().Local()
+	year := strconv.Itoa(currentTime.Year())
+	month := strconv.Itoa(int(currentTime.Month()))
+	day := strconv.Itoa(currentTime.Day())
+	hour := strconv.Itoa(currentTime.Hour())
+	minute := strconv.Itoa(currentTime.Minute())
+	second := strconv.Itoa(currentTime.Second())
+
+	retTime = (year + "-" + month + "-" + day + "T" + hour + ":" + minute + ":" + second)
+
+	return
 }
 
 func getNoSqlKey(request *messaging.ObjectRequest) string {
@@ -46,7 +62,14 @@ func getNoSqlKeyById(request *messaging.ObjectRequest, obj map[string]interface{
 	return key
 }
 
-func getStringByObject(request *messaging.ObjectRequest, obj map[string]interface{}) string {
+func getNoSqlKeyByGUID(request *messaging.ObjectRequest) string {
+	namespace := request.Controls.Namespace
+	class := request.Controls.Class
+	key := namespace + "." + class + "." + uuid.NewV1().String()
+	return key
+}
+
+func getStringByObject(obj interface{}) string {
 
 	result, err := json.Marshal(obj)
 
@@ -55,4 +78,13 @@ func getStringByObject(request *messaging.ObjectRequest, obj map[string]interfac
 	} else {
 		return "{}"
 	}
+}
+
+func getSQLnamespace(request *messaging.ObjectRequest) string {
+	return (strings.Replace(request.Controls.Namespace, ".", "", -1))
+}
+
+func ConvertOsheaders(input messaging.ControlHeaders) string {
+	myStr := "{\"Class\":\"" + input.Class + "\",\"LastUdated\":\"2" + input.LastUdated + "\",\"Namespace\":\"" + input.Namespace + "\",\"Tenant\":\"" + input.Tenant + "\",\"Version\":\"" + input.Version + "\"}"
+	return myStr
 }

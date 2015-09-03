@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/fatih/structs"
 	//"strconv"
+	"reflect"
 )
 
 type StoreModifier struct {
@@ -22,7 +23,19 @@ func (m *StoreModifier) WithKeyField(field string) *StoreModifier {
 func (m *StoreModifier) AndStoreOne(obj interface{}) *StoreModifier {
 
 	m.Request.Controls.Multiplicity = "single"
-	bodyMap := structs.Map(obj)
+	v := reflect.ValueOf(obj)
+	k := v.Kind()
+
+	var bodyMap map[string]interface{}
+
+	if (k != reflect.Map){
+		bodyMap = structs.Map(obj)
+	}else {
+		bodyMap = v.Interface().(map[string]interface{})
+	}
+	//fmt.Println("SDFASDFASDF")
+	//fmt.Println("CONVERTED " , bodyMap)
+
 	m.Request.Body.Object = bodyMap
 
 	return m
@@ -31,12 +44,30 @@ func (m *StoreModifier) AndStoreOne(obj interface{}) *StoreModifier {
 func (m *StoreModifier) AndStoreMany(objs []interface{}) *StoreModifier {
 	m.Request.Controls.Multiplicity = "multiple"
 
+	s := reflect.ValueOf(objs)
 	var interfaceList []map[string]interface{}
-	interfaceList = make([]map[string]interface{}, len(objs))
+	interfaceList = make([]map[string]interface{}, s.Len())
 
-	for index, element := range objs {
-		interfaceList[index] = structs.Map(element)
+	for i := 0; i < s.Len(); i++ {
+		//newMap := structs.Map(s.Index(i).Interface())
+		obj := s.Index(i).Interface();
+		v := reflect.ValueOf(obj)
+		k := v.Kind()
+		fmt.Println("KIND : ", k)
+		var newMap map[string]interface{}
+
+		if (k != reflect.Map){
+			newMap = structs.Map(obj)
+		}else {
+			newMap = obj.(map[string]interface{})
+		}
+
+		interfaceList[i] = newMap
 	}
+
+	//for index, element := range objs {
+	//	interfaceList[index] = structs.Map(element)
+	//}
 
 	m.Request.Body.Objects = interfaceList
 	return m

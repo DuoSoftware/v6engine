@@ -3,6 +3,7 @@ package storageengines
 import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
+	"fmt"
 )
 
 type ReplicatedStorageEngine struct {
@@ -101,42 +102,54 @@ func getRepositories(engineMappings map[string]string) []repositories.AbstractRe
 func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []repositories.AbstractRepository, successAction int, failAction int) (response repositories.RepositoryResponse) {
 
 	canRollback := false
+	if repositoryList == nil {
+		fmt.Println("NIL REPOSITORIES")
+	} else {
+		fmt.Println("REPOSITORIES FOUND!")
+		fmt.Print("Fetched Repositories : ")
+		fmt.Println(repositoryList)
+	}
 	for _, repository := range repositoryList {
+		if repository != nil {
+			request.Log("Executing repository : " + repository.GetRepositoryName())
 
-		request.Log("Executing repository : " + repository.GetRepositoryName())
+			tmpResponse := repositories.Execute(request, repository)
+			canBreak := false
 
-		tmpResponse := repositories.Execute(request, repository)
-		canBreak := false
+			if tmpResponse.IsSuccess {
+				request.Log("Executing repository : " + repository.GetRepositoryName() + " - Success")
+				switch successAction {
+				case 1:
+					response = tmpResponse
+					continue
+				case 3:
+					response = tmpResponse
+					canBreak = true
+				}
+			} else {
+				request.Log("Executing repository : " + repository.GetRepositoryName() + " - Failed")
+				switch failAction {
+				case 1:
+					continue
+				case 2:
+					canRollback = true
+					canBreak = true
+				case 3:
+					response = tmpResponse
+					canBreak = true
+				}
 
-		if tmpResponse.IsSuccess {
-			request.Log("Executing repository : " + repository.GetRepositoryName() + " - Success")
-			switch successAction {
-			case 1:
-				response = tmpResponse
-				continue
-			case 3:
-				response = tmpResponse
-				canBreak = true
+				if canBreak == true {
+					break
+				}
+
+				//1 = COMMIT, 2 = ROLLBACK, 3 = BREAK
+
 			}
 		} else {
-			request.Log("Executing repository : " + repository.GetRepositoryName() + " - Failed")
-			switch failAction {
-			case 1:
-				continue
-			case 2:
-				canRollback = true
-				canBreak = true
-			case 3:
-				response = tmpResponse
-				canBreak = true
-			}
+			fmt.Println("NIL REPOSITORY FOUND!")
+			continue
 		}
-
-		if canBreak == true {
-			break
-		}
-
-		//1 = COMMIT, 2 = ROLLBACK, 3 = BREAK
 
 	}
 

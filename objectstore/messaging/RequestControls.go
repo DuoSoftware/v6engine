@@ -2,6 +2,7 @@ package messaging
 
 type RequestControls struct {
 	SecurityToken string
+	SendMetaData  string
 	Namespace     string
 	Class         string
 	Operation     string //CREATE, READ, UPDATE, DELETE, SPECIAL

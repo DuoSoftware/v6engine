@@ -4,7 +4,6 @@ import (
 	"duov6.com/FileServer"
 	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
-	"duov6.com/objectstore/client"
 	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/processors"
@@ -13,13 +12,9 @@ import (
 	"fmt"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/cors"
-	"github.com/tealeg/xlsx"
-	//"io"
 	"io/ioutil"
-	//"log"
 	"net/http"
-	//	"os"
-	//"reflect"
+	"runtime"
 	"strings"
 )
 
@@ -46,6 +41,8 @@ func (h *HTTPService) Start() {
 	m.Get("/:namespace/:class/:id", handleRequest)
 	//READ BY KEYWORD
 	m.Get("/:namespace/:class", handleRequest)
+	//Get all classes
+	m.Post("/:namespace", handleRequest)
 	//READ ADVANCED, INSERT
 	m.Post("/:namespace/:class", handleRequest)
 
@@ -61,17 +58,21 @@ func (h *HTTPService) Start() {
 
 func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
 
+	// This will upload the file as a raw file and data as record wise.
 	var sendRequest = FileServerMessaging.FileRequest{}
 	sendRequest.WebRequest = r
 	sendRequest.WebResponse = w
+	sendRequest.Parameters = make(map[string]string)
 	sendRequest.Parameters = params
+
+	sendRequest.Parameters["fileContent"] = string(r.Header.Get("fileContent"))
 
 	exe := FileServer.FileManager{}
 
 	fileResponse := exe.Store(&sendRequest)
 
 	if fileResponse.IsSuccess == true {
-		fmt.Fprintf(w, "File uploaded successfully : ")
+		fmt.Fprintf(w, ":File uploaded successfully!")
 	} else {
 		fmt.Fprintf(w, "Aborted")
 	}
@@ -133,7 +134,7 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 	message, isSuccess := getObjectRequest(r, &objectRequest, params)
 
 	if isSuccess == false {
-		responseMessage = getQueryResponseString("Invalid Query Request", message, false, objectRequest.MessageStack)
+		responseMessage = getQueryResponseString("Invalid Query Request", message, false, objectRequest.MessageStack, nil)
 	} else {
 
 		dispatcher := processors.Dispatcher{}
@@ -143,11 +144,24 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 		if isSuccess {
 			if repResponse.Body != nil {
 				responseMessage = string(repResponse.Body)
-
+				//If it's a FILE
 				if checkIfFile(params) != "NAF" {
+
+					rootsaveDirectory := ""
+					rootgetDirectory := ""
+					if runtime.GOOS == "linux" {
+						rootsaveDirectory = objectRequest.Configuration.ServerConfiguration["LinuxFileServer"]["SavePath"]
+						rootgetDirectory = objectRequest.Configuration.ServerConfiguration["LinuxFileServer"]["GetPath"]
+					} else {
+						rootsaveDirectory = objectRequest.Configuration.ServerConfiguration["WindowsFileServer"]["SavePath"]
+						rootgetDirectory = objectRequest.Configuration.ServerConfiguration["WindowsFileServer"]["GetPath"]
+					}
+
 					var sendRequest = FileServerMessaging.FileRequest{}
 					sendRequest.Body = repResponse.Body
 					sendRequest.FilePath = ""
+					sendRequest.RootSavePath = rootsaveDirectory
+					sendRequest.RootGetPath = rootgetDirectory
 
 					exe := FileServer.FileManager{}
 
@@ -161,11 +175,11 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 				}
 
 			} else {
-				responseMessage = getQueryResponseString("Successfully completed request", repResponse.Message, isSuccess, objectRequest.MessageStack)
+				responseMessage = getQueryResponseString("Successfully completed request", repResponse.Message, isSuccess, objectRequest.MessageStack, repResponse.Data)
 			}
 
 		} else {
-			responseMessage = getQueryResponseString("Error occured while processing", repResponse.Message, isSuccess, objectRequest.MessageStack)
+			responseMessage = getQueryResponseString("Error occured while processing", repResponse.Message, isSuccess, objectRequest.MessageStack, nil)
 		}
 
 	}
@@ -173,10 +187,11 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 	return
 }
 
-func getQueryResponseString(mainError string, reason string, isSuccess bool, messageStack []string) string {
+func getQueryResponseString(mainError string, reason string, isSuccess bool, messageStack []string, Data []map[string]interface{}) string {
 	response := messaging.ResponseBody{}
+	response.Data = Data
 	response.IsSuccess = isSuccess
-	response.Message = mainError + " : " + reason
+	response.Message = mainError + ":" + reason
 	if messageStack != nil {
 		response.Stack = messageStack
 	}
@@ -196,6 +211,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 	isSuccess = true
 
 	headerToken := r.Header.Get("securityToken")
+	sendMetaData := r.Header.Get("sendMetaData")
 	headerLog := r.Header.Get("log")
 
 	var headerOperation string
@@ -206,6 +222,21 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 
 	headerId := params["id"]
 	headerKeyword := r.URL.Query().Get("keyword")
+
+	//check if <Skip> and <Take> are specified
+	//If so store them in ObjectRequest <Extras>
+
+	if r.URL.Query().Get("skip") != "" {
+		objectRequest.Extras["skip"] = r.URL.Query().Get("skip")
+	}
+
+	if r.URL.Query().Get("take") != "" {
+		objectRequest.Extras["take"] = r.URL.Query().Get("take")
+	}
+
+	if r.URL.Query().Get("fieldName") != "" {
+		objectRequest.Extras["fieldName"] = r.URL.Query().Get("fieldName")
+	}
 
 	if len(headerToken) == 0 {
 		isSuccess = false
@@ -225,7 +256,8 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 
 	if isSuccess {
 
-		isTokenValid, _ := validateSecurityToken(headerToken)
+		//isTokenValid, _ := validateSecurityToken(headerToken, headerNamespace)
+		isTokenValid := true
 
 		if isTokenValid {
 
@@ -238,7 +270,6 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 				} else {
 
 					err := json.Unmarshal(rb, &requestBody)
-
 					if err != nil {
 						message = "JSON Parse error in Request : " + err.Error()
 						isSuccess = false
@@ -265,23 +296,36 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					canAddHeader = false
 				case "POST": //read query, read special, insert
 					if len(requestBody.Object) != 0 || len(requestBody.Objects) != 0 {
-						fmt.Println("Inset by POST : " + objectRequest.Body.Parameters.KeyProperty)
+						fmt.Println("Insert by POST : " + objectRequest.Body.Parameters.KeyProperty)
 						headerOperation = "insert"
 						if len(objectRequest.Body.Object) != 0 {
 							headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
 						}
-					} else if &requestBody.Query != nil {
+					} else if requestBody.Query.Type != "" && requestBody.Query.Type != " " {
+						fmt.Println("Query Function Identified!")
 						headerOperation = "read-filter"
+						canAddHeader = false
+					} else if requestBody.Special.Type != "" && requestBody.Special.Type != " " {
+						fmt.Println("Special Function Identified!")
+						headerOperation = "special"
 						canAddHeader = false
 					}
 
 				case "PUT": //update
-					headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
-					headerOperation = "update"
+					if len(objectRequest.Body.Objects) != 0 {
+						headerOperation = "update"
+					} else {
+						headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
+						headerOperation = "update"
+					}
 
 				case "DELETE": //delete
-					headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
-					headerOperation = "delete"
+					if len(objectRequest.Body.Objects) != 0 {
+						headerOperation = "delete"
+					} else {
+						headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
+						headerOperation = "delete"
+					}
 				}
 
 				if len(objectRequest.Body.Objects) != 0 {
@@ -290,17 +334,19 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					headerMultipliciry = "single"
 				}
 
-				objectRequest.Controls = messaging.RequestControls{SecurityToken: headerToken, Namespace: headerNamespace, Class: headerClass, Multiplicity: headerMultipliciry, Id: headerId, Operation: headerOperation}
+				objectRequest.Controls = messaging.RequestControls{SecurityToken: headerToken, SendMetaData: sendMetaData, Namespace: headerNamespace, Class: headerClass, Multiplicity: headerMultipliciry, Id: headerId, Operation: headerOperation}
 
 				configObject := configuration.ConfigurationManager{}.Get(headerToken, headerNamespace, headerClass)
 				objectRequest.Configuration = configObject
 
 				if canAddHeader {
+					//This was changed on 2015-08-04
+					//From now on headers will be added in repositories.RepositoryExecutor.go
+					//Why this wasn't removed then? Without this note you could have deleted this.
+					//SAVING IT FOR A RAINY DAY! Stop questioning the dev!
 					repositories.FillControlHeaders(objectRequest)
-
 				}
 			}
-
 		} else {
 			isSuccess = false
 			message = "Access token not validated." + missingFields
@@ -308,27 +354,26 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 	} else {
 		message = "Missing attributes in request header : " + missingFields
 	}
-
 	return
 }
 
-func validateSecurityToken(token string) (isValidated bool, cert authlib.AuthCertificate) {
+func validateSecurityToken(token string, domain string) (isValidated bool, cert authlib.AuthCertificate) {
 	isValidated = true
 
 	handler := authlib.AuthHandler{}
-	cert, error := handler.GetSession(token)
+	cert, error := handler.GetSession(token, domain)
 
 	if len(error) != 0 {
 		isValidated = false
 	}
 
-	isValidated = true
+	//isValidated = true
 
 	return
 }
 
 func checkIfFile(params martini.Params) (fileType string) {
-
+	//Check if this a file and RETURN the file type
 	var tempArray []string
 	tempArray = strings.Split(params["id"], ".")
 	if len(tempArray) > 1 {
@@ -337,63 +382,4 @@ func checkIfFile(params martini.Params) (fileType string) {
 		fileType = "NAF"
 	}
 	return
-}
-
-func getExcelFileName(path string) (fileName string) {
-	subsets := strings.Split(path, "\\")
-	subfilenames := strings.Split(subsets[len(subsets)-1], ".")
-	fileName = subfilenames[0]
-	return
-}
-
-func SaveExcelEntries(excelFileName string) {
-	fmt.Println("Inserting Records to Database....")
-	rowcount := 0
-	colunmcount := 0
-	var exceldata []map[string]interface{}
-	var colunName []string
-
-	//log.Printf("Received a message: %s", file)
-	//file read
-	xlFile, error := xlsx.OpenFile(excelFileName)
-
-	if error == nil {
-		for _, sheet := range xlFile.Sheets {
-			rowcount = (sheet.MaxRow - 1)
-			colunmcount = sheet.MaxCol
-			colunName = make([]string, colunmcount)
-			for _, row := range sheet.Rows {
-				for j, cel := range row.Cells {
-					colunName[j] = cel.String()
-				}
-				break
-			}
-
-			exceldata = make(([]map[string]interface{}), rowcount)
-
-			if error == nil {
-				for _, sheet := range xlFile.Sheets {
-					for rownumber, row := range sheet.Rows {
-						currentRow := make(map[string]interface{})
-						if rownumber != 0 {
-							exceldata[rownumber-1] = currentRow
-							for cellnumber, cell := range row.Cells {
-								exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
-							}
-						}
-					}
-				}
-			}
-
-			//fmt.Println(exceldata)
-
-			Id := colunName[0]
-
-			client.Go("token", "com.duosoftware.com", getExcelFileName(excelFileName)+sheet.Name).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
-
-		}
-	}
-
-	return
-
 }

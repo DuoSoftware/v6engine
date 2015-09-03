@@ -6,11 +6,16 @@ import (
 	"duov6.com/objectstore/client"
 	"encoding/json"
 	"fmt"
+	"github.com/tealeg/xlsx"
 	"github.com/toqueteos/webbrowser"
 	"io"
 	"io/ioutil"
 	"os"
+	//"runtime"
+	"strings"
 )
+
+//var globalConfigs map[string]string
 
 type FileManager struct {
 }
@@ -56,6 +61,10 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 			fileResponse.Message = err.Error()
 		}
 
+		if checkIfFile(header.Filename) == "xlsx" {
+			SaveExcelEntries(header.Filename, request.Parameters["namespace"])
+		}
+
 		convertedBody := string(file2[:])
 		base64Body := common.EncodeToBase64(convertedBody)
 
@@ -67,7 +76,13 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 
 		headerToken := request.WebRequest.Header.Get("securityToken")
 
-		client.Go(headerToken, request.Parameters["namespace"], request.Parameters["class"]).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
+		var extraMap map[string]interface{}
+		extraMap = make(map[string]interface{})
+		extraMap["File"] = "excelFile"
+		fmt.Println(headerToken)
+		fmt.Println("Namespace : " + request.Parameters["namespace"])
+		fmt.Println("Class : " + request.Parameters["class"])
+		//client.GoExtra(headerToken, request.Parameters["namespace"], request.Parameters["class"], extraMap).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
 
 		fmt.Fprintf(request.WebResponse, "File uploaded successfully : ")
 		fmt.Fprintf(request.WebResponse, header.Filename)
@@ -122,11 +137,11 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 
 func (f *FileManager) Remove(request *messaging.FileRequest) messaging.FileResponse { // remove file from disk and database
 	fileResponse := messaging.FileResponse{}
-
-	file, err := ioutil.ReadFile(request.FilePath + request.FileName)
+	var saveServerPath string = request.RootSavePath
+	file, err := ioutil.ReadFile(saveServerPath + request.FilePath + request.FileName)
 
 	if len(file) > 0 {
-		err = os.Remove(request.FilePath + request.FileName)
+		err = os.Remove(saveServerPath + request.FilePath + request.FileName)
 	}
 
 	if err == nil {
@@ -154,8 +169,11 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 	if len(request.Body) == 0 {
 
 	} else {
-		var saveServerPath string = "D:/FileServer/"
-		var accessServerPath string = "ftp://127.0.0.1/"
+		var saveServerPath string = request.RootSavePath
+		var accessServerPath string = request.RootGetPath
+
+		fmt.Println(request.RootSavePath)
+		fmt.Println(request.RootGetPath)
 
 		file := FileData{}
 		json.Unmarshal(request.Body, &file)
@@ -174,4 +192,77 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 	}
 
 	return fileResponse
+}
+
+func SaveExcelEntries(excelFileName string, namespace string) {
+	fmt.Println("Inserting Records to Database....")
+	rowcount := 0
+	colunmcount := 0
+	var exceldata []map[string]interface{}
+	var colunName []string
+
+	//file read
+	xlFile, error := xlsx.OpenFile(excelFileName)
+
+	if error == nil {
+		for _, sheet := range xlFile.Sheets {
+			rowcount = (sheet.MaxRow - 1)
+			colunmcount = sheet.MaxCol
+			colunName = make([]string, colunmcount)
+			for _, row := range sheet.Rows {
+				for j, cel := range row.Cells {
+					colunName[j] = cel.String()
+				}
+				break
+			}
+
+			exceldata = make(([]map[string]interface{}), rowcount)
+
+			if error == nil {
+				for _, sheet := range xlFile.Sheets {
+					for rownumber, row := range sheet.Rows {
+						currentRow := make(map[string]interface{})
+						if rownumber != 0 {
+							exceldata[rownumber-1] = currentRow
+							for cellnumber, cell := range row.Cells {
+								exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+							}
+						}
+					}
+				}
+			}
+
+			Id := colunName[0]
+
+			var extraMap map[string]interface{}
+			extraMap = make(map[string]interface{})
+			extraMap["File"] = "exceldata"
+			fmt.Println("Namespace : " + namespace)
+			fmt.Println("filename : " + getExcelFileName(excelFileName) /*+ strings.ToLower(sheet.Name)*/)
+			client.GoExtra("token", namespace, getExcelFileName(excelFileName) /*+strings.ToLower(sheet.Name)*/, extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
+			//client.GoExtra("token", namespace, getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
+
+		}
+
+	}
+	return
+}
+
+func checkIfFile(params string) (fileType string) {
+
+	var tempArray []string
+	tempArray = strings.Split(params, ".")
+	if len(tempArray) > 1 {
+		fileType = tempArray[len(tempArray)-1]
+	} else {
+		fileType = "NAF"
+	}
+	return
+}
+
+func getExcelFileName(path string) (fileName string) {
+	subsets := strings.Split(path, "\\")
+	subfilenames := strings.Split(subsets[len(subsets)-1], ".")
+	fileName = subfilenames[0]
+	return
 }

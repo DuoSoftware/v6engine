@@ -6,6 +6,7 @@ type RepositoryResponse struct {
 	IsImplemented bool
 	Message       string
 	Body          []byte
+	Data          []map[string]interface{}
 }
 
 func (r *RepositoryResponse) GetErrorResponse(errorMessage string) {

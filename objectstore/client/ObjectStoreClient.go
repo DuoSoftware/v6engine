@@ -9,6 +9,11 @@ type ObjectStoreClient struct {
 	Request *messaging.ObjectRequest
 }
 
+func (o *ObjectStoreClient) DeleteObject() *DeleteModifier {
+	o.Request.Controls.Multiplicity = "single"
+	return NewDeleteModifier(o.Request)
+}
+
 func (o *ObjectStoreClient) GetOne() *GetModifier {
 	o.Request.Controls.Multiplicity = "single"
 	return NewGetModifier(o.Request)
@@ -49,5 +54,33 @@ func getObjectRequest(headerToken string, headerNamespace string, headerClass st
 	var extraMap map[string]interface{}
 	extraMap = make(map[string]interface{})
 	objectRequest.Extras = extraMap
+	return
+}
+
+//for pushing EXTRA parameters
+
+func GoExtra(securityToken string, namespace string, class string, extra map[string]interface{}) *ObjectStoreClient {
+	client := ObjectStoreClient{}
+	requestObject := getObjectRequestExtra(securityToken, namespace, class, extra)
+	client.Request = &requestObject
+	return &client
+}
+
+func getObjectRequestExtra(headerToken string, headerNamespace string, headerClass string, extra map[string]interface{}) (objectRequest messaging.ObjectRequest) {
+	objectRequest.Controls = messaging.RequestControls{SecurityToken: headerToken, Namespace: headerNamespace, Class: headerClass}
+	configObject := configuration.ConfigurationManager{}.Get(headerToken, headerNamespace, headerClass)
+	objectRequest.Configuration = configObject
+
+	objectRequest.IsLogEnabled = true
+	var initialSlice []string
+	initialSlice = make([]string, 0)
+	objectRequest.MessageStack = initialSlice
+
+	//objectRequest.IsLogEnabled = false
+
+	// var extraMap map[string]interface{}
+	// extraMap = make(map[string]interface{})
+	// objectRequest.Extras = extraMap
+	objectRequest.Extras = extra
 	return
 }

@@ -46,6 +46,11 @@ func SetupConfig() {
 
 	Config.UserName = term.Read("Username")
 	Config.Password = term.Read("Password")
+	Config.Smtpserver = term.Read("SMTP Server")
+	Config.Smtpusername = term.Read("SMTP Username")
+	Config.Smtppassword = term.Read("SMTP Password")
+	//Config. = term.Read("SMTP Username")
+
 	//Config.
 	SetConfig(Config)
 
@@ -73,6 +78,7 @@ type User struct {
 	Password        string
 	ConfirmPassword string
 	Active          bool
+	//OtherData       map[string]string
 }
 
 type AuthConfig struct {

@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type HTTPService struct {
@@ -53,24 +54,37 @@ func handleRequest(params martini.Params, res http.ResponseWriter, req *http.Req
 	if err != nil {
 		fmt.Println("Error decoding from Json to Struct")
 		fmt.Println(err.Error())
-	}
+	} else {
 
-	publishToRabbitMQ(requestBody1.OperationCode, requestBody1)
+		publishToRabbitMQ(requestBody1.OperationCode, requestBody1)
 
-	if requestBody1.ScheduleTimeStamp != "" {
-		//Push to ObjectStore
-		tmp := ProcessObject{}
-		temp1 := requestBody1.RefID
-		temp2 := requestBody1.RefType
-		tmp.Id = (temp1 + temp2)
-		tmp.requestBody = requestBody1
-		client.Go("token", "schedule", "newobject").StoreObject().WithKeyField("Id").AndStoreOne(tmp).Ok()
+		if requestBody1.ScheduleTimeStamp != "" {
+			//Push to ObjectStore
+			tmp := ProcessObject{}
+			temp1 := requestBody1.RefID
+			temp2 := requestBody1.RefType
+			tmp.Id = (temp1 + temp2)
+			tmp.requestBody = requestBody1
+			client.Go("token", "schedule", "newobject").StoreObject().WithKeyField("Id").AndStoreOne(tmp).Ok()
+		}
 	}
 
 }
 
 func publishToRabbitMQ(RoutingKey string, body messaging.ServiceRequest) {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+
+	//get settings
+
+	content, err := ioutil.ReadFile("ProcessDispatcher.config")
+	if err != nil {
+		//Do something for error
+		fmt.Println("FATAL ERROR! ProcessDispatcher.CONFIG file NOT FOUND!")
+	} else {
+		fmt.Println("Process Dispatcher Configuration loaded successfully!")
+	}
+	lines := strings.Split(string(content), "\n")
+
+	conn, err := amqp.Dial("amqp://" + lines[0] + ":" + lines[1] + "@" + lines[2] + "/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -94,7 +108,7 @@ func publishToRabbitMQ(RoutingKey string, body messaging.ServiceRequest) {
 
 	err = ch.Publish(
 		"publisher_01", // exchange
-		"Excel",        // routing key
+		RoutingKey,     // routing key
 		false,          // mandatory
 		false,          // immediate
 		amqp.Publishing{
@@ -104,7 +118,7 @@ func publishToRabbitMQ(RoutingKey string, body messaging.ServiceRequest) {
 		})
 	failOnError(err, "Failed to publish a message")
 
-	log.Printf("Data pushed to RabbitMQ Queue")
+	log.Printf("Data pushed to " + RoutingKey + " Queue")
 }
 
 func failOnError(err error, msg string) {

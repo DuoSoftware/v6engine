@@ -2,7 +2,7 @@ package main
 
 import (
 	"duov6.com/ProcessDispatcher/endpoints"
-	"duov6.com/fws"
+	"duov6.com/cebadapter"
 	"fmt"
 )
 
@@ -12,7 +12,21 @@ func main() {
 }
 
 func initialize() {
-	fws.Attach("ProcessDispatcher")
+	cebadapter.Attach("ProcessDispatcher", func(s bool){
+		cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
+			fmt.Println("Store Configuration Successfully Loaded...")
+
+			agent := cebadapter.GetAgent();
+			
+			agent.Client.OnEvent("globalConfigChanged.StoreConfig", func(from string, name string, data map[string]interface{}, resources map[string]interface{}){
+				cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
+					fmt.Println("Store Configuration Successfully Updated...")
+				});
+			});
+		})
+		fmt.Println("Successfully registered in CEB")
+	});
+
 	httpServer := endpoints.HTTPService{}
 	httpServer.Start()
 }

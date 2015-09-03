@@ -1,9 +1,10 @@
 package applib
 
 import (
-	"duov6.com/gorest"
 	//"duov6.com/authlib"
-	///"duov6.com/term"
+	"duov6.com/gorest"
+	"duov6.com/term"
+	//"duov"
 	"encoding/json"
 )
 
@@ -19,6 +20,9 @@ type Application struct {
 	Description   string
 	AppType       string
 	AppUri        string
+	OAuthURIs     string
+	AppICON       string
+	ScreenShoots  []string
 	OtherData     map[string]interface{}
 }
 
@@ -29,8 +33,10 @@ type AppSvc struct {
 }
 
 func (app AppSvc) Get(ApplicationID string) (a Application) {
+	scurityToken := app.Context.Request().Header.Get("SecurityToken")
+	term.Write("Get App for SecurityToken "+scurityToken, term.Debug)
 	var h Apphanler
-	a, err := h.Get(ApplicationID)
+	a, err := h.Get(ApplicationID, scurityToken)
 	if err != "" {
 
 		app.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
@@ -41,8 +47,12 @@ func (app AppSvc) Get(ApplicationID string) (a Application) {
 }
 
 func (app AppSvc) Add(a Application) {
+	scurityToken := app.Context.Request().Header.Get("SecurityToken")
+	term.Write("Add App for SecurityToken "+scurityToken, term.Debug)
+
 	var h Apphanler
-	a, err := h.Add(a)
+
+	a, err := h.Add(a, scurityToken)
 	if err != "" {
 		app.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
 		return

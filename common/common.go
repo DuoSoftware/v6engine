@@ -8,6 +8,8 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"runtime"
+	"time"
 )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -94,5 +96,34 @@ func DecodeFromBase64(message string) (retour string) {
 	base64.StdEncoding.Decode(base64Text, []byte(message))
 
 	return string(base64Text)
+
+}
+
+func PublishLog(fileName string, Body string) {
+
+	if runtime.GOOS == "linux" {
+
+		date := string(time.Now().Local().Format("2006-01-02 @ 15:04:05"))
+		_, _ = exec.Command("sh", "-c", "echo "+date+" >> "+fileName).Output()
+		_, _ = exec.Command("sh", "-c", "echo "+Body+" >> "+fileName).Output()
+
+	} else {
+		ff, err := os.OpenFile(fileName, os.O_APPEND, 0666)
+
+		if err != nil {
+			ff, err = os.Create(fileName)
+			ff, err = os.OpenFile(fileName, os.O_APPEND, 0666)
+		}
+
+		_, err = ff.Write([]byte(string(time.Now().Local().Format("2006-01-02 @ 15:04:05")) + "  "))
+
+		_, err = ff.Write([]byte(Body))
+		_, err = ff.Write([]byte("\r\n"))
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
+		ff.Close()
+	}
 
 }

@@ -17,18 +17,19 @@ func Add(v interface{}, name string) (err error) {
 	name = name + ".config"
 	dataset, _ := json.Marshal(v)
 
-	file, err := os.Open(name)
-	if err != nil {
-		fmt.Println(err, file)
-	}
-	if _, err := os.Stat(name); os.IsNotExist(err) {
-		_, err := os.Create(name)
+	//file, err := os.Open(name)
+	//if err != nil {
+	//	fmt.Println(err, file)
+	//}
+
+	//if _, err := os.Stat(name); os.IsNotExist(err) {
+		file, err := os.Create(name)
 		if err == nil {
 			fmt.Printf("%s file created ... \n", name)
 		} else {
 			fmt.Printf("file cannot create please check file location ")
 		}
-	}
+	//}
 
 	file1, err := os.OpenFile(name, os.O_WRONLY, 0600)
 	if err != nil {
@@ -48,18 +49,18 @@ func Save(name, content string) (err error) {
 	//dataset, _ := json.Marshal(v)
 
 	//mt.Printf("%s file created ... \n", name)
-	file, err := os.Open(name)
-	if err != nil {
-		fmt.Println(err, file)
-	}
-	if _, err := os.Stat(name); os.IsNotExist(err) {
-		_, err := os.Create(name)
+	//file, err := os.Open(name)
+	//if err != nil {
+	//	fmt.Println(err, file)
+	//}
+	//if _, err := os.Stat(name); os.IsNotExist(err) {
+		file, err := os.Create(name)
 		if err == nil {
 			fmt.Printf("%s file created ... \n", name)
 		} else {
 			fmt.Printf("file cannot create please check file location ")
 		}
-	}
+	//}
 
 	file1, err := os.OpenFile(name, os.O_WRONLY, 0600)
 	if err != nil {

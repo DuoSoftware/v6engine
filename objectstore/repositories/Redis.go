@@ -3,8 +3,10 @@ package repositories
 import (
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
-	"fmt"
+	"github.com/twinj/uuid"
 	"github.com/xuyu/goredis"
+	"strconv"
+	"strings"
 )
 
 type RedisRepository struct {
@@ -17,8 +19,7 @@ func (repository RedisRepository) GetRepositoryName() string {
 func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, isError bool, errorMessage string) {
 
 	isError = false
-
-	client, err := goredis.DialURL("tcp://@127.0.0.1:6379/0?timeout=10s&maxidle=1")
+	client, err := goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=10s&maxidle=1")
 	if err != nil {
 		isError = true
 		errorMessage = err.Error()
@@ -30,20 +31,15 @@ func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis
 }
 
 func (repository RedisRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("Starting GET-ALL")
 	response := RepositoryResponse{}
 	client, isError, errorMessage := getRedisConnection(request)
 
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
 	} else {
-		//key := getNoSqlKey(request) //request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
 		key := request.Controls.Namespace + "." + request.Controls.Class + "." + "*"
-		//client := getConnection()
-		//value, err := client.Get(key)
 		value, err := client.Keys(key)
-		//value2, err2 := client.Scan(0, key, 5)
-		fmt.Print("Key : ")
-		fmt.Println(key)
 
 		if err != nil {
 			response.IsSuccess = false
@@ -51,8 +47,43 @@ func (repository RedisRepository) GetAll(request *messaging.ObjectRequest) Repos
 			response.GetErrorResponse("Error getting value by key for All objects in Redis" + err.Error())
 		}
 
-		byteValue, _ := json.Marshal(value)
+		var temp []string
+		temp = make([]string, len(value))
 
+		for x := 0; x < len(value); x++ {
+			val, _ := client.Get(value[x])
+			temp[x] = string(val[:])
+		}
+
+		take := len(temp)
+
+		if request.Extras["take"] != nil {
+			take, _ = strconv.Atoi(request.Extras["take"].(string))
+		}
+
+		skip := 0
+
+		if request.Extras["skip"] != nil {
+			skip, _ = strconv.Atoi(request.Extras["skip"].(string))
+		}
+
+		var returnValues []map[string]interface{}
+
+		for _, valueIndex := range temp[skip:(skip + take)] {
+			var tempMap map[string]interface{}
+			tempMap = make(map[string]interface{})
+			err = json.Unmarshal([]byte(valueIndex), &tempMap)
+			if err != nil {
+				request.Log("Error converting Json to Map : " + err.Error())
+			} else {
+				if request.Controls.SendMetaData == "false" {
+					delete(tempMap, "__osHeaders")
+				}
+				returnValues = append(returnValues, tempMap)
+			}
+		}
+
+		byteValue, _ := json.Marshal(returnValues)
 		if err != nil {
 			response.IsSuccess = false
 			request.Log("Error getting value by key for All object in Redis : " + key + ", " + err.Error())
@@ -74,36 +105,62 @@ func (repository RedisRepository) GetSearch(request *messaging.ObjectRequest) Re
 }
 
 func (repository RedisRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("GetQuery not implemented in Redis repository")
-	return getDefaultNotImplemented()
+	request.Log("Starting GET-QUERY!")
+	response := RepositoryResponse{}
+	queryType := request.Body.Query.Type
+
+	switch queryType {
+	case "Query":
+		if request.Body.Query.Parameters != "*" {
+			request.Log("Support for SQL Query not implemented in Cassandra Db repository")
+			return getDefaultNotImplemented()
+		} else {
+			return repository.GetAll(request)
+		}
+	default:
+		request.Log(queryType + " not implemented in Redis Db repository")
+		return getDefaultNotImplemented()
+	}
+
+	return response
 }
 
 func (repository RedisRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("Starting GET-BY-KEY")
 	response := RepositoryResponse{}
 	client, isError, errorMessage := getRedisConnection(request)
 
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
 	} else {
-		key := getNoSqlKey(request) //request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
-
-		//client := getConnection()
+		key := getNoSqlKey(request)
 		value, err := client.Get(key)
+
+		var tempMap map[string]interface{}
+		tempMap = make(map[string]interface{})
+		err = json.Unmarshal(value, &tempMap)
+		if err != nil {
+			request.Log("Error converting Json to Map : " + err.Error())
+		} else {
+			if request.Controls.SendMetaData == "false" {
+				delete(tempMap, "__osHeaders")
+			}
+		}
+
+		byteValue, _ := json.Marshal(tempMap)
 
 		if err != nil {
 			response.IsSuccess = false
 			request.Log("Error getting value by key for object in Redis : " + key + ", " + err.Error())
 			response.GetErrorResponse("Error getting value by key for one object in Redis" + err.Error())
 		}
-		//convert ASCII output to string
-		//result := string(value[:])
 		if err != nil {
 			response.IsSuccess = false
 			request.Log("Error getting value by key for object in Redis : " + key + ", " + err.Error())
 			response.GetErrorResponse("Error getting value by key for one object in Redis" + err.Error())
 		} else {
 			response.IsSuccess = true
-			response.GetResponseWithBody(value)
+			response.GetResponseWithBody(byteValue)
 			response.Message = "Successfully retrieved one object in Redis"
 			request.Log(response.Message)
 		}
@@ -113,23 +170,25 @@ func (repository RedisRepository) GetByKey(request *messaging.ObjectRequest) Rep
 }
 
 func (repository RedisRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("Starting INSERT-MULTIPLE")
 	return setManyRedis(request)
 }
 
 func (repository RedisRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("Starting INSERT-SINGLE")
 	return setOneRedis(request)
 }
 
 func setOneRedis(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
 	client, isError, errorMessage := getRedisConnection(request)
-
+	keyValue := getRedisRecordID(request, nil)
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
-	} else {
-		key := request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
-
-		value := getStringByObject(request, request.Body.Object)
+	} else if keyValue != "" {
+		key := request.Controls.Namespace + "." + request.Controls.Class + "." + keyValue
+		request.Body.Object[request.Body.Parameters.KeyProperty] = keyValue
+		value := getStringByObject(request.Body.Object)
 
 		err := client.Set(key, value, 0, 0, false, false)
 
@@ -144,23 +203,46 @@ func setOneRedis(request *messaging.ObjectRequest) RepositoryResponse {
 		}
 	}
 
+	//Update Response
+	var Data []map[string]interface{}
+	Data = make([]map[string]interface{}, 1)
+	var actualData map[string]interface{}
+	actualData = make(map[string]interface{})
+	actualData["ID"] = keyValue
+	Data[0] = actualData
+	response.Data = Data
+
 	return response
 }
 
 func setManyRedis(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
 	client, isError, errorMessage := getRedisConnection(request)
-
+	var idData map[string]interface{}
+	idData = make(map[string]interface{})
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
 	} else {
 
 		isError := false
-
+		index := 0
 		for _, object := range request.Body.Objects {
-			key := getNoSqlKeyById(request, object)
+			index++
+			keyValue := getRedisRecordID(request, object)
 
-			value := getStringByObject(request, object)
+			if keyValue == "" {
+				response.IsSuccess = false
+				response.Message = "Failed inserting multiple object in Cassandra"
+				request.Log(response.Message)
+				request.Log("Inavalid ID request")
+				return response
+			}
+			key := request.Controls.Namespace + "." + request.Controls.Class + "." + keyValue
+			object[request.Body.Parameters.KeyProperty] = keyValue
+
+			idData[strconv.Itoa(index)] = keyValue
+
+			value := getStringByObject(object)
 			err := client.Set(key, value, 0, 0, false, false)
 
 			if err != nil {
@@ -181,18 +263,30 @@ func setManyRedis(request *messaging.ObjectRequest) RepositoryResponse {
 		}
 	}
 
+	//Update Response
+	var DataMap []map[string]interface{}
+	DataMap = make([]map[string]interface{}, 1)
+	var actualInput map[string]interface{}
+	actualInput = make(map[string]interface{})
+	actualInput["ID"] = idData
+	DataMap[0] = actualInput
+	response.Data = DataMap
+
 	return response
 }
 
 func (repository RedisRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("Starting UPDATE-MULTIPLE")
 	return setManyRedis(request)
 }
 
 func (repository RedisRepository) UpdateSingle(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("Starting UPDATE-SINGLE")
 	return setOneRedis(request)
 }
 
 func (repository RedisRepository) DeleteMultiple(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("Starting DELETE-MULTIPLE")
 	response := RepositoryResponse{}
 	client, isError, errorMessage := getRedisConnection(request)
 
@@ -204,9 +298,6 @@ func (repository RedisRepository) DeleteMultiple(request *messaging.ObjectReques
 
 		for _, object := range request.Body.Objects {
 			key := getNoSqlKeyById(request, object)
-
-			//value := getStringByObject(request, object)
-			//err := client.Set(key, value, 0, 0, false, false)
 			reply, err := client.ExecuteCommand("DEL", key)
 			err2 := reply.OKValue()
 			if err != nil {
@@ -238,6 +329,7 @@ func (repository RedisRepository) DeleteMultiple(request *messaging.ObjectReques
 }
 
 func (repository RedisRepository) DeleteSingle(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("Starting DELETE-SINGLE")
 	response := RepositoryResponse{}
 	client, isError, errorMessage := getRedisConnection(request)
 
@@ -245,8 +337,6 @@ func (repository RedisRepository) DeleteSingle(request *messaging.ObjectRequest)
 		response.GetErrorResponse(errorMessage)
 	} else {
 		key := request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
-
-		//value := getStringByObject(request, request.Body.Object)
 
 		isAvailable, err := client.Exists(key)
 		if err != nil {
@@ -283,4 +373,99 @@ func (repository RedisRepository) Special(request *messaging.ObjectRequest) Repo
 
 func (repository RedisRepository) Test(request *messaging.ObjectRequest) {
 
+}
+
+func getRedisRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
+	isGUIDKey := false
+	isAutoIncrementId := false //else MANUAL key from the user
+
+	if obj == nil {
+		//single request
+		if (request.Controls.Id == "-999") || (request.Body.Parameters.AutoIncrement == true) {
+			isAutoIncrementId = true
+		}
+
+		if (request.Controls.Id == "-888") || (request.Body.Parameters.GUIDKey == true) {
+			isGUIDKey = true
+		}
+
+	} else {
+		//multiple requests
+		if (obj[request.Body.Parameters.KeyProperty].(string) == "-999") || (request.Body.Parameters.AutoIncrement == true) {
+			isAutoIncrementId = true
+		}
+
+		if (obj[request.Body.Parameters.KeyProperty].(string) == "-888") || (request.Body.Parameters.GUIDKey == true) {
+			isGUIDKey = true
+		}
+
+	}
+
+	if isGUIDKey {
+		request.Log("GUID Key generation requested!")
+		returnID = uuid.NewV1().String()
+	} else if isAutoIncrementId {
+		request.Log("Automatic Increment Key generation requested!")
+		client, isError, _ := getRedisConnection(request)
+		if isError {
+			returnID = ""
+			request.Log("Connecting to REDIS Failed! ")
+		} else {
+			//read Attributes table
+
+			key := request.Controls.Namespace + "." + request.Controls.Class + "#domainClassAttributes"
+			rawBytes, err := client.Get(key)
+
+			if err != nil || string(rawBytes) == "" {
+				request.Log("This is a freshly created Class. Inserting new Class record.")
+				var ObjectBody map[string]interface{}
+				ObjectBody = make(map[string]interface{})
+				ObjectBody["maxCount"] = "1"
+				ObjectBody["version"] = uuid.NewV1().String()
+				err = client.Set(key, getStringByObject(ObjectBody), 0, 0, false, false)
+				if err != nil {
+					request.Log("Update of maxCount Failed : " + err.Error())
+					returnID = ""
+				} else {
+					returnID = "1"
+				}
+			} else {
+				var UpdatedCount int
+				var returnData map[string]interface{}
+				returnData = make(map[string]interface{})
+
+				json.Unmarshal(rawBytes, &returnData)
+
+				for fieldName, fieldvalue := range returnData {
+					if strings.ToLower(fieldName) == "maxcount" {
+						UpdatedCount, _ = strconv.Atoi(fieldvalue.(string))
+						UpdatedCount++
+						returnID = strconv.Itoa(UpdatedCount)
+						break
+					}
+				}
+
+				//update the table
+				//save to attributes table
+				returnData["maxCount"] = returnID
+				returnData["version"] = uuid.NewV1().String()
+				err = client.Set(key, getStringByObject(returnData), 0, 0, false, false)
+				if err != nil {
+					request.Log("Update of maxCount Failed")
+					returnID = ""
+				}
+
+			}
+
+		}
+	} else {
+		request.Log("Manual Key requested!")
+		if obj == nil {
+			returnID = request.Controls.Id
+		} else {
+			returnID = obj[request.Body.Parameters.KeyProperty].(string)
+		}
+	}
+
+	return
 }
