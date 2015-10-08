@@ -7,7 +7,7 @@ import (
 	//"fmt"
 )
 
-type TenantSvc struct {
+type TenantSvc struct 
 	gorest.RestService
 	autherized          gorest.EndPoint `method:"GET" path:"/tenant/Autherized/{TenantID:string}" output:"TenantAutherized"`
 	getTenant           gorest.EndPoint `method:"GET" path:"/tenant/GetTenant/{TenantID:string}" output:"Tenant"`
