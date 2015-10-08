@@ -15,7 +15,7 @@ type Apphanler struct {
 
 func (app *Apphanler) Get(ApplicationID string, securityToken string) (App Application, errMessage string) {
 	term.Write("Get  App  by ID"+ApplicationID, term.Debug)
-	_, status := session.GetSession(securityToken, "Nil")
+	s, status := session.GetSession(securityToken, "Nil")
 	bytes, err := client.Go(securityToken, s.Domain, "apps").GetOne().ByUniqueKey(ApplicationID).Ok()
 	//bytes, err := client.Go(securityToken, "com.duosoftware.application", "apps").GetOne().ByUniqueKey(ApplicationID).Ok()
 	var a Application
