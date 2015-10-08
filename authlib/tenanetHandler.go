@@ -171,6 +171,21 @@ func (h *TenantHandler) GetTenantsForUser(UserID string) []TenantMinimum {
 	}
 }
 
+func (h *TenantHandler) GetUsersForTenant(u session.AuthCertificate, TenantID string) []string {
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "users").GetOne().ByUniqueKey(TenantID).Ok()
+	var t TenantUsers
+	if err == "" {
+		err := json.Unmarshal(bytes, &t)
+		if err == nil {
+			return t.Users
+		} else {
+			return []string{}
+		}
+	} else {
+		return []string{}
+	}
+}
+
 func (h *TenantHandler) AddUserToTenant(u session.AuthCertificate, users []InviteUsers) {
 	for _, user := range users {
 		var inputParams map[string]string
