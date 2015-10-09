@@ -1,1 +1,0 @@
-[{"OriginalIndex":"com.duosoftware.test.disocunts.1","__osHeaders":{"Class":"disocunts","LastUdated":"2015-02-27 04:53:47.629889042 +0000 UTC","Namespace":"com.duosoftware.test","Tenant":"123","Version":"{9D6AEC6D-BE3C-11E4-A0CD-0242AC11001C}"},"id":"1","name":25}]

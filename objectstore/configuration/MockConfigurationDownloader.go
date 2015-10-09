@@ -27,10 +27,8 @@ func (c MockConfigurationDownloader) DownloadConfiguration(securityToken string,
 
 	var elasticmap map[string]string
 	elasticmap = make(map[string]string)
-	elasticmap["Host"] = "192.168.1.201"
+	elasticmap["Host"] = "127.0.0.1"
 	elasticmap["Port"] = "9200"
-	//elasticmap["Host"] = "127.0.0.1"
-	//elasticmap["Port"] = "9200"
 	config.ServerConfiguration["ELASTIC"] = elasticmap
 
 	var redismap map[string]string

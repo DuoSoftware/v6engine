@@ -7,7 +7,10 @@ import (
 	"fmt"
 	"github.com/fatih/structs"
 	//"strconv"
+	"github.com/twinj/uuid"
 	"reflect"
+	"strconv"
+	"time"
 )
 
 type StoreModifier struct {
@@ -28,17 +31,37 @@ func (m *StoreModifier) AndStoreOne(obj interface{}) *StoreModifier {
 
 	var bodyMap map[string]interface{}
 
-	if (k != reflect.Map){
+	if k != reflect.Map {
 		bodyMap = structs.Map(obj)
-	}else {
+	} else {
 		bodyMap = v.Interface().(map[string]interface{})
 	}
 	//fmt.Println("SDFASDFASDF")
 	//fmt.Println("CONVERTED " , bodyMap)
 
 	m.Request.Body.Object = bodyMap
-
+	controlObject := messaging.ControlHeaders{}
+	controlObject.Version = uuid.NewV1().String()
+	controlObject.Namespace = m.Request.Controls.Namespace
+	controlObject.Class = m.Request.Controls.Class
+	controlObject.Tenant = "123"
+	controlObject.LastUdated = getTime()
+	m.Request.Body.Object["__osHeaders"] = controlObject
 	return m
+}
+
+func getTime() (retTime string) {
+	currentTime := time.Now().Local()
+	year := strconv.Itoa(currentTime.Year())
+	month := strconv.Itoa(int(currentTime.Month()))
+	day := strconv.Itoa(currentTime.Day())
+	hour := strconv.Itoa(currentTime.Hour())
+	minute := strconv.Itoa(currentTime.Minute())
+	second := strconv.Itoa(currentTime.Second())
+
+	retTime = (year + "-" + month + "-" + day + "T" + hour + ":" + minute + ":" + second)
+
+	return
 }
 
 func (m *StoreModifier) AndStoreMany(objs []interface{}) *StoreModifier {
@@ -50,15 +73,15 @@ func (m *StoreModifier) AndStoreMany(objs []interface{}) *StoreModifier {
 
 	for i := 0; i < s.Len(); i++ {
 		//newMap := structs.Map(s.Index(i).Interface())
-		obj := s.Index(i).Interface();
+		obj := s.Index(i).Interface()
 		v := reflect.ValueOf(obj)
 		k := v.Kind()
 		fmt.Println("KIND : ", k)
 		var newMap map[string]interface{}
 
-		if (k != reflect.Map){
+		if k != reflect.Map {
 			newMap = structs.Map(obj)
-		}else {
+		} else {
 			newMap = obj.(map[string]interface{})
 		}
 
@@ -93,7 +116,7 @@ func (m *StoreModifier) Ok() {
 	fmt.Println(response.IsSuccess)
 }
 
-func (m *StoreModifier) FileOk() {
+func (m *StoreModifier) FileOk() []map[string]interface{} {
 	if m.Request.Controls.Multiplicity == "single" {
 		m.Request.Controls.Id = m.Request.Body.Object[m.Request.Body.Parameters.KeyProperty].(string)
 	}
@@ -103,6 +126,7 @@ func (m *StoreModifier) FileOk() {
 	response := dispatcher.Dispatch(m.Request)
 
 	fmt.Println(response.IsSuccess)
+	return response.Data
 }
 func NewStoreModifier(request *messaging.ObjectRequest) *StoreModifier {
 	modifier := StoreModifier{Request: request}

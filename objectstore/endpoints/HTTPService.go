@@ -4,6 +4,7 @@ import (
 	"duov6.com/FileServer"
 	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
+	"duov6.com/objectstore/backup"
 	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/processors"
@@ -64,6 +65,14 @@ func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request
 	sendRequest.WebResponse = w
 	sendRequest.Parameters = make(map[string]string)
 	sendRequest.Parameters = params
+	headerToken := r.Header.Get("securityToken")
+
+	if headerToken == "" {
+		headerToken = "securityToken"
+	}
+
+	sendRequest.Parameters["securityToken"] = headerToken
+	fmt.Println(sendRequest.Parameters)
 
 	sendRequest.Parameters["fileContent"] = string(r.Header.Get("fileContent"))
 
@@ -153,8 +162,7 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 						rootsaveDirectory = objectRequest.Configuration.ServerConfiguration["LinuxFileServer"]["SavePath"]
 						rootgetDirectory = objectRequest.Configuration.ServerConfiguration["LinuxFileServer"]["GetPath"]
 					} else {
-						rootsaveDirectory = objectRequest.Configuration.ServerConfiguration["WindowsFileServer"]["SavePath"]
-						rootgetDirectory = objectRequest.Configuration.ServerConfiguration["WindowsFileServer"]["GetPath"]
+						rootsaveDirectory = objectRequest.Configuration.ServerConfiguration["WindowsFileServer"]["GetPath"]
 					}
 
 					var sendRequest = FileServerMessaging.FileRequest{}
@@ -268,6 +276,17 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					message = "Error converting request : " + rerr.Error()
 					isSuccess = false
 				} else {
+					if r.Method == "POST" {
+						var temprequestBody messaging.RequestBody
+						_ = json.Unmarshal(rb, &temprequestBody)
+						if temprequestBody.Object != nil || temprequestBody.Objects != nil {
+							backup.SaveInsertJsons(rb, headerNamespace, headerClass)
+						}
+					} else if r.Method == "PUT" {
+						backup.SaveUpdateJsons(rb, headerNamespace, headerClass)
+					} else if r.Method == "DELETE" {
+						backup.SaveDeleteJsons(rb, headerNamespace, headerClass)
+					}
 
 					err := json.Unmarshal(rb, &requestBody)
 					if err != nil {

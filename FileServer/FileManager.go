@@ -11,11 +11,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	//"runtime"
 	"strings"
 )
-
-//var globalConfigs map[string]string
 
 type FileManager struct {
 }
@@ -61,31 +58,56 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 			fileResponse.Message = err.Error()
 		}
 
-		if checkIfFile(header.Filename) == "xlsx" {
-			SaveExcelEntries(header.Filename, request.Parameters["namespace"])
-		}
-
 		convertedBody := string(file2[:])
 		base64Body := common.EncodeToBase64(convertedBody)
 
-		//store file in the DB as a single file
+		//Create a instance of file struct
 		obj := FileData{}
+		// obj.Id = "-888"
 		obj.Id = request.Parameters["id"]
 		obj.FileName = header.Filename
 		obj.Body = base64Body
 
-		headerToken := request.WebRequest.Header.Get("securityToken")
-
 		var extraMap map[string]interface{}
 		extraMap = make(map[string]interface{})
 		extraMap["File"] = "excelFile"
-		fmt.Println(headerToken)
+
 		fmt.Println("Namespace : " + request.Parameters["namespace"])
 		fmt.Println("Class : " + request.Parameters["class"])
-		//client.GoExtra(headerToken, request.Parameters["namespace"], request.Parameters["class"], extraMap).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
 
-		fmt.Fprintf(request.WebResponse, "File uploaded successfully : ")
-		fmt.Fprintf(request.WebResponse, header.Filename)
+		uploadContext := strings.ToLower(request.Parameters["fileContent"])
+
+		isRawFile := false
+		isIndividualData := false
+
+		if uploadContext == "" || uploadContext == "both" || uploadContext == "raw" {
+			isRawFile = true
+		}
+		if uploadContext == "" || uploadContext == "both" || uploadContext == "data" {
+			isIndividualData = true
+		}
+
+		if isIndividualData {
+			fmt.Println("Saving INDIVIDUAL DATA inside file.......... ")
+			if checkIfFile(header.Filename) == "xlsx" {
+				status := SaveExcelEntries(header.Filename, request.Parameters["namespace"])
+				if status == true {
+					fmt.Println("Individual Records Saved Successfully!")
+				} else {
+					fmt.Println("Saving Individual Records Failed!")
+				}
+			}
+		}
+
+		var returnParams []map[string]interface{}
+		returnParams = make([]map[string]interface{}, 1)
+		if isRawFile {
+			fmt.Println("Saving the RAW file.......... ")
+			returnParams = client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], request.Parameters["class"], extraMap).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
+		}
+
+		//fmt.Fprintf(request.WebResponse, "File uploaded successfully : ")
+		fmt.Fprintf(request.WebResponse, returnParams[0]["ID"].(string))
 
 		//close the files
 		err = out.Close()
@@ -125,7 +147,7 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		obj.FileName = request.FileName
 		obj.Body = base64Body
 
-		client.Go("securityToken", request.Parameters["namespace"], request.Parameters["class"]).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
+		client.Go(request.Parameters["securityToken"], request.Parameters["namespace"], request.Parameters["class"]).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
 
 		fileResponse.IsSuccess = true
 		fileResponse.Message = "Storing file successfully completed"
@@ -194,7 +216,7 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 	return fileResponse
 }
 
-func SaveExcelEntries(excelFileName string, namespace string) {
+func SaveExcelEntries(excelFileName string, namespace string) bool {
 	fmt.Println("Inserting Records to Database....")
 	rowcount := 0
 	colunmcount := 0
@@ -225,7 +247,18 @@ func SaveExcelEntries(excelFileName string, namespace string) {
 						if rownumber != 0 {
 							exceldata[rownumber-1] = currentRow
 							for cellnumber, cell := range row.Cells {
-								exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+								if cellnumber == 0 {
+									exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+								} else if cell.Type() == 0 {
+									exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+								} else if cell.Type() == 2 {
+									dd, _ := cell.Float()
+									exceldata[rownumber-1][colunName[cellnumber]] = float64(dd)
+								} else if cell.Type() == 3 {
+									exceldata[rownumber-1][colunName[cellnumber]] = cell.Bool()
+								} else {
+									exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+								}
 							}
 						}
 					}
@@ -238,14 +271,15 @@ func SaveExcelEntries(excelFileName string, namespace string) {
 			extraMap = make(map[string]interface{})
 			extraMap["File"] = "exceldata"
 			fmt.Println("Namespace : " + namespace)
-			fmt.Println("filename : " + getExcelFileName(excelFileName) /*+ strings.ToLower(sheet.Name)*/)
-			client.GoExtra("token", namespace, getExcelFileName(excelFileName) /*+strings.ToLower(sheet.Name)*/, extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
-			//client.GoExtra("token", namespace, getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
-
+			fmt.Println("Keyfield : " + Id)
+			fmt.Println("filename : " + getExcelFileName(excelFileName))
+			client.GoExtra("token", namespace, getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
+			return true
 		}
 
 	}
-	return
+
+	return false
 }
 
 func checkIfFile(params string) (fileType string) {

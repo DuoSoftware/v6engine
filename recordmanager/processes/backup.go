@@ -2,15 +2,18 @@ package processes
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/mattbaird/elastigo/lib"
 	"io/ioutil"
+	"net/http"
 	"strings"
 )
 
 func BackupServer(ipAddress string) (status bool) {
 	status = true
-	for _, namespace := range getNamespaces(ipAddress) {
+	for _, namespace := range getDownloadAllowList(getNamespaces(ipAddress)) {
 		for _, class := range getClasses(namespace, ipAddress) {
+			fmt.Println("Backing up Namespace : " + namespace + " Class : " + class)
 			records := getInstanceData(namespace, class, ipAddress)
 			var array []map[string]interface{}
 			array = make([]map[string]interface{}, len(records))
@@ -21,12 +24,41 @@ func BackupServer(ipAddress string) (status bool) {
 			if err != nil {
 				status = false
 			}
-			ioutil.WriteFile((namespace + "-" + class + ".txt"), recordByte, 0666)
+			ioutil.WriteFile((namespace + "-" + class + ".objectfile"), recordByte, 0666)
 		}
 
 	}
 
 	return
+}
+
+func getDownloadAllowList(allList []string) []string {
+	var returnList []string
+	content, _ := ioutil.ReadFile("downloadAllowList.config")
+	var allowList []string
+	err := json.Unmarshal(content, &allowList)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Println(allowList)
+	if allowList[0] == "*" {
+		fmt.Println("Get All Namespaces!")
+		returnList = allList
+	} else {
+		fmt.Println("Get Selected Namespaces!")
+		for _, allValue := range allList {
+			for _, allowValue := range allowList {
+				if allValue == allowValue {
+					returnList = append(returnList, allValue)
+					break
+				}
+			}
+		}
+	}
+
+	fmt.Print("Allowed List : ")
+	fmt.Println(returnList)
+	return returnList
 }
 
 func getConnection(ipAddr string) *elastigo.Conn {
@@ -43,135 +75,69 @@ func getConnection(ipAddr string) *elastigo.Conn {
 	return connection
 }
 
-func getNamespaces(ipAddress string) map[int]string {
-	var returnMap map[int]string
-	returnMap = make(map[int]string)
-	conn := getConnection(ipAddress)
-	skip := "0"
-	take := "1000000"
-
-	query := "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
-
-	data, err := conn.Search("", "", nil, query)
-
+func getElasticByCURL(url string, path string) (returnByte []byte) {
+	url = "http://" + url + "/" + path
+	fmt.Println(url)
+	req, err := http.NewRequest("GET", url, nil)
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
+		fmt.Println("CURL Request Failed")
 	} else {
-		var allMaps []map[string]interface{}
-		allMaps = make([]map[string]interface{}, data.Hits.Len())
+		fmt.Println("CURL Request Success!")
+		body, _ := ioutil.ReadAll(resp.Body)
+		returnByte = body
+	}
+	defer resp.Body.Close()
 
-		for index, hit := range data.Hits.Hits {
-			var currentMap map[string]interface{}
-			currentMap = make(map[string]interface{})
+	return
+}
 
-			byteData, _ := hit.Source.MarshalJSON()
+func getNamespaces(ipAddress string) []string {
+	returnByte := getElasticByCURL(ipAddress, ("_mapping"))
+	var mainMap map[string]interface{}
+	mainMap = make(map[string]interface{})
+	_ = json.Unmarshal(returnByte, &mainMap)
+	var retArray []string
+	//range through namespaces
+	for index, _ := range mainMap {
+		retArray = append(retArray, index)
+	}
+	return retArray
+}
 
-			json.Unmarshal(byteData, &currentMap)
-
-			allMaps[index] = currentMap
-		}
-
-		var m map[int]string
-		m = make(map[int]string)
-
-		count := 0
-		for _, value := range allMaps {
-			for key, oo := range value {
-				if key == "__osHeaders" {
-					for key2, mapContent := range oo.(map[string]interface{}) {
-						if key2 == "Namespace" {
-							m[count] = mapContent.(string)
-							count++
-						}
-					}
+func getClasses(namespace string, ipAddress string) []string {
+	returnByte := getElasticByCURL(ipAddress, (namespace + "/_mapping"))
+	var mainMap map[string]interface{}
+	mainMap = make(map[string]interface{})
+	_ = json.Unmarshal(returnByte, &mainMap)
+	var retArray []string
+	//range through namespaces
+	for _, index := range mainMap {
+		for feature, typeDef := range index.(map[string]interface{}) {
+			//if feature is MAPPING
+			if feature == "mappings" {
+				for typeName, _ := range typeDef.(map[string]interface{}) {
+					retArray = append(retArray, typeName)
 				}
 			}
 		}
-
-		//Get Unique Class Names
-		mm := getUniqueRecordMap(m)
-		returnMap = mm
-
 	}
 
-	return returnMap
+	return retArray
 }
 
-func getClasses(namespace string, ipAddress string) map[int]string {
-	var returnMap map[int]string
-	returnMap = make(map[int]string)
+func getInstanceData(namespace string, class string, ipAddress string) []map[string]interface{} {
+	var returnMap []map[string]interface{}
 	conn := getConnection(ipAddress)
 	skip := "0"
 	take := "100000000"
 
 	query := "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
-	data, err := conn.Search("", "", nil, query)
+	data, err := conn.Search(namespace, class, nil, query)
 
 	if err != nil {
-	} else {
-
-		var allMaps []map[string]interface{}
-		allMaps = make([]map[string]interface{}, data.Hits.Len())
-
-		for index, hit := range data.Hits.Hits {
-			var currentMap map[string]interface{}
-			currentMap = make(map[string]interface{})
-
-			byteData, _ := hit.Source.MarshalJSON()
-
-			json.Unmarshal(byteData, &currentMap)
-
-			allMaps[index] = currentMap
-		}
-		var m map[int]string
-		m = make(map[int]string)
-
-		count := 0
-		for _, value := range allMaps {
-			for key, oo := range value {
-				if key == "__osHeaders" {
-
-					var tempmap map[string]string
-					tempmap = make(map[string]string)
-
-					for key2, mapContent := range oo.(map[string]interface{}) {
-
-						if key2 == "Namespace" {
-							tempmap[key2] = mapContent.(string)
-						}
-
-						if key2 == "Class" {
-							tempmap[key2] = mapContent.(string)
-						}
-
-					}
-
-					if tempmap["Namespace"] == namespace {
-						m[count] = tempmap["Class"]
-						count++
-					}
-
-				}
-			}
-		}
-
-		//Get Unique Class Names
-		mm := getUniqueRecordMap(m)
-		returnMap = mm
-	}
-	return returnMap
-}
-
-func getInstanceData(namespace string, class string, ipAddress string) map[int]map[string]interface{} {
-	var returnMap map[int]map[string]interface{}
-	returnMap = make(map[int]map[string]interface{})
-	conn := getConnection(ipAddress)
-	skip := "0"
-	take := "100000000"
-
-	query := "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
-	data, err := conn.Search("", "", nil, query)
-
-	if err != nil {
+		returnMap = nil
 	} else {
 
 		var allMaps []map[string]interface{}
@@ -183,73 +149,18 @@ func getInstanceData(namespace string, class string, ipAddress string) map[int]m
 			currentMap["OriginalIndex"] = hit.Id
 			byteData, _ := hit.Source.MarshalJSON()
 
+			fmt.Println("---------------------------")
+			fmt.Println(hit.Fields)
+			fmt.Println(hit.Explanation)
+			fmt.Println(data.ScrollId)
+			fmt.Println("---------------------------")
+
 			json.Unmarshal(byteData, &currentMap)
 
 			allMaps[index] = currentMap
 		}
 
-		//get count of data
-		count := 0
-		for _, value := range allMaps {
-			for key, oo := range value {
-				if key == "__osHeaders" {
-
-					var tempmap map[string]string
-					tempmap = make(map[string]string)
-
-					for key2, mapContent := range oo.(map[string]interface{}) {
-
-						if key2 == "Namespace" {
-							tempmap[key2] = mapContent.(string)
-						}
-
-						if key2 == "Class" {
-							tempmap[key2] = mapContent.(string)
-						}
-
-					}
-
-					if tempmap["Namespace"] == namespace && tempmap["Class"] == class {
-						count++
-					}
-
-				}
-			}
-		}
-
-		var m map[int]map[string]interface{}
-		m = make(map[int]map[string]interface{})
-
-		count = 0
-		for _, value := range allMaps {
-			for key, oo := range value {
-				if key == "__osHeaders" {
-
-					var tempmap map[string]string
-					tempmap = make(map[string]string)
-
-					for key2, mapContent := range oo.(map[string]interface{}) {
-
-						if key2 == "Namespace" {
-							tempmap[key2] = mapContent.(string)
-						}
-
-						if key2 == "Class" {
-							tempmap[key2] = mapContent.(string)
-						}
-
-					}
-
-					if tempmap["Namespace"] == namespace && tempmap["Class"] == class {
-						m[count] = value
-						count++
-					}
-
-				}
-			}
-		}
-
-		returnMap = m
+		returnMap = allMaps
 	}
 
 	return returnMap

@@ -19,8 +19,8 @@ func Create(code string) AbstractRepository {
 		repository = PostgresRepository{}
 	case "MYSQL":
 		repository = MysqlRepository{}
-	case "POSTGRESREPORTING":
-		repository = PostgresReportingRepository{}
+	case "MSSQL":
+		repository = MssqlRepository{}
 	}
 
 	return repository

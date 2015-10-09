@@ -5,9 +5,10 @@ import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/queryparser"
 	"encoding/json"
-	//"fmt"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/twinj/uuid"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -17,6 +18,11 @@ type MysqlRepository struct {
 
 func (repository MysqlRepository) GetRepositoryName() string {
 	return "MYSQL DB"
+}
+
+func getMySQLnamespace(request *messaging.ObjectRequest) string {
+	namespace := strings.Replace(request.Controls.Namespace, ".", "", -1)
+	return "_" + strings.ToLower(namespace)
 }
 
 func getMysqlConnection(request *messaging.ObjectRequest) (session *sql.DB, isError bool, errorMessage string) {
@@ -34,11 +40,11 @@ func getMysqlConnection(request *messaging.ObjectRequest) (session *sql.DB, isEr
 	}
 
 	//Create schema if not available.
-	request.Log("Checking if Database " + getSQLnamespace(request) + " is available.")
+	request.Log("Checking if Database " + getMySQLnamespace(request) + " is available.")
 
 	isDatabaseAvailbale := false
 
-	rows, err := session.Query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + getSQLnamespace(request) + "'")
+	rows, err := session.Query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + getMySQLnamespace(request) + "'")
 
 	if err != nil {
 		request.Log("Error contacting Mysql Server to fetch available databases")
@@ -71,8 +77,8 @@ func getMysqlConnection(request *messaging.ObjectRequest) (session *sql.DB, isEr
 				} else {
 					v = val
 				}
-				request.Log("Check domain : " + getSQLnamespace(request) + " : available schema : " + v.(string))
-				if v.(string) == getSQLnamespace(request) {
+				request.Log("Check domain : " + getMySQLnamespace(request) + " : available schema : " + v.(string))
+				if v.(string) == getMySQLnamespace(request) {
 					//Database available
 					isDatabaseAvailbale = true
 					break
@@ -84,7 +90,7 @@ func getMysqlConnection(request *messaging.ObjectRequest) (session *sql.DB, isEr
 	if isDatabaseAvailbale {
 		request.Log("Database already available. Nothing to do. Proceed!")
 	} else {
-		_, err = session.Query("create schema " + getSQLnamespace(request) + ";")
+		_, err = session.Query("create schema " + getMySQLnamespace(request) + ";")
 		if err != nil {
 			request.Log("Creation of domain matched Schema failed")
 		} else {
@@ -117,11 +123,17 @@ func (repository MysqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 		}
 		var returnMap []map[string]interface{}
 
-		rows, err := session.Query("SELECT * FROM " + getSQLnamespace(request) + "." + request.Controls.Class + " limit " + take + " offset " + skip)
+		rows, err := session.Query("SELECT * FROM " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " limit " + take + " offset " + skip)
 
 		if err != nil {
-			response.IsSuccess = false
-			response.GetErrorResponse("Error getting values for all objects in MySQL" + err.Error())
+			//response.IsSuccess = false
+			//response.GetErrorResponse("Error getting values for all objects in MySQL" + err.Error())
+			response.IsSuccess = true
+			response.Message = "No objects found in Couchbase"
+			var emptyMap map[string]interface{}
+			emptyMap = make(map[string]interface{})
+			byte, _ := json.Marshal(emptyMap)
+			response.GetResponseWithBody(byte)
 		} else {
 			response.IsSuccess = true
 			response.Message = "Successfully retrieved values for all objects in MySQL"
@@ -158,9 +170,17 @@ func (repository MysqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 					}
 
 					tempMap[col] = v
-
 				}
 				returnMap = append(returnMap, tempMap)
+			}
+
+			if len(returnMap) == 0 {
+				response.IsSuccess = true
+				response.Message = "No objects found in MySQL"
+				var emptyMap map[string]interface{}
+				emptyMap = make(map[string]interface{})
+				byte, _ := json.Marshal(emptyMap)
+				response.GetResponseWithBody(byte)
 			}
 
 			if request.Controls.SendMetaData == "false" {
@@ -229,83 +249,84 @@ func (repository MysqlRepository) GetQuery(request *messaging.ObjectRequest) Rep
 
 func executeMySQLQuery(request *messaging.ObjectRequest) (returnByte []byte) {
 
-	if checkIfTenantIsAllowed(request.Body.Query.Parameters, request.Controls.Namespace) {
+	//if checkIfTenantIsAllowed(request.Body.Query.Parameters, request.Controls.Namespace) {
 
-		request.Log("This Tenent is ALLOWED to perform this Query!")
-		session, isError, _ := getMysqlConnection(request)
-		if isError == true {
-			returnByte = nil
+	//request.Log("This Tenent is ALLOWED to perform this Query!")
+	session, isError, _ := getMysqlConnection(request)
+	if isError == true {
+		returnByte = nil
+	} else {
+		isError = false
+		//Process A : Get Count of DB
+		request.Log("User Input Query : " + request.Body.Query.Parameters)
+		formattedQuery := queryparser.GetFormattedQuery(request.Body.Query.Parameters)
+		request.Log("Formatted MySQL Query : " + formattedQuery)
+
+		//var returnMap map[string]interface{}
+		//returnMap = make(map[string]interface{})
+		var returnMap []map[string]interface{}
+
+		rows, err := session.Query(formattedQuery)
+
+		if err != nil {
+			request.Log("Error executing query in MySQL")
 		} else {
-			isError = false
-			//Process A : Get Count of DB
-			request.Log("User Input Query : " + request.Body.Query.Parameters)
-			formattedQuery := queryparser.GetFormattedQuery(request.Body.Query.Parameters)
-			request.Log("Formatted MySQL Query : " + formattedQuery)
+			request.Log("Successfully executed query in MySQL")
+			columns, _ := rows.Columns()
+			count := len(columns)
+			values := make([]interface{}, count)
+			valuePtrs := make([]interface{}, count)
 
-			var returnMap map[string]interface{}
-			returnMap = make(map[string]interface{})
+			//index := 0
+			for rows.Next() {
 
-			rows, err := session.Query(formattedQuery)
+				var tempMap map[string]interface{}
+				tempMap = make(map[string]interface{})
 
-			if err != nil {
-				request.Log("Error executing query in MySQL")
-			} else {
-				request.Log("Successfully executed query in MySQL")
-				columns, _ := rows.Columns()
-				count := len(columns)
-				values := make([]interface{}, count)
-				valuePtrs := make([]interface{}, count)
-
-				index := 0
-				for rows.Next() {
-
-					var tempMap map[string]interface{}
-					tempMap = make(map[string]interface{})
-
-					for i, _ := range columns {
-						valuePtrs[i] = &values[i]
-					}
-
-					rows.Scan(valuePtrs...)
-
-					for i, col := range columns {
-
-						var v interface{}
-
-						val := values[i]
-
-						b, ok := val.([]byte)
-
-						if ok {
-							v = string(b)
-						} else {
-							v = val
-						}
-
-						tempMap[col] = v
-
-					}
-
-					returnMap[strconv.Itoa(index)] = tempMap
-					index++
+				for i, _ := range columns {
+					valuePtrs[i] = &values[i]
 				}
 
-				byteValue, errMarshal := json.Marshal(returnMap)
-				if errMarshal != nil {
-					request.Log("Error converting to byte array")
-					byteValue = nil
-				} else {
-					request.Log("Successfully converted result to byte array")
-				}
+				rows.Scan(valuePtrs...)
 
-				returnByte = byteValue
+				for i, col := range columns {
+
+					var v interface{}
+
+					val := values[i]
+
+					b, ok := val.([]byte)
+
+					if ok {
+						v = string(b)
+					} else {
+						v = val
+					}
+
+					tempMap[col] = v
+
+				}
+				returnMap = append(returnMap, tempMap)
+				//returnMap[strconv.Itoa(index)] = tempMap
+				//index++
 			}
 
+			byteValue, errMarshal := json.Marshal(returnMap)
+			if errMarshal != nil {
+				request.Log("Error converting to byte array")
+				byteValue = nil
+			} else {
+				request.Log("Successfully converted result to byte array")
+			}
+
+			returnByte = byteValue
 		}
-	} else {
-		returnByte = ([]byte("This Tenent is NOT ALLOWED to perform submitted Query!"))
-		//return ([]byte("This Tenent is NOT ALLOWED to perform submitted Query!"))
+
 	}
+	//} else {
+	//returnByte = ([]byte("This Tenent is NOT ALLOWED to perform submitted Query!"))
+	//return ([]byte("This Tenent is NOT ALLOWED to perform submitted Query!"))
+	//}
 
 	return returnByte
 }
@@ -343,13 +364,21 @@ func (repository MysqlRepository) GetByKey(request *messaging.ObjectRequest) Rep
 			parameter = request.Controls.Id
 		} else {
 			request.Log("Getting Primary Key")
-			rows, err := session.Query("SELECT DISTINCT COLUMN_NAME FROM INFORMATION_SCHEMA.key_column_usage where TABLE_SCHEMA='" + getSQLnamespace(request) + "' AND TABLE_NAME='" + request.Controls.Class + "';")
+			rows, err := session.Query("SELECT DISTINCT COLUMN_NAME FROM INFORMATION_SCHEMA.key_column_usage where TABLE_SCHEMA='" + getMySQLnamespace(request) + "' AND TABLE_NAME='" + strings.ToLower(request.Controls.Class) + "';")
 
 			if err != nil {
-				response.IsSuccess = false
-				response.Message = "Error reading primary key"
-				request.Log("Error reading primary key")
-				return response
+				//response.IsSuccess = false
+				//response.Message = "Error reading primary key"
+				//request.Log("Error reading primary key")
+				//return response
+
+				response.IsSuccess = true
+				response.Message = "No objects found in MySQL"
+				var emptyMap map[string]interface{}
+				emptyMap = make(map[string]interface{})
+				byte, _ := json.Marshal(emptyMap)
+				response.GetResponseWithBody(byte)
+
 			} else {
 
 				request.Log("Successfully returned primary Key for table")
@@ -385,12 +414,21 @@ func (repository MysqlRepository) GetByKey(request *messaging.ObjectRequest) Rep
 					}
 				}
 			}
+
+			if len(keyMap) == 0 {
+				response.IsSuccess = true
+				response.Message = "No objects found in MySQL"
+				var emptyMap map[string]interface{}
+				emptyMap = make(map[string]interface{})
+				byte, _ := json.Marshal(emptyMap)
+				response.GetResponseWithBody(byte)
+			}
 			fieldName = keyMap["COLUMN_NAME"].(string)
 		}
 
 		request.Log("KeyProperty : " + fieldName)
 		request.Log("KeyValue : " + request.Controls.Id)
-		rows, err := session.Query("SELECT * FROM " + getSQLnamespace(request) + "." + request.Controls.Class + " where " + fieldName + " = '" + parameter + "'" + " limit " + take + " offset " + skip)
+		rows, err := session.Query("SELECT * FROM " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " where " + fieldName + " = '" + parameter + "'" + " limit " + take + " offset " + skip)
 
 		if err != nil {
 			response.IsSuccess = false
@@ -466,132 +504,236 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
 	} else {
+		var DataObjects []map[string]interface{}
+		DataObjects = make([]map[string]interface{}, len(request.Body.Objects))
 
-		//appendKey := request.Controls.Namespace + "." + request.Controls.Class + "."
-
-		ifCheckedForTableExistance := false
-
+		//change osheaders
 		for i := 0; i < len(request.Body.Objects); i++ {
-			noOfElements := len(request.Body.Objects[i])
-
-			keyValue := getMySqlRecordID(request, request.Body.Objects[i])
-			request.Body.Objects[i][request.Body.Parameters.KeyProperty] = keyValue
-			idData[strconv.Itoa(i)] = keyValue
-			if keyValue == "" {
-				response.IsSuccess = false
-				response.Message = "Failed inserting multiple object in Cassandra"
-				request.Log(response.Message)
-				request.Log("Inavalid ID request")
-				return response
-			}
-
-			var keyArray = make([]string, noOfElements)
-			var valueArray = make([]string, noOfElements)
-
-			// Process A :start identifying individual data in array and convert to string
-			var startIndex int = 0
+			var tempMapObject map[string]interface{}
+			tempMapObject = make(map[string]interface{})
 
 			for key, value := range request.Body.Objects[i] {
-
-				if key != "__osHeaders" {
-					if _, ok := value.(string); ok {
-						//Implement all MAP related logic here. All correct data are being caught in here
-						keyArray[startIndex] = key
-						valueArray[startIndex] = value.(string)
-						startIndex = startIndex + 1
-
-					} else {
-						request.Log("Non string value detected, Will be strigified!")
-						keyArray[startIndex] = key
-						valueArray[startIndex] = getStringByObject(value)
-						startIndex = startIndex + 1
-					}
+				if key == "__osHeaders" {
+					tempMapObject["osHeaders"] = value
 				} else {
-					//__osHeaders Catched!
-					keyArray[startIndex] = "osHeaders"
-					valueArray[startIndex] = ConvertOsheaders(value.(messaging.ControlHeaders))
-					startIndex = startIndex + 1
+					tempMapObject[key] = value
 				}
 			}
 
-			var argKeyList string
-			var argValueList string
+			DataObjects[i] = tempMapObject
+		}
+		//check for table in MsSql
+		if createMySQLTable(request, session) {
+			request.Log("Table Verified Successfully!")
+		} else {
+			response.IsSuccess = false
+			return response
+		}
 
-			//Build the query string
-			for i := 0; i < noOfElements; i++ {
-				if i != noOfElements-1 {
-					argKeyList = argKeyList + keyArray[i] + ", "
-					argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
-				} else {
-					argKeyList = argKeyList + keyArray[i]
-					argValueList = argValueList + "'" + valueArray[i] + "'"
+		indexNames := getMySQLFieldOrder(request)
+		fmt.Println("Index Names : ")
+		fmt.Println(indexNames)
+		var argKeyList string
+		var argValueList string
+
+		//create keyvalue list
+
+		for i := 0; i < len(indexNames); i++ {
+			if i != len(indexNames)-1 {
+				argKeyList = argKeyList + indexNames[i] + ", "
+			} else {
+				argKeyList = argKeyList + indexNames[i]
+			}
+		}
+
+		noOf500Sets := (len(DataObjects) / 500)
+		remainderFromSets := 0
+		statusCount := noOf500Sets
+		remainderFromSets = (len(DataObjects) - (noOf500Sets * 500))
+		if remainderFromSets > 0 {
+			statusCount++
+		}
+		var setStatus []bool
+		setStatus = make([]bool, statusCount)
+
+		startIndex := 0
+		stopIndex := 500
+		statusIndex := 0
+
+		for x := 0; x < noOf500Sets; x++ {
+			argValueList = ""
+
+			for i, _ := range DataObjects[startIndex:stopIndex] {
+				i += startIndex
+				noOfElements := len(DataObjects[i])
+				request.Log("Serializing Object no : " + strconv.Itoa(i))
+				keyValue := getMySqlRecordID(request, DataObjects[i])
+				DataObjects[i][request.Body.Parameters.KeyProperty] = keyValue
+				idData[strconv.Itoa(i)] = keyValue
+				if keyValue == "" {
+					response.IsSuccess = false
+					response.Message = "Failed inserting multiple object in MYSQL"
+					request.Log(response.Message)
+					request.Log("Inavalid ID request")
+					return response
 				}
+
+				var keyArray = make([]string, noOfElements)
+				var valueArray = make([]string, noOfElements)
+
+				for index := 0; index < len(indexNames); index++ {
+
+					if indexNames[index] != "osHeaders" {
+
+						if _, ok := DataObjects[i][indexNames[index]].(string); ok {
+							keyArray[index] = indexNames[index]
+							valueArray[index] = DataObjects[i][indexNames[index]].(string)
+						} else {
+							//	fmt.Println("Non string value detected, Will be strigified!")
+							keyArray[index] = indexNames[index]
+							valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
+						}
+					} else {
+						// __osHeaders Catched!
+						keyArray[index] = "osHeaders"
+						valueArray[index] = ConvertOsheaders(DataObjects[i][indexNames[index]].(messaging.ControlHeaders))
+					}
+
+				}
+				argValueList += "("
+
+				//Build the query string
+				for i := 0; i < noOfElements; i++ {
+					if i != noOfElements-1 {
+						argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
+					} else {
+						argValueList = argValueList + "'" + valueArray[i] + "'"
+					}
+				}
+
+				i -= startIndex
+				if i != len(DataObjects[startIndex:stopIndex])-1 {
+					argValueList += "),"
+				} else {
+					argValueList += ")"
+				}
+
 			}
 
 			//DEBUG USE : Display Query information
-			//fmt.Println("Table Name : " + request.Controls.Class)
-			//fmt.Println("Key list : " + argKeyList)
+			//	fmt.Println("Table Name : " + request.Controls.Class)
+			//	fmt.Println("Key list : " + argKeyList)
 			//fmt.Println("Value list : " + argValueList)
-			//fmt.Println("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES (" + argValueList + ")")
-
-			_, err := session.Query("INSERT INTO " + getSQLnamespace(request) + "." + request.Controls.Class + " (" + argKeyList + ") VALUES (" + argValueList + ")")
+			//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES " + argValueList + ";")
+			//request.Log("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
+			_, err := session.Query("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			if err != nil {
-				response.IsSuccess = false
-				response.GetErrorResponse("Error inserting one object in MySQL" + err.Error())
-
-				if ifCheckedForTableExistance {
-					//do nothing
-					response.IsSuccess = false
-					response.GetErrorResponse("Error inserting one object in MySQL" + err.Error())
-					request.Log(response.Message)
-				} else {
-					ifCheckedForTableExistance = true
-					request.Log("Table Not Found. Creating New Table " + request.Controls.Class)
-					var argKeyList2 string
-
-					for i := 0; i < noOfElements; i++ {
-						if i != noOfElements-1 {
-							if keyArray[i] == request.Body.Parameters.KeyProperty {
-								argKeyList2 = argKeyList2 + keyArray[i] + " varchar(255) PRIMARY KEY, "
-							} else {
-								argKeyList2 = argKeyList2 + keyArray[i] + " text, "
-							}
-
-						} else {
-							if keyArray[i] == request.Body.Parameters.KeyProperty {
-								argKeyList2 = argKeyList2 + keyArray[i] + " varchar(255) PRIMARY KEY"
-							} else {
-								argKeyList2 = argKeyList2 + keyArray[i] + " text"
-							}
-
-						}
-					}
-					request.Log("create table " + getSQLnamespace(request) + "." + request.Controls.Class + "(" + argKeyList2 + ");")
-					_, err = session.Query("create table " + getSQLnamespace(request) + "." + request.Controls.Class + "(" + argKeyList2 + ");")
-
-					if err != nil {
-						request.Log("New Table Creation Failed. Abort!")
-					} else {
-						_, err := session.Query("INSERT INTO " + getSQLnamespace(request) + "." + request.Controls.Class + " (" + argKeyList + ") VALUES (" + argValueList + ")")
-						if err != nil {
-							request.Log("Error inserting data to newly created table")
-							response.IsSuccess = false
-							response.Message = "Failed inserting one object in MySQL"
-							request.Log(response.Message)
-						} else {
-							request.Log("Successfully inserted data to newly created table")
-							response.IsSuccess = true
-							response.Message = "Successfully inserted objects in MySQL"
-							request.Log(response.Message)
-						}
-					}
-				}
+				setStatus[statusIndex] = false
+				request.Log("ERROR : " + err.Error())
 			} else {
-				response.IsSuccess = true
-				response.Message = "Successfully inserted one object in MySQL"
-				request.Log(response.Message)
+				request.Log("INSERTED SUCCESSFULLY")
+				setStatus[statusIndex] = true
 			}
 
+			statusIndex++
+			startIndex += 500
+			stopIndex += 500
+		}
+
+		if remainderFromSets > 0 {
+			argValueList = ""
+			start := len(DataObjects) - remainderFromSets
+
+			for i, _ := range DataObjects[start:len(DataObjects)] {
+				i += start
+				noOfElements := len(DataObjects[i])
+				request.Log("Serializing Object no : " + strconv.Itoa(i))
+				keyValue := getMySqlRecordID(request, DataObjects[i])
+				DataObjects[i][request.Body.Parameters.KeyProperty] = keyValue
+				idData[strconv.Itoa(i)] = keyValue
+				if keyValue == "" {
+					response.IsSuccess = false
+					response.Message = "Failed inserting multiple object in MYSQL"
+					request.Log(response.Message)
+					request.Log("Inavalid ID request")
+					return response
+				}
+
+				var keyArray = make([]string, noOfElements)
+				var valueArray = make([]string, noOfElements)
+
+				for index := 0; index < len(indexNames); index++ {
+					if indexNames[index] != "osHeaders" {
+
+						if _, ok := DataObjects[i][indexNames[index]].(string); ok {
+							keyArray[index] = indexNames[index]
+							valueArray[index] = DataObjects[i][indexNames[index]].(string)
+						} else {
+							//	fmt.Println("Non string value detected, Will be strigified!")
+							keyArray[index] = indexNames[index]
+							valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
+						}
+					} else {
+						// __osHeaders Catched!
+						keyArray[index] = "osHeaders"
+						valueArray[index] = ConvertOsheaders(DataObjects[i][indexNames[index]].(messaging.ControlHeaders))
+					}
+
+				}
+
+				argValueList += "("
+
+				//Build the query string
+				for i := 0; i < noOfElements; i++ {
+					if i != noOfElements-1 {
+						argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
+					} else {
+						argValueList = argValueList + "'" + valueArray[i] + "'"
+					}
+				}
+
+				i -= start
+				if i != len(DataObjects[start:len(DataObjects)])-1 {
+					argValueList += "),"
+				} else {
+					argValueList += ")"
+				}
+
+			}
+
+			//DEBUG USE : Display Query information
+			//	fmt.Println("Table Name : " + request.Controls.Class)
+			//	fmt.Println("Key list : " + argKeyList)
+			//fmt.Println("Value list : " + argValueList)
+			//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES " + argValueList + ";")
+			//request.Log("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
+			_, err := session.Query("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
+			if err != nil {
+				setStatus[statusIndex] = false
+				request.Log("ERROR : " + err.Error())
+			} else {
+				request.Log("INSERTED SUCCESSFULLY")
+				setStatus[statusIndex] = true
+			}
+		}
+
+		isAllCompleted := true
+		for _, value := range setStatus {
+			if value == false {
+				isAllCompleted = false
+				break
+			}
+		}
+
+		if isAllCompleted {
+			response.IsSuccess = true
+			response.Message = "Successfully inserted many objects in to MYSQL"
+			request.Log(response.Message)
+		} else {
+			response.IsSuccess = false
+			response.Message = "Error inserting many objects in to MYSQL"
+			request.Log(response.Message)
+			response.GetErrorResponse("Error inserting many objects in to MYSQL")
 		}
 
 	}
@@ -604,6 +746,9 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 	actualInput["ID"] = idData
 	DataMap[0] = actualInput
 	response.Data = DataMap
+	response.IsSuccess = true
+	response.Message = "Successfully inserted Many object in MySQL"
+	session.Close()
 	return response
 }
 
@@ -611,50 +756,77 @@ func (repository MysqlRepository) InsertSingle(request *messaging.ObjectRequest)
 	request.Log("Starting INSERT-SINGLE")
 	response := RepositoryResponse{}
 	keyValue := getMySqlRecordID(request, nil)
+
 	session, isError, errorMessage := getMysqlConnection(request)
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
 	} else if keyValue != "" {
-		request.Body.Object[request.Body.Parameters.KeyProperty] = keyValue
-		noOfElements := len(request.Body.Object)
+
+		//copy array
+		var DataObject map[string]interface{}
+		DataObject = make(map[string]interface{})
+
+		for key, value := range request.Body.Object {
+			if key == "__osHeaders" {
+				DataObject["osHeaders"] = value
+			} else {
+				DataObject[key] = value
+			}
+		}
+
+		noOfElements := len(DataObject)
+		DataObject[request.Body.Parameters.KeyProperty] = keyValue
+
+		if createMySQLTable(request, session) {
+			request.Log("Table Verified Successfully!")
+		} else {
+			response.IsSuccess = false
+			return response
+		}
+
+		indexNames := getMySQLFieldOrder(request)
+
+		var argKeyList string
+		var argValueList string
+
+		//create keyvalue list
+
+		for i := 0; i < len(indexNames); i++ {
+			if i != len(indexNames)-1 {
+				argKeyList = argKeyList + indexNames[i] + ", "
+			} else {
+				argKeyList = argKeyList + indexNames[i]
+			}
+		}
 
 		var keyArray = make([]string, noOfElements)
 		var valueArray = make([]string, noOfElements)
 
 		// Process A :start identifying individual data in array and convert to string
-		var startIndex int = 0
-		for key, value := range request.Body.Object {
+		for index := 0; index < len(indexNames); index++ {
+			if indexNames[index] != "osHeaders" {
 
-			if key != "__osHeaders" {
-
-				if _, ok := value.(string); ok {
-					keyArray[startIndex] = key
-					valueArray[startIndex] = value.(string)
-					startIndex = startIndex + 1
+				if _, ok := DataObject[indexNames[index]].(string); ok {
+					keyArray[index] = indexNames[index]
+					valueArray[index] = DataObject[indexNames[index]].(string)
 				} else {
-					request.Log("Non string value detected, Will be strigified!")
-					keyArray[startIndex] = key
-					valueArray[startIndex] = getStringByObject(value)
-					startIndex = startIndex + 1
+					//fmt.Println("Non string value detected, Will be strigified!")
+					keyArray[index] = indexNames[index]
+					valueArray[index] = getStringByObject(DataObject[indexNames[index]])
 				}
 			} else {
 				// __osHeaders Catched!
-				keyArray[startIndex] = "osHeaders"
-				valueArray[startIndex] = ConvertOsheaders(value.(messaging.ControlHeaders))
-				startIndex = startIndex + 1
+				keyArray[index] = "osHeaders"
+				valueArray[index] = ConvertOsheaders(DataObject[indexNames[index]].(messaging.ControlHeaders))
 			}
-		}
 
-		var argKeyList string
-		var argValueList string
+		}
 
 		//Build the query string
 		for i := 0; i < noOfElements; i++ {
 			if i != noOfElements-1 {
-				argKeyList = argKeyList + keyArray[i] + ", "
 				argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
 			} else {
-				argKeyList = argKeyList + keyArray[i]
 				argValueList = argValueList + "'" + valueArray[i] + "'"
 			}
 		}
@@ -663,53 +835,13 @@ func (repository MysqlRepository) InsertSingle(request *messaging.ObjectRequest)
 		//fmt.Println("Table Name : " + request.Controls.Class)
 		//fmt.Println("Key list : " + argKeyList)
 		//fmt.Println("Value list : " + argValueList)
-
-		_, err := session.Query("INSERT INTO " + getSQLnamespace(request) + "." + request.Controls.Class + " (" + argKeyList + ") VALUES (" + argValueList + ")")
+		//fmt.Println("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES (" + argValueList + ");")
+		_, err := session.Query("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES (" + argValueList + ");")
 		if err != nil {
 			response.IsSuccess = false
 			response.GetErrorResponse("Error inserting one object in MySQL" + err.Error())
-
-			request.Log("Table Not Found. Creating New Table " + request.Controls.Class)
-			var argKeyList2 string
-
-			for i := 0; i < noOfElements; i++ {
-				if i != noOfElements-1 {
-					if keyArray[i] == request.Body.Parameters.KeyProperty {
-						argKeyList2 = argKeyList2 + keyArray[i] + " varchar(255) PRIMARY KEY, "
-					} else {
-						argKeyList2 = argKeyList2 + keyArray[i] + " text, "
-					}
-
-				} else {
-					if keyArray[i] == request.Body.Parameters.KeyProperty {
-						argKeyList2 = argKeyList2 + keyArray[i] + " varchar(255) PRIMARY KEY"
-					} else {
-						argKeyList2 = argKeyList2 + keyArray[i] + " text"
-					}
-
-				}
-			}
-
-			request.Log("create table " + request.Controls.Class + "(" + argKeyList2 + ");")
-
-			_, err = session.Query("create table " + getSQLnamespace(request) + "." + request.Controls.Class + "(" + argKeyList2 + ");")
-
-			if err != nil {
-				request.Log("New Table Creation Failed. Abort!")
-			} else {
-				_, err := session.Query("INSERT INTO " + getSQLnamespace(request) + "." + request.Controls.Class + " (" + argKeyList + ") VALUES (" + argValueList + ")")
-				if err != nil {
-					request.Log("Error inserting data to newly created table" + err.Error())
-					response.IsSuccess = false
-					response.Message = "Failed inserting one object in MySQL"
-					request.Log(response.Message)
-				} else {
-					request.Log("Successfully inserted data to newly created table")
-					response.IsSuccess = true
-					response.Message = "Successfully inserted one object in MySQL"
-					request.Log(response.Message)
-				}
-			}
+			response.Message = err.Error()
+			fmt.Println(err.Error())
 		} else {
 			response.IsSuccess = true
 			response.Message = "Successfully inserted one object in MySQL"
@@ -724,7 +856,188 @@ func (repository MysqlRepository) InsertSingle(request *messaging.ObjectRequest)
 	actualData["ID"] = keyValue
 	Data[0] = actualData
 	response.Data = Data
+	response.IsSuccess = true
+	response.Message = "Successfully inserted one object in MySQL"
 	return response
+}
+
+func getMySQLFieldOrder(request *messaging.ObjectRequest) []string {
+	var returnArray []string
+	//read fields
+	byteValue := executeMySqlGetFields(request)
+
+	err := json.Unmarshal(byteValue, &returnArray)
+	if err != nil {
+		request.Log("Converstion of Json Failed!")
+		returnArray = make([]string, 1)
+		returnArray[0] = "nil"
+		return returnArray
+	}
+
+	return returnArray
+}
+
+func createMySQLTable(request *messaging.ObjectRequest, session *sql.DB) (status bool) {
+	status = false
+
+	//get table list
+	classBytes := executeMySqlGetClasses(request)
+	var classList []string
+	err := json.Unmarshal(classBytes, &classList)
+	if err != nil {
+		status = false
+	} else {
+		for _, className := range classList {
+			if strings.ToLower(request.Controls.Class) == className {
+				fmt.Println("Table Already Available")
+				status = true
+				//Get all fields
+				classBytes := executeMySqlGetFields(request)
+				var tableFieldList []string
+				_ = json.Unmarshal(classBytes, &tableFieldList)
+				//Check For missing fields. If any ALTER TABLE
+				var recordFieldList []string
+				var recordFieldType []string
+
+				if request.Body.Object == nil {
+					recordFieldList = make([]string, len(request.Body.Objects[0]))
+					recordFieldType = make([]string, len(request.Body.Objects[0]))
+					index := 0
+					for key, value := range request.Body.Objects[0] {
+						if key == "__osHeaders" {
+							recordFieldList[index] = "osHeaders"
+							recordFieldType[index] = "text"
+						} else {
+							recordFieldList[index] = key
+							recordFieldType[index] = getMySqlDataType(value)
+						}
+						index++
+					}
+				} else {
+					recordFieldList = make([]string, len(request.Body.Object))
+					recordFieldType = make([]string, len(request.Body.Object))
+					index := 0
+					for key, value := range request.Body.Object {
+						if key == "__osHeaders" {
+							recordFieldList[index] = "osHeaders"
+							recordFieldType[index] = "text"
+						} else {
+							recordFieldList[index] = key
+							recordFieldType[index] = getMySqlDataType(value)
+						}
+						index++
+					}
+				}
+
+				var newFields []string
+				var newTypes []string
+
+				//check for new Fields
+				for key, fieldName := range recordFieldList {
+					isAvailable := false
+					for _, tableField := range tableFieldList {
+						if fieldName == tableField {
+							isAvailable = true
+							break
+						}
+					}
+
+					if !isAvailable {
+						newFields = append(newFields, fieldName)
+						newTypes = append(newTypes, recordFieldType[key])
+					}
+				}
+
+				//ALTER TABLES
+
+				for key, _ := range newFields {
+					_, er := session.Query("ALTER TABLE " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " ADD COLUMN " + newFields[key] + " " + newTypes[key] + ";")
+					if er != nil {
+						status = false
+						request.Log("Table Alter Failed : " + er.Error())
+						return
+					} else {
+						status = true
+						request.Log("Table Alter Success!")
+					}
+				}
+
+				return
+			}
+		}
+
+		// if not available
+		//get one object
+		var dataObject map[string]interface{}
+		dataObject = make(map[string]interface{})
+
+		if request.Body.Object != nil {
+			for key, value := range request.Body.Object {
+				if key == "__osHeaders" {
+					dataObject["osHeaders"] = value
+				} else {
+					dataObject[key] = value
+				}
+			}
+		} else {
+			for key, value := range request.Body.Objects[0] {
+				if key == "__osHeaders" {
+					dataObject["osHeaders"] = value
+				} else {
+					dataObject[key] = value
+				}
+			}
+		}
+		//read fields
+		noOfElements := len(dataObject)
+		var keyArray = make([]string, noOfElements)
+		var dataTypeArray = make([]string, noOfElements)
+
+		var startIndex int = 0
+
+		for key, value := range dataObject {
+			keyArray[startIndex] = key
+			dataTypeArray[startIndex] = getMySqlDataType(value)
+			startIndex = startIndex + 1
+
+		}
+
+		//Create Table
+
+		var argKeyList2 string
+
+		for i := 0; i < noOfElements; i++ {
+			if i != noOfElements-1 {
+				if keyArray[i] == request.Body.Parameters.KeyProperty {
+					argKeyList2 = argKeyList2 + keyArray[i] + " VARCHAR(255) PRIMARY KEY, "
+				} else {
+					argKeyList2 = argKeyList2 + keyArray[i] + " " + dataTypeArray[i] + ", "
+				}
+
+			} else {
+				if keyArray[i] == request.Body.Parameters.KeyProperty {
+					argKeyList2 = argKeyList2 + keyArray[i] + " VARCHAR(255) PRIMARY KEY"
+				} else {
+					argKeyList2 = argKeyList2 + keyArray[i] + " " + dataTypeArray[i]
+				}
+
+			}
+		}
+
+		request.Log("create table " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + "(" + argKeyList2 + ");")
+
+		_, er := session.Query("create table " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + "(" + argKeyList2 + ");")
+		if er != nil {
+			status = false
+			request.Log("Table Creation Failed : " + er.Error())
+			return
+		}
+
+		status = true
+
+	}
+
+	return
 }
 
 func (repository MysqlRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
@@ -735,6 +1048,13 @@ func (repository MysqlRepository) UpdateMultiple(request *messaging.ObjectReques
 		response.GetErrorResponse(errorMessage)
 	} else {
 
+		if createMySQLTable(request, session) {
+			request.Log("Table Verified Successfully!")
+		} else {
+			response.IsSuccess = false
+			return response
+		}
+
 		for i := 0; i < len(request.Body.Objects); i++ {
 			noOfElements := len(request.Body.Objects[i]) - 1
 			var keyUpdate = make([]string, noOfElements)
@@ -744,9 +1064,20 @@ func (repository MysqlRepository) UpdateMultiple(request *messaging.ObjectReques
 			for key, value := range request.Body.Objects[i] {
 				if key != request.Body.Parameters.KeyProperty {
 					if key != "__osHeaders" {
-						keyUpdate[startIndex] = key
-						valueUpdate[startIndex] = value.(string)
-						startIndex = startIndex + 1
+						//if str, ok := value.(string); ok {
+						if _, ok := value.(string); ok {
+
+							//Implement all MAP related logic here. All correct data are being caught in here
+							keyUpdate[startIndex] = key
+							valueUpdate[startIndex] = value.(string)
+							startIndex = startIndex + 1
+
+						} else {
+							//request.Log("Non string value detected, Will be strigified!")
+							keyUpdate[startIndex] = key
+							valueUpdate[startIndex] = getStringByObject(value)
+							startIndex = startIndex + 1
+						}
 					} else {
 						keyUpdate[startIndex] = "osHeaders"
 						valueUpdate[startIndex] = ConvertOsheaders(value.(messaging.ControlHeaders))
@@ -770,8 +1101,8 @@ func (repository MysqlRepository) UpdateMultiple(request *messaging.ObjectReques
 			//DEBUG USE : Display Query information
 			//	fmt.Println("Table Name : " + request.Controls.Class)
 			//	fmt.Println("Value list : " + argValueList)
-			request.Log("UPDATE " + getSQLnamespace(request) + "." + request.Controls.Class + " SET " + argValueList + " WHERE " + request.Body.Parameters.KeyProperty + " =" + "'" + request.Body.Objects[i][request.Body.Parameters.KeyProperty].(string) + "'")
-			_, err := session.Query("UPDATE " + getSQLnamespace(request) + "." + request.Controls.Class + " SET " + argValueList + " WHERE " + request.Body.Parameters.KeyProperty + " =" + "'" + request.Body.Objects[i][request.Body.Parameters.KeyProperty].(string) + "'")
+			//request.Log("UPDATE " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " SET " + argValueList + " WHERE " + request.Body.Parameters.KeyProperty + " =" + "'" + request.Body.Objects[i][request.Body.Parameters.KeyProperty].(string) + "'")
+			_, err := session.Query("UPDATE " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " SET " + argValueList + " WHERE " + request.Body.Parameters.KeyProperty + " =" + "'" + request.Body.Objects[i][request.Body.Parameters.KeyProperty].(string) + "'")
 
 			if err != nil {
 				response.IsSuccess = false
@@ -797,6 +1128,13 @@ func (repository MysqlRepository) UpdateSingle(request *messaging.ObjectRequest)
 		response.GetErrorResponse(errorMessage)
 	} else {
 
+		if createMySQLTable(request, session) {
+			request.Log("Table Verified Successfully!")
+		} else {
+			response.IsSuccess = false
+			return response
+		}
+
 		noOfElements := len(request.Body.Object) - 1
 		var keyUpdate = make([]string, noOfElements)
 		var valueUpdate = make([]string, noOfElements)
@@ -805,9 +1143,18 @@ func (repository MysqlRepository) UpdateSingle(request *messaging.ObjectRequest)
 		for key, value := range request.Body.Object {
 			if key != request.Body.Parameters.KeyProperty {
 				if key != "__osHeaders" {
-					keyUpdate[startIndex] = key
-					valueUpdate[startIndex] = value.(string)
-					startIndex = startIndex + 1
+					if _, ok := value.(string); ok {
+						//Implement all MAP related logic here. All correct data are being caught in here
+						keyUpdate[startIndex] = key
+						valueUpdate[startIndex] = value.(string)
+						startIndex = startIndex + 1
+
+					} else {
+						//request.Log("Non string value detected, Will be strigified!")
+						keyUpdate[startIndex] = key
+						valueUpdate[startIndex] = getStringByObject(value)
+						startIndex = startIndex + 1
+					}
 				} else {
 					keyUpdate[startIndex] = "osHeaders"
 					valueUpdate[startIndex] = ConvertOsheaders(value.(messaging.ControlHeaders))
@@ -831,7 +1178,7 @@ func (repository MysqlRepository) UpdateSingle(request *messaging.ObjectRequest)
 		//fmt.Println("Table Name : " + request.Controls.Class)
 		//fmt.Println("Value list : " + argValueList)
 
-		_, err := session.Query("UPDATE " + getSQLnamespace(request) + "." + request.Controls.Class + " SET " + argValueList + " WHERE " + request.Body.Parameters.KeyProperty + " =" + "'" + request.Controls.Id + "'")
+		_, err := session.Query("UPDATE " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " SET " + argValueList + " WHERE " + request.Body.Parameters.KeyProperty + " =" + "'" + request.Controls.Id + "'")
 
 		if err != nil {
 			response.IsSuccess = false
@@ -856,7 +1203,7 @@ func (repository MysqlRepository) DeleteMultiple(request *messaging.ObjectReques
 		response.GetErrorResponse(errorMessage)
 	} else {
 		for _, obj := range request.Body.Objects {
-			_, err := session.Query("DELETE FROM " + getSQLnamespace(request) + "." + request.Controls.Class + " WHERE " + request.Body.Parameters.KeyProperty + " = '" + obj[request.Body.Parameters.KeyProperty].(string) + "'")
+			_, err := session.Query("DELETE FROM " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " WHERE " + request.Body.Parameters.KeyProperty + " = '" + obj[request.Body.Parameters.KeyProperty].(string) + "'")
 			if err != nil {
 				response.IsSuccess = false
 				request.Log("Error deleting object in MySQL : " + err.Error())
@@ -881,7 +1228,7 @@ func (repository MysqlRepository) DeleteSingle(request *messaging.ObjectRequest)
 		response.GetErrorResponse(errorMessage)
 	} else {
 
-		_, err := session.Query("DELETE FROM " + getSQLnamespace(request) + "." + request.Controls.Class + " WHERE " + request.Body.Parameters.KeyProperty + " = '" + request.Controls.Id + "'")
+		_, err := session.Query("DELETE FROM " + getMySQLnamespace(request) + "." + request.Controls.Class + " WHERE " + request.Body.Parameters.KeyProperty + " = '" + request.Controls.Id + "'")
 		if err != nil {
 			response.IsSuccess = false
 			request.Log("Error deleting object in MySQL : " + err.Error())
@@ -970,8 +1317,8 @@ func (repository MysqlRepository) Test(request *messaging.ObjectRequest) {
 
 func executeMySqlGetFields(request *messaging.ObjectRequest) (returnByte []byte) {
 
-	namespace := getSQLnamespace(request)
-	class := request.Controls.Class
+	namespace := getMySQLnamespace(request)
+	class := strings.ToLower(request.Controls.Class)
 
 	session, isError, _ := getMysqlConnection(request)
 	if isError == true {
@@ -1053,7 +1400,7 @@ func executeMySqlGetFields(request *messaging.ObjectRequest) (returnByte []byte)
 
 func executeMySqlGetClasses(request *messaging.ObjectRequest) (returnByte []byte) {
 
-	namespace := getSQLnamespace(request)
+	namespace := getMySQLnamespace(request)
 
 	session, isError, _ := getMysqlConnection(request)
 	if isError == true {
@@ -1218,8 +1565,8 @@ func executeMySqlGetSelected(request *messaging.ObjectRequest) (returnByte []byt
 	if isError == true {
 		request.Log("Error Connecting to MySQL")
 	} else {
-		var returnMap map[string]interface{}
-		returnMap = make(map[string]interface{})
+		var returnMap []map[string]interface{}
+		//returnMap = make(map[string]interface{})
 
 		var selectedItemsQuery string
 
@@ -1242,8 +1589,8 @@ func executeMySqlGetSelected(request *messaging.ObjectRequest) (returnByte []byt
 			}
 		}
 
-		rows, err := session.Query("SELECT " + selectedItemsQuery + " FROM " + getSQLnamespace(request) + "." + request.Controls.Class)
-		request.Log("SELECT " + selectedItemsQuery + " FROM " + getSQLnamespace(request) + "." + request.Controls.Class)
+		rows, err := session.Query("SELECT " + selectedItemsQuery + " FROM " + getMySQLnamespace(request) + "." + request.Controls.Class)
+		request.Log("SELECT " + selectedItemsQuery + " FROM " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class))
 		if err != nil {
 			request.Log("Error Fetching data from MySQL")
 		} else {
@@ -1253,7 +1600,7 @@ func executeMySqlGetSelected(request *messaging.ObjectRequest) (returnByte []byt
 			values := make([]interface{}, count)
 			valuePtrs := make([]interface{}, count)
 
-			index := 0
+			//index := 0
 			for rows.Next() {
 
 				var tempMap map[string]interface{}
@@ -1281,8 +1628,9 @@ func executeMySqlGetSelected(request *messaging.ObjectRequest) (returnByte []byt
 					tempMap[col] = v
 				}
 
-				returnMap[strconv.Itoa(index)] = tempMap
-				index++
+				returnMap = append(returnMap, tempMap)
+				//returnMap[strconv.Itoa(index)] = tempMap
+				//index++
 			}
 
 			byteValue, _ := json.Marshal(returnMap)
@@ -1321,10 +1669,10 @@ func getMySqlRecordID(request *messaging.ObjectRequest, obj map[string]interface
 	}
 
 	if isGUIDKey {
-		request.Log("GUID Key generation requested!")
+		//request.Log("GUID Key generation requested!")
 		returnID = uuid.NewV1().String()
 	} else if isAutoIncrementId {
-		request.Log("Automatic Increment Key generation requested!")
+		//request.Log("Automatic Increment Key generation requested!")
 		session, isError, _ := getMysqlConnection(request)
 		if isError {
 			returnID = ""
@@ -1332,18 +1680,18 @@ func getMySqlRecordID(request *messaging.ObjectRequest, obj map[string]interface
 		} else {
 			//Read Table domainClassAttributes
 			request.Log("Reading maxCount from DB")
-			rows, err := session.Query("SELECT maxCount FROM " + getSQLnamespace(request) + ".domainClassAttributes where class = '" + request.Controls.Class + "';")
+			rows, err := session.Query("SELECT maxCount FROM " + getMySQLnamespace(request) + ".domainClassAttributes where class = '" + strings.ToLower(request.Controls.Class) + "';")
 
 			if err != nil {
 				//If err create new domainClassAttributes  table
 				request.Log("No Class found.. Must be a new namespace")
-				_, err = session.Query("create table " + getSQLnamespace(request) + ".domainClassAttributes ( class text primary key, maxCount text, version text);")
+				_, err = session.Query("create table " + getMySQLnamespace(request) + ".domainClassAttributes ( class text primary key, maxCount text, version text);")
 				if err != nil {
 					returnID = ""
 					return
 				} else {
 					//insert record with count 1 and return
-					_, err := session.Query("INSERT INTO " + getSQLnamespace(request) + ".domainClassAttributes (class, maxCount,version) VALUES ('" + request.Controls.Class + "','1','" + uuid.NewV1().String() + "')")
+					_, err := session.Query("INSERT INTO " + getMySQLnamespace(request) + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','1','" + uuid.NewV1().String() + "')")
 					if err != nil {
 						returnID = ""
 						return
@@ -1389,7 +1737,7 @@ func getMySqlRecordID(request *messaging.ObjectRequest, obj map[string]interface
 
 				if len(myMap) == 0 {
 					request.Log("New Class! New record for this class will be inserted")
-					_, err = session.Query("INSERT INTO " + getSQLnamespace(request) + ".domainClassAttributes (class,maxCount,version) values ('" + request.Controls.Class + "', '1', '" + uuid.NewV1().String() + "');")
+					_, err = session.Query("INSERT INTO " + getMySQLnamespace(request) + ".domainClassAttributes (class,maxCount,version) values ('" + strings.ToLower(request.Controls.Class) + "', '1', '" + uuid.NewV1().String() + "');")
 					if err != nil {
 						returnID = ""
 						return
@@ -1404,7 +1752,7 @@ func getMySqlRecordID(request *messaging.ObjectRequest, obj map[string]interface
 					maxCount, err = strconv.Atoi(myMap["maxCount"].(string))
 					maxCount++
 					returnID = strconv.Itoa(maxCount)
-					_, err = session.Query("UPDATE " + getSQLnamespace(request) + ".domainClassAttributes SET maxCount='" + returnID + "' WHERE class = '" + request.Controls.Class + "' ;")
+					_, err = session.Query("UPDATE " + getMySQLnamespace(request) + ".domainClassAttributes SET maxCount='" + returnID + "' WHERE class = '" + strings.ToLower(request.Controls.Class) + "' ;")
 					if err != nil {
 						request.Log("Error Updating index table : " + err.Error())
 						returnID = ""
@@ -1414,7 +1762,7 @@ func getMySqlRecordID(request *messaging.ObjectRequest, obj map[string]interface
 			}
 		}
 	} else {
-		request.Log("Manual Key requested!")
+		//request.Log("Manual Key requested!")
 		if obj == nil {
 			returnID = request.Controls.Id
 		} else {
@@ -1423,4 +1771,16 @@ func getMySqlRecordID(request *messaging.ObjectRequest, obj map[string]interface
 	}
 
 	return
+}
+
+func getMySqlDataType(item interface{}) (datatype string) {
+	datatype = reflect.TypeOf(item).Name()
+	if datatype == "bool" {
+		datatype = "text"
+	} else if datatype == "float64" {
+		datatype = "real"
+	} else if datatype == "" || datatype == "string" || datatype == "ControlHeaders" {
+		datatype = "text"
+	}
+	return datatype
 }

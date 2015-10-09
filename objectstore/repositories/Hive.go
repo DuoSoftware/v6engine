@@ -74,6 +74,15 @@ func (repository HiveRepository) GetAll(request *messaging.ObjectRequest) Reposi
 				}
 			}
 
+			if len(allMaps) == 0 {
+				response.IsSuccess = true
+				response.Message = "No objects found in Hive"
+				var emptyMap map[string]interface{}
+				emptyMap = make(map[string]interface{})
+				byte, _ := json.Marshal(emptyMap)
+				response.GetResponseWithBody(byte)
+			}
+
 			byteValue, errMarshal := json.Marshal(allMaps)
 
 			if errMarshal != nil {
@@ -233,6 +242,15 @@ func (repository HiveRepository) GetByKey(request *messaging.ObjectRequest) Repo
 				}
 			}
 
+			if len(myMap) == 0 {
+				response.IsSuccess = true
+				response.Message = "No objects found in Hive"
+				var emptyMap map[string]interface{}
+				emptyMap = make(map[string]interface{})
+				byte, _ := json.Marshal(emptyMap)
+				response.GetResponseWithBody(byte)
+			}
+
 			byteValue, errMarshal := json.Marshal(myMap)
 
 			if errMarshal != nil {
@@ -276,7 +294,7 @@ func (repository HiveRepository) InsertMultiple(request *messaging.ObjectRequest
 			request.Log("Database Not Ready! Check Hadoop Configuration. Following TSQL transaction WILL FAIL...")
 		}
 
-		executionCountForTableCreation := 0
+		isTableChecked := false
 
 		for i := 0; i < len(request.Body.Objects); i++ {
 
@@ -396,7 +414,7 @@ func (repository HiveRepository) InsertMultiple(request *messaging.ObjectRequest
 					}
 				}
 
-				if executionCountForTableCreation == 0 {
+				if !isTableChecked {
 					//check if table exists if not create new one
 
 					if checkTableAvailability(request) == false {
@@ -421,7 +439,7 @@ func (repository HiveRepository) InsertMultiple(request *messaging.ObjectRequest
 					}
 				}
 
-				executionCountForTableCreation++
+				isTableChecked = true
 				//DEBUG USE : Display Query information
 				//fmt.Println("Table Name : " + request.Controls.Class)
 				//fmt.Println("Key list : " + argKeyList)

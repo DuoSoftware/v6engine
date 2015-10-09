@@ -155,7 +155,7 @@ func convertToHiveTableFormat(input map[int]string) map[int]string {
 
 	for key, _ := range outMap {
 		//replace first two dots to 8s
-		outMap[key] = strings.Replace(outMap[key], ".", "", 2)
+		outMap[key] = "_" + strings.Replace(outMap[key], ".", "", 2)
 		//replace last dot to 0s
 		//outMap[key] = strings.Replace(outMap[key], ".", "0", 1)
 	}

@@ -11,11 +11,7 @@ import (
 func ConvertToTags(queryString string) (whereTags map[string]string, selectTags map[string]string) {
 
 	arr := strings.Split(queryString, "select")
-
-	//var whereTags map[string]string
 	whereTags = make(map[string]string)
-
-	//var selectTags map[string]string
 	selectTags = make(map[string]string)
 
 	if len(arr) == 1 {

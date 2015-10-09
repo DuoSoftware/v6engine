@@ -12,11 +12,16 @@ func main() {
 	fmt.Println("Starting Elastic Record Manager!")
 	fmt.Println()
 	fmt.Println("Please Enter choice and press ENTER")
-	fmt.Println("		[a] : Create Data BACKUP of a data store.")
-	fmt.Println("		[b] : RESTORE Backup to a new instance.")
+	fmt.Println("		[a] : BACKUP data store.")
+	fmt.Println("		[b] : RESTORE new instance.")
+	fmt.Println("		[c] : Export to Couchbase")
+	fmt.Println("		[d] : Export to MySQL")
 	fmt.Println()
 
 	var ipAddress string
+	var username string
+	var password string
+	var bucket string
 	var response string
 	print("Enter your Selection : ")
 	_, err := fmt.Scanln(&response)
@@ -50,6 +55,44 @@ func main() {
 			fmt.Println(err.Error())
 		} else {
 			status := processes.RestoreServer(ipAddress)
+			if status {
+				fmt.Println("Records Successfully Restored! :D ")
+			} else {
+				fmt.Println("An error occured! :( ")
+			}
+		}
+	}
+
+	if response == "c" {
+		fmt.Println("Export to COUCHBASE option selected. Make sure all Backup file are in the same folder.")
+		fmt.Println("Specify URL : ")
+		_, err := fmt.Scanln(&ipAddress)
+		fmt.Println("Specify URL : ")
+		_, err2 := fmt.Scanln(&bucket)
+		if err != nil || err2 != nil {
+			fmt.Println(err.Error())
+		} else {
+			status := processes.ExportToCouchServer(ipAddress, bucket)
+			if status {
+				fmt.Println("Records Successfully Restored! :D ")
+			} else {
+				fmt.Println("An error occured! :( ")
+			}
+		}
+	}
+
+	if response == "d" {
+		fmt.Println("Export to MySQL option selected. Make sure all Backup file are in the same folder.")
+		fmt.Println("Specify URL : ")
+		_, err := fmt.Scanln(&ipAddress)
+		fmt.Println("Specify Username : ")
+		_, err = fmt.Scanln(&username)
+		fmt.Println("Specify Password : ")
+		_, err = fmt.Scanln(&password)
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			status := processes.ExportToMySQLServer(ipAddress, username, password)
 			if status {
 				fmt.Println("Records Successfully Restored! :D ")
 			} else {

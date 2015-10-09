@@ -3,7 +3,9 @@ package repositories
 import (
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
+	//"fmt"
 	"github.com/twinj/uuid"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -11,6 +13,18 @@ import (
 
 func getDefaultNotImplemented() RepositoryResponse {
 	return RepositoryResponse{IsSuccess: false, IsImplemented: false, Message: "Operation Not Implemented"}
+}
+
+func getDataType(item interface{}) (datatype string) {
+	datatype = reflect.TypeOf(item).Name()
+	if datatype == "bool" {
+		datatype = "boolean"
+	} else if datatype == "float64" {
+		datatype = "real"
+	} else if datatype == "" || datatype == "string" || datatype == "ControlHeaders" {
+		datatype = "text"
+	}
+	return datatype
 }
 
 func FillControlHeaders(request *messaging.ObjectRequest) {
@@ -83,6 +97,11 @@ func getStringByObject(obj interface{}) string {
 func getSQLnamespace(request *messaging.ObjectRequest) string {
 	return (strings.Replace(request.Controls.Namespace, ".", "", -1))
 }
+
+// func getSQLnamespace(request *messaging.ObjectRequest) string {
+// 	dd := (strings.Replace(request.Controls.Namespace, ".", "", -1))
+// 	return ("_" + dd)
+// }
 
 func ConvertOsheaders(input messaging.ControlHeaders) string {
 	myStr := "{\"Class\":\"" + input.Class + "\",\"LastUdated\":\"2" + input.LastUdated + "\",\"Namespace\":\"" + input.Namespace + "\",\"Tenant\":\"" + input.Tenant + "\",\"Version\":\"" + input.Version + "\"}"

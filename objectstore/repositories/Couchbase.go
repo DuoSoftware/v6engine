@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/couchbaselabs/go-couchbase"
+	"github.com/couchbaselabs/gocb"
 	"github.com/twinj/uuid"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type CouchRepository struct {
@@ -26,7 +28,7 @@ func (repository CouchRepository) GetAll(request *messaging.ObjectRequest) Repos
 		response.GetErrorResponse(errorMessage)
 	} else {
 		//Get all IDs
-		viewResult, err := bucket.View("dev_allkeytemp", "allkeystemp", nil)
+		viewResult, err := bucket.View(("dev_" + getSQLnamespace(request)), ("dev_" + getSQLnamespace(request)), nil)
 
 		//Iterate check for pattern and choose only desired IDs
 		pattern := request.Controls.Namespace + "." + request.Controls.Class + "."
@@ -53,6 +55,15 @@ func (repository CouchRepository) GetAll(request *messaging.ObjectRequest) Repos
 			}
 
 			returnDataMap = append(returnDataMap, tempData)
+		}
+
+		if len(returnDataMap) == 0 {
+			response.IsSuccess = true
+			response.Message = "No objects found in Couchbase"
+			var emptyMap map[string]interface{}
+			emptyMap = make(map[string]interface{})
+			byte, _ := json.Marshal(emptyMap)
+			response.GetResponseWithBody(byte)
 		}
 
 		rawBytes, err := json.Marshal(returnDataMap)
@@ -112,6 +123,15 @@ func (repository CouchRepository) GetByKey(request *messaging.ObjectRequest) Rep
 
 		if request.Controls.SendMetaData == "false" {
 			delete(returnData, "__osHeaders")
+		}
+
+		if len(returnData) == 0 {
+			response.IsSuccess = true
+			response.Message = "No objects found in Couchbase"
+			var emptyMap map[string]interface{}
+			emptyMap = make(map[string]interface{})
+			byte, _ := json.Marshal(emptyMap)
+			response.GetResponseWithBody(byte)
 		}
 
 		rawBytes, err = json.Marshal(returnData)
@@ -353,11 +373,10 @@ func getCouchBucket(request *messaging.ObjectRequest) (bucket *couchbase.Bucket,
 
 	setting_host := request.Configuration.ServerConfiguration["COUCH"]["Url"]
 	setting_bucket := request.Configuration.ServerConfiguration["COUCH"]["Bucket"]
-	//setting_userName := request.StoreConfiguration.ServerConfiguration["COUCH"]["UserName"]
-	//setting_password := request.StoreConfiguration.ServerConfiguration["COUCH"]["Password"]
+	setting_bucket = getSQLnamespace(request)
 	request.Log("Store configuration settings recieved for Couchbase Host : " + setting_host + " , Bucket : " + setting_bucket)
 
-	c, err := couchbase.Connect(setting_host)
+	c, err := couchbase.Connect("http://" + setting_host + "/")
 	if err != nil {
 		isError = true
 		errorMessage = "Error connecting Couchbase to :  " + setting_host
@@ -374,15 +393,109 @@ func getCouchBucket(request *messaging.ObjectRequest) (bucket *couchbase.Bucket,
 	returnBucket, err := pool.GetBucket(setting_bucket)
 
 	if err != nil {
-		isError = true
-		errorMessage = "Error getting Couchbase bucket: " + setting_bucket
-		request.Log(errorMessage)
+		err1 := createCouchbaseBucket(setting_host, setting_bucket)
+		if !err1 {
+			isError = true
+			errorMessage = "Error getting/creating Couchbase bucket: " + setting_bucket
+			request.Log(errorMessage)
+			return bucket, errorMessage, isError
+		} else {
+			time.Sleep(2 * time.Second)
+			//Insert Document Wait for another second to refresh
+			status := uploadDesignDocument(setting_host, setting_bucket, getSQLnamespace(request))
+			fmt.Println(status)
+			//reconnect
+			bucket = reconnect(setting_host, setting_bucket)
+		}
+
 	} else {
 		request.Log("Successfully recieved Couchbase bucket")
 		bucket = returnBucket
 	}
 
 	return
+}
+
+func reconnect(url string, bucketName string) (bucket *couchbase.Bucket) {
+	c, err := couchbase.Connect("http://" + url + "/")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	pool, err := c.GetPool("default")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	bucket, err = pool.GetBucket(bucketName)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Successfully recieved Couchbase bucket")
+	}
+	return bucket
+}
+
+func createCouchbaseBucket(url string, bucketName string) (status bool) {
+	tempUrl := strings.Split(url, ":")
+	cluster, err := gocb.Connect("couchbase://" + tempUrl[0] + "")
+	clustermgr := cluster.Manager("Administrator", "123456")
+
+	bucketSettings := gocb.BucketSettings{}
+	bucketSettings.FlushEnabled = true
+	bucketSettings.IndexReplicas = false
+	bucketSettings.Name = bucketName
+	bucketSettings.Password = ""
+	bucketSettings.Quota = 100
+	bucketSettings.Replicas = 0
+	bucketSettings.Type = 0
+	q := &bucketSettings
+
+	err = clustermgr.InsertBucket(q)
+	if err != nil {
+		fmt.Println("Error creating the new Bucket! : " + err.Error())
+		status = false
+	} else {
+		fmt.Println("Successfully created new Bucket!")
+		status = true
+	}
+	return status
+}
+
+func uploadDesignDocument(url string, bucketname string, namespace string) (status bool) {
+	designDocumentName := "dev_" + namespace
+	tempUrl := strings.Split(url, ":")
+	cluster, _ := gocb.Connect("couchbase://" + tempUrl[0] + "")
+	buckett, _ := cluster.OpenBucket(bucketname, "")
+
+	bucketMgr := buckett.Manager("Administrator", "123456")
+
+	ddoc := gocb.DesignDocument{}
+	ddoc.Name = designDocumentName
+
+	vview := gocb.View{}
+	vview.Map = "function(doc,meta){emit(meta.id);}"
+
+	var myView map[string]gocb.View
+	myView = make(map[string]gocb.View)
+
+	myView[designDocumentName] = vview
+
+	ddoc.Views = myView
+
+	p := &ddoc
+
+	err := bucketMgr.UpsertDesignDocument(p)
+	if err != nil {
+		fmt.Println(err.Error())
+		status = false
+	} else {
+		status = true
+	}
+
+	return
+
 }
 
 // Helper Functions
@@ -506,7 +619,7 @@ func makeCouchBaseIndexing(request *messaging.ObjectRequest) (status bool) {
 			err = bucket.Set(key, 0, newData)
 
 			if err != nil {
-				request.Log("Error storing data in Couchbase. Connection Resetted!")
+				request.Log("Error storing data in Couchbase! : " + err.Error())
 				status = false
 				return
 			} else {
@@ -621,7 +734,7 @@ func executeCouchbaseGetFields(request *messaging.ObjectRequest) (returnByte []b
 		returnByte = nil
 	} else {
 		//Get all IDs
-		viewResult, err := bucket.View("dev_allkeytemp", "allkeystemp", nil)
+		viewResult, err := bucket.View(("dev_" + getSQLnamespace(request)), ("dev_" + getSQLnamespace(request)), nil)
 		if err != nil {
 			request.Log("Error fetching result from View")
 			returnByte = nil
@@ -676,7 +789,7 @@ func executeCouchbaseGetSelectedFields(request *messaging.ObjectRequest) (return
 		returnByte = nil
 	} else {
 		//Get all IDs
-		viewResult, err := bucket.View("dev_allkeytemp", "allkeystemp", nil)
+		viewResult, err := bucket.View(("dev_" + getSQLnamespace(request)), ("dev_" + getSQLnamespace(request)), nil)
 		if err != nil {
 			returnByte = nil
 			request.Log("Couldn't fetch results from the View")

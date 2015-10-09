@@ -76,6 +76,15 @@ func (repository MongoRepository) GetAll(request *messaging.ObjectRequest) Repos
 			skip, _ = strconv.Atoi(request.Extras["skip"].(string))
 		}
 
+		if len(data) == 0 {
+			response.IsSuccess = true
+			response.Message = "No objects found in Mongo"
+			var emptyMap map[string]interface{}
+			emptyMap = make(map[string]interface{})
+			byte, _ := json.Marshal(emptyMap)
+			response.GetResponseWithBody(byte)
+		}
+
 		for index, _ := range data {
 			if request.Controls.SendMetaData == "false" {
 				delete(data[index], "__osHeaders")
@@ -141,6 +150,15 @@ func (repository MongoRepository) GetByKey(request *messaging.ObjectRequest) Rep
 
 		if err != nil {
 			fmt.Println(err.Error())
+		}
+
+		if len(data) == 0 {
+			response.IsSuccess = true
+			response.Message = "No objects found in Mongo"
+			var emptyMap map[string]interface{}
+			emptyMap = make(map[string]interface{})
+			byte, _ := json.Marshal(emptyMap)
+			response.GetResponseWithBody(byte)
 		}
 
 		if request.Controls.SendMetaData == "false" {

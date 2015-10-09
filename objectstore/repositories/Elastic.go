@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/mattbaird/elastigo/lib"
 	"github.com/twinj/uuid"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -46,17 +48,24 @@ func search(request *messaging.ObjectRequest, searchStr string) RepositoryRespon
 	if request.Extras["take"] != nil {
 		take = request.Extras["take"].(string)
 	}
-	//query := "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
-
-	query := "{\"sort\" : [{\"__osHeaders.LastUdated\" : {\"order\" : \"desc\"}}],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+	query := "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+	//query := "{\"sort\" : [{\"__osHeaders.LastUdated\" : {\"order\" : \"desc\"}}],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+	//query := "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}},\"sort\" : [{\"__osHeaders.LastUdated\" : {\"order\" : \"desc\"}}]}"
 
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
 	if err != nil {
-		errorMessage := "Error retrieving object from elastic search : " + err.Error()
-		request.Log(errorMessage)
-		request.Log("Error Query : " + query)
-		response.GetErrorResponse(errorMessage)
+		if strings.Contains(err.Error(), "record not found") {
+			var emptymap map[string]interface{}
+			emptymap = make(map[string]interface{})
+			finalBytes, _ := json.Marshal(emptymap)
+			response.GetResponseWithBody(finalBytes)
+		} else {
+			errorMessage := "Error retrieving object from elastic search : " + err.Error()
+			request.Log(errorMessage)
+			request.Log("Error Query : " + query)
+			response.GetErrorResponse(errorMessage)
+		}
 	} else {
 		request.Log("Successfully retrieved object from Elastic Search")
 
@@ -76,17 +85,6 @@ func search(request *messaging.ObjectRequest, searchStr string) RepositoryRespon
 			}
 
 			allMaps[index] = currentMap
-		}
-
-		//get Field Names
-
-		for _, value := range allMaps {
-			for key, _ := range value {
-
-				if key != "__osHeaders" {
-					//fmt.Println(key)
-				}
-			}
 		}
 
 		finalBytes, _ := json.Marshal(allMaps)
@@ -138,9 +136,15 @@ func (repository ElasticRepository) GetByKey(request *messaging.ObjectRequest) R
 	data, err := conn.Get(request.Controls.Namespace, request.Controls.Class, key, nil)
 
 	if err != nil {
-		errorMessage := "Error retrieving object from elastic search : " + err.Error()
-		request.Log(errorMessage)
-		response.GetErrorResponse(errorMessage)
+		// errorMessage := "Error retrieving object from elastic search : " + err.Error()
+		// request.Log(errorMessage)
+		// response.GetErrorResponse(errorMessage)
+		if strings.Contains(err.Error(), "record not found") {
+			var emptymap map[string]interface{}
+			emptymap = make(map[string]interface{})
+			finalBytes, _ := json.Marshal(emptymap)
+			response.GetResponseWithBody(finalBytes)
+		}
 	} else {
 		request.Log("Successfully retrieved object from Elastic Search")
 		bytes, err := data.Source.MarshalJSON()
@@ -160,6 +164,7 @@ func (repository ElasticRepository) GetByKey(request *messaging.ObjectRequest) R
 			errorMessage := "Elastic search JSON marshal error : " + err.Error()
 			request.Log(errorMessage)
 			response.GetErrorResponse(errorMessage)
+
 		} else {
 			response.GetResponseWithBody(bytes)
 		}
@@ -203,7 +208,6 @@ func setOneElastic(request *messaging.ObjectRequest) RepositoryResponse {
 		request.Body.Object[request.Body.Parameters.KeyProperty] = itemArray[1]
 		returnID = itemArray[1]
 		_, err := conn.Index(request.Controls.Namespace, request.Controls.Class, key, nil, request.Body.Object)
-		_, err = conn.Index(getKibanaElasticName(request), getKibanaElasticName(request), key, nil, request.Body.Object)
 
 		if err != nil {
 			errorMessage := "Elastic Search Single Insert Error : " + err.Error()
@@ -267,8 +271,8 @@ func setOneElastic(request *messaging.ObjectRequest) RepositoryResponse {
 		recordKey := request.Controls.Namespace + "." + request.Controls.Class + "." + maxCount
 		request.Body.Object[request.Body.Parameters.KeyProperty] = maxCount
 		returnID = maxCount
-		_, err1 := conn.Index(getKibanaElasticName(request), getKibanaElasticName(request), recordKey, nil, request.Body.Object)
-		_, err1 = conn.Index(request.Controls.Namespace, request.Controls.Class, recordKey, nil, request.Body.Object)
+		_, err1 := conn.Index(request.Controls.Namespace, request.Controls.Class, recordKey, nil, request.Body.Object)
+
 		//Update the Count
 		var newRecord map[string]interface{}
 		newRecord = make(map[string]interface{})
@@ -294,7 +298,7 @@ func setOneElastic(request *messaging.ObjectRequest) RepositoryResponse {
 		request.Log("Inserting single object to Elastic Search : " + key)
 		returnID = request.Controls.Id
 		_, err := conn.Index(request.Controls.Namespace, request.Controls.Class, key, nil, request.Body.Object)
-		_, err = conn.Index(getKibanaElasticName(request), getKibanaElasticName(request), key, nil, request.Body.Object)
+
 		if err != nil {
 			errorMessage := "Elastic Search Single Insert Error : " + err.Error()
 			request.Log(errorMessage)
@@ -394,235 +398,266 @@ func setManyElastic(request *messaging.ObjectRequest) RepositoryResponse {
 		request.Log("Manual Keys supplied!")
 	}
 
-	numberOfSets := (len(request.Body.Objects) / 100) + 1
+	stub := 100
+
+	noOfSets := (len(request.Body.Objects) / stub)
+	remainderFromSets := 0
+	statusCount := noOfSets
+	remainderFromSets = (len(request.Body.Objects) - (noOfSets * stub))
+	if remainderFromSets > 0 {
+		statusCount++
+	}
+	var setStatus []bool
+	setStatus = make([]bool, statusCount)
+
+	//numberOfSets := (len(request.Body.Objects) / 100) + 1
 	startIndex := 0
-	stopIndex := 100
+	stopIndex := stub
+	statusIndex := 0
 
-	for x := 0; x < numberOfSets; x++ {
-		if x == numberOfSets-1 {
-			indexer := conn.NewBulkIndexer(100)
-			indexer2 := conn.NewBulkIndexer(100)
-			nowTime := time.Now()
+	for x := 0; x < noOfSets; x++ {
 
-			if isAutoIncrementKey {
-				//Read maxCount from domainClassAttributes table
-				request.Log("Reading the max count")
-				classkey := request.Controls.Class
-				data, err := conn.Get(request.Controls.Namespace, "domainClassAttributes", classkey, nil)
+		indexer := conn.NewBulkIndexer(stub)
+		nowTime := time.Now()
 
-				if err != nil {
-					request.Log("No record Found. This is a NEW record. Inserting new attribute value")
-					var newRecord map[string]interface{}
-					newRecord = make(map[string]interface{})
-					newRecord["class"] = request.Controls.Class
-					newRecord["maxCount"] = "0"
-					newRecord["version"] = uuid.NewV1().String()
+		if isAutoIncrementKey {
+			//Read maxCount from domainClassAttributes table
+			request.Log("Reading the max count")
+			classkey := request.Controls.Class
+			data, err := conn.Get(request.Controls.Namespace, "domainClassAttributes", classkey, nil)
 
-					_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", classkey, nil, newRecord)
-
-					if err != nil {
-						errorMessage := "Failed to create new Domain Class Attribute entry."
-						request.Log(errorMessage)
-						return response
-					} else {
-						response.IsSuccess = true
-						response.Message = "Successfully new Domain Class Attribute to elastic search"
-						request.Log(response.Message)
-						maxCount = "0"
-					}
-
-				} else {
-					request.Log("Successfully retrieved object from Elastic Search")
-					var currentMap map[string]interface{}
-					currentMap = make(map[string]interface{})
-
-					byteData, err := data.Source.MarshalJSON()
-
-					if err != nil {
-						request.Log("Data serialization to read maxCount failed")
-						response.Message = "Data serialization to read maxCount failed"
-						return response
-					}
-
-					json.Unmarshal(byteData, &currentMap)
-					maxCount = currentMap["maxCount"].(string)
-				}
-
-				//Increment by 100 and update
-				tempCount, err := strconv.Atoi(maxCount)
-				maxCount = strconv.Itoa(tempCount + (len(request.Body.Objects) - startIndex))
-
-				request.Log("Updating Domain Class Attribute table")
+			if err != nil {
+				request.Log("No record Found. This is a NEW record. Inserting new attribute value")
 				var newRecord map[string]interface{}
 				newRecord = make(map[string]interface{})
 				newRecord["class"] = request.Controls.Class
-				newRecord["maxCount"] = maxCount
+				newRecord["maxCount"] = "0"
 				newRecord["version"] = uuid.NewV1().String()
-				_, err2 := conn.Index(request.Controls.Namespace, "domainClassAttributes", request.Controls.Class, nil, newRecord)
-				if err2 != nil {
-					request.Log("Inserting to Elastic Failed")
-					response.Message = "Inserting to Elastic Failed"
-					return response
-				} else {
-					request.Log("Inserting to Elastic Successfull")
-					response.Message = "Inserting to Elastic Successfull"
-					response.IsSuccess = true
-					request.Log(response.Message)
-				}
-			}
 
-			for _, obj := range request.Body.Objects[startIndex:len(request.Body.Objects)] {
-				temp := ""
-				nosqlid := ""
-				if isGUIDKey {
-					request.Log("GUIDKey keys requested")
-					nosqlid = getNoSqlKeyByGUID(request)
-					itemArray := strings.Split(nosqlid, (request.Controls.Namespace + "." + request.Controls.Class + "."))
-					obj[request.Body.Parameters.KeyProperty] = itemArray[1]
-					temp = itemArray[1]
-				} else if isAutoIncrementKey {
-					currentIndex += 1
-					nosqlid = request.Controls.Namespace + "." + request.Controls.Class + "." + strconv.Itoa(currentIndex)
-					obj[request.Body.Parameters.KeyProperty] = strconv.Itoa(currentIndex)
-					temp = strconv.Itoa(currentIndex)
-				} else {
-					nosqlid = getNoSqlKeyById(request, obj)
-					temp = obj[request.Body.Parameters.KeyProperty].(string)
-				}
-				fmt.Println(temp)
-				CountIndex++
-				Data[strconv.Itoa(CountIndex)] = temp
-				indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
-				indexer2.Index(getKibanaElasticName(request), getKibanaElasticName(request), nosqlid, "10", &nowTime, obj, false)
-			}
-			indexer.Start()
-			numerrors := indexer.NumErrors()
-			indexer2.Start()
-			numerrors2 := indexer2.NumErrors()
-
-			if numerrors != 0 && numerrors2 != 0 {
-				request.Log("Elastic Search bulk insert error")
-				response.GetErrorResponse("Elastic Search bulk insert error")
-			} else {
-				response.IsSuccess = true
-				response.Message = "Successfully inserted bulk to Elastic Search"
-				request.Log(response.Message)
-			}
-		} else {
-			indexer := conn.NewBulkIndexer(100)
-			indexer2 := conn.NewBulkIndexer(100)
-			nowTime := time.Now()
-
-			if isAutoIncrementKey {
-				//Read maxCount from domainClassAttributes table
-				request.Log("Reading the max count")
-				classkey := request.Controls.Class
-				data, err := conn.Get(request.Controls.Namespace, "domainClassAttributes", classkey, nil)
+				_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", classkey, nil, newRecord)
 
 				if err != nil {
-					request.Log("No record Found. This is a NEW record. Inserting new attribute value")
-					var newRecord map[string]interface{}
-					newRecord = make(map[string]interface{})
-					newRecord["class"] = request.Controls.Class
-					newRecord["maxCount"] = "0"
-					newRecord["version"] = uuid.NewV1().String()
-
-					_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", classkey, nil, newRecord)
-
-					if err != nil {
-						errorMessage := "Failed to create new Domain Class Attribute entry."
-						request.Log(errorMessage)
-						return response
-					} else {
-						response.IsSuccess = true
-						response.Message = "Successfully new Domain Class Attribute to elastic search"
-						request.Log(response.Message)
-						maxCount = "0"
-					}
-
-				} else {
-					request.Log("Successfully retrieved object from Elastic Search")
-					var currentMap map[string]interface{}
-					currentMap = make(map[string]interface{})
-
-					byteData, err := data.Source.MarshalJSON()
-
-					if err != nil {
-						request.Log("Data serialization to read maxCount failed")
-						response.Message = "Data serialization to read maxCount failed"
-						return response
-					}
-
-					json.Unmarshal(byteData, &currentMap)
-					maxCount = currentMap["maxCount"].(string)
-				}
-
-				//Increment by 100 and update
-				tempCount, err := strconv.Atoi(maxCount)
-				maxCount = strconv.Itoa(tempCount + 100)
-
-				request.Log("Updating Domain Class Attribute table")
-				var newRecord map[string]interface{}
-				newRecord = make(map[string]interface{})
-				newRecord["class"] = request.Controls.Class
-				newRecord["maxCount"] = maxCount
-				newRecord["version"] = uuid.NewV1().String()
-				_, err2 := conn.Index(request.Controls.Namespace, "domainClassAttributes", request.Controls.Class, nil, newRecord)
-				if err2 != nil {
-					request.Log("Inserting to Elastic Failed")
-					response.Message = "Inserting to Elastic Failed"
+					errorMessage := "Failed to create new Domain Class Attribute entry."
+					request.Log(errorMessage)
 					return response
 				} else {
-					request.Log("Inserting to Elastic Successfull")
-					response.Message = "Inserting to Elastic Successfull"
 					response.IsSuccess = true
+					response.Message = "Successfully new Domain Class Attribute to elastic search"
 					request.Log(response.Message)
+					maxCount = "0"
 				}
-			}
 
-			for _, obj := range request.Body.Objects[startIndex:stopIndex] {
-				nosqlid := ""
-				temp := ""
-				if isGUIDKey {
-					nosqlid = getNoSqlKeyByGUID(request)
-					itemArray := strings.Split(nosqlid, (request.Controls.Namespace + "." + request.Controls.Class + "."))
-					obj[request.Body.Parameters.KeyProperty] = itemArray[1]
-					temp = itemArray[1]
-				} else if isAutoIncrementKey {
-					currentIndex += 1
-					nosqlid = request.Controls.Namespace + "." + request.Controls.Class + "." + strconv.Itoa(currentIndex)
-					obj[request.Body.Parameters.KeyProperty] = strconv.Itoa(currentIndex)
-					temp = strconv.Itoa(currentIndex)
-				} else {
-					nosqlid = getNoSqlKeyById(request, obj)
-					temp = obj[request.Body.Parameters.KeyProperty].(string)
-				}
-				fmt.Println(temp)
-				CountIndex++
-				Data[strconv.Itoa(CountIndex)] = temp
-				indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
-				indexer2.Index(getKibanaElasticName(request), getKibanaElasticName(request), nosqlid, "10", &nowTime, obj, false)
-
-			}
-			indexer.Start()
-			numerrors := indexer.NumErrors()
-
-			indexer2.Start()
-			numerrors2 := indexer.NumErrors()
-
-			if numerrors != 0 && numerrors2 != 0 {
-				request.Log("Elastic Search bulk insert error")
-				response.GetErrorResponse("Elastic Search bulk insert error")
 			} else {
+				request.Log("Successfully retrieved object from Elastic Search")
+				var currentMap map[string]interface{}
+				currentMap = make(map[string]interface{})
+
+				byteData, err := data.Source.MarshalJSON()
+
+				if err != nil {
+					request.Log("Data serialization to read maxCount failed")
+					response.Message = "Data serialization to read maxCount failed"
+					return response
+				}
+
+				json.Unmarshal(byteData, &currentMap)
+				maxCount = currentMap["maxCount"].(string)
+			}
+
+			//Increment by 100 and update
+			tempCount, err := strconv.Atoi(maxCount)
+			maxCount = strconv.Itoa(tempCount + stub)
+
+			request.Log("Updating Domain Class Attribute table")
+			var newRecord map[string]interface{}
+			newRecord = make(map[string]interface{})
+			newRecord["class"] = request.Controls.Class
+			newRecord["maxCount"] = maxCount
+			newRecord["version"] = uuid.NewV1().String()
+			_, err2 := conn.Index(request.Controls.Namespace, "domainClassAttributes", request.Controls.Class, nil, newRecord)
+			if err2 != nil {
+				request.Log("Inserting to Elastic Failed")
+				response.Message = "Inserting to Elastic Failed"
+				return response
+			} else {
+				request.Log("Inserting to Elastic Successfull")
+				response.Message = "Inserting to Elastic Successfull"
 				response.IsSuccess = true
-				response.Message = "Successfully inserted bulk to Elastic Search"
 				request.Log(response.Message)
 			}
 		}
-		startIndex += 100
-		stopIndex += 100
+
+		for _, obj := range request.Body.Objects[startIndex:stopIndex] {
+			nosqlid := ""
+			temp := ""
+			if isGUIDKey {
+				nosqlid = getNoSqlKeyByGUID(request)
+				itemArray := strings.Split(nosqlid, (request.Controls.Namespace + "." + request.Controls.Class + "."))
+				obj[request.Body.Parameters.KeyProperty] = itemArray[1]
+				temp = itemArray[1]
+			} else if isAutoIncrementKey {
+				currentIndex += 1
+				nosqlid = request.Controls.Namespace + "." + request.Controls.Class + "." + strconv.Itoa(currentIndex)
+				obj[request.Body.Parameters.KeyProperty] = strconv.Itoa(currentIndex)
+				temp = strconv.Itoa(currentIndex)
+			} else {
+				nosqlid = getNoSqlKeyById(request, obj)
+				temp = obj[request.Body.Parameters.KeyProperty].(string)
+			}
+			fmt.Println(temp)
+			CountIndex++
+			Data[strconv.Itoa(CountIndex)] = temp
+			indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
+		}
+		indexer.Start()
+		numerrors := indexer.NumErrors()
+		time.Sleep(1200 * time.Millisecond)
+
+		if numerrors != 0 {
+			request.Log("Elastic Search bulk insert error")
+			response.GetErrorResponse("Elastic Search bulk insert error")
+			setStatus[statusIndex] = false
+		} else {
+			response.IsSuccess = true
+			response.Message = "Successfully inserted bulk to Elastic Search"
+			request.Log(response.Message)
+			setStatus[statusIndex] = true
+		}
+		statusIndex++
+		startIndex += stub
+		stopIndex += stub
 	}
-	fmt.Println(Data)
+
+	if remainderFromSets > 0 {
+		start := len(request.Body.Objects) - remainderFromSets
+		indexer := conn.NewBulkIndexer(stub)
+		nowTime := time.Now()
+
+		if isAutoIncrementKey {
+			//Read maxCount from domainClassAttributes table
+			request.Log("Reading the max count")
+			classkey := request.Controls.Class
+			data, err := conn.Get(request.Controls.Namespace, "domainClassAttributes", classkey, nil)
+
+			if err != nil {
+				request.Log("No record Found. This is a NEW record. Inserting new attribute value")
+				var newRecord map[string]interface{}
+				newRecord = make(map[string]interface{})
+				newRecord["class"] = request.Controls.Class
+				newRecord["maxCount"] = "0"
+				newRecord["version"] = uuid.NewV1().String()
+
+				_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", classkey, nil, newRecord)
+
+				if err != nil {
+					errorMessage := "Failed to create new Domain Class Attribute entry."
+					request.Log(errorMessage)
+					return response
+				} else {
+					response.IsSuccess = true
+					response.Message = "Successfully new Domain Class Attribute to elastic search"
+					request.Log(response.Message)
+					maxCount = "0"
+				}
+
+			} else {
+				request.Log("Successfully retrieved object from Elastic Search")
+				var currentMap map[string]interface{}
+				currentMap = make(map[string]interface{})
+
+				byteData, err := data.Source.MarshalJSON()
+
+				if err != nil {
+					request.Log("Data serialization to read maxCount failed")
+					response.Message = "Data serialization to read maxCount failed"
+					return response
+				}
+
+				json.Unmarshal(byteData, &currentMap)
+				maxCount = currentMap["maxCount"].(string)
+			}
+
+			//Increment by 100 and update
+			tempCount, err := strconv.Atoi(maxCount)
+			maxCount = strconv.Itoa(tempCount + (len(request.Body.Objects) - startIndex))
+
+			request.Log("Updating Domain Class Attribute table")
+			var newRecord map[string]interface{}
+			newRecord = make(map[string]interface{})
+			newRecord["class"] = request.Controls.Class
+			newRecord["maxCount"] = maxCount
+			newRecord["version"] = uuid.NewV1().String()
+			_, err2 := conn.Index(request.Controls.Namespace, "domainClassAttributes", request.Controls.Class, nil, newRecord)
+			if err2 != nil {
+				request.Log("Inserting to Elastic Failed")
+				response.Message = "Inserting to Elastic Failed"
+				return response
+			} else {
+				request.Log("Inserting to Elastic Successfull")
+				response.Message = "Inserting to Elastic Successfull"
+				response.IsSuccess = true
+				request.Log(response.Message)
+			}
+		}
+
+		for _, obj := range request.Body.Objects[start:len(request.Body.Objects)] {
+			temp := ""
+			nosqlid := ""
+			if isGUIDKey {
+				request.Log("GUIDKey keys requested")
+				nosqlid = getNoSqlKeyByGUID(request)
+				itemArray := strings.Split(nosqlid, (request.Controls.Namespace + "." + request.Controls.Class + "."))
+				obj[request.Body.Parameters.KeyProperty] = itemArray[1]
+				temp = itemArray[1]
+			} else if isAutoIncrementKey {
+				currentIndex += 1
+				nosqlid = request.Controls.Namespace + "." + request.Controls.Class + "." + strconv.Itoa(currentIndex)
+				obj[request.Body.Parameters.KeyProperty] = strconv.Itoa(currentIndex)
+				temp = strconv.Itoa(currentIndex)
+			} else {
+				nosqlid = getNoSqlKeyById(request, obj)
+				temp = obj[request.Body.Parameters.KeyProperty].(string)
+			}
+			fmt.Println(temp)
+			CountIndex++
+			Data[strconv.Itoa(CountIndex)] = temp
+			indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
+		}
+		indexer.Start()
+		numerrors := indexer.NumErrors()
+		time.Sleep(1200 * time.Millisecond)
+
+		if numerrors != 0 {
+			request.Log("Elastic Search bulk insert error")
+			response.GetErrorResponse("Elastic Search bulk insert error")
+			setStatus[statusIndex] = false
+		} else {
+			response.IsSuccess = true
+			response.Message = "Successfully inserted bulk to Elastic Search"
+			request.Log(response.Message)
+			setStatus[statusIndex] = true
+		}
+	}
+
+	isAllCompleted := true
+	for _, value := range setStatus {
+		if value == false {
+			isAllCompleted = false
+			break
+		}
+	}
+
+	if isAllCompleted {
+		response.IsSuccess = true
+		response.Message = "Successfully inserted many objects in to Elastic"
+		request.Log(response.Message)
+	} else {
+		response.IsSuccess = false
+		response.Message = "Error inserting many objects in to Elastic"
+		request.Log(response.Message)
+		response.GetErrorResponse("Error inserting many objects in to Elastic")
+	}
+
 	//Update Response
 	var DataMap []map[string]interface{}
 	DataMap = make([]map[string]interface{}, 1)
@@ -654,7 +689,6 @@ func (repository ElasticRepository) DeleteMultiple(request *messaging.ObjectRequ
 		key := getNoSqlKeyById(request, object)
 		request.Log("Deleting single object from Elastic Search : " + key)
 		_, err := conn.Delete(request.Controls.Namespace, request.Controls.Class, key, nil)
-		_, err = conn.Delete(getKibanaElasticName(request), getKibanaElasticName(request), key, nil)
 		if err != nil {
 			errorMessage := "Elastic Search single delete error : " + err.Error()
 			request.Log(errorMessage)
@@ -678,7 +712,6 @@ func (repository ElasticRepository) DeleteSingle(request *messaging.ObjectReques
 	key := getNoSqlKey(request)
 	request.Log("Deleting single object from Elastic Search : " + key)
 	_, err := conn.Delete(request.Controls.Namespace, request.Controls.Class, getNoSqlKey(request), nil)
-	_, err = conn.Delete(getKibanaElasticName(request), getKibanaElasticName(request), getNoSqlKey(request), nil)
 	if err != nil {
 		errorMessage := "Elastic Search single delete error : " + err.Error()
 		request.Log(errorMessage)
@@ -939,158 +972,41 @@ func executeElasticGetFields(request *messaging.ObjectRequest) (returnByte []byt
 }
 
 func executeElasticGetClasses(request *messaging.ObjectRequest) (returnByte []byte) {
-	conn := getConnection()(request)
-	skip := "0"
-
-	if request.Extras["skip"] != nil {
-		skip = request.Extras["skip"].(string)
-	}
-
-	take := "100000000"
-
-	if request.Extras["take"] != nil {
-		take = request.Extras["take"].(string)
-	}
-
-	query := "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
-	data, err := conn.Search(request.Controls.Namespace, "", nil, query)
-
-	if err != nil {
-		errorMessage := "Error retrieving object from elastic search : " + err.Error()
-		request.Log(errorMessage)
-		request.Log("Error retrieving object from elastic search : " + err.Error())
-	} else {
-		request.Log("Successfully retrieved object from Elastic Search")
-
-		var allMaps []map[string]interface{}
-		allMaps = make([]map[string]interface{}, data.Hits.Len())
-
-		for index, hit := range data.Hits.Hits {
-			var currentMap map[string]interface{}
-			currentMap = make(map[string]interface{})
-
-			byteData, _ := hit.Source.MarshalJSON()
-
-			json.Unmarshal(byteData, &currentMap)
-
-			allMaps[index] = currentMap
-		}
-
-		var m map[int]string
-		m = make(map[int]string)
-
-		count := 0
-		for _, value := range allMaps {
-			for key, oo := range value {
-				if key == "__osHeaders" {
-
-					var tempmap map[string]string
-					tempmap = make(map[string]string)
-
-					for key2, mapContent := range oo.(map[string]interface{}) {
-						if key2 == "Namespace" {
-							tempmap[key2] = mapContent.(string)
-						}
-
-						if key2 == "Class" {
-							tempmap[key2] = mapContent.(string)
-						}
-					}
-					if tempmap["Namespace"] == request.Controls.Namespace {
-						m[count] = tempmap["Class"]
-						count++
-					}
-
+	host := request.Configuration.ServerConfiguration["ELASTIC"]["Host"]
+	port := request.Configuration.ServerConfiguration["ELASTIC"]["Port"]
+	returnByte = getElasticByCURL(host, port, (request.Controls.Namespace + "/_mapping"))
+	var mainMap map[string]interface{}
+	mainMap = make(map[string]interface{})
+	_ = json.Unmarshal(returnByte, &mainMap)
+	var retArray []string
+	//range through namespaces
+	for _, index := range mainMap {
+		for feature, typeDef := range index.(map[string]interface{}) {
+			//if feature is MAPPING
+			if feature == "mappings" {
+				for typeName, _ := range typeDef.(map[string]interface{}) {
+					retArray = append(retArray, typeName)
 				}
 			}
 		}
-
-		//Get Unique Class Names
-		mm := getUniqueRecordMap(m)
-		//Convert to an array
-		var retArray []string
-		retArray = make([]string, len(mm))
-
-		arrCount := 0
-		for _, value := range mm {
-			retArray[arrCount] = value
-			arrCount++
-		}
-		returnByte, _ = json.Marshal(retArray)
 	}
+	returnByte, _ = json.Marshal(retArray)
 	return
 }
 
 func executeElasticGetNamespaces(request *messaging.ObjectRequest) (returnByte []byte) {
-	conn := getConnection()(request)
-	skip := "0"
-
-	if request.Extras["skip"] != nil {
-		skip = request.Extras["skip"].(string)
+	host := request.Configuration.ServerConfiguration["ELASTIC"]["Host"]
+	port := request.Configuration.ServerConfiguration["ELASTIC"]["Port"]
+	returnByte = getElasticByCURL(host, port, ("_mapping"))
+	var mainMap map[string]interface{}
+	mainMap = make(map[string]interface{})
+	_ = json.Unmarshal(returnByte, &mainMap)
+	var retArray []string
+	//range through namespaces
+	for index, _ := range mainMap {
+		retArray = append(retArray, index)
 	}
-
-	take := "100000"
-
-	if request.Extras["take"] != nil {
-		take = request.Extras["take"].(string)
-	}
-
-	query := "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
-
-	data, err := conn.Search("", "", nil, query)
-	if err != nil {
-		errorMessage := "Error retrieving object from elastic search : " + err.Error()
-		request.Log(errorMessage)
-		request.Log("Error retrieving object from elastic search : " + err.Error())
-	} else {
-		request.Log("Successfully retrieved object from Elastic Search")
-
-		var allMaps []map[string]interface{}
-		allMaps = make([]map[string]interface{}, data.Hits.Len())
-
-		for index, hit := range data.Hits.Hits {
-			var currentMap map[string]interface{}
-			currentMap = make(map[string]interface{})
-
-			byteData, _ := hit.Source.MarshalJSON()
-
-			json.Unmarshal(byteData, &currentMap)
-
-			allMaps[index] = currentMap
-		}
-
-		var m map[int]string
-		m = make(map[int]string)
-
-		count := 0
-		for _, value := range allMaps {
-			for key, oo := range value {
-				if key == "__osHeaders" {
-					for key2, mapContent := range oo.(map[string]interface{}) {
-						if key2 == "Namespace" {
-							m[count] = mapContent.(string)
-							count++
-						}
-					}
-				}
-			}
-		}
-
-		//Get Unique Class Names
-		mm := getUniqueRecordMap(m)
-		//Convert to an array
-
-		var retArray []string
-		retArray = make([]string, len(mm))
-
-		arrCount := 0
-		for _, value := range mm {
-			retArray[arrCount] = value
-			arrCount++
-		}
-		returnByte, _ = json.Marshal(retArray)
-	}
-
+	returnByte, _ = json.Marshal(retArray)
 	return
 }
 
@@ -1251,6 +1167,24 @@ func executeElasticGetSelectedFields(request *messaging.ObjectRequest) (returnBy
 
 // Helper Functions
 
+func getElasticByCURL(host string, port string, path string) (returnByte []byte) {
+	url := "http://" + host + ":" + port + "/" + path
+	fmt.Println(url)
+	req, err := http.NewRequest("GET", url, nil)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("CURL Request Failed")
+	} else {
+		fmt.Println("CURL Request Success!")
+		body, _ := ioutil.ReadAll(resp.Body)
+		returnByte = body
+	}
+	defer resp.Body.Close()
+
+	return
+}
+
 func getConnection() func(request *messaging.ObjectRequest) *elastigo.Conn {
 
 	var connection *elastigo.Conn
@@ -1298,10 +1232,4 @@ func getUniqueRecordMap(inputMap map[int]string) map[int]string {
 		}
 	}
 	return outputMap
-}
-
-func getKibanaElasticName(request *messaging.ObjectRequest) string {
-	domain := strings.Replace(request.Controls.Namespace, ".", "", -1)
-	class := request.Controls.Class
-	return (domain + "." + class)
 }

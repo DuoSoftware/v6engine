@@ -67,6 +67,15 @@ func (repository RedisRepository) GetAll(request *messaging.ObjectRequest) Repos
 			skip, _ = strconv.Atoi(request.Extras["skip"].(string))
 		}
 
+		if len(temp) == 0 {
+			response.IsSuccess = true
+			response.Message = "No objects found in Redis"
+			var emptyMap map[string]interface{}
+			emptyMap = make(map[string]interface{})
+			byte, _ := json.Marshal(emptyMap)
+			response.GetResponseWithBody(byte)
+		}
+
 		var returnValues []map[string]interface{}
 
 		for _, valueIndex := range temp[skip:(skip + take)] {
@@ -139,6 +148,16 @@ func (repository RedisRepository) GetByKey(request *messaging.ObjectRequest) Rep
 		var tempMap map[string]interface{}
 		tempMap = make(map[string]interface{})
 		err = json.Unmarshal(value, &tempMap)
+
+		if len(tempMap) == 0 {
+			response.IsSuccess = true
+			response.Message = "No objects found in Redis"
+			var emptyMap map[string]interface{}
+			emptyMap = make(map[string]interface{})
+			byte, _ := json.Marshal(emptyMap)
+			response.GetResponseWithBody(byte)
+		}
+
 		if err != nil {
 			request.Log("Error converting Json to Map : " + err.Error())
 		} else {

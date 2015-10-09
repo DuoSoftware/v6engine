@@ -57,6 +57,8 @@ func GetElasticQuery(tagMap map[string]string) (queryString string) {
 	tempMap = make(map[string]string)
 
 	index := 0
+	fmt.Print("Tag Array : ")
+	fmt.Println(tagArray)
 
 	for key, tag := range tagArray {
 		fmt.Print(tag + " : ")
@@ -94,8 +96,20 @@ func GetElasticQuery(tagMap map[string]string) (queryString string) {
 		} else {
 			fmt.Println("SomeThingElse")
 			if tag != "=" {
+				var tempArray []string
 
-				tempArray := strings.Split(tag, " ")
+				if strings.ContainsAny(tag, " ") {
+					tempArray = strings.Split(tag, " ")
+				} else if strings.ContainsAny(tag, "@") {
+					tempArray = strings.Split(tag, "@")
+				} else if strings.ContainsAny(tag, ".") {
+					tempArray = strings.Split(tag, ".")
+				} else if strings.ContainsAny(tag, "-") {
+					tempArray = strings.Split(tag, "-")
+				} else {
+					tempArray = strings.Split(tag, " ")
+				}
+
 				//because elastic by design cant string match with 2 operators
 				if len(tempArray) != 1 && tagArray[key-2] == "!" {
 
@@ -105,6 +119,17 @@ func GetElasticQuery(tagMap map[string]string) (queryString string) {
 					for key, _ := range tempArray {
 						if key != 0 {
 							tempString += " AND NOT " + tagArray[key-1] + " : " + tempArray[key]
+						}
+					}
+					tempMap[strconv.Itoa(index)] = tempString
+				} else if len(tempArray) != 1 && tagArray[key-2] != "!" {
+					tempString := ""
+					tempString += tempArray[0]
+
+					for key, _ := range tempArray {
+						if key != 0 {
+							tempString += " AND " + tagArray[key-1] + " : " + tempArray[key]
+							fmt.Println(tempString)
 						}
 					}
 					tempMap[strconv.Itoa(index)] = tempString
