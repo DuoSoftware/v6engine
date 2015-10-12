@@ -1,5 +1,5 @@
 package repositories
-
+//update servers to 15.04 so gocb is supported
 import (
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
