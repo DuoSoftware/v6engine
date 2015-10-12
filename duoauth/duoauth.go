@@ -38,11 +38,6 @@ func GetConfig() ServiceConfig {
 
 }
 
-func SetConfig(c ServiceConfig) {
-
-	config.Add(c, "Service")
-}
-
 func main() {
 
 	cebadapter.Attach("DuoAuth", func(s bool) {
@@ -78,10 +73,6 @@ func main() {
 
 }
 
-func status() {
-	term.Write("Status is running", term.Information)
-}
-
 func webServer() {
 	http.Handle(
 		"/",
@@ -91,11 +82,6 @@ func webServer() {
 		),
 	)
 	http.ListenAndServe(":9000", nil)
-}
-
-func Bingo() {
-
-	//bingo.RenderNoLayoutToHTML(template, data)
 }
 
 func runRestFul() {
@@ -125,9 +111,5 @@ func runRestFul() {
 			return
 		}
 	}
-
-}
-
-func Setup() {
 
 }

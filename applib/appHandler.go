@@ -103,8 +103,8 @@ func (app *Apphanler) Add(a Application, securityToken string) (ourApp Applicati
 		errMessage = "SaveUser saving user fetech Error #" + err
 		return
 	}
-	errMessage = "Unable to process"
-	ourApp = a
-	return
+	//errMessage = "Unable to process"
+	//ourApp = a
+	//return
 	//return a
 }

@@ -25,8 +25,8 @@ type Auth struct {
 	logOut             gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
 	getUser            gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
 	getGUID            gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
-	forgotPassword     gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}" output:"bool"`
-	changePassword     gorest.EndPoint `method:"GET" path:"/ChangePassword/{NewPassword:string}" output:"bool"`
+	forgotPassword     gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
+	changePassword     gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
 }
 
 func GetClientIP() string {
@@ -55,15 +55,21 @@ func (A Auth) LogOut(SecurityToken string) bool {
 	return false
 }
 
-func (A Auth) ForgotPassword(EmailAddress string) bool {
+func (A Auth) ForgotPassword(EmailAddress, RequestCode string) bool {
 	h := newAuthHandler()
 	return h.ForgetPassword(EmailAddress)
 }
 
-func (A Auth) ChangePassword(NewPassword string) bool {
+func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
 	h := newAuthHandler()
 	user, error := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+
 	if error == "" {
+		_, err := h.Login(user.Email, OldPassword)
+		if err != "" {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Invalid Password"))
+			return false
+		}
 		return h.ChangePassword(user, NewPassword)
 	} else {
 		return false
