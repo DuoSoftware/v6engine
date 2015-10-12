@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/couchbaselabs/go-couchbase"
-	"github.com/couchbaselabs/gocb"
+//	"github.com/couchbaselabs/gocb"
 	"github.com/twinj/uuid"
 	"strconv"
 	"strings"
-	"time"
+//	"time"
 )
 
 type CouchRepository struct {
@@ -393,7 +393,7 @@ func getCouchBucket(request *messaging.ObjectRequest) (bucket *couchbase.Bucket,
 	returnBucket, err := pool.GetBucket(setting_bucket)
 
 	if err != nil {
-		
+		/*
 		err1 := createCouchbaseBucket(setting_host, setting_bucket)
 		if !err1 {
 			isError = true
@@ -408,7 +408,7 @@ func getCouchBucket(request *messaging.ObjectRequest) (bucket *couchbase.Bucket,
 			//reconnect
 			bucket = reconnect(setting_host, setting_bucket)
 		}
-
+*/
 	} else {
 		request.Log("Successfully recieved Couchbase bucket")
 		bucket = returnBucket
@@ -437,7 +437,7 @@ func reconnect(url string, bucketName string) (bucket *couchbase.Bucket) {
 	}
 	return bucket
 }
-
+/*
 func createCouchbaseBucket(url string, bucketName string) (status bool) {
 	tempUrl := strings.Split(url, ":")
 	cluster, err := gocb.Connect("couchbase://" + tempUrl[0] + "")
@@ -498,7 +498,7 @@ func uploadDesignDocument(url string, bucketname string, namespace string) (stat
 	return
 
 }
-
+*/
 // Helper Functions
 
 func getCouchBaseRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
