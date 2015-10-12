@@ -1205,7 +1205,7 @@ func getConnection() func(request *messaging.ObjectRequest) *elastigo.Conn {
 		return connection
 	}
 }
-
+/*
 func getUniqueRecordMap(inputMap map[int]string) map[int]string {
 
 	var outputMap map[int]string
@@ -1233,3 +1233,4 @@ func getUniqueRecordMap(inputMap map[int]string) map[int]string {
 	}
 	return outputMap
 }
+*/
