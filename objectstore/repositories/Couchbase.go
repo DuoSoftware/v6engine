@@ -1,5 +1,6 @@
 package repositories
 //update servers to 15.04 so gocb is supported
+/*
 import (
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
@@ -11,10 +12,11 @@ import (
 	"strings"
 	"time"
 )
+*/
 
 type CouchRepository struct {
 }
-
+/*
 func (repository CouchRepository) GetRepositoryName() string {
 	return "Couchbase"
 }
@@ -885,3 +887,4 @@ func executeCouchbaseGetClasses(request *messaging.ObjectRequest) (returnByte []
 	}
 	return
 }
+*/
