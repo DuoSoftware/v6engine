@@ -7,7 +7,9 @@ import (
 )
 
 func getRepository() repositories.AbstractRepository {
-	var repository repositories.AbstractRepository = repositories.CouchRepository{}
+	//commented bcs COUCH no longer implements AbstractRepository methods
+	//var repository repositories.AbstractRepository = repositories.CouchRepository{}
+	var repository repositories.AbstractRepository = repositories.ElasticRepository{}
 	return repository
 }
 
