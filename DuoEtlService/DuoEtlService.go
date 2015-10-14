@@ -5,8 +5,10 @@ import (
 	"duov6.com/DuoEtlService/logger"
 	"duov6.com/DuoEtlService/messaging"
 	"duov6.com/DuoEtlService/repositories"
+	"duov6.com/DuoEtlService/fileprocessor"
 	"duov6.com/cebadapter"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -36,10 +38,16 @@ func main() {
 	var Request *messaging.ETLRequest
 	Request = &messaging.ETLRequest{}
 	Request.Configuration = etlconfig
-
-	executeTask(Request)
-	go delaySecond(300, Request)
-	select {}
+	
+	logger.Log("Waiting for JSON Objects......")
+	
+	for true{
+	if checkForNewFiles(Request.Configuration.DataPath){
+		executeTask(Request)
+	}
+	}
+	//go delaySecond(300, Request)
+	//select {}
 }
 
 func executeTask(request *messaging.ETLRequest) {
@@ -51,7 +59,7 @@ func delaySecond(n time.Duration, request *messaging.ETLRequest) {
 	for _ = range time.Tick(n * time.Second) {
 		executeTask(request)
 	}
-}
+} 
 
 func getTime() (retTime string) {
 	currentTime := time.Now().Local()
@@ -66,6 +74,30 @@ func getTime() (retTime string) {
 
 	return
 }
+
+func checkForNewFiles(objectsPath string) (status bool){
+	status = false
+	classPaths := fileprocessor.GetClassPaths(objectsPath)
+	for _, classpath := range classPaths{
+		addFiles,_ := filepath.Glob(classpath +"/add/new/"+ "*.txt")
+		if len(addFiles) > 0{
+			status = true
+			return
+		}
+		editFiles,_ := filepath.Glob(classpath +"/edit/new/"+ "*.txt")
+		if len(editFiles) > 0{
+			status = true
+			return
+		}
+		deleteFiles,_ := filepath.Glob(classpath +"/delete/new/"+ "*.txt")
+		if len(deleteFiles) > 0{
+			status = true
+			return
+		}
+	}
+	return 
+}
+
 func draw() {
 	logger.Log("Starting Duo ETL Service.........")
 	logger.Log("\n")

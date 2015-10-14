@@ -15,7 +15,9 @@ func Dispatch(request *messaging.ETLRequest) {
 	} else {
 		logger.Log("Dispatch Failed!")
 	}
+	
 	logger.Log(response.Message)
+	logger.Log("Waiting for JSON Objects......")
 	logger.Log("\n")
 	logger.Log("\n")
 
