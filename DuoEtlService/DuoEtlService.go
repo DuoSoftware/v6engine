@@ -43,6 +43,7 @@ func main() {
 	
 	for true{
 	if checkForNewFiles(Request.Configuration.DataPath){
+		//If only new files availlble Execute ETL... of wait for object files
 		executeTask(Request)
 	}
 	}
