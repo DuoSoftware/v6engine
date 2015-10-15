@@ -173,7 +173,7 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 		term.Write("SaveUser saving user retrived", term.Debug)
 		fmt.Println(uList)
 		term.Write("SaveUser saving user retrived", term.Debug)
-		if err!=null  {
+		if err!=nil || uList.UserID!=nil  {
 			u.Active = false
 			u.UserID = common.GetGUID()
 			term.Write("SaveUser saving user  "+u.Name+" New User "+u.UserID, term.Debug)
