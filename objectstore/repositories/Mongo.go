@@ -131,7 +131,7 @@ func (repository MongoRepository) GetQuery(request *messaging.ObjectRequest) Rep
 		return getDefaultNotImplemented()
 	}
 
-	//return response
+	return response
 }
 
 func (repository MongoRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
