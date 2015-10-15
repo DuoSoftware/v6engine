@@ -10,7 +10,7 @@ import (
 	"duov6.com/term"
 	"encoding/json"
 	"strings"
-	//"fmt"
+	"fmt"
 )
 
 type AuthHandler struct {
@@ -170,7 +170,8 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 		var uList User
 		err := json.Unmarshal(bytes, &uList)
 		//if err == nil || bytes == nil {
-		if uList != nil {
+		fmt.Println(uList)
+		if err != nil {
 			u.Active = false
 			u.UserID = common.GetGUID()
 			term.Write("SaveUser saving user  "+u.Name+" New User "+u.UserID, term.Debug)
