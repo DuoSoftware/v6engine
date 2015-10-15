@@ -61,7 +61,7 @@ func (m *GetModifier) Ok() (output []byte, err string) {
 		var repResponse repositories.RepositoryResponse = dispatcher.Dispatch(m.Request)
 		output = repResponse.Body
 		
-		var mapper interface{}
+		var mapper map[string]interface{}
 		err2 := json.Unmarshal(output, &mapper)
 		if err2 != nil {
 			fmt.Println("Conversion Error")
