@@ -107,7 +107,7 @@ func LoadConfigTree(jsonfile string) (outObj Node) {
 	json.Unmarshal(file, &outObj)
 	return
 }
-
+/*
 func Save(jsonfile string, config map[string]interface{}) {
 	//fmt.Println(config,jsonfile)
 	
@@ -137,7 +137,7 @@ func Save(jsonfile string, config map[string]interface{}) {
 	fmt.Println(string(dataset))
 
 
-}
+}*/
 
 func Load(jsonfile string) (map[string]interface{}) {
 
