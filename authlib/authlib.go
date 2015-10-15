@@ -63,7 +63,12 @@ func (A Auth) ForgotPassword(EmailAddress, RequestCode string) bool {
 func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
 	h := newAuthHandler()
 	user, error := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
-
+	x:=1
+	if(x!=1){
+	    x=2
+	}else{
+	    x=3
+	}
 	if error == "" {
 		_, err := h.Login(user.Email, OldPassword)
 		if err != "" {
