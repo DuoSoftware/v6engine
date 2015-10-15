@@ -158,17 +158,18 @@ func (repository MysqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 				for i, col := range columns {
 
 					var v interface{}
-
+		
 					val := values[i]
 
 					b, ok := val.([]byte)
 
 					if ok {
-						v = string(b)
+						//v = string(b)
+						v = getCastableValue(string(b))
 					} else {
 						v = val
 					}
-
+					
 					tempMap[col] = v
 				}
 				returnMap = append(returnMap, tempMap)
@@ -209,6 +210,23 @@ func (repository MysqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 	}
 
 	return response
+}
+
+func getCastableValue(value string) (returnVal interface{}){
+	
+	if value == "\u0001" || value == "\u0000"{
+		if value == "\u0001"{
+			returnVal = true
+		}else if value == "\u0000"{
+			returnVal = false
+		}
+	}else if iVal, err := strconv.Atoi(value); err == nil {
+		returnVal = iVal
+	}else{
+		returnVal = value
+	}
+
+	return
 }
 
 func (repository MysqlRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
@@ -403,11 +421,12 @@ func (repository MysqlRepository) GetByKey(request *messaging.ObjectRequest) Rep
 
 						b, ok := val.([]byte)
 
-						if ok {
-							v = string(b)
-						} else {
-							v = val
-						}
+					if ok {
+						//v = string(b)
+						v = getCastableValue(string(b))
+					} else {
+						v = val
+					}
 
 						keyMap[col] = v
 
@@ -636,6 +655,8 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 			//fmt.Println("Value list : " + argValueList)
 			//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			//request.Log("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
+			fmt.Println("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
+			
 			_, err := session.Query("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			if err != nil {
 				setStatus[statusIndex] = false
@@ -810,7 +831,7 @@ func (repository MysqlRepository) InsertSingle(request *messaging.ObjectRequest)
 		}
 
 		var keyArray = make([]string, noOfElements)
-		var valueArray = make([]string, noOfElements)
+		var valueArray = make([]interface{}, noOfElements)
 
 		// Process A :start identifying individual data in array and convert to string
 		for index := 0; index < len(indexNames); index++ {
@@ -822,7 +843,8 @@ func (repository MysqlRepository) InsertSingle(request *messaging.ObjectRequest)
 				} else {
 					//fmt.Println("Non string value detected, Will be strigified!")
 					keyArray[index] = indexNames[index]
-					valueArray[index] = getStringByObject(DataObject[indexNames[index]])
+					//valueArray[index] = getStringByObject(DataObject[indexNames[index]])
+					valueArray[index] = DataObject[indexNames[index]]
 				}
 			} else {
 				// __osHeaders Catched!
@@ -831,22 +853,48 @@ func (repository MysqlRepository) InsertSingle(request *messaging.ObjectRequest)
 			}
 
 		}
-
+		/*
+					recordFieldList = make([]string, len(request.Body.Object))
+					recordFieldType = make([]string, len(request.Body.Object))
+					index := 0
+					for key, value := range request.Body.Object {
+						if key == "__osHeaders" {
+							recordFieldList[index] = "osHeaders"
+							recordFieldType[index] = "text"
+						} else {
+							recordFieldList[index] = key
+							recordFieldType[index] = getMySqlDataType(value)
+						}
+						index++
+					}
+		*/
+		fmt.Println("**********************************")
 		//Build the query string
 		for i := 0; i < noOfElements; i++ {
+			dataType := getMySqlDataType(valueArray[i])
+			fmt.Println(dataType)
 			if i != noOfElements-1 {
-				argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
+				if dataType == "BIT" || dataType == "real"{
+					argValueList = argValueList + getStringByObject(valueArray[i]) + ", "
+				}else{
+					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'" + ", "
+				}
 			} else {
-				argValueList = argValueList + "'" + valueArray[i] + "'"
+				if dataType == "BIT" || dataType == "real"{
+					argValueList = argValueList + getStringByObject(valueArray[i])
+				}else{
+					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'"
+				}
 			}
 		}
-
+		fmt.Println("**********************************")
 		//DEBUG USE : Display Query information
 		//fmt.Println("Table Name : " + request.Controls.Class)
 		//fmt.Println("Key list : " + argKeyList)
 		//fmt.Println("Value list : " + argValueList)
 		//fmt.Println("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES (" + argValueList + ");")
 		_, err := session.Query("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES (" + argValueList + ");")
+		fmt.Println("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES (" + argValueList + ");")
 		if err != nil {
 			response.IsSuccess = false
 			response.GetErrorResponse("Error inserting one object in MySQL" + err.Error())
@@ -1035,7 +1083,7 @@ func createMySQLTable(request *messaging.ObjectRequest, session *sql.DB) (status
 		}
 
 		request.Log("create table " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + "(" + argKeyList2 + ");")
-
+		
 		_, er := session.Query("create table " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + "(" + argKeyList2 + ");")
 		if er != nil {
 			status = false
@@ -1784,9 +1832,10 @@ func getMySqlRecordID(request *messaging.ObjectRequest, obj map[string]interface
 }
 
 func getMySqlDataType(item interface{}) (datatype string) {
+	fmt.Println(item)
 	datatype = reflect.TypeOf(item).Name()
 	if datatype == "bool" {
-		datatype = "text"
+		datatype = "BIT"
 	} else if datatype == "float64" {
 		datatype = "real"
 	} else if datatype == "" || datatype == "string" || datatype == "ControlHeaders" {
