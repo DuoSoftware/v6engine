@@ -59,6 +59,18 @@ func (m *GetModifier) Ok() (output []byte, err string) {
 		dispatcher := processors.Dispatcher{}
 		var repResponse repositories.RepositoryResponse = dispatcher.Dispatch(m.Request)
 		output = repResponse.Body
+		
+		var mapper interface{}
+		err2 := json.Unmarshal(output, &mapper)
+		if err2 != nil {
+			fmt.Println("Conversion Error")
+			err = err2.Error()
+		}else{
+			if len(mapper) == 0{
+				err = "No Object Found"
+				fmt.Println("No Object Found")
+				}
+			}
 	} else {
 		//using Cache
 		//first read from cache
