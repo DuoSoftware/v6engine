@@ -62,7 +62,7 @@ func (this *Node) Find(key string, value string) (node *Node) {
 
 	return
 }
-
+/*
 func SaveConfigTree(obj interface{}) {
 	dataset, _ := json.Marshal(obj)
 	configFile := "Config.json"
@@ -87,7 +87,7 @@ func SaveConfigTree(obj interface{}) {
 	if _, err = file1.WriteString(string(dataset)); err != nil {
 		panic(err)
 	}
-}
+}*/
 
 func LoadConfigTree(jsonfile string) (outObj Node) {
 	file, e := ioutil.ReadFile(jsonfile)
