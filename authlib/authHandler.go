@@ -16,12 +16,12 @@ import (
 type AuthHandler struct {
 	//Config AuthConfig
 }
-/*
+
 func newAuthHandler() *AuthHandler {
 	authhld := new(AuthHandler)
 	//authhld.Config = GetConfig()
 	return authhld
-}*/
+}
 
 type ActivationEmail struct {
 	GUUserID string
