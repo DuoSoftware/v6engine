@@ -42,7 +42,7 @@ func (this *Node) Add(nodes ...*Node) bool {
 func (this *Node) Get(name string) (node *Node) {
 	for index, element := range this.Children {
 		if element.Name == name {
-			index = index
+			//index = index
 			node = element
 			return
 		}
@@ -54,7 +54,7 @@ func (this *Node) Find(key string, value string) (node *Node) {
 
 	for index, element := range this.Children {
 		if element.Name == key && element.Value == value {
-			index = index
+			//index = index
 			node = element
 			break
 		}
