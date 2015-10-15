@@ -16,10 +16,16 @@ func main() {
 	}
 
 	service.Log("ETL Host : " + getETLHost())
-
-	executeTask()
-	go delaySecond(200)
-	select {}
+	
+	for(true){
+		executeTask()
+		fmt.Println("Looking for JSON objects....")
+		time.Sleep(60 * time.Second)
+	}
+	
+	//executeTask()
+	//go delaySecond(60)
+	//select {}
 
 }
 
@@ -45,11 +51,14 @@ func getTime() (retTime string) {
 	return
 }
 
+/*
 func delaySecond(n time.Duration) {
 	for _ = range time.Tick(n * time.Second) {
 		executeTask()
 	}
 }
+*/
+
 
 func getETLHost() (url string) {
 	content, err := ioutil.ReadFile("config.config")
