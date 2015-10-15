@@ -123,7 +123,7 @@ func (serv RegistationService) UserRegistation(r Registation) {
 	user.EmailAddress = r.EmailAddress
 	user.Name = r.Name
 	user.Password = r.Password
-	fmt.Println("SAVE USER\n\n\n")
+	//fmt.Println("SAVE USER\n\n\n")
 	//Save user Method
 	fmt.Println("1")
 	res := SaveUser(user)
