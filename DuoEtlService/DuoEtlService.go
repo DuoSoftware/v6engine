@@ -43,9 +43,9 @@ func main() {
 	
 	for true{
 	if checkForNewFiles(Request.Configuration.DataPath){
-		//If only new files availlble Execute ETL... of wait for object files
 		executeTask(Request)
 	}
+		time.Sleep(60 * time.Second)
 	}
 	//go delaySecond(300, Request)
 	//select {}
@@ -55,13 +55,13 @@ func executeTask(request *messaging.ETLRequest) {
 	logger.Log("Executing @ " + getTime())
 	repositories.Dispatch(request)
 }
-
+/*
 func delaySecond(n time.Duration, request *messaging.ETLRequest) {
 	for _ = range time.Tick(n * time.Second) {
 		executeTask(request)
 	}
 } 
-
+*/
 func getTime() (retTime string) {
 	currentTime := time.Now().Local()
 	year := strconv.Itoa(currentTime.Year())
