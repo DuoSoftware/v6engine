@@ -7,7 +7,7 @@ import (
 	//"fmt"
 )
 
-type userSVC struct {
+type UserSVC struct {
 	addUserRoles    gorest.EndPoint `method:"POST" path:"/user/AddUserRoles/" postdata:"UserRole"`
 	getMyRoles      gorest.EndPoint `method:"GET" path:"/user/GetMyRoles" output:"[]RoleMinimum"`
 	getRoles        gorest.EndPoint `method:"GET" path:"/user/GetRoles/{GUUserID:string}" output:"[]RoleMinimum"`
@@ -16,7 +16,7 @@ type userSVC struct {
 	gorest.RestService
 }
 
-func (A userSVC) AddUserRoles(u UserRole) {
+func (A UserSVC) AddUserRoles(u UserRole) {
 	h := newAuthHandler()
 	_, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
 
@@ -27,11 +27,11 @@ func (A userSVC) AddUserRoles(u UserRole) {
 
 }
 
-func (A userSVC) AddOtherData(UserID, Filed, Value string) bool {
+func (A UserSVC) AddOtherData(UserID, Filed, Value string) bool {
 	return true
 }
 
-func (A userSVC) RemoveUserRoles(RoleID string) bool {
+func (A UserSVC) RemoveUserRoles(RoleID string) bool {
 	h := newAuthHandler()
 	_, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if err == "" {
@@ -42,7 +42,7 @@ func (A userSVC) RemoveUserRoles(RoleID string) bool {
 
 }
 
-func (A userSVC) GetMyRoles() []RoleMinimum {
+func (A UserSVC) GetMyRoles() []RoleMinimum {
 	h := newAuthHandler()
 	_, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
 	r := []RoleMinimum{}
@@ -54,7 +54,7 @@ func (A userSVC) GetMyRoles() []RoleMinimum {
 	}
 }
 
-func (A userSVC) GetRoles(UserID string) []RoleMinimum {
+func (A UserSVC) GetRoles(UserID string) []RoleMinimum {
 	h := newAuthHandler()
 	_, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
 	r := []RoleMinimum{}
