@@ -170,7 +170,9 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 		var uList User
 		err := json.Unmarshal(bytes, &uList)
 		//if err == nil || bytes == nil {
+		term.Write("SaveUser saving user retrived", term.Debug)
 		fmt.Println(uList)
+		term.Write("SaveUser saving user retrived", term.Debug)
 		if err != nil {
 			u.Active = false
 			u.UserID = common.GetGUID()
