@@ -241,6 +241,10 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 	if r.URL.Query().Get("take") != "" {
 		objectRequest.Extras["take"] = r.URL.Query().Get("take")
 	}
+	
+	if r.URL.Query().Get("orderby") != "" {
+		objectRequest.Extras["orderby"] = r.URL.Query().Get("orderby")
+	}
 
 	if r.URL.Query().Get("fieldName") != "" {
 		objectRequest.Extras["fieldName"] = r.URL.Query().Get("fieldName")

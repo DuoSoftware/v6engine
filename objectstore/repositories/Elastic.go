@@ -48,8 +48,19 @@ func search(request *messaging.ObjectRequest, searchStr string) RepositoryRespon
 	if request.Extras["take"] != nil {
 		take = request.Extras["take"].(string)
 	}
-	query := "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
-	//query := "{\"sort\" : [{\"__osHeaders.LastUdated\" : {\"order\" : \"desc\"}}],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+	
+	orderby := "desc"
+	var query string
+	
+	if request.Extras["orderby"] != nil {
+		orderby = request.Extras["orderby"].(string)
+		query = "{\"sort\" : [{\"timestamp\" : {\"order\" : \""+orderby+"\"}}],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+	}else{
+		query = "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+	}
+	
+	
+	
 	//query := "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}},\"sort\" : [{\"__osHeaders.LastUdated\" : {\"order\" : \"desc\"}}]}"
 
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
