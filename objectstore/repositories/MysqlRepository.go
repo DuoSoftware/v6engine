@@ -371,7 +371,7 @@ func (repository MysqlRepository) GetByKey(request *messaging.ObjectRequest) Rep
 				//response.Message = "Error reading primary key"
 				//request.Log("Error reading primary key")
 				//return response
-
+				fmt.Println(err.Error())
 				response.IsSuccess = true
 				response.Message = "No objects found in MySQL"
 				var emptyMap map[string]interface{}
@@ -380,7 +380,7 @@ func (repository MysqlRepository) GetByKey(request *messaging.ObjectRequest) Rep
 				response.GetResponseWithBody(byte)
 
 			} else {
-
+				
 				request.Log("Successfully returned primary Key for table")
 
 				columns, _ := rows.Columns()
@@ -422,6 +422,16 @@ func (repository MysqlRepository) GetByKey(request *messaging.ObjectRequest) Rep
 				emptyMap = make(map[string]interface{})
 				byte, _ := json.Marshal(emptyMap)
 				response.GetResponseWithBody(byte)
+				return response
+			}
+			if keyMap["COLUMN_NAME"] == nil{
+				response.IsSuccess = true
+				response.Message = "No objects found in MySQL"
+				var emptyMap map[string]interface{}
+				emptyMap = make(map[string]interface{})
+				byte, _ := json.Marshal(emptyMap)
+				response.GetResponseWithBody(byte)
+				return response
 			}
 			fieldName = keyMap["COLUMN_NAME"].(string)
 		}
