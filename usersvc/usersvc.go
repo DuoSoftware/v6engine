@@ -68,12 +68,12 @@ type AuthConfig struct {
 	UserName      string
 	Password      string
 }
-
+/*
 func newAuthHandler() *AuthHandler {
 	authhld := new(AuthHandler)
 	//authhld.Config = GetConfig()
 	return authhld
-}
+}*/
 
 var Config AuthConfig
 
