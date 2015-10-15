@@ -1196,7 +1196,8 @@ func executePostgresReportingGetFields(session *sql.DB, class string) (returnByt
 // }
 
 func getPostgresReportingSQLnamespace(request *messaging.ETLRequest) string {
-	return ("_" + strings.Replace(request.Controls.Namespace, ".", "", -1))
+	//return ("_" + strings.Replace(request.Controls.Namespace, ".", "", -1))
+	return "epayreportingv6"
 }
 
 func getPostgresReportingFieldOrder(request *messaging.ETLRequest, session *sql.DB) []string {
