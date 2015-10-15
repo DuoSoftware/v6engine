@@ -41,9 +41,10 @@ type Registation struct {
 type ResetEmail struct {
 	ResetEmail string
 }
+/*
 type AuthHandler struct {
 	//Config AuthConfig
-}
+}*/
 type Password struct {
 	EmailAddress string
 	Password     string
