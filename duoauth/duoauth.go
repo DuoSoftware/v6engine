@@ -87,6 +87,7 @@ func webServer() {
 func runRestFul() {
 	gorest.RegisterService(new(authlib.Auth))
 	gorest.RegisterService(new(authlib.TenantSvc))
+	gorest.RegisterService(new(authlib.userSVC))
 	gorest.RegisterService(new(pog.POGSvc))
 	gorest.RegisterService(new(applib.AppSvc))
 	gorest.RegisterService(new(config.ConfigSvc))
