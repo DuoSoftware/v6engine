@@ -261,6 +261,7 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 			var uList User
 			err := json.Unmarshal(bytes, &uList)
 			if err == nil {
+				//fmt.Println();
 				if uList.Password == common.GetHash(password) && strings.ToLower(uList.EmailAddress) == strings.ToLower(email) {
 					return uList, ""
 				} else {
