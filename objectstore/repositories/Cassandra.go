@@ -200,7 +200,7 @@ func (repository CassandraRepository) GetQuery(request *messaging.ObjectRequest)
 		return getDefaultNotImplemented()
 	}
 
-	return response
+	//return response
 }
 
 func (repository CassandraRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
