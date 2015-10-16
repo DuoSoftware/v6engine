@@ -606,9 +606,9 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 					request.Log("Inavalid ID request")
 					return response
 				}
-
+				fmt.Println(1)
 				var keyArray = make([]string, noOfElements)
-				var valueArray = make([]string, noOfElements)
+				var valueArray = make([]interface{}, noOfElements)
 
 				for index := 0; index < len(indexNames); index++ {
 
@@ -620,7 +620,8 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 						} else {
 							//	fmt.Println("Non string value detected, Will be strigified!")
 							keyArray[index] = indexNames[index]
-							valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
+							//valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
+							valueArray[index] = DataObjects[i][indexNames[index]]
 						}
 					} else {
 						// __osHeaders Catched!
@@ -629,8 +630,9 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 					}
 
 				}
+				fmt.Println(2)
 				argValueList += "("
-
+				/*
 				//Build the query string
 				for i := 0; i < noOfElements; i++ {
 					if i != noOfElements-1 {
@@ -639,7 +641,29 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 						argValueList = argValueList + "'" + valueArray[i] + "'"
 					}
 				}
-
+				*/
+				
+				fmt.Println("**********************************")
+		//Build the query string
+		for i := 0; i < noOfElements; i++ {
+			dataType := getMySqlDataType(valueArray[i])
+			fmt.Println(dataType)
+			if i != noOfElements-1 {
+				if dataType == "BIT" || dataType == "real"{
+					argValueList = argValueList + getStringByObject(valueArray[i]) + ", "
+				}else{
+					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'" + ", "
+				}
+			} else {
+				if dataType == "BIT" || dataType == "real"{
+					argValueList = argValueList + getStringByObject(valueArray[i])
+				}else{
+					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'"
+				}
+			}
+		}
+		fmt.Println("**********************************")
+				
 				i -= startIndex
 				if i != len(DataObjects[startIndex:stopIndex])-1 {
 					argValueList += "),"
@@ -648,7 +672,7 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 				}
 
 			}
-
+			fmt.Println(3)
 			//DEBUG USE : Display Query information
 			//	fmt.Println("Table Name : " + request.Controls.Class)
 			//	fmt.Println("Key list : " + argKeyList)
@@ -656,7 +680,7 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 			//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			//request.Log("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			fmt.Println("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
-			
+			fmt.Println(4)
 			_, err := session.Query("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			if err != nil {
 				setStatus[statusIndex] = false
@@ -665,7 +689,7 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 				request.Log("INSERTED SUCCESSFULLY")
 				setStatus[statusIndex] = true
 			}
-
+			
 			statusIndex++
 			startIndex += 500
 			stopIndex += 500
@@ -691,7 +715,7 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 				}
 
 				var keyArray = make([]string, noOfElements)
-				var valueArray = make([]string, noOfElements)
+				var valueArray = make([]interface{}, noOfElements)
 
 				for index := 0; index < len(indexNames); index++ {
 					if indexNames[index] != "osHeaders" {
@@ -702,7 +726,8 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 						} else {
 							//	fmt.Println("Non string value detected, Will be strigified!")
 							keyArray[index] = indexNames[index]
-							valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
+							//valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
+							valueArray[index] = DataObjects[i][indexNames[index]]
 						}
 					} else {
 						// __osHeaders Catched!
@@ -713,7 +738,8 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 				}
 
 				argValueList += "("
-
+				
+				/*
 				//Build the query string
 				for i := 0; i < noOfElements; i++ {
 					if i != noOfElements-1 {
@@ -722,7 +748,31 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 						argValueList = argValueList + "'" + valueArray[i] + "'"
 					}
 				}
-
+				
+				*/
+				
+				fmt.Println("**********************************")
+		//Build the query string
+		for i := 0; i < noOfElements; i++ {
+			dataType := getMySqlDataType(valueArray[i])
+			fmt.Println(dataType)
+			if i != noOfElements-1 {
+				if dataType == "BIT" || dataType == "real"{
+					argValueList = argValueList + getStringByObject(valueArray[i]) + ", "
+				}else{
+					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'" + ", "
+				}
+			} else {
+				if dataType == "BIT" || dataType == "real"{
+					argValueList = argValueList + getStringByObject(valueArray[i])
+				}else{
+					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'"
+				}
+			}
+		}
+		fmt.Println("**********************************")
+				
+				
 				i -= start
 				if i != len(DataObjects[start:len(DataObjects)])-1 {
 					argValueList += "),"
@@ -738,6 +788,7 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 			//fmt.Println("Value list : " + argValueList)
 			//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			//request.Log("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
+			fmt.Println("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			_, err := session.Query("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			if err != nil {
 				setStatus[statusIndex] = false
