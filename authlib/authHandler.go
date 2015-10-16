@@ -9,8 +9,8 @@ import (
 	"duov6.com/objectstore/client"
 	"duov6.com/term"
 	"encoding/json"
-	"strings"
 	"fmt"
+	"strings"
 )
 
 type AuthHandler struct {
@@ -173,7 +173,7 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 		term.Write("SaveUser saving user retrived", term.Debug)
 		fmt.Println(uList)
 		term.Write("SaveUser saving user retrived", term.Debug)
-		if err!=nil || uList.UserID==""  {
+		if err != nil || uList.UserID == "" {
 			u.Active = false
 			u.UserID = common.GetGUID()
 			term.Write("SaveUser saving user  "+u.Name+" New User "+u.UserID, term.Debug)
@@ -261,7 +261,7 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 			var uList User
 			err := json.Unmarshal(bytes, &uList)
 			if err == nil {
-				//fmt.Println();
+				fmt.Println(uList)
 				if uList.Password == common.GetHash(password) && strings.ToLower(uList.EmailAddress) == strings.ToLower(email) {
 					return uList, ""
 				} else {
