@@ -606,7 +606,7 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 					request.Log("Inavalid ID request")
 					return response
 				}
-				fmt.Println(1)
+
 				var keyArray = make([]string, noOfElements)
 				var valueArray = make([]interface{}, noOfElements)
 
@@ -616,38 +616,22 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 
 						if _, ok := DataObjects[i][indexNames[index]].(string); ok {
 							keyArray[index] = indexNames[index]
-							valueArray[index] = DataObjects[i][indexNames[index]].(string)
+							valueArray[index] = DataObjects[i][indexNames[index]]
 						} else {
 							//	fmt.Println("Non string value detected, Will be strigified!")
 							keyArray[index] = indexNames[index]
-							
-							if getMySqlDataType(DataObjects[i][indexNames[index]]) == "BIT" || getMySqlDataType(DataObjects[i][indexNames[index]]) == "real"{
-								valueArray[index] = DataObjects[i][indexNames[index]]
-							}else if getMySqlDataType(DataObjects[i][indexNames[index]]) == "text"{
-								valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
-							}
+							valueArray[index] = DataObjects[i][indexNames[index]]
 						}
 					} else {
 						// __osHeaders Catched!
 						keyArray[index] = "osHeaders"
-						valueArray[index] = ConvertOsheaders(DataObjects[i][indexNames[index]].(messaging.ControlHeaders))
+						valueArray[index] = DataObjects[i][indexNames[index]]
 					}
 
 				}
-				fmt.Println(2)
 				argValueList += "("
-				/*
-				//Build the query string
-				for i := 0; i < noOfElements; i++ {
-					if i != noOfElements-1 {
-						argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
-					} else {
-						argValueList = argValueList + "'" + valueArray[i] + "'"
-					}
-				}
-				*/
 				
-				fmt.Println("**********************************")
+				
 		//Build the query string
 		for i := 0; i < noOfElements; i++ {
 			dataType := getMySqlDataType(valueArray[i])
@@ -655,18 +639,25 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 			if i != noOfElements-1 {
 				if dataType == "BIT" || dataType == "real"{
 					argValueList = argValueList + getStringByObject(valueArray[i]) + ", "
-				}else{
-					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'" + ", "
+				}else if dataType == "controlheaders" {
+					argValueList = argValueList + "'" + ConvertOsheaders(valueArray[i].(messaging.ControlHeaders)) + "'" + ", "
+				}else if dataType == "text"{
+					argValueList = argValueList + "'" + valueArray[i].(string) + "'" + ", "
+				}else if dataType == "object"{
+					argValueList = argValueList + getStringByObject(valueArray[i]) + ", "
 				}
 			} else {
 				if dataType == "BIT" || dataType == "real"{
 					argValueList = argValueList + getStringByObject(valueArray[i])
-				}else{
+				}else if dataType == "controlheaders" {
+					argValueList = argValueList + "'" + ConvertOsheaders(valueArray[i].(messaging.ControlHeaders)) + "'"
+				}else if dataType == "text"{
+					argValueList = argValueList + "'" + valueArray[i].(string) + "'"
+				}else if dataType == "object"{
 					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'"
 				}
 			}
 		}
-		fmt.Println("**********************************")
 				
 				i -= startIndex
 				if i != len(DataObjects[startIndex:stopIndex])-1 {
@@ -676,7 +667,7 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 				}
 
 			}
-			fmt.Println(3)
+
 			//DEBUG USE : Display Query information
 			//	fmt.Println("Table Name : " + request.Controls.Class)
 			//	fmt.Println("Key list : " + argKeyList)
@@ -684,7 +675,6 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 			//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			//request.Log("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			fmt.Println("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
-			fmt.Println(4)
 			_, err := session.Query("INSERT INTO " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
 			if err != nil {
 				setStatus[statusIndex] = false
@@ -726,40 +716,23 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 
 						if _, ok := DataObjects[i][indexNames[index]].(string); ok {
 							keyArray[index] = indexNames[index]
-							valueArray[index] = DataObjects[i][indexNames[index]].(string)
+							valueArray[index] = DataObjects[i][indexNames[index]]
 						} else {
 							//	fmt.Println("Non string value detected, Will be strigified!")
 							keyArray[index] = indexNames[index]
-							
-							if getMySqlDataType(DataObjects[i][indexNames[index]]) == "BIT" || getMySqlDataType(DataObjects[i][indexNames[index]]) == "real"{
-								valueArray[index] = DataObjects[i][indexNames[index]]
-							}else if getMySqlDataType(DataObjects[i][indexNames[index]]) == "text"{
-								valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
-							}
+							valueArray[index] = DataObjects[i][indexNames[index]]
 						}
 					} else {
 						// __osHeaders Catched!
 						keyArray[index] = "osHeaders"
-						valueArray[index] = ConvertOsheaders(DataObjects[i][indexNames[index]].(messaging.ControlHeaders))
+						valueArray[index] = DataObjects[i][indexNames[index]]
 					}
 
 				}
 
 				argValueList += "("
 				
-				/*
-				//Build the query string
-				for i := 0; i < noOfElements; i++ {
-					if i != noOfElements-1 {
-						argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
-					} else {
-						argValueList = argValueList + "'" + valueArray[i] + "'"
-					}
-				}
-				
-				*/
-				
-				fmt.Println("**********************************")
+		
 		//Build the query string
 		for i := 0; i < noOfElements; i++ {
 			dataType := getMySqlDataType(valueArray[i])
@@ -767,19 +740,25 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 			if i != noOfElements-1 {
 				if dataType == "BIT" || dataType == "real"{
 					argValueList = argValueList + getStringByObject(valueArray[i]) + ", "
-				}else{
-					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'" + ", "
+				}else if dataType == "controlheaders" {
+					argValueList = argValueList + "'" + ConvertOsheaders(valueArray[i].(messaging.ControlHeaders)) + "'" + ", "
+				}else if dataType == "text"{
+					argValueList = argValueList + "'" + valueArray[i].(string) + "'" + ", "
+				}else if dataType == "object"{
+					argValueList = argValueList + getStringByObject(valueArray[i]) + ", "
 				}
 			} else {
 				if dataType == "BIT" || dataType == "real"{
 					argValueList = argValueList + getStringByObject(valueArray[i])
-				}else{
+				}else if dataType == "controlheaders" {
+					argValueList = argValueList + "'" + ConvertOsheaders(valueArray[i].(messaging.ControlHeaders)) + "'"
+				}else if dataType == "text"{
+					argValueList = argValueList + "'" + valueArray[i].(string) + "'"
+				}else if dataType == "object"{
 					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'"
 				}
 			}
 		}
-		fmt.Println("**********************************")
-				
 				
 				i -= start
 				if i != len(DataObjects[start:len(DataObjects)])-1 {
@@ -898,40 +877,19 @@ func (repository MysqlRepository) InsertSingle(request *messaging.ObjectRequest)
 
 				if _, ok := DataObject[indexNames[index]].(string); ok {
 					keyArray[index] = indexNames[index]
-					valueArray[index] = DataObject[indexNames[index]].(string)
+					valueArray[index] = DataObject[indexNames[index]]
 				} else {
-					//fmt.Println("Non string value detected, Will be strigified!")
 					keyArray[index] = indexNames[index]
-
-					if getMySqlDataType(DataObject[indexNames[index]]) == "BIT" || getMySqlDataType(DataObject[indexNames[index]]) == "real"{
-						valueArray[index] = DataObject[indexNames[index]]
-					}else if getMySqlDataType(DataObject[indexNames[index]]) == "text"{
-						valueArray[index] = getStringByObject(DataObject[indexNames[index]])
-					}
+					valueArray[index] = DataObject[indexNames[index]]
 				}
 			} else {
 				// __osHeaders Catched!
 				keyArray[index] = "osHeaders"
-				valueArray[index] = ConvertOsheaders(DataObject[indexNames[index]].(messaging.ControlHeaders))
+				valueArray[index] = DataObject[indexNames[index]]
 			}
 
 		}
-		/*
-					recordFieldList = make([]string, len(request.Body.Object))
-					recordFieldType = make([]string, len(request.Body.Object))
-					index := 0
-					for key, value := range request.Body.Object {
-						if key == "__osHeaders" {
-							recordFieldList[index] = "osHeaders"
-							recordFieldType[index] = "text"
-						} else {
-							recordFieldList[index] = key
-							recordFieldType[index] = getMySqlDataType(value)
-						}
-						index++
-					}
-		*/
-		fmt.Println("**********************************")
+
 		//Build the query string
 		for i := 0; i < noOfElements; i++ {
 			dataType := getMySqlDataType(valueArray[i])
@@ -939,18 +897,26 @@ func (repository MysqlRepository) InsertSingle(request *messaging.ObjectRequest)
 			if i != noOfElements-1 {
 				if dataType == "BIT" || dataType == "real"{
 					argValueList = argValueList + getStringByObject(valueArray[i]) + ", "
-				}else{
-					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'" + ", "
+				}else if dataType == "controlheaders" {
+					argValueList = argValueList + "'" + ConvertOsheaders(valueArray[i].(messaging.ControlHeaders)) + "'" + ", "
+				}else if dataType == "text"{
+					argValueList = argValueList + "'" + valueArray[i].(string) + "'" + ", "
+				}else if dataType == "object"{
+					argValueList = argValueList + getStringByObject(valueArray[i]) + ", "
 				}
 			} else {
 				if dataType == "BIT" || dataType == "real"{
 					argValueList = argValueList + getStringByObject(valueArray[i])
-				}else{
+				}else if dataType == "controlheaders" {
+					argValueList = argValueList + "'" + ConvertOsheaders(valueArray[i].(messaging.ControlHeaders)) + "'"
+				}else if dataType == "text"{
+					argValueList = argValueList + "'" + valueArray[i].(string) + "'"
+				}else if dataType == "object"{
 					argValueList = argValueList + "'" + getStringByObject(valueArray[i]) + "'"
 				}
 			}
 		}
-		fmt.Println("**********************************")
+	
 		//DEBUG USE : Display Query information
 		//fmt.Println("Table Name : " + request.Controls.Class)
 		//fmt.Println("Key list : " + argKeyList)
@@ -1122,6 +1088,15 @@ func createMySQLTable(request *messaging.ObjectRequest, session *sql.DB) (status
 			startIndex = startIndex + 1
 
 		}
+		
+		//check Data type array and replace controlheaders to text
+		for typeIndex, _ := range dataTypeArray{
+			if dataTypeArray[typeIndex] == "controlheaders"{
+				dataTypeArray[typeIndex] = "text"
+			}else if dataTypeArray[typeIndex] == "object"{
+				dataTypeArray[typeIndex] = "text"
+			}
+		}
 
 		//Create Table
 
@@ -1187,26 +1162,19 @@ func (repository MysqlRepository) UpdateMultiple(request *messaging.ObjectReques
 					if key != "__osHeaders" {
 						//if str, ok := value.(string); ok {
 						if _, ok := value.(string); ok {
-
 							//Implement all MAP related logic here. All correct data are being caught in here
 							keyUpdate[startIndex] = key
-							valueUpdate[startIndex] = value.(string)
+							valueUpdate[startIndex] = value
 							startIndex = startIndex + 1
-
 						} else {
 							//request.Log("Non string value detected, Will be strigified!")
 							keyUpdate[startIndex] = key
-							//valueUpdate[startIndex] = getStringByObject(value)
-							if getMySqlDataType(value) == "BIT" || getMySqlDataType(value) == "real"{
-								valueUpdate[startIndex] = value
-							}else if getMySqlDataType(value) == "text"{
-								valueUpdate[startIndex] = getStringByObject(value)
-							}
+							valueUpdate[startIndex] = value
 							startIndex = startIndex + 1
 						}
 					} else {
 						keyUpdate[startIndex] = "osHeaders"
-						valueUpdate[startIndex] = ConvertOsheaders(value.(messaging.ControlHeaders))
+						valueUpdate[startIndex] = value
 						startIndex = startIndex + 1
 					}
 				}
@@ -1216,29 +1184,37 @@ func (repository MysqlRepository) UpdateMultiple(request *messaging.ObjectReques
 			var argValueList string
 
 			//Build the query string
-			for i := 0; i < noOfElements; i++ {
-				dataType := getMySqlDataType(valueUpdate[i])
-				if i != noOfElements-1 {
-					//argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'" + ", "
-					if dataType == "BIT" || dataType == "real"{
-						argValueList = argValueList + getStringByObject(valueUpdate[i]) + ", "
-					}else{
-						argValueList = argValueList + "'" + getStringByObject(valueUpdate[i]) + "'" + ", "
+		for i := 0; i < noOfElements; i++ {
+			dataType := getMySqlDataType(valueUpdate[i])
+			if i != noOfElements-1 {
+				//argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'" + ", "
+				if dataType == "BIT" || dataType == "real"{
+						argValueList = argValueList + keyUpdate[i] + " = " + getStringByObject(valueUpdate[i]) + ", "
+					}else if dataType == "controlheaders" {
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + ConvertOsheaders(valueUpdate[i].(messaging.ControlHeaders)) + "'" + ", "
+					}else if dataType == "text" {
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i].(string) + "'" + ", "
+					}else if dataType == "object"{
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + getStringByObject(valueUpdate[i]) + "'" + ", "
 					}
-				} else {
-					//argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'"
-					if dataType == "BIT" || dataType == "real"{
-						argValueList = argValueList + getStringByObject(valueUpdate[i])
-					}else{
-						argValueList = argValueList + "'" + getStringByObject(valueUpdate[i]) + "'"
+			} else {
+				//argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'"
+				if dataType == "BIT" || dataType == "real"{
+						argValueList = argValueList + keyUpdate[i] + " = " + getStringByObject(valueUpdate[i])
+					}else if dataType == "controlheaders"{
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + ConvertOsheaders(valueUpdate[i].(messaging.ControlHeaders)) + "'"
+					}else if dataType == "text" {
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i].(string) + "'"
+					}else if dataType == "object"{
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + getStringByObject(valueUpdate[i]) + "'"
 					}
-				}
 			}
+		}
 
 			//DEBUG USE : Display Query information
 			//	fmt.Println("Table Name : " + request.Controls.Class)
 			//	fmt.Println("Value list : " + argValueList)
-			//request.Log("UPDATE " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " SET " + argValueList + " WHERE " + request.Body.Parameters.KeyProperty + " =" + "'" + request.Body.Objects[i][request.Body.Parameters.KeyProperty].(string) + "'")
+			request.Log("UPDATE " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " SET " + argValueList + " WHERE " + request.Body.Parameters.KeyProperty + " =" + "'" + request.Body.Objects[i][request.Body.Parameters.KeyProperty].(string) + "'")
 			_, err := session.Query("UPDATE " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " SET " + argValueList + " WHERE " + request.Body.Parameters.KeyProperty + " =" + "'" + request.Body.Objects[i][request.Body.Parameters.KeyProperty].(string) + "'")
 
 			if err != nil {
@@ -1283,23 +1259,18 @@ func (repository MysqlRepository) UpdateSingle(request *messaging.ObjectRequest)
 					if _, ok := value.(string); ok {
 						//Implement all MAP related logic here. All correct data are being caught in here
 						keyUpdate[startIndex] = key
-						valueUpdate[startIndex] = value.(string)
+						valueUpdate[startIndex] = value
 						startIndex = startIndex + 1
 
 					} else {
 						//request.Log("Non string value detected, Will be strigified!")
 						keyUpdate[startIndex] = key
-						//valueUpdate[startIndex] = getStringByObject(value)
-						if getMySqlDataType(value) == "BIT" || getMySqlDataType(value) == "real"{
-								valueUpdate[startIndex] = value
-							}else if getMySqlDataType(value) == "text"{
-								valueUpdate[startIndex] = getStringByObject(value)
-							}
+						valueUpdate[startIndex] = value
 						startIndex = startIndex + 1
 					}
 				} else {
 					keyUpdate[startIndex] = "osHeaders"
-					valueUpdate[startIndex] = ConvertOsheaders(value.(messaging.ControlHeaders))
+					valueUpdate[startIndex] = value
 					startIndex = startIndex + 1
 				}
 			}
@@ -1313,24 +1284,32 @@ func (repository MysqlRepository) UpdateSingle(request *messaging.ObjectRequest)
 			if i != noOfElements-1 {
 				//argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'" + ", "
 				if dataType == "BIT" || dataType == "real"{
-						argValueList = argValueList + getStringByObject(valueUpdate[i]) + ", "
-					}else{
-						argValueList = argValueList + "'" + getStringByObject(valueUpdate[i]) + "'" + ", "
+						argValueList = argValueList + keyUpdate[i] + " = " + getStringByObject(valueUpdate[i]) + ", "
+					}else if dataType == "controlheaders" {
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + ConvertOsheaders(valueUpdate[i].(messaging.ControlHeaders)) + "'" + ", "
+					}else if dataType == "text" {
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i].(string) + "'" + ", "
+					}else if dataType == "object"{
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + getStringByObject(valueUpdate[i]) + "'" + ", "
 					}
 			} else {
 				//argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'"
 				if dataType == "BIT" || dataType == "real"{
-						argValueList = argValueList + getStringByObject(valueUpdate[i])
-					}else{
-						argValueList = argValueList + "'" + getStringByObject(valueUpdate[i]) + "'"
+						argValueList = argValueList + keyUpdate[i] + " = " + getStringByObject(valueUpdate[i])
+					}else if dataType == "controlheaders"{
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + ConvertOsheaders(valueUpdate[i].(messaging.ControlHeaders)) + "'"
+					}else if dataType == "text" {
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i].(string) + "'"
+					}else if dataType == "object"{
+						argValueList = argValueList + keyUpdate[i] + " = " + "'" + getStringByObject(valueUpdate[i]) + "'"
 					}
 			}
 		}
-
+		
 		//DEBUG USE : Display Query information
 		//fmt.Println("Table Name : " + request.Controls.Class)
 		//fmt.Println("Value list : " + argValueList)
-
+		request.Log("UPDATE " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " SET " + argValueList + " WHERE " + request.Body.Parameters.KeyProperty + " =" + "'" + request.Controls.Id + "'")
 		_, err := session.Query("UPDATE " + getMySQLnamespace(request) + "." + strings.ToLower(request.Controls.Class) + " SET " + argValueList + " WHERE " + request.Body.Parameters.KeyProperty + " =" + "'" + request.Controls.Id + "'")
 
 		if err != nil {
@@ -1933,8 +1912,12 @@ func getMySqlDataType(item interface{}) (datatype string) {
 		datatype = "BIT"
 	} else if datatype == "float64" {
 		datatype = "real"
-	} else if datatype == "" || datatype == "string" || datatype == "ControlHeaders" {
+	}else if datatype == "ControlHeaders"{
+		datatype = "controlheaders"
+	}else if datatype == "string"{
 		datatype = "text"
+	}else if datatype == "" {
+		datatype = "object"
 	}
 	return datatype
 }
