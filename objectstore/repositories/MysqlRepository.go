@@ -620,8 +620,12 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 						} else {
 							//	fmt.Println("Non string value detected, Will be strigified!")
 							keyArray[index] = indexNames[index]
-							//valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
-							valueArray[index] = DataObjects[i][indexNames[index]]
+							
+							if getMySqlDataType(DataObjects[i][indexNames[index]]) == "BIT" || getMySqlDataType(DataObjects[i][indexNames[index]]) == "real"{
+								valueArray[index] = DataObjects[i][indexNames[index]]
+							}else if getMySqlDataType(DataObjects[i][indexNames[index]]) == "text"{
+								valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
+							}
 						}
 					} else {
 						// __osHeaders Catched!
@@ -726,8 +730,12 @@ func (repository MysqlRepository) InsertMultiple(request *messaging.ObjectReques
 						} else {
 							//	fmt.Println("Non string value detected, Will be strigified!")
 							keyArray[index] = indexNames[index]
-							//valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
-							valueArray[index] = DataObjects[i][indexNames[index]]
+							
+							if getMySqlDataType(DataObjects[i][indexNames[index]]) == "BIT" || getMySqlDataType(DataObjects[i][indexNames[index]]) == "real"{
+								valueArray[index] = DataObjects[i][indexNames[index]]
+							}else if getMySqlDataType(DataObjects[i][indexNames[index]]) == "text"{
+								valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
+							}
 						}
 					} else {
 						// __osHeaders Catched!
@@ -894,8 +902,12 @@ func (repository MysqlRepository) InsertSingle(request *messaging.ObjectRequest)
 				} else {
 					//fmt.Println("Non string value detected, Will be strigified!")
 					keyArray[index] = indexNames[index]
-					//valueArray[index] = getStringByObject(DataObject[indexNames[index]])
-					valueArray[index] = DataObject[indexNames[index]]
+
+					if getMySqlDataType(DataObject[indexNames[index]]) == "BIT" || getMySqlDataType(DataObject[indexNames[index]]) == "real"{
+						valueArray[index] = DataObject[indexNames[index]]
+					}else if getMySqlDataType(DataObject[indexNames[index]]) == "text"{
+						valueArray[index] = getStringByObject(DataObject[indexNames[index]])
+					}
 				}
 			} else {
 				// __osHeaders Catched!
@@ -1167,7 +1179,7 @@ func (repository MysqlRepository) UpdateMultiple(request *messaging.ObjectReques
 		for i := 0; i < len(request.Body.Objects); i++ {
 			noOfElements := len(request.Body.Objects[i]) - 1
 			var keyUpdate = make([]string, noOfElements)
-			var valueUpdate = make([]string, noOfElements)
+			var valueUpdate = make([]interface{}, noOfElements)
 
 			var startIndex = 0
 			for key, value := range request.Body.Objects[i] {
@@ -1184,7 +1196,12 @@ func (repository MysqlRepository) UpdateMultiple(request *messaging.ObjectReques
 						} else {
 							//request.Log("Non string value detected, Will be strigified!")
 							keyUpdate[startIndex] = key
-							valueUpdate[startIndex] = getStringByObject(value)
+							//valueUpdate[startIndex] = getStringByObject(value)
+							if getMySqlDataType(value) == "BIT" || getMySqlDataType(value) == "real"{
+								valueUpdate[startIndex] = value
+							}else if getMySqlDataType(value) == "text"{
+								valueUpdate[startIndex] = getStringByObject(value)
+							}
 							startIndex = startIndex + 1
 						}
 					} else {
@@ -1200,10 +1217,21 @@ func (repository MysqlRepository) UpdateMultiple(request *messaging.ObjectReques
 
 			//Build the query string
 			for i := 0; i < noOfElements; i++ {
+				dataType := getMySqlDataType(valueUpdate[i])
 				if i != noOfElements-1 {
-					argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'" + ", "
+					//argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'" + ", "
+					if dataType == "BIT" || dataType == "real"{
+						argValueList = argValueList + getStringByObject(valueUpdate[i]) + ", "
+					}else{
+						argValueList = argValueList + "'" + getStringByObject(valueUpdate[i]) + "'" + ", "
+					}
 				} else {
-					argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'"
+					//argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'"
+					if dataType == "BIT" || dataType == "real"{
+						argValueList = argValueList + getStringByObject(valueUpdate[i])
+					}else{
+						argValueList = argValueList + "'" + getStringByObject(valueUpdate[i]) + "'"
+					}
 				}
 			}
 
@@ -1246,7 +1274,7 @@ func (repository MysqlRepository) UpdateSingle(request *messaging.ObjectRequest)
 
 		noOfElements := len(request.Body.Object) - 1
 		var keyUpdate = make([]string, noOfElements)
-		var valueUpdate = make([]string, noOfElements)
+		var valueUpdate = make([]interface{}, noOfElements)
 
 		var startIndex = 0
 		for key, value := range request.Body.Object {
@@ -1261,7 +1289,12 @@ func (repository MysqlRepository) UpdateSingle(request *messaging.ObjectRequest)
 					} else {
 						//request.Log("Non string value detected, Will be strigified!")
 						keyUpdate[startIndex] = key
-						valueUpdate[startIndex] = getStringByObject(value)
+						//valueUpdate[startIndex] = getStringByObject(value)
+						if getMySqlDataType(value) == "BIT" || getMySqlDataType(value) == "real"{
+								valueUpdate[startIndex] = value
+							}else if getMySqlDataType(value) == "text"{
+								valueUpdate[startIndex] = getStringByObject(value)
+							}
 						startIndex = startIndex + 1
 					}
 				} else {
@@ -1276,10 +1309,21 @@ func (repository MysqlRepository) UpdateSingle(request *messaging.ObjectRequest)
 
 		//Build the query string
 		for i := 0; i < noOfElements; i++ {
+			dataType := getMySqlDataType(valueUpdate[i])
 			if i != noOfElements-1 {
-				argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'" + ", "
+				//argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'" + ", "
+				if dataType == "BIT" || dataType == "real"{
+						argValueList = argValueList + getStringByObject(valueUpdate[i]) + ", "
+					}else{
+						argValueList = argValueList + "'" + getStringByObject(valueUpdate[i]) + "'" + ", "
+					}
 			} else {
-				argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'"
+				//argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'"
+				if dataType == "BIT" || dataType == "real"{
+						argValueList = argValueList + getStringByObject(valueUpdate[i])
+					}else{
+						argValueList = argValueList + "'" + getStringByObject(valueUpdate[i]) + "'"
+					}
 			}
 		}
 
