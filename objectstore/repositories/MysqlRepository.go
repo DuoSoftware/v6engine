@@ -316,7 +316,8 @@ func executeMySQLQuery(request *messaging.ObjectRequest) (returnByte []byte) {
 					b, ok := val.([]byte)
 
 					if ok {
-						v = string(b)
+						//v = string(b)
+						v = getCastableValue(string(b))
 					} else {
 						v = val
 					}
