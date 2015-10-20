@@ -1817,7 +1817,7 @@ func getMySqlRecordID(request *messaging.ObjectRequest, obj map[string]interface
 			if err != nil {
 				//If err create new domainClassAttributes  table
 				request.Log("No Class found.. Must be a new namespace")
-				_, err = session.Query("create table " + getMySQLnamespace(request) + ".domainClassAttributes ( class text primary key, maxCount text, version text);")
+				_, err = session.Query("create table " + getMySQLnamespace(request) + ".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);")
 				if err != nil {
 					returnID = ""
 					return
