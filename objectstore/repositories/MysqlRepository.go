@@ -1433,8 +1433,34 @@ func (repository MysqlRepository) Special(request *messaging.ObjectRequest) Repo
 			errorMessage := response.Message
 			response.GetErrorResponse(errorMessage)
 		}
+		case "DropClass":
+		request.Log("Starting Delete-Class sub routine")
+		status := executeMySqlDropClass(request)
+		if status {
+			response.IsSuccess = true
+			response.Message = "Successfully Deleted Class"
+			response.GetResponseWithBody([]byte(response.Message))
+		} else {
+			response.IsSuccess = false
+			response.Message = "Aborted! Unsuccessful Deleting Class"
+			errorMessage := response.Message
+			response.GetErrorResponse(errorMessage)
+		}
+	case "DropNamespace":
+		request.Log("Starting Delete-Class sub routine")
+		status := executeMySqlDropNamespace(request)
+		if status {
+			response.IsSuccess = true
+			response.Message = "Successfully Deleted Namespace"
+			response.GetResponseWithBody([]byte(response.Message))
+		} else {
+			response.IsSuccess = false
+			response.Message = "Aborted! Unsuccessful Deleting Namespace"
+			errorMessage := response.Message
+			response.GetErrorResponse(errorMessage)
+		}
 	default:
-		return search(request, request.Body.Special.Parameters)
+		return repository.GetAll(request)
 
 	}
 
@@ -1447,12 +1473,58 @@ func (repository MysqlRepository) Test(request *messaging.ObjectRequest) {
 
 //Sub Routines
 
-func executeMySqlGetFields(request *messaging.ObjectRequest) (returnByte []byte) {
+func executeMySqlDropClass(request *messaging.ObjectRequest) (status bool) {
 
 	namespace := getMySQLnamespace(request)
 	class := strings.ToLower(request.Controls.Class)
 
 	session, isError, _ := getMysqlConnection(request)
+	if isError == true {
+		status = false
+	} else {
+		isError = false
+		_, err := session.Query("DROP TABLE " + namespace + "." + class)
+		if err != nil {
+			request.Log("Error executing query in MySQL : " + err.Error())
+			status = false
+		} else {
+			request.Log("Successfully executed query in MySQL")
+			status = true
+		}
+	}
+	return status
+}
+
+func executeMySqlDropNamespace(request *messaging.ObjectRequest) (status bool) {
+
+	namespace := getMySQLnamespace(request)
+
+	session, isError, _ := getMysqlConnection(request)
+
+	if isError == true {
+		status = false
+	} else {
+		isError = false
+		_, err := session.Query("DROP SCHEMA " + namespace)
+		if err != nil {
+			request.Log("Error executing query in MySQL : " + err.Error())
+			status = false
+		} else {
+			request.Log("Successfully executed query in MySQL")
+			status = true
+		}
+	}
+	return status
+}
+
+func executeMySqlGetFields(request *messaging.ObjectRequest) (returnByte []byte) {
+
+	namespace := getMySQLnamespace(request)
+	class := strings.ToLower(request.Controls.Class)
+	
+
+	session, isError, _ := getMysqlConnection(request)
+
 	if isError == true {
 		returnByte = nil
 	} else {
