@@ -255,6 +255,7 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 	term.Write(Config.UserName, term.Debug)
 
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(email).Ok()
+	fmt.Println(string(bytes));
 	var user User
 	if err == "" {
 		if bytes != nil {
