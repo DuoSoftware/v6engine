@@ -21,6 +21,8 @@ func Create(code string) AbstractRepository {
 		repository = MysqlRepository{}
 	case "MSSQL":
 		repository = MssqlRepository{}
+	case "CLOUDSQL":
+		repository = CloudSqlRepository{}
 	}
 
 	return repository
