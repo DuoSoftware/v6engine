@@ -46,6 +46,8 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 					if strings.ToLower(uList.Domain) != strings.ToLower(Domain) {
 						uList.Domain = strings.ToLower(Domain)
 						uList.SecurityToken = common.GetGUID()
+						uList.Otherdata = make(map[string]string)
+						uList.Otherdata["unused"] = "sss"
 						AddSession(uList)
 						return uList, ""
 					} else {
