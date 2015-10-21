@@ -85,9 +85,10 @@ func (m *GetModifier) Ok() (output []byte, err string) {
 		}
 	}
 	
-	//if(len(output) == 2){
-	//	err = "ERROR"
-	//}
+	if(len(output) == 2){
+		err = "ERROR"
+		output = nil
+	}
 	
 	return
 }
