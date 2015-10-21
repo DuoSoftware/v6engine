@@ -9,8 +9,7 @@ import (
 	"encoding/json";
 	"strings";
 	"errors";
-	"strconv";
-	"reflect"
+	"strconv"
 )
 
 type CloudSqlRepository struct {
@@ -393,7 +392,7 @@ func (repository CloudSqlRepository) getSqlFieldValue(value interface{}) string{
 
 func (repository CloudSqlRepository) golangToSql(value interface{}) string{
 	var strValue string
-	fmt.Println(reflect.TypeOf(value))
+
     switch value.(type) {
     		case string:
     			strValue = "TEXT"
