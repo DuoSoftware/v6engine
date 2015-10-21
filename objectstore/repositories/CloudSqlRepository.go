@@ -489,14 +489,31 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) (interface{
 				}
 			}
 
-			var m interface{} //map[string]interface{}
-			err := json.Unmarshal([]byte(tmp), &m)
-			if err == nil {
-				outData = m
+			var m map[string]interface{}
+			var ml []map[string]interface{}
+
+
+			if (string(tmp[0]) == "{"){
+				err := json.Unmarshal([]byte(tmp), &m)
+				if err == nil {
+					outData = m
+				}else{
+					fmt.Println(err.Error())
+					outData = tmp
+				}				
+			}else if (string(tmp[0]) == "["){
+				err := json.Unmarshal([]byte(tmp), &ml)
+				if err == nil {
+					outData = ml
+				}else{
+					fmt.Println(err.Error())
+					outData = tmp
+				}				
 			}else{
-				fmt.Println(err.Error())
 				outData = tmp
-			}							
+			}
+
+			
 			break
 	}
 	
