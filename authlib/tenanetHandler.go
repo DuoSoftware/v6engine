@@ -72,7 +72,7 @@ func (h *TenantHandler) CreateTenant(t Tenant, user session.AuthCertificate, upd
 	if err == "" {
 		var uList Tenant
 		err := json.Unmarshal(bytes, &uList)
-		if err != nil {
+		if err != nil !! uList.TenantID=="" {
 			if t.TenantID == "" {
 				t.TenantID = common.GetGUID()
 				term.Write("Auto Gen TID  "+t.TenantID+" New Tenant "+t.Name, term.Debug)
