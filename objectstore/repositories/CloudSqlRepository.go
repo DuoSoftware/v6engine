@@ -459,7 +459,17 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) (interface{
 
 			break
 		case "text":
-			outData = tmp
+			if (len(tmp) ==4){
+				if (strings.ToLower(tmp) == "null"){
+					outData = nil
+				}else{
+					outData = tmp
+				}
+			}else{
+				outData = tmp	
+			}
+
+			
 			break
 		case "double":
 			fData,err := strconv.ParseFloat(tmp,64)
