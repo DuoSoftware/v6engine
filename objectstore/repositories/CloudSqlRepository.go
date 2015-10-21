@@ -9,7 +9,8 @@ import (
 	"encoding/json";
 	"strings";
 	"errors";
-	"strconv"
+	"strconv";
+	"reflect"
 )
 
 type CloudSqlRepository struct {
@@ -126,7 +127,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 	script,err := repository.getStoreScript(conn, request)
 	
 	if err ==nil{
-		//fmt.Println(script)
+		fmt.Println(script)
 		err := repository.executeNonQuery(conn, script);
 		if err ==nil{
 			response.IsSuccess = true
@@ -377,12 +378,6 @@ func (repository CloudSqlRepository) getJson(m interface{}) string{
 func (repository CloudSqlRepository) getSqlFieldValue(value interface{}) string{
 	var strValue string
     switch v := value.(type) {
-    		
-    		case []map[string]interface{}:
-    		case []interface{}:
-            case map[string]interface{}:
-            	strValue = "'" + repository.getJson(v) + "'"
-            	break;
             case string:
             	strValue = "'" + fmt.Sprint(value) + "'"
             	break;
@@ -398,6 +393,7 @@ func (repository CloudSqlRepository) getSqlFieldValue(value interface{}) string{
 
 func (repository CloudSqlRepository) golangToSql(value interface{}) string{
 	var strValue string
+	fmt.Println(reflect.TypeOf(value))
     switch value.(type) {
     		case string:
     			strValue = "TEXT"
@@ -421,13 +417,8 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string{
 			case float64:
 				strValue = "DOUBLE"
 				break;
-    		case []map[string]interface{}:
-    		case []interface{}:
-            case map[string]interface{}:
-            	strValue = "BLOB"
-            	break;
             default:
-            	strValue = "TEXT"
+            	strValue = "BLOB"
                 break;
                 
     }
@@ -469,7 +460,15 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) (interface{
 			}
 			break
 		case "blob":
-			outData = tmp
+			var m map[string]interface{}
+			err := json.Unmarshal([]byte(tmp), &m)
+			if err == nil {
+				outData = m
+			}else{
+				fmt.Println(err.Error())
+				outData = tmp
+			}
+			
 			break
 	}
 	
