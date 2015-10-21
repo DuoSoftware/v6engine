@@ -1,5 +1,7 @@
 package repositories
 
+import "encoding/json"
+
 type RepositoryResponse struct {
 	ResponseJson  string
 	IsSuccess     bool
@@ -20,4 +22,19 @@ func (r *RepositoryResponse) GetResponseWithBody(body []byte) {
 	r.IsImplemented = true
 	r.Message = "Operation Success!!!"
 	r.Body = body
+}
+
+func (r *RepositoryResponse) GetSuccessResByObject(body interface{}) {
+	r.IsSuccess = true
+	r.IsImplemented = true
+	r.Message = "Operation Success!!!"
+	bytes,_ := json.Marshal(&body)
+	r.Body = bytes//[:len(bytes)]
+}
+
+func (r *RepositoryResponse) GetSuccessResByString(body string) {
+	r.IsSuccess = true
+	r.IsImplemented = true
+	r.Message = "Operation Success!!!"
+	r.Body = ([]byte)(body)
 }
