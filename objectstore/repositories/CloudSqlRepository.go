@@ -558,7 +558,15 @@ func (repository CloudSqlRepository) rowsToMap(rows *sql.Rows, tableName interfa
 				}
 
 				if v == nil{
-					v = string(b)
+					if (b == nil){
+						v = nil
+					}else if (strings.ToLower(string(b)) == "null"){
+						v = nil
+					} else {
+						v = string(b)
+					}
+					
+
 				}
 			} else {
 				v = val
