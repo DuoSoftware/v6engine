@@ -377,6 +377,13 @@ func (repository CloudSqlRepository) getJson(m interface{}) string{
 func (repository CloudSqlRepository) getSqlFieldValue(value interface{}) string{
 	var strValue string
     switch v := value.(type) {
+    		case bool:
+    			if (value.(bool) == true){
+    				strValue = "b'1'"
+				}else{
+					strValue = "b'0'"
+				}
+    			break;
             case string:
             	strValue = "'" + fmt.Sprint(value) + "'"
             	break;
@@ -439,12 +446,16 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) (interface{
 	tmp := string(b)
 	switch (t){
 		case "bit(1)":
-			fmt.Println("BIT : " + t)
-			if (tmp == "1"){
-				outData = true
+			if (len(b) ==0){
+				outData = false;
 			}else{
-				outData = false
+				if (b[0] == 1){
+					outData = true
+				}else{
+					outData = false
+				}				
 			}
+
 			break
 		case "text":
 			outData = tmp
@@ -504,8 +515,6 @@ func (repository CloudSqlRepository) rowsToMap(rows *sql.Rows, tableName interfa
 			val := values[i]
 			b, ok := val.([]byte)
 			if ok {
-				//fmt.Println("cacheItem")
-				//fmt.Println(tableCache)
 				if (cacheItem !=nil){
 					t, ok := cacheItem[col]
 					if (ok){
