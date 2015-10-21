@@ -136,7 +136,7 @@ func (h *TenantHandler) AddTenantForUsers(Tenant TenantMinimum, UserID string) U
 	//t.UserID
 	if err == "" {
 		err := json.Unmarshal(bytes, &t)
-		if err != nil {
+		if err != nil || t.UserID==""  {
 			term.Write("No Users yet assigied "+UserID, term.Debug)
 			t = UserTenants{UserID, []TenantMinimum{}}
 			t.UserID = UserID
@@ -249,7 +249,7 @@ func (h *TenantHandler) AcceptRequest(u session.AuthCertificate, securityLevel, 
 	var t InviteUserRequest
 	if err == "" {
 		err := json.Unmarshal(bytes, &t)
-		if err != nil {
+		if err != nil || t.SecurityLevel==""{
 			if securityLevel == "" {
 				securityLevel = t.SecurityLevel
 			}
@@ -272,7 +272,7 @@ func (h *TenantHandler) AddUsersToTenant(TenantID, Name string, users, SecurityL
 	var t TenantUsers
 	if err == "" {
 		err := json.Unmarshal(bytes, &t)
-		if err != nil {
+		if err != nil || t.TenantID==""{
 			term.Write("No Users yet assigied "+t.TenantID, term.Debug)
 			//t=TenantUsers{}
 			t = TenantUsers{TenantID, []string{}}
