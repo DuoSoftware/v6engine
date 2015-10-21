@@ -471,18 +471,22 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) (interface{
 			}
 			break
 		case "blob":
-			if tmp == "null"{
-				outData = nil
-			}else{
-				var m interface{} //map[string]interface{}
-				err := json.Unmarshal([]byte(tmp), &m)
-				if err == nil {
-					outData = m
-				}else{
-					fmt.Println(err.Error())
-					outData = tmp
-				}				
+
+			if (len(tmp) ==4){
+				if (strings.ToLower(tmp) == "null"){
+					outData = nil
+					break;
+				}
 			}
+
+			var m interface{} //map[string]interface{}
+			err := json.Unmarshal([]byte(tmp), &m)
+			if err == nil {
+				outData = m
+			}else{
+				fmt.Println(err.Error())
+				outData = tmp
+			}							
 			break
 	}
 	
