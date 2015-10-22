@@ -10,7 +10,8 @@ import (
 	"strings";
 	"errors";
 	"strconv";
-	"reflect"
+	//"reflect";
+	"encoding/base64"
 )
 
 type CloudSqlRepository struct {
@@ -179,19 +180,41 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 
 	query = ""
 
+	isFirstRow := true;
+	var keyArray []string
+
 	for _, obj := range allObjects {
 
 		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKey(request))
 
 		if currentObject == nil{
-			query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
+			if isFirstRow{
+				query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
+			}
+			
 			keyList :="";
 			valueList :="";
-			for k,v := range obj {
-				keyList += ("," +k);
+			
+			if (isFirstRow){
+				for k,_ := range obj {	
+					keyList += ("," +k);
+					keyArray = append(keyArray, k)
+				}
+			}
+			fmt.Println(keyArray)
+			for _,k := range keyArray {
+				v := obj[k]
 				valueList += ("," + repository.getSqlFieldValue(v));
 			}
-			query += ( " (__os_id" + keyList + ") VALUES (\""+ getNoSqlKey(request) + "\"" + valueList + ");")
+
+			if isFirstRow {
+				query += "(__os_id" + keyList + ") VALUES "
+			}else{
+				query +=","
+			}
+
+			query += ("(\""+ getNoSqlKeyById(request, obj) + "\"" + valueList + ")")
+
 		} else {
 			updateValues :="";
 			isFirst := true;
@@ -205,6 +228,10 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 				updateValues += (k + "=" + repository.getSqlFieldValue(v));
 			}
 			query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKey(request) + "\";")
+		}
+
+		if isFirstRow{
+			isFirstRow = false
 		}
 	}
 
@@ -386,10 +413,20 @@ func (repository CloudSqlRepository) getSqlFieldValue(value interface{}) string{
 				}
     			break;
             case string:
-            	strValue = "'" + fmt.Sprint(value) + "'"
+            	sval := fmt.Sprint(value)
+            	if (strings.ContainsAny(sval, "\"'\n\r\t")){
+        		    sEnc := base64.StdEncoding.EncodeToString([]byte(sval))
+            		strValue = "'^" + sEnc + "'";	
+        		}else{
+        			strValue = "'" + sval + "'";	
+        		}
+        		/*else if (strings.Contains(sval, "'")){
+        		    sEnc := base64.StdEncoding.EncodeToString([]byte(sval))
+            		strValue = "'^" + sEnc + "'";	
+        		}*/
             	break;
             default:
-            	strValue = "'" + repository.getJson(v) + "'";
+				strValue = "'" + repository.getJson(v) + "'";
                 break;
                 
     }
@@ -400,7 +437,7 @@ func (repository CloudSqlRepository) getSqlFieldValue(value interface{}) string{
 
 func (repository CloudSqlRepository) golangToSql(value interface{}) string{
 	var strValue string
-	fmt.Println(reflect.TypeOf(value))
+	//fmt.Println(reflect.TypeOf(value))
     switch value.(type) {
     		case string:
     			strValue = "TEXT"
@@ -458,21 +495,6 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) (interface{
 			}
 
 			break
-		/*
-		case "text":
-			if (len(tmp) ==4){
-				if (strings.ToLower(tmp) == "null"){
-					outData = nil
-				}else{
-					outData = tmp
-				}
-			}else{
-				outData = tmp	
-			}
-
-			
-			break
-			*/
 		case "double":
 			fData,err := strconv.ParseFloat(tmp,64)
 			if err !=nil{
@@ -482,9 +504,9 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) (interface{
 				outData=fData
 			}
 			break
-		case "text":
-		case "blob":
-
+		//case "text":
+		//case "blob":
+		default:
 			if (len(tmp) ==4){
 				if (strings.ToLower(tmp) == "null"){
 					outData = nil
@@ -492,6 +514,7 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) (interface{
 				}
 			}
 
+			/*
 			var m map[string]interface{}
 			var ml []map[string]interface{}
 
@@ -515,13 +538,39 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) (interface{
 			}else{
 				outData = tmp
 			}
-
+*/
+			if (string(tmp[0]) == "^"){
+				byteData:=[]byte(tmp)
+				bdata:= string(byteData[1:])
+				decData,_ := base64.StdEncoding.DecodeString(bdata)
+				outData = repository.getInterfaceValue(string(decData))
+				
+			}else{
+				outData = repository.getInterfaceValue(tmp)	
+			}
 			
+
 			break
 	}
 	
 
 	return outData
+}
+
+func (repository CloudSqlRepository) getInterfaceValue(tmp string) (outData interface{}){
+	var m interface{}
+	if (string(tmp[0]) == "{" || string(tmp[0]) == "["){
+		err := json.Unmarshal([]byte(tmp), &m)
+		if err == nil {
+			outData = m
+		}else{
+			fmt.Println(err.Error())
+			outData = tmp
+		}				
+	}else{
+		outData = tmp
+	}
+	return
 }
 
 func (repository CloudSqlRepository) rowsToMap(rows *sql.Rows, tableName interface{}) (tableMap []map[string]interface{}, err error) {
@@ -549,6 +598,9 @@ func (repository CloudSqlRepository) rowsToMap(rows *sql.Rows, tableName interfa
 		rowMap := make(map[string]interface{})
 
 		for i, col := range columns {
+			if (col == "__os_id" || col =="__osHeaders"){
+				continue
+			}
 			var v interface{}
 			val := values[i]
 			b, ok := val.([]byte)
