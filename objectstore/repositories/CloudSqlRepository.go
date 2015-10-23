@@ -22,7 +22,29 @@ func (repository CloudSqlRepository) GetRepositoryName() string {
 }
 
 func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
+	//query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+	//return repository.queryCommonMany(query, request)
+	isSkippable := false
+	isTakable := false
+	skip := "0"
+	take := "100000"
+
+	if request.Extras["skip"] != nil {
+		skip = request.Extras["skip"].(string)
+	}
+
+	if request.Extras["take"] != nil {
+		take = request.Extras["take"].(string)
+	}
+
 	query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+	if isTakable {
+		query += " limit " + take
+	}
+	if isSkippable {
+		query += " offset " + skip
+	}
+
 	return repository.queryCommonMany(query, request)
 }
 
@@ -58,18 +80,117 @@ func (repository CloudSqlRepository) UpdateSingle(request *messaging.ObjectReque
 }
 
 func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("DeleteMultiple not implemented in CloudSQL repository")
-	return getDefaultNotImplemented()
+	//request.Log("DeleteMultiple not implemented in CloudSQL repository")
+	//return getDefaultNotImplemented()
+	response := RepositoryResponse{}
+	conn, err := repository.getConnection(request)
+	if err == nil {
+		isError := false
+		for _, obj := range request.Body.Objects {
+			query := repository.getDeleteScript(repository.getDatabaseName(request.Controls.Namespace), request.Controls.Class, getNoSqlKeyById(request, obj))
+			err := repository.executeNonQuery(conn, query)
+			if err != nil {
+				isError = true
+			}
+		}
+		if isError {
+			response.IsSuccess = false
+			response.Message = "Error deleting all objects. Please double check data!"
+		} else {
+			response.IsSuccess = true
+			response.Message = "Successfully Deleted all objects from CloudSQL repository!"
+		}
+	} else {
+		response.IsSuccess = false
+		response.Message = "Error deleting all objects! : " + err.Error()
+	}
+	return response
 }
 
 func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("DeleteSingle not implemented in CloudSQL repository")
-	return getDefaultNotImplemented()
+	//request.Log("DeleteSingle not implemented in CloudSQL repository")
+	//return getDefaultNotImplemented()
+	response := RepositoryResponse{}
+	conn, err := repository.getConnection(request)
+	if err == nil {
+		query := repository.getDeleteScript(repository.getDatabaseName(request.Controls.Namespace), request.Controls.Class, request.Controls.Id)
+		err := repository.executeNonQuery(conn, query)
+		if err != nil {
+			response.IsSuccess = false
+			response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
+		} else {
+			response.IsSuccess = true
+			response.Message = "Successfully Deleted from CloudSQL repository!"
+		}
+	} else {
+		response.IsSuccess = false
+		response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
+	}
+	return response
 }
 
 func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Special not implemented in CloudSQL repository")
-	return getDefaultNotImplemented()
+	//request.Log("Special not implemented in CloudSQL repository")
+	//return getDefaultNotImplemented()
+	response := RepositoryResponse{}
+	queryType := request.Body.Special.Type
+
+	switch queryType {
+	case "getFields":
+		request.Log("Starting GET-FIELDS sub routine!")
+		query := "describe " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+		return repository.queryCommonMany(query, request)
+	case "getClasses":
+		request.Log("Starting GET-CLASSES sub routine")
+		query := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + repository.getDatabaseName(request.Controls.Namespace) + "';"
+		return repository.queryCommonMany(query, request)
+	case "getNamespaces":
+		request.Log("Starting GET-NAMESPACES sub routine")
+		query := "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME != 'information_schema' AND SCHEMA_NAME !='mysql' AND SCHEMA_NAME !='performance_schema';"
+		return repository.queryCommonMany(query, request)
+	case "getSelected":
+		request.Log("Get-Selected not implemented in CloudSQL repository. Use Get-Query for custom querying in CloudSQL Repository")
+		return getDefaultNotImplemented()
+	case "DropClass":
+		request.Log("Starting Delete-Class sub routine")
+		conn, err := repository.getConnection(request)
+		if err == nil {
+			query := "DROP TABLE " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+			err := repository.executeNonQuery(conn, query)
+			if err != nil {
+				response.IsSuccess = false
+				response.Message = "Error Dropping Table in CloudSQL Repository : " + err.Error()
+			} else {
+				response.IsSuccess = true
+				response.Message = "Successfully Dropped Table : " + request.Controls.Class
+			}
+		} else {
+			response.IsSuccess = false
+			response.Message = "Connection Failed to CloudSQL Server"
+		}
+	case "DropNamespace":
+		request.Log("Starting Delete-Database sub routine")
+		conn, err := repository.getConnection(request)
+		if err == nil {
+			query := "DROP SCHEMA " + repository.getDatabaseName(request.Controls.Namespace)
+			err := repository.executeNonQuery(conn, query)
+			if err != nil {
+				response.IsSuccess = false
+				response.Message = "Error Dropping Table in CloudSQL Repository : " + err.Error()
+			} else {
+				response.IsSuccess = true
+				response.Message = "Successfully Dropped Table : " + request.Controls.Class
+			}
+		} else {
+			response.IsSuccess = false
+			response.Message = "Connection Failed to CloudSQL Server"
+		}
+	default:
+		return repository.GetAll(request)
+
+	}
+
+	return response
 }
 
 func (repository CloudSqlRepository) Test(request *messaging.ObjectRequest) {
