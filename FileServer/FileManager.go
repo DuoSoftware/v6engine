@@ -273,7 +273,27 @@ func SaveExcelEntries(excelFileName string, namespace string) bool {
 			fmt.Println("Namespace : " + namespace)
 			fmt.Println("Keyfield : " + Id)
 			fmt.Println("filename : " + getExcelFileName(excelFileName))
-			client.GoExtra("token", namespace, getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
+			
+			noOfElementsPerSet := 500
+			noOfSets := (len(exceldata) / noOfElementsPerSet)
+			remainderFromSets := 0
+			remainderFromSets = (len(exceldata) - (noOfSets * noOfElementsPerSet))
+
+			startIndex := 0
+			stopIndex := noOfElementsPerSet
+
+			for x := 0; x < noOfSets; x++ {
+				client.GoExtra("securityToken", namespace, getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata[startIndex:stopIndex]).Ok()
+				startIndex += noOfElementsPerSet
+				stopIndex += noOfElementsPerSet
+			}
+
+			if remainderFromSets > 0 {
+				start := len(exceldata) - remainderFromSets
+				client.GoExtra("securityToken", namespace, getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata[start:len(exceldata)]).Ok()
+			}
+			
+			//client.GoExtra("token", namespace, getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
 			return true
 		}
 
