@@ -4,6 +4,7 @@ import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/connmanager"
 	"database/sql";
+	"github.com/twinj/uuid"
 	_ "github.com/go-sql-driver/mysql";
 	"fmt";
 	"encoding/json";
@@ -64,11 +65,45 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 }
 
 func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
-	return repository.queryStore(request)
+	//return repository.queryStore(request)
+	var idData map[string]interface{}
+	idData = make(map[string]interface{})
+
+	for index, obj := range request.Body.Objects {
+		id := repository.getRecordID(request, obj)
+		idData[strconv.Itoa(index)] = id
+		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
+	}
+
+	var DataMap []map[string]interface{}
+	DataMap = make([]map[string]interface{}, 1)
+	var idMap map[string]interface{}
+	idMap = make(map[string]interface{})
+	idMap["ID"] = idData
+	DataMap[0] = idMap
+
+	response := repository.queryStore(request)
+	response.Data = DataMap
+	return response
 }
 
 func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	return repository.queryStore(request)
+	//return repository.queryStore(request)
+	id := repository.getRecordID(request, request.Body.Object)
+	request.Controls.Id = id
+	request.Body.Object[request.Body.Parameters.KeyProperty] = id
+
+	//Add IDs to return Data
+	var Data []map[string]interface{}
+	Data = make([]map[string]interface{}, 1)
+	var idData map[string]interface{}
+	idData = make(map[string]interface{})
+	idData["ID"] = id
+	Data[0] = idData
+
+	response := repository.queryStore(request)
+	response.Data = Data
+	return response
 }
 
 func (repository CloudSqlRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
@@ -797,4 +832,84 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string)
     stmt, err = conn.Prepare(query);
     _, err = stmt.Exec()
     return
+}
+
+func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
+	isGUIDKey := false
+	isAutoIncrementId := false //else MANUAL key from the user
+
+	//multiple requests
+	if (obj[request.Body.Parameters.KeyProperty].(string) == "-999") || (request.Body.Parameters.AutoIncrement == true) {
+		isAutoIncrementId = true
+	}
+
+	if (obj[request.Body.Parameters.KeyProperty].(string) == "-888") || (request.Body.Parameters.GUIDKey == true) {
+		isGUIDKey = true
+	}
+
+	if isGUIDKey {
+		returnID = uuid.NewV1().String()
+	} else if isAutoIncrementId {
+		session, isError := repository.getConnection(request)
+		if isError != nil {
+			returnID = ""
+			return
+		} else {
+			//Reading maxCount from DB
+			checkTableQuery := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME='domainClassAttributes';"
+			tableResultMap, _ := repository.executeQueryOne(session, checkTableQuery, request.Controls.Class)
+			if len(tableResultMap) == 0 {
+				//Create new domainClassAttributes  table
+				createDomainAttrQuery := "create table " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);"
+				err := repository.executeNonQuery(session, createDomainAttrQuery)
+				if err != nil {
+					returnID = ""
+					return
+				} else {
+					//insert record with count 1 and return
+					insertQuery := "INSERT INTO " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','1','" + uuid.NewV1().String() + "')"
+					err = repository.executeNonQuery(session, insertQuery)
+					if err != nil {
+						returnID = ""
+						return
+					} else {
+						returnID = "1"
+						return
+					}
+				}
+			} else {
+				//This is a new Class.. Create New entry
+				readQuery := "SELECT maxCount FROM " + getMySQLnamespace(request) + ".domainClassAttributes where class = '" + strings.ToLower(request.Controls.Class) + "';"
+				myMap, _ := repository.executeQueryOne(session, readQuery, (getMySQLnamespace(request) + ".domainClassAttributes"))
+
+				if len(myMap) == 0 {
+					request.Log("New Class! New record for this class will be inserted")
+					insertNewClassQuery := "INSERT INTO " + getMySQLnamespace(request) + ".domainClassAttributes (class,maxCount,version) values ('" + strings.ToLower(request.Controls.Class) + "', '1', '" + uuid.NewV1().String() + "');"
+					err := repository.executeNonQuery(session, insertNewClassQuery)
+					if err != nil {
+						returnID = ""
+						return
+					} else {
+						returnID = "1"
+						return
+					}
+				} else {
+					//Inrement one and UPDATE
+					maxCount := 0
+					maxCount, err := strconv.Atoi(myMap["maxCount"].(string))
+					maxCount++
+					returnID = strconv.Itoa(maxCount)
+					updateQuery := "UPDATE " + getMySQLnamespace(request) + ".domainClassAttributes SET maxCount='" + returnID + "' WHERE class = '" + strings.ToLower(request.Controls.Class) + "' ;"
+					err = repository.executeNonQuery(session, updateQuery)
+					if err != nil {
+						returnID = ""
+						return
+					}
+				}
+			}
+		}
+	} else {
+		returnID = obj[request.Body.Parameters.KeyProperty].(string)
+	}
+	return
 }
