@@ -25,7 +25,12 @@ func GetQuery(queryString string) (returnQuery string, isSelectedFields bool, se
 		whereTags, selectTags, class := ConvertToTSQLTags(queryString)
 		isSelectedFields = true
 		selectedFields = MapToArrayConverter(selectTags)
-		returnQuery = GetElasticQuery(whereTags)
+		//returnQuery = GetElasticQuery(whereTags)
+		if whereTags != nil {
+			returnQuery = GetElasticQuery(whereTags)
+		} else {
+			returnQuery = "*"
+		}
 		fromClass = class
 
 	} else {
