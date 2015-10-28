@@ -23,8 +23,17 @@ func ConvertToTSQLTags(queryString string) (whereTags map[string]string, selectT
 
 	whereArr := strings.Split(queryString, "where")
 
-	whereTags = make(map[string]string)
-	whereTags = GetTags(whereArr[1])
+	//whereTags = make(map[string]string)
+	//whereTags = GetTags(whereArr[1])
+	
+	if len(whereArr) > 1 {
+		whereTags = make(map[string]string)
+		whereTags = GetTags(whereArr[1])
+	} else {
+		//No Where Tags...
+		fmt.Println("No Where Tags!")
+		whereTags = nil
+	}
 
 	return
 }
