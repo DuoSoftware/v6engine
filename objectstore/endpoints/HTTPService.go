@@ -15,7 +15,7 @@ import (
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
-	"runtime"
+//	"runtime"
 	"strings"
 )
 
@@ -154,6 +154,11 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 			if repResponse.Body != nil {
 				responseMessage = string(repResponse.Body)
 				//If it's a FILE
+				
+				//TEMPORARY COMMENTED DUE TO INCOMPATIBILITY WITH LINUX CMD ONLY INTERFACES
+				//KEEPING COMMENTED CODE FOR FUTURE REFERENCE
+				
+				/*
 				if checkIfFile(params) != "NAF" {
 
 					rootsaveDirectory := ""
@@ -181,6 +186,7 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 						fmt.Println(fileResponse.Message)
 					}
 				}
+				*/
 
 			} else {
 				responseMessage = getQueryResponseString("Successfully completed request", repResponse.Message, isSuccess, objectRequest.MessageStack, repResponse.Data)
