@@ -18,3 +18,107 @@ Creation of domain matched Schema Successful
 Reusing existing MySQL connection
 2015-10-08 @ 03:36:26
 Executing repository : MYSQL DB - Success
+2015-10-29 @ 15:12:39  Starting replicated storage engine
+2015-10-29 @ 15:12:39  Getting settings for single insert
+2015-10-29 @ 15:12:39  Executing repository : Elastic Search
+2015-10-29 @ 15:12:39  Starting INSERT-SINGLE
+2015-10-29 @ 15:12:39  Establishing new connection for Elastic Search 104.236.68.121:9200
+2015-10-29 @ 15:12:39  Manual ID Selected!
+2015-10-29 @ 15:12:39  Inserting single object to Elastic Search : com.prasadjh.com.users.700
+2015-10-29 @ 15:12:52  Successfully inserted one to elastic search
+2015-10-29 @ 15:12:52  Executing repository : Elastic Search - Success
+2015-10-29 @ 15:12:58  Starting replicated storage engine
+2015-10-29 @ 15:12:58  Getting settings for get all
+2015-10-29 @ 15:12:58  Executing repository : Elastic Search
+2015-10-29 @ 15:12:58  Starting GETALL
+2015-10-29 @ 15:12:58  Establishing new connection for Elastic Search 104.236.68.121:9200
+2015-10-29 @ 15:12:58  Reusing existing Elastic Search connection 
+2015-10-29 @ 15:12:58  Executing repository : Elastic Search - Success
+2015-10-29 @ 15:13:09  Starting replicated storage engine
+2015-10-29 @ 15:13:09  Getting settings for single insert
+2015-10-29 @ 15:13:09  Executing repository : Elastic Search
+2015-10-29 @ 15:13:09  Starting INSERT-SINGLE
+2015-10-29 @ 15:13:09  Establishing new connection for Elastic Search 104.236.68.121:9200
+2015-10-29 @ 15:13:09  Automatic Increment Key Selected!
+2015-10-29 @ 15:13:10  No record Found. This is a NEW record. Inserting new attribute value
+2015-10-29 @ 15:13:10  Successfully inserted one to elastic search
+2015-10-29 @ 15:13:10  Inserting Actual data Body
+2015-10-29 @ 15:13:11  Inserting to Elastic Successfull
+2015-10-29 @ 15:13:11  Inserting to Elastic Successfull
+2015-10-29 @ 15:13:11  Executing repository : Elastic Search - Success
+2015-10-29 @ 15:50:45  Starting replicated storage engine
+2015-10-29 @ 15:50:45  Getting settings for single insert
+2015-10-29 @ 15:50:45  Executing repository : Elastic Search
+2015-10-29 @ 15:50:45  Starting INSERT-SINGLE
+2015-10-29 @ 15:50:45  Establishing new connection for Elastic Search 104.236.68.121:9200
+2015-10-29 @ 15:50:54  No record Found. This is a NEW record. Inserting new attribute value
+2015-10-29 @ 15:50:55  Executing repository : Elastic Search - Success
+2015-10-29 @ 15:51:01  Starting replicated storage engine
+2015-10-29 @ 15:51:01  Getting settings for get all
+2015-10-29 @ 15:51:01  Executing repository : Elastic Search
+2015-10-29 @ 15:51:01  Starting GETALL
+2015-10-29 @ 15:51:01  Executing repository : Elastic Search - Success
+2015-10-29 @ 15:53:06  Starting replicated storage engine
+2015-10-29 @ 15:53:06  Getting settings for single insert
+2015-10-29 @ 15:53:06  Executing repository : Elastic Search
+2015-10-29 @ 15:53:06  Starting INSERT-SINGLE
+2015-10-29 @ 15:53:06  Establishing new connection for Elastic Search 104.236.68.121:9200
+2015-10-29 @ 15:53:08  Executing repository : Elastic Search - Success
+2015-10-29 @ 15:53:21  Starting replicated storage engine
+2015-10-29 @ 15:53:21  Getting settings for single insert
+2015-10-29 @ 15:53:21  Executing repository : Elastic Search
+2015-10-29 @ 15:53:21  Starting INSERT-SINGLE
+2015-10-29 @ 15:53:27  Executing repository : Elastic Search - Success
+2015-10-29 @ 15:53:31  Starting replicated storage engine
+2015-10-29 @ 15:53:31  Getting settings for get all
+2015-10-29 @ 15:53:31  Executing repository : Elastic Search
+2015-10-29 @ 15:53:31  Starting GETALL
+2015-10-29 @ 15:53:31  Executing repository : Elastic Search - Success
+2015-10-29 @ 15:53:36  Starting replicated storage engine
+2015-10-29 @ 15:53:36  Getting settings for get by key
+2015-10-29 @ 15:53:36  Executing repository : Elastic Search
+2015-10-29 @ 15:53:36  Starting GET-BY-KEY
+2015-10-29 @ 15:53:36  Starting replicated storage engine
+2015-10-29 @ 15:53:36  Getting settings for get by key
+2015-10-29 @ 15:53:36  Executing repository : Elastic Search
+2015-10-29 @ 15:53:36  Starting GET-BY-KEY
+2015-10-29 @ 15:53:37  Executing repository : Elastic Search - Success
+2015-10-29 @ 15:53:39  Executing repository : Elastic Search - Success
+2015-10-29 @ 16:02:31  Starting replicated storage engine
+2015-10-29 @ 16:02:31  Getting settings for multiple insert
+2015-10-29 @ 16:02:31  Executing repository : Elastic Search
+2015-10-29 @ 16:02:31  Starting INSERT-MULTIPLE
+2015-10-29 @ 16:02:31  Establishing new connection for Elastic Search 104.236.68.121:9200
+2015-10-29 @ 16:02:32  Executing repository : Elastic Search - Success
+2015-10-29 @ 16:02:37  Starting replicated storage engine
+2015-10-29 @ 16:02:37  Getting settings for get all
+2015-10-29 @ 16:02:37  Executing repository : Elastic Search
+2015-10-29 @ 16:02:37  Starting GETALL
+2015-10-29 @ 16:02:38  Executing repository : Elastic Search - Success
+2015-10-29 @ 16:03:03  Starting replicated storage engine
+2015-10-29 @ 16:03:03  Getting settings for multiple insert
+2015-10-29 @ 16:03:03  Executing repository : Elastic Search
+2015-10-29 @ 16:03:03  Starting INSERT-MULTIPLE
+2015-10-29 @ 16:03:04  Executing repository : Elastic Search - Success
+2015-10-29 @ 16:03:08  Starting replicated storage engine
+2015-10-29 @ 16:03:08  Getting settings for get all
+2015-10-29 @ 16:03:08  Executing repository : Elastic Search
+2015-10-29 @ 16:03:08  Starting GETALL
+2015-10-29 @ 16:03:08  Executing repository : Elastic Search - Success
+2015-10-29 @ 16:03:10  Starting replicated storage engine
+2015-10-29 @ 16:03:10  Getting settings for get all
+2015-10-29 @ 16:03:10  Executing repository : Elastic Search
+2015-10-29 @ 16:03:10  Starting GETALL
+2015-10-29 @ 16:03:11  Executing repository : Elastic Search - Success
+2015-10-29 @ 16:03:19  Starting replicated storage engine
+2015-10-29 @ 16:03:19  Getting settings for get all
+2015-10-29 @ 16:03:19  Executing repository : Elastic Search
+2015-10-29 @ 16:03:19  Starting GETALL
+2015-10-29 @ 16:03:21  Executing repository : Elastic Search - Success
+2015-10-29 @ 16:05:25  Starting replicated storage engine
+2015-10-29 @ 16:05:25  Getting settings for single insert
+2015-10-29 @ 16:05:25  Executing repository : Elastic Search
+2015-10-29 @ 16:05:25  Starting INSERT-SINGLE
+2015-10-29 @ 16:05:25  Establishing new connection for Elastic Search 104.236.68.121:9200
+2015-10-29 @ 16:05:26  No record Found. This is a NEW record. Inserting new attribute value
+2015-10-29 @ 16:05:27  Executing repository : Elastic Search - Success
