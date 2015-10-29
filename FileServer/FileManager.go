@@ -104,9 +104,13 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		if isRawFile {
 			fmt.Println("Saving the RAW file.......... ")
 			returnParams = client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], request.Parameters["class"], extraMap).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
-			fmt.Fprintf(request.WebResponse, returnParams[0]["ID"].(string))
+			if len(returnParams) > 0 {
+				fmt.Fprintf(request.WebResponse, returnParams[0]["ID"].(string))
+			} else {
+				fmt.Fprintf(request.WebResponse, "FAILED!")
+			}
 		} else {
-			fmt.Fprintf(request.WebResponse, "File uploaded successfully : ")
+			fmt.Fprintf(request.WebResponse, header.Filename)
 		}
 
 		//close the files
