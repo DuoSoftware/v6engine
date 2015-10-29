@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -30,7 +31,6 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 	if len(request.Body) == 0 {
 
 		//WHEN REQUEST COMES FROM A REST INTERFACE
-
 		file, header, err := request.WebRequest.FormFile("file")
 
 		if err != nil {
@@ -63,7 +63,6 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 
 		//Create a instance of file struct
 		obj := FileData{}
-		// obj.Id = "-888"
 		obj.Id = request.Parameters["id"]
 		obj.FileName = header.Filename
 		obj.Body = base64Body
@@ -90,7 +89,8 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		if isIndividualData {
 			fmt.Println("Saving INDIVIDUAL DATA inside file.......... ")
 			if checkIfFile(header.Filename) == "xlsx" {
-				status := SaveExcelEntries(header.Filename, request.Parameters["namespace"])
+				isRawFile = false
+				status := SaveExcelEntries(header.Filename, request)
 				if status == true {
 					fmt.Println("Individual Records Saved Successfully!")
 				} else {
@@ -104,10 +104,10 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		if isRawFile {
 			fmt.Println("Saving the RAW file.......... ")
 			returnParams = client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], request.Parameters["class"], extraMap).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
+			fmt.Fprintf(request.WebResponse, returnParams[0]["ID"].(string))
+		} else {
+			fmt.Fprintf(request.WebResponse, "File uploaded successfully : ")
 		}
-
-		//fmt.Fprintf(request.WebResponse, "File uploaded successfully : ")
-		fmt.Fprintf(request.WebResponse, returnParams[0]["ID"].(string))
 
 		//close the files
 		err = out.Close()
@@ -137,7 +137,6 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 	} else {
 
 		//WHEN REQUEST COMES FROM A NON REST INTERFACE
-
 		convertedBody := string(request.Body[:])
 		base64Body := common.EncodeToBase64(convertedBody)
 
@@ -178,7 +177,7 @@ func (f *FileManager) Remove(request *messaging.FileRequest) messaging.FileRespo
 	obj.Id = request.Parameters["id"]
 	obj.FileName = request.FileName
 
-	client.Go("token", request.Parameters["namespace"], request.Parameters["class"]).StoreObjectWithOperation("delete").WithKeyField("Id").AndStoreOne(obj).Ok()
+	client.Go(request.Parameters["securityToken"], request.Parameters["namespace"], request.Parameters["class"]).StoreObjectWithOperation("delete").WithKeyField("Id").AndStoreOne(obj).Ok()
 	fileResponse.IsSuccess = true
 	fileResponse.Message = "Deletion of file successfully completed"
 
@@ -193,9 +192,6 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 	} else {
 		var saveServerPath string = request.RootSavePath
 		var accessServerPath string = request.RootGetPath
-
-		fmt.Println(request.RootSavePath)
-		fmt.Println(request.RootGetPath)
 
 		file := FileData{}
 		json.Unmarshal(request.Body, &file)
@@ -216,7 +212,7 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 	return fileResponse
 }
 
-func SaveExcelEntries(excelFileName string, namespace string) bool {
+func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
 	fmt.Println("Inserting Records to Database....")
 	rowcount := 0
 	colunmcount := 0
@@ -225,7 +221,6 @@ func SaveExcelEntries(excelFileName string, namespace string) bool {
 
 	//file read
 	xlFile, error := xlsx.OpenFile(excelFileName)
-
 	if error == nil {
 		for _, sheet := range xlFile.Sheets {
 			rowcount = (sheet.MaxRow - 1)
@@ -237,9 +232,7 @@ func SaveExcelEntries(excelFileName string, namespace string) bool {
 				}
 				break
 			}
-
 			exceldata = make(([]map[string]interface{}), rowcount)
-
 			if error == nil {
 				for _, sheet := range xlFile.Sheets {
 					for rownumber, row := range sheet.Rows {
@@ -266,15 +259,14 @@ func SaveExcelEntries(excelFileName string, namespace string) bool {
 			}
 
 			Id := colunName[0]
-
 			var extraMap map[string]interface{}
 			extraMap = make(map[string]interface{})
 			extraMap["File"] = "exceldata"
-			fmt.Println("Namespace : " + namespace)
+			fmt.Println("Namespace : " + request.Parameters["namespace"])
 			fmt.Println("Keyfield : " + Id)
 			fmt.Println("filename : " + getExcelFileName(excelFileName))
-			
-			noOfElementsPerSet := 500
+
+			noOfElementsPerSet, _ := strconv.Atoi(request.Parameters["BlockSize"])
 			noOfSets := (len(exceldata) / noOfElementsPerSet)
 			remainderFromSets := 0
 			remainderFromSets = (len(exceldata) - (noOfSets * noOfElementsPerSet))
@@ -283,27 +275,23 @@ func SaveExcelEntries(excelFileName string, namespace string) bool {
 			stopIndex := noOfElementsPerSet
 
 			for x := 0; x < noOfSets; x++ {
-				client.GoExtra("securityToken", namespace, getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata[startIndex:stopIndex]).Ok()
+				client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata[startIndex:stopIndex]).Ok()
 				startIndex += noOfElementsPerSet
 				stopIndex += noOfElementsPerSet
 			}
 
 			if remainderFromSets > 0 {
 				start := len(exceldata) - remainderFromSets
-				client.GoExtra("securityToken", namespace, getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata[start:len(exceldata)]).Ok()
+				client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata[start:len(exceldata)]).Ok()
 			}
-			
-			//client.GoExtra("token", namespace, getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
 			return true
 		}
 
 	}
-
 	return false
 }
 
 func checkIfFile(params string) (fileType string) {
-
 	var tempArray []string
 	tempArray = strings.Split(params, ".")
 	if len(tempArray) > 1 {
