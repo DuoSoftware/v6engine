@@ -58,7 +58,6 @@ func (h *HTTPService) Start() {
 }
 
 func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-
 	// This will upload the file as a raw file and data as record wise.
 	var sendRequest = FileServerMessaging.FileRequest{}
 	sendRequest.WebRequest = r
@@ -70,16 +69,22 @@ func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request
 	if headerToken == "" {
 		headerToken = "securityToken"
 	}
-
 	sendRequest.Parameters["securityToken"] = headerToken
-	fmt.Println(sendRequest.Parameters)
-
 	sendRequest.Parameters["fileContent"] = string(r.Header.Get("fileContent"))
 
+	//Get Configuration and Read for Insert Single/Multiple Repository Selection
+	configObject := configuration.ConfigurationManager{}.Get(headerToken, params["namespace"], params["class"])
+	blockSize := "1000"
+	for _, value := range configObject.StoreConfiguration["INSERT-MULTIPLE"] {
+		if value == "ELASTIC" {
+			blockSize = "200" //If Elastic is there reduce Transfer block size to 200
+			break
+		}
+	}
+	sendRequest.Parameters["BlockSize"] = blockSize
+
 	exe := FileServer.FileManager{}
-
 	fileResponse := exe.Store(&sendRequest)
-
 	if fileResponse.IsSuccess == true {
 		fmt.Fprintf(w, ":File uploaded successfully!")
 	} else {
