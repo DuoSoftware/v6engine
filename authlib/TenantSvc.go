@@ -20,6 +20,7 @@ type TenantSvc struct {
 	subciribe           gorest.EndPoint `method:"GET" path:"/tenant/Subciribe/{TenantID:string}" output:"bool"`
 	getUsers            gorest.EndPoint `method:"GET" path:"/tenant/GetUsers/{TenantID:string}" output:"[]string"`
 	addUser             gorest.EndPoint `method:"GET" path:"/tenant/AddUser/{email:string}/{level:string}" output:"bool"`
+	removeUser   		gorest.EndPoint `method:"GET" path:"/tenant/RemoveUser/{email:string}" output:"bool"`
 }
 
 func (T TenantSvc) CreateTenant(t Tenant) {
@@ -110,6 +111,34 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			if p.SecurityLevel == "admin" {
 				t := th.GetTenant(user.Domain)
 				th.AddUsersToTenant(user.Domain, t.Name, a.UserID, level)
+				return true
+			} else {
+				T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Need to have Admin access to tenant to add user"))
+				return false
+			}
+
+		} else {
+			return false
+		}
+	} else {
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		return false
+	}
+}
+
+func (T TenantSvc) RemoveUser(email string) bool {
+	//fmt.Println(T.Context.Request().Header.Get("Securitytoken"))
+	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		auth := AuthHandler{}
+		a, err := auth.GetUser(email)
+		if err == "" {
+
+			th := TenantHandler{}
+			_, p := th.Autherized(user.Domain, user)
+			if p.SecurityLevel == "admin" {
+				t := th.GetTenant(user.Domain)
+				//th.AddUsersToTenant(user.Domain, t.Name, a.UserID, "level")
 				return true
 			} else {
 				T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Need to have Admin access to tenant to add user"))
