@@ -895,7 +895,7 @@ func (repository HiveRepository) Special(request *messaging.ObjectRequest) Repos
 			response.GetErrorResponse(errorMessage)
 		}
 	default:
-		return search(request, request.Body.Special.Parameters)
+		return repository.GetAll(request)
 
 	}
 

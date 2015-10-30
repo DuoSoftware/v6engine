@@ -9,13 +9,14 @@ import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/processors"
 	"duov6.com/objectstore/repositories"
+	"duov6.com/term"
 	"encoding/json"
 	"fmt"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
-//	"runtime"
+	//	"runtime"
 	"strings"
 )
 
@@ -29,7 +30,7 @@ type FileData struct {
 }
 
 func (h *HTTPService) Start() {
-	fmt.Println("Object Store Listening on Port : 3000")
+	term.Write("Object Store Listening on Port : 3000", 2)
 	m := martini.Classic()
 	m.Use(cors.Allow(&cors.Options{
 		AllowOrigins:     []string{"*"},
@@ -158,41 +159,6 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 		if isSuccess {
 			if repResponse.Body != nil {
 				responseMessage = string(repResponse.Body)
-				//If it's a FILE
-				
-				//TEMPORARY COMMENTED DUE TO INCOMPATIBILITY WITH LINUX CMD ONLY INTERFACES
-				//KEEPING COMMENTED CODE FOR FUTURE REFERENCE
-				
-				/*
-				if checkIfFile(params) != "NAF" {
-
-					rootsaveDirectory := ""
-					rootgetDirectory := ""
-					if runtime.GOOS == "linux" {
-						rootsaveDirectory = objectRequest.Configuration.ServerConfiguration["LinuxFileServer"]["SavePath"]
-						rootgetDirectory = objectRequest.Configuration.ServerConfiguration["LinuxFileServer"]["GetPath"]
-					} else {
-						rootsaveDirectory = objectRequest.Configuration.ServerConfiguration["WindowsFileServer"]["GetPath"]
-					}
-
-					var sendRequest = FileServerMessaging.FileRequest{}
-					sendRequest.Body = repResponse.Body
-					sendRequest.FilePath = ""
-					sendRequest.RootSavePath = rootsaveDirectory
-					sendRequest.RootGetPath = rootgetDirectory
-
-					exe := FileServer.FileManager{}
-
-					fileResponse := exe.Download(&sendRequest)
-
-					if fileResponse.IsSuccess == true {
-						fmt.Println(fileResponse.Message)
-					} else {
-						fmt.Println(fileResponse.Message)
-					}
-				}
-				*/
-
 			} else {
 				responseMessage = getQueryResponseString("Successfully completed request", repResponse.Message, isSuccess, objectRequest.MessageStack, repResponse.Data)
 			}
@@ -252,7 +218,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 	if r.URL.Query().Get("take") != "" {
 		objectRequest.Extras["take"] = r.URL.Query().Get("take")
 	}
-	
+
 	if r.URL.Query().Get("orderby") != "" {
 		objectRequest.Extras["orderby"] = r.URL.Query().Get("orderby")
 	}
@@ -330,17 +296,17 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					canAddHeader = false
 				case "POST": //read query, read special, insert
 					if len(requestBody.Object) != 0 || len(requestBody.Objects) != 0 {
-						fmt.Println("Insert by POST : " + objectRequest.Body.Parameters.KeyProperty)
+						term.Write("Insert by POST : "+objectRequest.Body.Parameters.KeyProperty, 2)
 						headerOperation = "insert"
 						if len(objectRequest.Body.Object) != 0 {
 							headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
 						}
 					} else if requestBody.Query.Type != "" && requestBody.Query.Type != " " {
-						fmt.Println("Query Function Identified!")
+						term.Write("Query Function Identified!", 2)
 						headerOperation = "read-filter"
 						canAddHeader = false
 					} else if requestBody.Special.Type != "" && requestBody.Special.Type != " " {
-						fmt.Println("Special Function Identified!")
+						term.Write("Special Function Identified!", 2)
 						headerOperation = "special"
 						canAddHeader = false
 					}

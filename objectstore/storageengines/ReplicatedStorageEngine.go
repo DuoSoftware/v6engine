@@ -3,7 +3,7 @@ package storageengines
 import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
-	"fmt"
+	"duov6.com/term"
 )
 
 type ReplicatedStorageEngine struct {
@@ -103,11 +103,9 @@ func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []rep
 
 	canRollback := false
 	if repositoryList == nil {
-		fmt.Println("NIL REPOSITORIES")
+		term.Write("Nil Repositories Found!", 2)
 	} else {
-		fmt.Println("REPOSITORIES FOUND!")
-		fmt.Print("Fetched Repositories : ")
-		fmt.Println(repositoryList)
+		term.Write("Repositories Found!", 2)
 	}
 	for _, repository := range repositoryList {
 		if repository != nil {
@@ -147,7 +145,7 @@ func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []rep
 
 			}
 		} else {
-			fmt.Println("NIL REPOSITORY FOUND!")
+			term.Write("Nil Repository Found!", 2)
 			continue
 		}
 

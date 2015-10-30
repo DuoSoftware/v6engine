@@ -1447,7 +1447,7 @@ func (repository PostgresRepository) Special(request *messaging.ObjectRequest) R
 			response.GetErrorResponse(errorMessage)
 		}
 	default:
-		return search(request, request.Body.Special.Parameters)
+		return repository.GetAll(request)
 
 	}
 
