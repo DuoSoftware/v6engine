@@ -291,7 +291,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 	conn, _ := repository.getConnection(request)
 
 	script, err := repository.getStoreScript(conn, request)
-
+	/*
 	if err == nil {
 		err := repository.executeNonQuery(conn, script)
 		if err == nil {
@@ -305,7 +305,49 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 		response.IsSuccess = true
 		response.Message = "Error generating CloudSQL query : " + err.Error()
 	}
+	*/
+	
+	
+	queryArray := strings.Split(script, "###")
 
+	if len(queryArray) > 1 && err == nil {
+		//Multiple Updates
+		status := make([]bool, len(queryArray)-1)
+		for index := 0; index < (len(queryArray) - 1); index++ {
+			err := repository.executeNonQuery(conn, queryArray[index])
+			if err == nil {
+				status[index] = true
+			} else {
+				status[index] = false
+			}
+		}
+		for _, stat := range status {
+			if stat == false {
+				response.IsSuccess = false
+				response.Message = "Error Updating All Objects in CloudSQL. Check Data!"
+				return response
+			}
+		}
+
+		response.IsSuccess = true
+		response.Message = "Successfully stored object(s) in CloudSQL"
+
+	} else {
+		if err == nil {
+			err := repository.executeNonQuery(conn, script)
+			if err == nil {
+				response.IsSuccess = true
+				response.Message = "Successfully stored object(s) in CloudSQL"
+			} else {
+				response.IsSuccess = false
+				response.Message = "Error storing data in CloudSQL : " + err.Error()
+			}
+		} else {
+			response.IsSuccess = false
+			response.Message = "Error generating CloudSQL query : " + err.Error()
+		}
+	}
+	
 	return response
 }
 
@@ -391,7 +433,7 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 
 				updateValues += (k + "=" + repository.getSqlFieldValue(v))
 			}
-			query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";")
+			query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";###")
 		}
 
 		if isFirstRow {
