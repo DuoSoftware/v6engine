@@ -267,10 +267,14 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 		if err == nil {
 			response.GetSuccessResByObject(obj)
 		} else {
-			response.GetErrorResponse("Error querying from CloudSQL : " + err.Error())
+			var empty interface{}
+			response.GetSuccessResByObject(empty)
+			//response.GetErrorResponse("Error querying from CloudSQL : " + err.Error())
 		}
 	} else {
-		response.GetErrorResponse("Error connecting to CloudSQL : " + err.Error())
+		var empty interface{}
+		response.GetSuccessResByObject(empty)
+		//response.GetErrorResponse("Error connecting to CloudSQL : " + err.Error())
 	}
 
 	return response
