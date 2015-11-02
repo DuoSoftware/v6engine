@@ -131,7 +131,7 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 	if err == nil {
 		isError := false
 		for _, obj := range request.Body.Objects {
-			query := repository.getDeleteScript(repository.getDatabaseName(request.Controls.Namespace), request.Controls.Class, getNoSqlKeyById(request, obj))
+			query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKeyById(request, obj))
 			err := repository.executeNonQuery(conn, query)
 			if err != nil {
 				isError = true
@@ -157,7 +157,7 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 	response := RepositoryResponse{}
 	conn, err := repository.getConnection(request)
 	if err == nil {
-		query := repository.getDeleteScript(repository.getDatabaseName(request.Controls.Namespace), request.Controls.Class, getNoSqlKey(request))
+		query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKey(request))
 		err := repository.executeNonQuery(conn, query)
 		if err != nil {
 			response.IsSuccess = false
@@ -349,7 +349,7 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 
 	for _, obj := range allObjects {
 
-		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKey(request))
+		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj))
 
 		if currentObject == nil {
 			if isFirstRow {
@@ -391,7 +391,7 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 
 				updateValues += (k + "=" + repository.getSqlFieldValue(v))
 			}
-			query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKey(request) + "\";")
+			query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";")
 		}
 
 		if isFirstRow {
@@ -403,7 +403,7 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 }
 
 func (repository CloudSqlRepository) getDeleteScript(namespace string, class string, id string) string {
-	return "DELETE * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = \"" + id + "\""
+	return "DELETE FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = \"" + id + "\""
 }
 
 func (repository CloudSqlRepository) getCreateScript(namespace string, class string, obj map[string]interface{}) string {
