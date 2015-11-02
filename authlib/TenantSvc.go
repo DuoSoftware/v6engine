@@ -131,13 +131,13 @@ func (T TenantSvc) RemoveUser(email string) bool {
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		auth := AuthHandler{}
-		a, err := auth.GetUser(email)
+		//a, err := auth.GetUser(email)
 		if err == "" {
 
 			th := TenantHandler{}
 			_, p := th.Autherized(user.Domain, user)
 			if p.SecurityLevel == "admin" {
-				t := th.GetTenant(user.Domain)
+				//t := th.GetTenant(user.Domain)
 				//th.AddUsersToTenant(user.Domain, t.Name, a.UserID, "level")
 				return true
 			} else {
