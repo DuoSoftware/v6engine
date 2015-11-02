@@ -51,8 +51,16 @@ func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) Re
 }
 
 func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
-	query := request.Body.Query.Parameters
-	return repository.queryCommonMany(query, request)
+	//query := request.Body.Query.Parameters
+	//return repository.queryCommonMany(query, request)
+	response := RepositoryResponse{}
+	if request.Body.Query.Parameters != "*" {
+		query := request.Body.Query.Parameters
+		response = repository.queryCommonMany(query, request)
+	} else {
+		response = repository.GetAll(request)
+	}
+	return response
 }
 
 func (repository CloudSqlRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
@@ -149,7 +157,7 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 	response := RepositoryResponse{}
 	conn, err := repository.getConnection(request)
 	if err == nil {
-		query := repository.getDeleteScript(repository.getDatabaseName(request.Controls.Namespace), request.Controls.Class, request.Controls.Id)
+		query := repository.getDeleteScript(repository.getDatabaseName(request.Controls.Namespace), request.Controls.Class, getNoSqlKey(request))
 		err := repository.executeNonQuery(conn, query)
 		if err != nil {
 			response.IsSuccess = false
@@ -521,7 +529,7 @@ func (repository CloudSqlRepository) checkSchema(conn *sql.DB, namespace string,
 		err := repository.checkAvailabilityTable(conn, dbName, namespace, class, obj)
 
 		if err != nil {
-
+			term.Write(err.Error(), 1)
 		}
 	}
 }
@@ -822,6 +830,10 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string)
 	var stmt *sql.Stmt
 	stmt, err = conn.Prepare(query)
 	_, err = stmt.Exec()
+	if err != nil {
+		term.Write(err.Error(),1)
+		term.Write(query, 1)
+	}
 	return
 }
 
