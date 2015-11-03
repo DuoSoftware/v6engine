@@ -67,8 +67,17 @@ func (repository CloudSqlRepository) GetByKey(request *messaging.ObjectRequest) 
 }
 
 func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("GetSearch not implemented in CloudSQL repository")
-	return getDefaultNotImplemented()
+	//request.Log("GetSearch not implemented in CloudSQL repository")
+	//return getDefaultNotImplemented()
+	response := RepositoryResponse{}
+	tokens := strings.Split(request.Body.Query.Parameters, ":")
+	fieldName := tokens[0]
+	fieldValue := tokens[1]
+
+	query := "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "';"
+	fmt.Println(query)
+	response = repository.queryCommonMany(query, request)
+	return response
 }
 
 func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
