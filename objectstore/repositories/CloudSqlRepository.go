@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"duov6.com/objectstore/queryparser"
 	"github.com/twinj/uuid"
 	"strconv"
 	"strings"
@@ -24,8 +25,7 @@ func (repository CloudSqlRepository) GetRepositoryName() string {
 }
 
 func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
-	//query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
-	//return repository.queryCommonMany(query, request)
+	term.Write("Executing Get-All!", 2)
 	isSkippable := false
 	isTakable := false
 	skip := "0"
@@ -51,9 +51,12 @@ func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) Re
 }
 
 func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
+	term.Write("Executing Get-Query!", 2)
 	response := RepositoryResponse{}
 	if request.Body.Query.Parameters != "*" {
-		query := request.Body.Query.Parameters
+		formattedQuery := queryparser.GetFormattedQuery(request.Body.Query.Parameters)
+		term.Write(("Formatted Query : " + formattedQuery),2);
+		query := formattedQuery
 		response = repository.queryCommonMany(query, request)
 	} else {
 		response = repository.GetAll(request)
@@ -62,13 +65,13 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 }
 
 func (repository CloudSqlRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
+	term.Write("Executing Get-By-Key!", 2)
 	query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE __os_id = \"" + getNoSqlKey(request) + "\""
 	return repository.queryCommonOne(query, request)
 }
 
 func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
-	//request.Log("GetSearch not implemented in CloudSQL repository")
-	//return getDefaultNotImplemented()
+	term.Write("Executing Get-Search!", 2)
 	response := RepositoryResponse{}
 	tokens := strings.Split(request.Body.Query.Parameters, ":")
 	fieldName := tokens[0]
@@ -81,7 +84,7 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 }
 
 func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
-	//return repository.queryStore(request)
+	term.Write("Executing Insert-Multiple!", 2)
 	var idData map[string]interface{}
 	idData = make(map[string]interface{})
 
@@ -104,7 +107,7 @@ func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectReq
 }
 
 func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	//return repository.queryStore(request)
+	term.Write("Executing Insert-Single!", 2)
 	id := repository.getRecordID(request, request.Body.Object)
 	request.Controls.Id = id
 	request.Body.Object[request.Body.Parameters.KeyProperty] = id
@@ -123,16 +126,17 @@ func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectReque
 }
 
 func (repository CloudSqlRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
+	term.Write("Executing Update-Multiple!", 2)
 	return repository.queryStore(request)
 }
 
 func (repository CloudSqlRepository) UpdateSingle(request *messaging.ObjectRequest) RepositoryResponse {
+	term.Write("Executing Update-Single!", 2)
 	return repository.queryStore(request)
 }
 
 func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectRequest) RepositoryResponse {
-	//request.Log("DeleteMultiple not implemented in CloudSQL repository")
-	//return getDefaultNotImplemented()
+	term.Write("Executing Delete-Multiple!", 2)
 	response := RepositoryResponse{}
 	conn, err := repository.getConnection(request)
 	if err == nil {
@@ -159,8 +163,7 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 }
 
 func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	//request.Log("DeleteSingle not implemented in CloudSQL repository")
-	//return getDefaultNotImplemented()
+	term.Write("Executing Delete-Single!", 2)
 	response := RepositoryResponse{}
 	conn, err := repository.getConnection(request)
 	if err == nil {
@@ -181,8 +184,7 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 }
 
 func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) RepositoryResponse {
-	//request.Log("Special not implemented in CloudSQL repository")
-	//return getDefaultNotImplemented()
+	term.Write("Executing Special!", 2)
 	response := RepositoryResponse{}
 	queryType := request.Body.Special.Type
 
