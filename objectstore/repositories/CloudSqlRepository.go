@@ -54,7 +54,7 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 	term.Write("Executing Get-Query!", 2)
 	response := RepositoryResponse{}
 	if request.Body.Query.Parameters != "*" {
-		formattedQuery := queryparser.GetFormattedQuery(request.Body.Query.Parameters)
+		formattedQuery := queryparser.GetFormattedQuerywithDB(request.Body.Query.Parameters)
 		term.Write(("Formatted Query : " + formattedQuery),2);
 		query := formattedQuery
 		response = repository.queryCommonMany(query, request)
