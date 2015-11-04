@@ -16,7 +16,33 @@ func GetFormattedQuery(oldQuery string) (newQuery string) {
 		fmt.Print("Tables in Query Before Converting to Hive : ")
 		fmt.Println(tables)
 
-		newTables := convertToHiveTableFormat(tables)
+		newTables := convertToHiveTableFormat(tables, "")
+
+		fmt.Print("Hive Converted Table Names : ")
+		fmt.Println(newTables)
+
+		for key, _ := range tables {
+			newQuery = strings.Replace(newQuery, tables[key], newTables[key], -1)
+		}
+	} else {
+		newQuery = oldQuery
+	}
+
+	return
+}
+
+func GetFormattedQuerywithDB(oldQuery string, database string) (newQuery string) {
+	fmt.Println("Starting formatting query process...")
+
+	if !checkIfException(oldQuery) {
+
+		newQuery = oldQuery
+		tables := getTables(oldQuery)
+
+		fmt.Print("Tables in Query Before Converting to Hive : ")
+		fmt.Println(tables)
+
+		newTables := convertToHiveTableFormat(tables, database)
 
 		fmt.Print("Hive Converted Table Names : ")
 		fmt.Println(newTables)
@@ -144,7 +170,7 @@ func RebuildQuery(oldQuery string) (newQuery string) {
 	return
 }
 
-func convertToHiveTableFormat(input map[int]string) map[int]string {
+func convertToHiveTableFormat(input map[int]string, namespace string) map[int]string {
 
 	var outMap map[int]string
 	outMap = make(map[int]string)
@@ -154,14 +180,15 @@ func convertToHiveTableFormat(input map[int]string) map[int]string {
 	}
 
 	for key, _ := range outMap {
-		
-		tokens := strings.Split(outMap[key], ".")
-		noOfEmissions := len(tokens) - 2
-		outMap[key] = "_" + strings.Replace(outMap[key], ".", "", noOfEmissions)
-		//replace first two dots to 8s
-		//outMap[key] = "_" + strings.Replace(outMap[key], ".", "", 2)
-		//replace last dot to 0s
-		//outMap[key] = strings.Replace(outMap[key], ".", "0", 1)
+
+		if strings.Contains(outMap[key], ".") {
+			tokens := strings.Split(outMap[key], ".")
+			noOfEmissions := len(tokens) - 2
+			outMap[key] = "_" + strings.Replace(outMap[key], ".", "", noOfEmissions)
+		} else {
+			outMap[key] = namespace + "." + outMap[key]
+		}
+
 	}
 
 	return outMap
