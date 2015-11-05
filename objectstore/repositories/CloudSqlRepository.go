@@ -4,12 +4,12 @@ import (
 	"database/sql"
 	"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
+	"duov6.com/objectstore/queryparser"
 	"duov6.com/term"
 	"encoding/json"
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"duov6.com/objectstore/queryparser"
 	"github.com/twinj/uuid"
 	"strconv"
 	"strings"
@@ -55,7 +55,7 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 	response := RepositoryResponse{}
 	if request.Body.Query.Parameters != "*" {
 		formattedQuery := queryparser.GetFormattedQuerywithDB(request.Body.Query.Parameters, repository.getDatabaseName(request.Controls.Namespace))
-		term.Write(("Formatted Query : " + formattedQuery),2);
+		term.Write(("Formatted Query : " + formattedQuery), 2)
 		query := formattedQuery
 		response = repository.queryCommonMany(query, request)
 	} else {
@@ -446,7 +446,7 @@ func (repository CloudSqlRepository) getDeleteScript(namespace string, class str
 }
 
 func (repository CloudSqlRepository) getCreateScript(namespace string, class string, obj map[string]interface{}) string {
-	query := "CREATE TABLE " + repository.getDatabaseName(namespace) + "." + class + "(__os_id TEXT"
+	query := "CREATE TABLE IF NOT EXISTS " + repository.getDatabaseName(namespace) + "." + class + "(__os_id TEXT"
 
 	for k, v := range obj {
 		query += (", " + k + " " + repository.golangToSql(v))
@@ -493,7 +493,10 @@ func (repository CloudSqlRepository) checkAvailabilityTable(conn *sql.DB, dbName
 	if availableTables[dbName+"."+class] == nil {
 		var tableResult map[string]interface{}
 		tableResult, err = repository.executeQueryOne(conn, "SHOW TABLES FROM "+dbName+" LIKE \""+class+"\"", nil)
-
+		fmt.Println("------------------")
+		fmt.Println(tableResult)
+		fmt.Println("Tables_in_" + dbName)
+		fmt.Println("------------------")
 		if err == nil {
 			if tableResult["Tables_in_"+dbName] == nil {
 				script := repository.getCreateScript(namespace, class, obj)
@@ -526,6 +529,7 @@ func (repository CloudSqlRepository) checkAvailabilityTable(conn *sql.DB, dbName
 			}
 
 			alterColumns += ("ADD COLUMN " + k + " " + repository.golangToSql(v))
+			repository.addColumnToTableCache(dbName, class, k, repository.golangToSql(v))
 		}
 	}
 
@@ -535,6 +539,13 @@ func (repository CloudSqlRepository) checkAvailabilityTable(conn *sql.DB, dbName
 	}
 
 	return
+}
+
+func (repository CloudSqlRepository) addColumnToTableCache(dbName string, class string, field string, datatype string) {
+	dataMap := make(map[string]string)
+	dataMap = tableCache[dbName+"."+class]
+	dataMap[field] = datatype
+	tableCache[dbName+"."+class] = dataMap
 }
 
 func (repository CloudSqlRepository) buildTableCache(conn *sql.DB, dbName string, class string) (err error) {
@@ -679,7 +690,9 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 	}
 
 	var outData interface{}
-
+	fmt.Println("*************")
+	fmt.Println(t)
+	fmt.Println("*************)")
 	tmp := string(b)
 	switch t {
 	case "bit(1)":
@@ -866,6 +879,7 @@ func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string,
 }
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
+	fmt.Println(query)
 	var stmt *sql.Stmt
 	stmt, err = conn.Prepare(query)
 	_, err = stmt.Exec()
