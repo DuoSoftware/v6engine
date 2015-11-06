@@ -73,11 +73,15 @@ func (repository CloudSqlRepository) GetByKey(request *messaging.ObjectRequest) 
 func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Get-Search!", 2)
 	response := RepositoryResponse{}
-	tokens := strings.Split(request.Body.Query.Parameters, ":")
-	fieldName := tokens[0]
-	fieldValue := tokens[1]
-
-	query := "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "';"
+	query := ""
+	if strings.Contains(request.Body.Query.Parameters, ":") {
+		tokens := strings.Split(request.Body.Query.Parameters, ":")
+		fieldName := tokens[0]
+		fieldValue := tokens[1]
+		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "';"
+	} else {
+		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + ";"
+	}
 	fmt.Println(query)
 	response = repository.queryCommonMany(query, request)
 	return response
