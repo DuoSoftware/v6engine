@@ -257,6 +257,8 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					message = "Error converting request : " + rerr.Error()
 					isSuccess = false
 				} else {
+
+					//Start writing to JsonStack
 					if r.Method == "POST" {
 						var temprequestBody messaging.RequestBody
 						_ = json.Unmarshal(rb, &temprequestBody)
@@ -268,6 +270,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					} else if r.Method == "DELETE" {
 						backup.SaveDeleteJsons(rb, headerNamespace, headerClass)
 					}
+					//Writing to JsonStack ends here
 
 					err := json.Unmarshal(rb, &requestBody)
 					if err != nil {
@@ -340,10 +343,6 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 				objectRequest.Configuration = configObject
 
 				if canAddHeader {
-					//This was changed on 2015-08-04
-					//From now on headers will be added in repositories.RepositoryExecutor.go
-					//Why this wasn't removed then? Without this note you could have deleted this.
-					//SAVING IT FOR A RAINY DAY! Stop questioning the dev!
 					repositories.FillControlHeaders(objectRequest)
 				}
 			}
