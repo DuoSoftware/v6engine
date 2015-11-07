@@ -186,6 +186,7 @@ func (repository ElasticRepository) setOneElastic(request *messaging.ObjectReque
 
 	id := repository.getRecordID(request, request.Body.Object)
 	request.Body.Object[request.Body.Parameters.KeyProperty] = id
+	request.Body.Object["timestamp"] = repository.getTimestamp()
 	key := request.Controls.Namespace + "." + request.Controls.Class + "." + id
 	_, err := conn.Index(request.Controls.Namespace, request.Controls.Class, key, nil, request.Body.Object)
 	if err != nil {
@@ -225,6 +226,7 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 		id := repository.getRecordID(request, obj)
 		nosqlid := request.Controls.Namespace + "." + request.Controls.Class + "." + id
 		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
+		request.Body.Objects[index]["timestamp"] = repository.getTimestamp()
 		Data[strconv.Itoa(CountIndex)] = id
 		CountIndex++
 		indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
@@ -746,5 +748,18 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 	} else {
 		return obj[request.Body.Parameters.KeyProperty].(string)
 	}
+	return
+}
+
+func (repository ElasticRepository) getTimestamp() (retTime string) {
+	currentTime := time.Now().Local()
+	year := strconv.Itoa(currentTime.Year())
+	month := strconv.Itoa(int(currentTime.Month()))
+	day := strconv.Itoa(currentTime.Day())
+	hour := strconv.Itoa(currentTime.Hour())
+	minute := strconv.Itoa(currentTime.Minute())
+	second := strconv.Itoa(currentTime.Second())
+	retTime = (year + "-" + month + "-" + day + "T" + hour + ":" + minute + ":" + second)
+
 	return
 }
