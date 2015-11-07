@@ -217,6 +217,9 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 				response.IsSuccess = false
 				response.Message = "Error Dropping Table in CloudSQL Repository : " + err.Error()
 			} else {
+				//Delete Class from availableTables and tablecache
+				delete(availableTables, (repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class))
+				delete(tableCache, (repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class))
 				response.IsSuccess = true
 				response.Message = "Successfully Dropped Table : " + request.Controls.Class
 			}
@@ -234,6 +237,15 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 				response.IsSuccess = false
 				response.Message = "Error Dropping Table in CloudSQL Repository : " + err.Error()
 			} else {
+				//Delete Namespace from availableDbs
+				delete(availableDbs, repository.getDatabaseName(request.Controls.Namespace))
+				//Delete all associated Classes from it's TableCache and availableTables
+				for key, _ := range availableTables {
+					if strings.Contains(key, repository.getDatabaseName(request.Controls.Namespace)) {
+						delete(availableTables, key)
+						delete(tableCache, key)
+					}
+				}
 				response.IsSuccess = true
 				response.Message = "Successfully Dropped Table : " + request.Controls.Class
 			}
