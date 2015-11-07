@@ -62,10 +62,8 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 
 	if err != nil {
 		if strings.Contains(err.Error(), "record not found") {
-			var emptymap map[string]interface{}
-			emptymap = make(map[string]interface{})
-			finalBytes, _ := json.Marshal(emptymap)
-			response.GetResponseWithBody(finalBytes)
+			var empty interface{}
+			response.GetSuccessResByObject(empty)
 		} else {
 			errorMessage := "Error retrieving object from elastic search : " + err.Error()
 			term.Write(errorMessage, 1)
@@ -138,10 +136,8 @@ func (repository ElasticRepository) GetByKey(request *messaging.ObjectRequest) R
 
 	if err != nil {
 		if strings.Contains(err.Error(), "record not found") {
-			var emptymap map[string]interface{}
-			emptymap = make(map[string]interface{})
-			finalBytes, _ := json.Marshal(emptymap)
-			response.GetResponseWithBody(finalBytes)
+			var empty interface{}
+			response.GetSuccessResByObject(empty)
 		}
 	} else {
 		bytes, err := data.Source.MarshalJSON()
