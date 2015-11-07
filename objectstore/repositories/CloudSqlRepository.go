@@ -6,6 +6,7 @@ import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/queryparser"
 	"duov6.com/term"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,8 +14,6 @@ import (
 	"github.com/twinj/uuid"
 	"strconv"
 	"strings"
-	//"reflect";
-	"encoding/base64"
 )
 
 type CloudSqlRepository struct {
@@ -82,7 +81,7 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 	} else {
 		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + ";"
 	}
-	fmt.Println(query)
+	request.Log(query)
 	response = repository.queryCommonMany(query, request)
 	return response
 }
@@ -282,12 +281,9 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 		} else {
 			var empty interface{}
 			response.GetSuccessResByObject(empty)
-			//response.GetErrorResponse("Error querying from CloudSQL : " + err.Error())
 		}
 	} else {
-		var empty interface{}
-		response.GetSuccessResByObject(empty)
-		//response.GetErrorResponse("Error connecting to CloudSQL : " + err.Error())
+		response.GetErrorResponse("Error connecting to CloudSQL : " + err.Error())
 	}
 
 	return response
@@ -460,7 +456,7 @@ func (repository CloudSqlRepository) getCreateScript(namespace string, class str
 	return query
 }
 
-var availableDbs map[string]interface{} //:= make(map[string]bool)
+var availableDbs map[string]interface{}
 var availableTables map[string]interface{}
 var tableCache map[string]map[string]string
 
@@ -497,10 +493,6 @@ func (repository CloudSqlRepository) checkAvailabilityTable(conn *sql.DB, dbName
 	if availableTables[dbName+"."+class] == nil {
 		var tableResult map[string]interface{}
 		tableResult, err = repository.executeQueryOne(conn, "SHOW TABLES FROM "+dbName+" LIKE \""+class+"\"", nil)
-		fmt.Println("------------------")
-		fmt.Println(tableResult)
-		fmt.Println("Tables_in_" + dbName)
-		fmt.Println("------------------")
 		if err == nil {
 			if tableResult["Tables_in_"+dbName] == nil {
 				script := repository.getCreateScript(namespace, class, obj)
@@ -694,9 +686,6 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 	}
 
 	var outData interface{}
-	fmt.Println("*************")
-	fmt.Println(t)
-	fmt.Println("*************)")
 	tmp := string(b)
 	switch t {
 	case "bit(1)":
