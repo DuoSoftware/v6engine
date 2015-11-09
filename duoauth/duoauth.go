@@ -18,13 +18,7 @@ import (
 
 var Config ServiceConfig
 
-type ServiceConfig struct {
-	AuthService    bool
-	AppService     bool
-	Master         bool
-	MasterServerIP bool
-	//ConfigService bool
-}
+
 
 func GetConfig() ServiceConfig {
 	b, err := config.Get("Service")
