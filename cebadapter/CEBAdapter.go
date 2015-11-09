@@ -1,5 +1,5 @@
 package cebadapter
-
+//I don't  want to be a lazy coder :`(
 import (
 	"duov6.com/agentCore"
 	"duov6.com/agentCore/core"
