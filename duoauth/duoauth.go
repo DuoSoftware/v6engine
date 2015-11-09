@@ -68,6 +68,7 @@ func main() {
 	term.Write("|     Admintration Console running on  :9000                   |", term.Splash)
 	term.Write("|     https RestFul Service running on :3048                   |", term.Splash)
 	term.Write("|     Duo v6 Auth Service 6.0                                  |", term.Splash)
+	term.Write("|     New updat		                                   |", term.Splash)
 	term.Write("================================================================", term.Splash)
 	term.StartCommandLine()
 
@@ -93,7 +94,7 @@ func runRestFul() {
 	gorest.RegisterService(new(config.ConfigSvc))
 	gorest.RegisterService(new(statservice.StatSvc))
 	gorest.RegisterService(new(apisvc.ApiSvc))
-
+	
 	c := authlib.GetConfig()
 	email.EmailAddress = c.Smtpusername
 	email.Password = c.Smtppassword
