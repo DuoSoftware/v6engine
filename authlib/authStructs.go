@@ -56,46 +56,4 @@ func SetupConfig() {
 
 }
 
-type AppAutherize struct {
-	Name          string
-	AppliccatioID string
-	AutherizeKey  string
-	OtherData     map[string]interface{}
-}
 
-type AppCertificate struct {
-	AuthKey       string
-	UserID        string
-	ApplicationID string
-	AppSecretKey  string
-	Otherdata     map[string]interface{}
-}
-
-type User struct {
-	UserID          string
-	EmailAddress    string
-	Name            string
-	Password        string
-	ConfirmPassword string
-	Active          bool
-	//OtherData       map[string]string
-}
-
-type AuthConfig struct {
-	Cirtifcate    string
-	PrivateKey    string
-	Https_Enabled bool
-	StoreID       string
-	Smtpserver    string
-	Smtpusername  string
-	Smtppassword  string
-	UserName      string
-	Password      string
-}
-
-type AuthCode struct {
-	ApplicationID string
-	Code          string
-	UserID        string
-	URI           string
-}
