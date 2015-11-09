@@ -4,6 +4,7 @@ import "duov6.com/cebadapter"
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type DistributedConfigDownloader struct {
@@ -17,10 +18,8 @@ func (c DistributedConfigDownloader) DownloadConfiguration(securityToken string,
 
 	//Getting Objectstore Settings
 	configAll := cebadapter.GetGlobalConfig("StoreConfig")
-
 	//Get Default Configurations
 	retConfig := getDefaultConfigurations(getConfigurationIndex("Default", configAll), configAll)
-
 	//Check for overriding Configurations
 	isOverride, overrideIndex := CheckIfOverridable(configAll, namespace, class)
 	//if Overridable ->
@@ -48,12 +47,21 @@ func CheckIfOverridable(configAll []interface{}, namespace string, class string)
 		configMap := configAll[x].(map[string]interface{})
 
 		if configMap["StoreId"].(string) == namespace+".*" {
+			fmt.Println("CLASS RANGE OVERRIDE")
+			isOverride = true
+			overideIndex[index] = x
+			index++
+		}
+
+		if strings.Contains(namespace, strings.Replace(configMap["StoreId"].(string), "*", "", 1)) {
+			fmt.Println("NAMESPACE RANGE OVERRIDE")
 			isOverride = true
 			overideIndex[index] = x
 			index++
 		}
 
 		if configMap["StoreId"].(string) == namespace+"."+class {
+			fmt.Println("NAMESPACE, CLASS OVERRIDE")
 			isOverride = true
 			overideIndex[index] = x
 			index++

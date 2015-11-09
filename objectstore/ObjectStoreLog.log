@@ -747,3 +747,78 @@ Executing repository : MYSQL DB - Success
 2015-11-09 @ 12:28:16  Getting settings for single insert
 2015-11-09 @ 12:28:16  Executing repository : CloudSQL
 2015-11-09 @ 12:28:17  Executing repository : CloudSQL - Success
+2015-11-09 @ 17:42:17  Starting replicated storage engine
+2015-11-09 @ 17:42:17  Getting settings for single insert
+2015-11-09 @ 17:42:17  Executing repository : CloudSQL
+2015-11-09 @ 17:42:17  Executing repository : CloudSQL - Success
+2015-11-09 @ 17:43:32  Starting replicated storage engine
+2015-11-09 @ 17:43:32  Getting settings for single insert
+2015-11-09 @ 17:43:32  Executing repository : CloudSQL
+2015-11-09 @ 17:43:32  Executing repository : CloudSQL - Success
+2015-11-09 @ 17:46:48  Starting replicated storage engine
+2015-11-09 @ 17:46:48  Getting settings for single insert
+2015-11-09 @ 17:46:48  Executing repository : CloudSQL
+2015-11-09 @ 17:46:49  Executing repository : CloudSQL - Success
+2015-11-09 @ 17:46:58  Starting replicated storage engine
+2015-11-09 @ 17:46:58  Getting settings for single insert
+2015-11-09 @ 17:46:58  Executing repository : CloudSQL
+2015-11-09 @ 17:46:58  Executing repository : CloudSQL - Success
+2015-11-09 @ 17:48:46  Starting replicated storage engine
+2015-11-09 @ 17:48:46  Getting settings for single insert
+2015-11-09 @ 17:48:46  Executing repository : CloudSQL
+2015-11-09 @ 17:48:47  Executing repository : CloudSQL - Success
+2015-11-09 @ 17:53:05  Starting replicated storage engine
+2015-11-09 @ 17:53:05  Getting settings for single insert
+2015-11-09 @ 17:53:05  Executing repository : CloudSQL
+2015-11-09 @ 17:53:05  Executing repository : CloudSQL - Success
+2015-11-09 @ 17:55:41  Starting replicated storage engine
+2015-11-09 @ 17:55:41  Getting settings for single insert
+2015-11-09 @ 17:55:41  Executing repository : CloudSQL
+2015-11-09 @ 17:55:41  Executing repository : CloudSQL - Success
+2015-11-09 @ 17:58:02  Starting replicated storage engine
+2015-11-09 @ 17:58:02  Getting settings for single insert
+2015-11-09 @ 17:58:02  Executing repository : CloudSQL
+2015-11-09 @ 17:58:03  Executing repository : CloudSQL - Success
+2015-11-09 @ 17:59:26  Starting replicated storage engine
+2015-11-09 @ 17:59:26  Getting settings for single insert
+2015-11-09 @ 17:59:26  Executing repository : CloudSQL
+2015-11-09 @ 17:59:26  Executing repository : CloudSQL - Success
+2015-11-09 @ 18:04:28  Starting replicated storage engine
+2015-11-09 @ 18:04:28  Getting settings for single insert
+2015-11-09 @ 18:04:28  Executing repository : Elastic Search
+2015-11-09 @ 18:04:28  Starting INSERT-SINGLE
+2015-11-09 @ 18:04:28  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-09 @ 18:04:34  Executing repository : Elastic Search - Success
+2015-11-09 @ 18:06:07  Starting replicated storage engine
+2015-11-09 @ 18:06:07  Getting settings for single insert
+2015-11-09 @ 18:06:07  Executing repository : CloudSQL
+2015-11-09 @ 18:06:07  Executing repository : CloudSQL - Success
+2015-11-09 @ 18:12:07  Starting replicated storage engine
+2015-11-09 @ 18:12:07  Getting settings for single insert
+2015-11-09 @ 18:12:07  Executing repository : Elastic Search
+2015-11-09 @ 18:12:07  Starting INSERT-SINGLE
+2015-11-09 @ 18:12:07  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-09 @ 18:12:08  Executing repository : Elastic Search - Success
+2015-11-09 @ 18:12:26  Starting replicated storage engine
+2015-11-09 @ 18:12:26  Getting settings for single insert
+2015-11-09 @ 18:12:26  Executing repository : Elastic Search
+2015-11-09 @ 18:12:26  Starting INSERT-SINGLE
+2015-11-09 @ 18:12:26  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-09 @ 18:12:27  Executing repository : Elastic Search - Success
+2015-11-09 @ 18:12:38  Starting replicated storage engine
+2015-11-09 @ 18:12:38  Getting settings for single insert
+2015-11-09 @ 18:12:38  Executing repository : CloudSQL
+2015-11-09 @ 18:12:38  Executing repository : CloudSQL - Success
+2015-11-09 @ 18:13:18  Starting replicated storage engine
+2015-11-09 @ 18:13:18  Getting settings for single insert
+2015-11-09 @ 18:13:18  Executing repository : CloudSQL
+2015-11-09 @ 18:13:43  Starting replicated storage engine
+2015-11-09 @ 18:13:43  Getting settings for single insert
+2015-11-09 @ 18:13:43  Executing repository : CloudSQL
+2015-11-09 @ 18:13:43  Executing repository : CloudSQL - Success
+2015-11-09 @ 18:13:52  Starting replicated storage engine
+2015-11-09 @ 18:13:52  Getting settings for single insert
+2015-11-09 @ 18:13:52  Executing repository : Elastic Search
+2015-11-09 @ 18:13:52  Starting INSERT-SINGLE
+2015-11-09 @ 18:13:52  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-09 @ 18:13:52  Executing repository : Elastic Search - Success
