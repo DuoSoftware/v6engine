@@ -1,3 +1,5 @@
+package main
+
 type ServiceConfig struct {
 	AuthService    bool
 	AppService     bool
