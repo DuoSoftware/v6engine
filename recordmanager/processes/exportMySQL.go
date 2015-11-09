@@ -1,6 +1,59 @@
 package processes
 
 import (
+	"duov6.com/objectstore/client"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"strconv"
+)
+
+func ExportToMySQLServer(ipAddress string, username string, password string) (status bool) {
+	status = true
+	for _, value := range GetBackupFileList() {
+		content, _ := ioutil.ReadFile(value)
+		var array []map[string]interface{}
+		_ = json.Unmarshal(content, &array)
+		namespace, class := getNamespaceAndClass(value)
+		fmt.Println("Inserting Table : " + class + " in DB : " + namespace)
+		status = InsertToMySQL(ipAddress, username, password, namespace, class, array)
+	}
+	return
+}
+
+func InsertToMySQL(ipAddress string, username string, password string, namespace string, class string, array []map[string]interface{}) (status bool) {
+	fmt.Println(namespace)
+	fmt.Println(class)
+	fmt.Println(array[0])
+
+	noOfElementsPerSet := 500
+	noOfSets := (len(array) / noOfElementsPerSet)
+	remainderFromSets := 0
+	remainderFromSets = (len(array) - (noOfSets * noOfElementsPerSet))
+
+	startIndex := 0
+	stopIndex := noOfElementsPerSet
+
+	for x := 0; x < noOfSets; x++ {
+		fmt.Println("Inserting Stub : " + strconv.Itoa(x))
+		client.Go("securityToken", namespace, class).StoreObject().WithKeyField("OriginalIndex").AndStoreMapInterface(array[startIndex:stopIndex]).Ok()
+		startIndex += noOfElementsPerSet
+		stopIndex += noOfElementsPerSet
+	}
+
+	if remainderFromSets > 0 {
+		fmt.Println("Inserting Final Stub")
+		start := len(array) - remainderFromSets
+		client.Go("securityToken", namespace, class).StoreObject().WithKeyField("OriginalIndex").AndStoreMapInterface(array[start:len(array)]).Ok()
+	}
+
+	return true
+}
+
+/*
+package processes
+
+import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -660,3 +713,5 @@ func executeMySqlGetFields(session *sql.DB, Namespace string, class string) (ret
 
 	return returnByte
 }
+
+*/

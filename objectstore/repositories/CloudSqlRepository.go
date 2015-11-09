@@ -407,6 +407,14 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 				query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
 			}
 
+			id := ""
+
+			if obj["OriginalIndex"] == nil {
+				id = getNoSqlKeyById(request, obj)
+			} else {
+				id = obj["OriginalIndex"].(string)
+			}
+
 			keyList := ""
 			valueList := ""
 
@@ -428,7 +436,8 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 				query += ","
 			}
 
-			query += ("(\"" + getNoSqlKeyById(request, obj) + "\"" + valueList + ")")
+			//query += ("(\"" + getNoSqlKeyById(request, obj) + "\"" + valueList + ")")
+			query += ("(\"" + id + "\"" + valueList + ")")
 
 		} else {
 			updateValues := ""
