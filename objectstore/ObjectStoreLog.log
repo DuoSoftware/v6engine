@@ -822,3 +822,62 @@ Executing repository : MYSQL DB - Success
 2015-11-09 @ 18:13:52  Starting INSERT-SINGLE
 2015-11-09 @ 18:13:52  Establishing new connection for Elastic Search 127.0.0.1:9200
 2015-11-09 @ 18:13:52  Executing repository : Elastic Search - Success
+2015-11-10 @ 10:47:52  Starting replicated storage engine
+2015-11-10 @ 10:47:52  Getting settings for single insert
+2015-11-10 @ 10:47:52  Executing repository : Postgres DB
+2015-11-10 @ 10:50:47  Starting replicated storage engine
+2015-11-10 @ 10:50:47  Getting settings for single insert
+2015-11-10 @ 10:50:47  Executing repository : Postgres DB
+2015-11-10 @ 10:54:37  Starting replicated storage engine
+2015-11-10 @ 10:54:37  Getting settings for single insert
+2015-11-10 @ 10:54:37  Executing repository : Postgres DB
+2015-11-10 @ 10:54:37  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:54:41  Starting replicated storage engine
+2015-11-10 @ 10:54:41  Getting settings for get all
+2015-11-10 @ 10:54:41  Executing repository : Postgres DB
+2015-11-10 @ 10:54:41  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:54:47  Starting replicated storage engine
+2015-11-10 @ 10:54:47  Getting settings for get by key
+2015-11-10 @ 10:54:47  Executing repository : Postgres DB
+2015-11-10 @ 10:54:48  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:55:47  Starting replicated storage engine
+2015-11-10 @ 10:55:47  Getting settings for single insert
+2015-11-10 @ 10:55:47  Executing repository : Postgres DB
+2015-11-10 @ 10:55:47  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:55:51  Starting replicated storage engine
+2015-11-10 @ 10:55:51  Getting settings for get all
+2015-11-10 @ 10:55:51  Executing repository : Postgres DB
+2015-11-10 @ 10:55:51  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:56:17  Starting replicated storage engine
+2015-11-10 @ 10:56:17  Getting settings for single delete
+2015-11-10 @ 10:56:17  Executing repository : Postgres DB
+2015-11-10 @ 10:56:17  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:56:20  Starting replicated storage engine
+2015-11-10 @ 10:56:20  Getting settings for get all
+2015-11-10 @ 10:56:20  Executing repository : Postgres DB
+2015-11-10 @ 10:56:20  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:56:29  Starting replicated storage engine
+2015-11-10 @ 10:56:29  Getting settings for single insert
+2015-11-10 @ 10:56:29  Executing repository : Postgres DB
+2015-11-10 @ 10:56:30  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:56:54  Starting replicated storage engine
+2015-11-10 @ 10:56:54  Getting settings for special operation
+2015-11-10 @ 10:56:54  Executing repository : Postgres DB
+2015-11-10 @ 10:56:54  Starting Delete-Class sub routine
+2015-11-10 @ 10:56:54  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:56:58  Starting replicated storage engine
+2015-11-10 @ 10:56:58  Getting settings for get all
+2015-11-10 @ 10:56:58  Executing repository : Postgres DB
+2015-11-10 @ 10:56:58  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:57:07  Starting replicated storage engine
+2015-11-10 @ 10:57:07  Getting settings for single insert
+2015-11-10 @ 10:57:07  Executing repository : Postgres DB
+2015-11-10 @ 10:57:07  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:57:10  Starting replicated storage engine
+2015-11-10 @ 10:57:10  Getting settings for get all
+2015-11-10 @ 10:57:10  Executing repository : Postgres DB
+2015-11-10 @ 10:57:10  Executing repository : Postgres DB - Success
+2015-11-10 @ 10:58:48  Starting replicated storage engine
+2015-11-10 @ 10:58:48  Getting settings for get by filtering
+2015-11-10 @ 10:58:48  Executing repository : Postgres DB
+2015-11-10 @ 10:58:48  Executing repository : Postgres DB - Success

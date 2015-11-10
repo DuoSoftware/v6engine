@@ -2,11 +2,15 @@ package repositories
 
 import (
 	"database/sql"
+	"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
+	"duov6.com/term"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	_ "github.com/lib/pq"
-	"github.com/twinj/uuid"
+	//"github.com/twinj/uuid"
 	"strconv"
 	"strings"
 )
@@ -14,1437 +18,356 @@ import (
 type PostgresRepository struct {
 }
 
+//var availableDbs map[string]interface{} //:= make(map[string]bool)
+//var availableTables map[string]interface{}
+//var tableCache map[string]map[string]string
+
 func (repository PostgresRepository) GetRepositoryName() string {
 	return "Postgres DB"
 }
 
-func getPostgresSQLnamespace(request *messaging.ObjectRequest) string {
-	namespace := strings.Replace(request.Controls.Namespace, ".", "", -1)
-	return "_" + strings.ToLower(namespace)
+func (repository PostgresRepository) getDatabaseName(namespace string) string {
+	return ("_" + strings.Replace(namespace, ".", "", -1))
 }
 
-func getPostgresConnection(request *messaging.ObjectRequest) (session *sql.DB, isError bool, errorMessage string) {
+func (repository PostgresRepository) getConnection(request *messaging.ObjectRequest) (session *sql.DB, isError bool, errorMessage string) {
+	connInt := connmanager.Get("POSTGRES", request.Controls.Namespace)
 
-	isError = false
-	username := request.Configuration.ServerConfiguration["POSTGRES"]["Username"]
-	password := request.Configuration.ServerConfiguration["POSTGRES"]["Password"]
-	dbUrl := request.Configuration.ServerConfiguration["POSTGRES"]["Url"]
-	dbPort := request.Configuration.ServerConfiguration["POSTGRES"]["Port"]
-
-	session, err := sql.Open("postgres", "host="+dbUrl+" port="+dbPort+" user="+username+" password="+password+" dbname="+"postgres"+" sslmode=disable")
-
-	if err != nil {
-		isError = true
-		request.Log("Error : " + err.Error())
-		errorMessage = err.Error()
-		request.Log("Postgres connection initilizing failed!")
-	}
-
-	//Create schema if not available.
-	request.Log("Checking if Database " + getPostgresSQLnamespace(request) + " is available.")
-
-	isDatabaseAvailbale := false
-
-	rows, err := session.Query("SELECT datname FROM pg_database WHERE datistemplate = false;")
-
-	if err != nil {
-		request.Log("Error contacting PostGres Server : " + err.Error())
+	if connInt != nil {
+		term.Write("Connection Found!", 2)
+		session = connInt.(*sql.DB)
+		isError = false
 	} else {
-		request.Log("Successfully retrieved values for all objects in PostGres")
+		term.Write("Connection Not Found! Creating New Postgres Connection!", 2)
+		isError = false
+		username := request.Configuration.ServerConfiguration["POSTGRES"]["Username"]
+		password := request.Configuration.ServerConfiguration["POSTGRES"]["Password"]
+		dbUrl := request.Configuration.ServerConfiguration["POSTGRES"]["Url"]
+		dbPort := request.Configuration.ServerConfiguration["POSTGRES"]["Port"]
 
-		columns, _ := rows.Columns()
-		count := len(columns)
-		values := make([]interface{}, count)
-		valuePtrs := make([]interface{}, count)
+		session, err := sql.Open("postgres", "host="+dbUrl+" port="+dbPort+" user="+username+" password="+password+" dbname="+"postgres"+" sslmode=disable")
 
-		for rows.Next() {
-
-			for i, _ := range columns {
-				valuePtrs[i] = &values[i]
-			}
-
-			rows.Scan(valuePtrs...)
-
-			for i, _ := range columns {
-
-				var v interface{}
-
-				val := values[i]
-
-				b, ok := val.([]byte)
-
-				if ok {
-					v = string(b)
-				} else {
-					v = val
-				}
-				request.Log("Check domain : " + getPostgresSQLnamespace(request) + " : available schema : " + v.(string))
-				if v.(string) == getPostgresSQLnamespace(request) {
-					//Database available
-					isDatabaseAvailbale = true
-					break
-				}
-			}
-		}
-	}
-
-	if isDatabaseAvailbale {
-		request.Log("Database already available. Nothing to do. Proceed!")
-		session.Close()
-		session, err = sql.Open("postgres", "host="+dbUrl+" port="+dbPort+" user="+username+" password="+password+" dbname="+(getPostgresSQLnamespace(request))+" sslmode=disable")
-
-	} else {
-		_, err = session.Query("CREATE DATABASE " + getPostgresSQLnamespace(request) + ";")
 		if err != nil {
-			request.Log("Creation of domain matched Schema failed : " + err.Error())
+			isError = true
+			term.Write(err.Error(), 1)
+			errorMessage = err.Error()
+		}
+
+		//Create schema if not available.
+		term.Write("Checking if Database "+repository.getDatabaseName(request.Controls.Namespace)+" is available.", 2)
+
+		isDatabaseAvailbale := false
+
+		rows, err := session.Query("SELECT datname FROM pg_database WHERE datistemplate = false;")
+
+		if err != nil {
+			term.Write(err.Error(), 1)
 		} else {
-			request.Log("Creation of domain matched Schema Successful")
+			term.Write("Successfully retrieved values for all objects in PostGres", 2)
+
+			columns, _ := rows.Columns()
+			count := len(columns)
+			values := make([]interface{}, count)
+			valuePtrs := make([]interface{}, count)
+
+			for rows.Next() {
+
+				for i, _ := range columns {
+					valuePtrs[i] = &values[i]
+				}
+
+				rows.Scan(valuePtrs...)
+
+				for i, _ := range columns {
+
+					var v interface{}
+
+					val := values[i]
+
+					b, ok := val.([]byte)
+
+					if ok {
+						v = string(b)
+					} else {
+						v = val
+					}
+					term.Write("Check domain : "+repository.getDatabaseName(request.Controls.Namespace)+" : available schema : "+v.(string), 2)
+					if v.(string) == repository.getDatabaseName(request.Controls.Namespace) {
+						//Database available
+						isDatabaseAvailbale = true
+						break
+					}
+				}
+			}
+		}
+
+		if isDatabaseAvailbale {
+			term.Write("Database already available. Nothing to do. Proceed!", 2)
 			session.Close()
-			session, err = sql.Open("postgres", "host="+dbUrl+" port="+dbPort+" user="+username+" password="+password+" dbname="+(getPostgresSQLnamespace(request))+" sslmode=disable")
+			session, err = sql.Open("postgres", "host="+dbUrl+" port="+dbPort+" user="+username+" password="+password+" dbname="+(repository.getDatabaseName(request.Controls.Namespace))+" sslmode=disable")
 			if err != nil {
-				request.Log("Relogin Failed! : " + err.Error())
+				term.Write(err.Error(), 1)
+				isError = true
 			} else {
-				request.Log("Relogin successful!")
+				isError = false
+				errorMessage = ""
+				term.Write("Already Relogin successful!", 2)
 			}
 
+		} else {
+			_, err = session.Query("CREATE DATABASE " + repository.getDatabaseName(request.Controls.Namespace) + ";")
+			if err != nil {
+				term.Write(err.Error(), 1)
+				isError = true
+			} else {
+				term.Write("Creation of domain matched Schema Successful", 2)
+				session.Close()
+				session, err = sql.Open("postgres", "host="+dbUrl+" port="+dbPort+" user="+username+" password="+password+" dbname="+(repository.getDatabaseName(request.Controls.Namespace))+" sslmode=disable")
+				if err != nil {
+					term.Write(err.Error(), 1)
+					isError = true
+				} else {
+					term.Write("Relogin successful!", 2)
+					isError = false
+				}
+
+			}
 		}
+
+		return session, isError, errorMessage
 	}
-	request.Log("Reusing existing Postgres connection")
+	term.Write("Reusing existing Postgres connection", 2)
 	return
 }
 
 func (repository PostgresRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Starting GET-ALL")
-	response := RepositoryResponse{}
-	session, isError, errorMessage := getPostgresConnection(request)
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
-	} else {
-		isError = false
-		skip := "0"
-		if request.Extras["skip"] != nil {
-			skip = request.Extras["skip"].(string)
-		}
+	term.Write("Executing Get-All!", 2)
+	isSkippable := false
+	isTakable := false
+	skip := "0"
+	take := "100000"
 
-		take := "100000"
-		if request.Extras["take"] != nil {
-			take = request.Extras["take"].(string)
-		}
-
-		var returnMap []map[string]interface{}
-
-		rows, err := session.Query("SELECT * FROM " + strings.ToLower(request.Controls.Class) + " limit " + take + " offset " + skip)
-
-		if err != nil {
-			//response.IsSuccess = false
-			//response.GetErrorResponse("Error getting values for all objects in Postgres" + err.Error())
-			//response.Message = "Table Not Found in Database : " + getPostgresSQLnamespace(request)
-
-			response.IsSuccess = true
-			response.Message = "No objects found in Postgres"
-			var emptyMap map[string]interface{}
-			emptyMap = make(map[string]interface{})
-			byte, _ := json.Marshal(emptyMap)
-			response.GetResponseWithBody(byte)
-
-		} else {
-			response.IsSuccess = true
-			response.Message = "Successfully retrieved values for all objects in Postgres"
-			request.Log(response.Message)
-
-			columns, _ := rows.Columns()
-			count := len(columns)
-			values := make([]interface{}, count)
-			valuePtrs := make([]interface{}, count)
-
-			for rows.Next() {
-
-				var tempMap map[string]interface{}
-				tempMap = make(map[string]interface{})
-
-				for i, _ := range columns {
-					valuePtrs[i] = &values[i]
-				}
-
-				rows.Scan(valuePtrs...)
-
-				for i, col := range columns {
-
-					var v interface{}
-
-					val := values[i]
-
-					b, ok := val.([]byte)
-
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
-
-					tempMap[col] = v
-				}
-
-				returnMap = append(returnMap, tempMap)
-
-			}
-
-			if len(returnMap) == 0 {
-				response.IsSuccess = true
-				response.Message = "No objects found in Postgres"
-				var emptyMap map[string]interface{}
-				emptyMap = make(map[string]interface{})
-				byte, _ := json.Marshal(emptyMap)
-				response.GetResponseWithBody(byte)
-			}
-
-			if request.Controls.SendMetaData == "false" {
-
-				for index, arrVal := range returnMap {
-					for key, _ := range arrVal {
-						if key == "osheaders" {
-							delete(returnMap[index], key)
-						}
-					}
-				}
-			}
-
-			byteValue, errMarshal := json.Marshal(returnMap)
-			if errMarshal != nil {
-				response.IsSuccess = false
-				response.GetErrorResponse("Error getting values for all objects in Postgres" + err.Error())
-			} else {
-				response.IsSuccess = true
-				response.GetResponseWithBody(byteValue)
-				response.Message = "Successfully retrieved values for all objects in mongo"
-				request.Log(response.Message)
-			}
-		}
+	if request.Extras["skip"] != nil {
+		skip = request.Extras["skip"].(string)
 	}
-	session.Close()
-	return response
+
+	if request.Extras["take"] != nil {
+		take = request.Extras["take"].(string)
+	}
+
+	query := "SELECT * FROM " + request.Controls.Class
+	if isTakable {
+		query += " limit " + take
+	}
+	if isSkippable {
+		query += " offset " + skip
+	}
+
+	return repository.queryCommonMany(query, request)
 }
 
 func (repository PostgresRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Get Search not implemented in Postgres Db repository")
-	return getDefaultNotImplemented()
+	term.Write("Executing Get-Search!", 2)
+	response := RepositoryResponse{}
+	query := ""
+	if strings.Contains(request.Body.Query.Parameters, ":") {
+		tokens := strings.Split(request.Body.Query.Parameters, ":")
+		fieldName := tokens[0]
+		fieldValue := tokens[1]
+		query = "select * from " + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "';"
+	} else {
+		query = "select * from " + request.Controls.Class + ";"
+	}
+	request.Log(query)
+	response = repository.queryCommonMany(query, request)
+	return response
 }
 
 func (repository PostgresRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Starting GET-QUERY")
+	term.Write("Executing Get-Query!", 2)
 	response := RepositoryResponse{}
-
-	queryType := request.Body.Query.Type
-	switch queryType {
-	case "Query":
-		if request.Body.Query.Parameters != "*" {
-			fieldsInByte := executePostgresQuery(request)
-			if fieldsInByte != nil {
-				response.IsSuccess = true
-				response.Message = "Successfully Retrieved Data For Custom Query"
-				response.GetResponseWithBody(fieldsInByte)
-			} else {
-				response.IsSuccess = false
-				response.Message = "Aborted! Unsuccessful Retrieving Data For Custom Query"
-				errorMessage := response.Message
-				response.GetErrorResponse(errorMessage)
-			}
-		} else {
-			return repository.GetAll(request)
-		}
-	default:
-		request.Log(queryType + " not implemented in Postgres_SQL Db repository")
-		return getDefaultNotImplemented()
-
-	}
-
-	return response
-}
-
-func executePostgresQuery(request *messaging.ObjectRequest) (returnByte []byte) {
-	session, isError, _ := getPostgresConnection(request)
-	if isError == true {
-		returnByte = nil
+	if request.Body.Query.Parameters != "*" {
+		query := request.Body.Query.Parameters
+		term.Write(query, 2)
+		response = repository.queryCommonMany(query, request)
 	} else {
-		isError = false
-		//Process A : Get Count of DB
-		var returnMap map[string]interface{}
-		returnMap = make(map[string]interface{})
-
-		rows, err := session.Query(request.Body.Query.Parameters)
-
-		if err != nil {
-			request.Log("Error executing query in MySQL")
-		} else {
-			request.Log("Successfully executed query in MySQL")
-			columns, _ := rows.Columns()
-			count := len(columns)
-			values := make([]interface{}, count)
-			valuePtrs := make([]interface{}, count)
-
-			index := 0
-			for rows.Next() {
-
-				var tempMap map[string]interface{}
-				tempMap = make(map[string]interface{})
-
-				for i, _ := range columns {
-					valuePtrs[i] = &values[i]
-				}
-
-				rows.Scan(valuePtrs...)
-
-				for i, col := range columns {
-
-					var v interface{}
-
-					val := values[i]
-
-					b, ok := val.([]byte)
-
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
-
-					tempMap[col] = v
-
-				}
-
-				returnMap[strconv.Itoa(index)] = tempMap
-				index++
-			}
-
-			byteValue, errMarshal := json.Marshal(returnMap)
-			if errMarshal != nil {
-				request.Log("Error converting to byte array")
-				byteValue = nil
-			} else {
-				request.Log("Successfully converted result to byte array")
-			}
-
-			returnByte = byteValue
-		}
-
+		response = repository.GetAll(request)
 	}
-	session.Close()
-	return returnByte
+	return response
 }
 
 func (repository PostgresRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
-
-	request.Log("Starting GET-BY-KEY")
-	response := RepositoryResponse{}
-	session, isError, errorMessage := getPostgresConnection(request)
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
-	} else {
-		isError = false
-		request.Log("Id key : " + request.Controls.Id)
-
-		var myMap map[string]interface{}
-		myMap = make(map[string]interface{})
-
-		var keyMap map[string]interface{}
-		keyMap = make(map[string]interface{})
-
-		fieldName := ""
-		parameter := request.Controls.Id
-		if request.Extras["fieldName"] != nil {
-			fieldName = request.Extras["fieldName"].(string)
-			parameter = request.Controls.Id
-		} else {
-			request.Log("Getting Primary Key")
-			rows, err := session.Query("SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name)JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where constraint_type = 'PRIMARY KEY' and tc.table_name = '" + strings.ToLower(request.Controls.Class) + "';")
-
-			if err != nil {
-				response.IsSuccess = false
-				response.Message = "Error reading primary key"
-				request.Log("Error reading primary key")
-				return response
-			} else {
-
-				request.Log("Successfully returned primary Key for table")
-
-				columns, _ := rows.Columns()
-				count := len(columns)
-				values := make([]interface{}, count)
-				valuePtrs := make([]interface{}, count)
-
-				for rows.Next() {
-					for i, _ := range columns {
-						valuePtrs[i] = &values[i]
-					}
-
-					rows.Scan(valuePtrs...)
-
-					for i, col := range columns {
-
-						var v interface{}
-
-						val := values[i]
-
-						b, ok := val.([]byte)
-
-						if ok {
-							v = string(b)
-						} else {
-							v = val
-						}
-
-						keyMap[col] = v
-
-					}
-				}
-			}
-
-			if len(keyMap) == 0 {
-				response.IsSuccess = true
-				response.Message = "No objects found in Couchbase"
-				var emptyMap map[string]interface{}
-				emptyMap = make(map[string]interface{})
-				byte, _ := json.Marshal(emptyMap)
-				response.GetResponseWithBody(byte)
-			}
-
-			fieldName = keyMap["column_name"].(string)
-		}
-
-		request.Log("KeyProperty : " + fieldName)
-		request.Log("KeyValue : " + request.Controls.Id)
-		rows, err := session.Query("SELECT * FROM " + strings.ToLower(request.Controls.Class) + " where " + fieldName + " = '" + parameter + "';")
-
-		if err != nil {
-			response.IsSuccess = false
-			response.GetErrorResponse("Error getting values for all objects in PostgresSQL" + err.Error())
-		} else {
-			response.IsSuccess = true
-			response.Message = "Successfully retrieved values for all objects in PostgresSQL"
-			request.Log(response.Message)
-
-			columns, _ := rows.Columns()
-			count := len(columns)
-			values := make([]interface{}, count)
-			valuePtrs := make([]interface{}, count)
-
-			for rows.Next() {
-				for i, _ := range columns {
-					valuePtrs[i] = &values[i]
-				}
-
-				rows.Scan(valuePtrs...)
-
-				for i, col := range columns {
-
-					var v interface{}
-
-					val := values[i]
-
-					b, ok := val.([]byte)
-
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
-
-					myMap[col] = v
-
-				}
-			}
-
-			if len(myMap) == 0 {
-				response.IsSuccess = true
-				response.Message = "No objects found in Postgres"
-				var emptyMap map[string]interface{}
-				emptyMap = make(map[string]interface{})
-				byte, _ := json.Marshal(emptyMap)
-				response.GetResponseWithBody(byte)
-			}
-
-			if request.Controls.SendMetaData == "false" {
-				for index, _ := range myMap {
-					if index == "osheaders" {
-						delete(myMap, index)
-					}
-				}
-			}
-
-			byteValue, errMarshal := json.Marshal(myMap)
-			if errMarshal != nil {
-				response.IsSuccess = false
-				response.GetErrorResponse("Error getting values for all objects in PostgresSQL" + err.Error())
-			} else {
-				response.IsSuccess = true
-				response.GetResponseWithBody(byteValue)
-				response.Message = "Successfully retrieved values for all objects in PostgresSQL"
-				request.Log(response.Message)
-			}
-		}
-	}
-	session.Close()
-	return response
+	term.Write("Executing Get-By-Key!", 2)
+	query := "SELECT * FROM " + request.Controls.Class + " WHERE __os_id = '" + getNoSqlKey(request) + "'"
+	term.Write(query, 2)
+	return repository.queryCommonOne(query, request)
 }
 
-/*func (repository PostgresRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Starting INSERT-MULTIPLE")
-	response := RepositoryResponse{}
-	session, isError, errorMessage := getPostgresConnection(request)
-
-	var idData map[string]interface{}
-	idData = make(map[string]interface{})
-
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
-	} else {
-
-		var DataObjects []map[string]interface{}
-		DataObjects = make([]map[string]interface{}, len(request.Body.Objects))
-
-		//change osheaders
-		for i := 0; i < len(request.Body.Objects); i++ {
-			var tempMapObject map[string]interface{}
-			tempMapObject = make(map[string]interface{})
-
-			for key, value := range request.Body.Objects[i] {
-				if key == "__osHeaders" {
-					tempMapObject["osheaders"] = value
-				} else {
-					tempMapObject[strings.ToLower(key)] = value
-				}
-			}
-
-			DataObjects[i] = tempMapObject
-		}
-		//check for table in postgres
-
-		if createPostgresTable(request, session) {
-			request.Log("Table Verified Successfully!")
-		} else {
-			response.IsSuccess = false
-			return response
-		}
-
-		indexNames := getPostgresFieldOrder(request)
-
-		var argKeyList string
-		var argValueList string
-
-		//create keyvalue list
-
-		for i := 0; i < len(indexNames); i++ {
-			if i != len(indexNames)-1 {
-				argKeyList = argKeyList + indexNames[i] + ", "
-			} else {
-				argKeyList = argKeyList + indexNames[i]
-			}
-		}
-
-		for i := 0; i < len(DataObjects); i++ {
-			noOfElements := len(DataObjects[i])
-			keyValue := getPostgresSqlRecordID(request, DataObjects[i])
-			DataObjects[i][strings.ToLower(request.Body.Parameters.KeyProperty)] = keyValue
-			idData[strconv.Itoa(i)] = keyValue
-			if keyValue == "" {
-				response.IsSuccess = false
-				response.Message = "Failed inserting multiple object in Postgres"
-				request.Log(response.Message)
-				request.Log("Inavalid ID request")
-				return response
-			}
-
-			var keyArray = make([]string, noOfElements)
-			var valueArray = make([]string, noOfElements)
-
-			for index := 0; index < len(indexNames); index++ {
-				if indexNames[index] != "osheaders" {
-
-					if _, ok := DataObjects[i][indexNames[index]].(string); ok {
-						keyArray[index] = indexNames[index]
-						valueArray[index] = DataObjects[i][indexNames[index]].(string)
-					} else {
-						fmt.Println("Non string value detected, Will be strigified!")
-						keyArray[index] = indexNames[index]
-						valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
-					}
-				} else {
-					// __osHeaders Catched!
-					keyArray[index] = "osheaders"
-					valueArray[index] = ConvertOsheaders(DataObjects[i][indexNames[index]].(messaging.ControlHeaders))
-				}
-
-			}
-
-			argValueList += "("
-
-			//Build the query string
-			for i := 0; i < noOfElements; i++ {
-				if i != noOfElements-1 {
-					argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
-				} else {
-					argValueList = argValueList + "'" + valueArray[i] + "'"
-				}
-			}
-			if i != len(DataObjects)-1 {
-				argValueList += "),"
-			} else {
-				argValueList += ")"
-			}
-
-		}
-
-		//DEBUG USE : Display Query information
-		//	fmt.Println("Table Name : " + request.Controls.Class)
-		//	fmt.Println("Key list : " + argKeyList)
-		//fmt.Println("Value list : " + argValueList)
-		//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES " + argValueList + ";")
-		_, err := session.Query("INSERT INTO " + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
-		if err != nil {
-			response.IsSuccess = false
-			response.Message = err.Error()
-			request.Log(response.Message)
-			response.GetErrorResponse("Error inserting one object in Postgres" + err.Error())
-		} else {
-			response.IsSuccess = true
-			response.Message = "Successfully inserted one object in Postgres"
-			request.Log(response.Message)
-		}
-
-	}
-
-	//Update Response
-	var DataMap []map[string]interface{}
-	DataMap = make([]map[string]interface{}, 1)
-	var actualInput map[string]interface{}
-	actualInput = make(map[string]interface{})
-	actualInput["ID"] = idData
-	DataMap[0] = actualInput
-	response.Data = DataMap
-
-	session.Close()
-	return response
-}*/
-
 func (repository PostgresRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Starting INSERT-MULTIPLE")
-	response := RepositoryResponse{}
-	session, isError, errorMessage := getPostgresConnection(request)
-
+	term.Write("Executing Insert-Multiple!", 2)
+	//return repository.queryStore(request)
 	var idData map[string]interface{}
 	idData = make(map[string]interface{})
 
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
-	} else {
-
-		var DataObjects []map[string]interface{}
-		DataObjects = make([]map[string]interface{}, len(request.Body.Objects))
-
-		//change osheaders
-		for i := 0; i < len(request.Body.Objects); i++ {
-			var tempMapObject map[string]interface{}
-			tempMapObject = make(map[string]interface{})
-
-			for key, value := range request.Body.Objects[i] {
-				if key == "__osHeaders" {
-					tempMapObject["osheaders"] = value
-				} else {
-					tempMapObject[strings.ToLower(key)] = value
-				}
-			}
-
-			DataObjects[i] = tempMapObject
-		}
-		//check for table in postgres
-
-		if createPostgresTable(request, session) {
-			request.Log("Table Verified Successfully!")
-		} else {
-			response.IsSuccess = false
-			return response
-		}
-
-		indexNames := getPostgresFieldOrder(request)
-
-		var argKeyList string
-		var argValueList string
-
-		//create keyvalue list
-
-		for i := 0; i < len(indexNames); i++ {
-			if i != len(indexNames)-1 {
-				argKeyList = argKeyList + indexNames[i] + ", "
-			} else {
-				argKeyList = argKeyList + indexNames[i]
-			}
-		}
-
-		//Inserting Begins here
-
-		noOf500Sets := (len(DataObjects) / 500)
-		remainderFromSets := 0
-		statusCount := noOf500Sets
-		remainderFromSets = (len(DataObjects) - (noOf500Sets * 500))
-		if remainderFromSets > 0 {
-			statusCount++
-		}
-		var setStatus []bool
-		setStatus = make([]bool, statusCount)
-
-		startIndex := 0
-		stopIndex := 500
-		statusIndex := 0
-
-		for x := 0; x < noOf500Sets; x++ {
-			argValueList = ""
-
-			for i, _ := range DataObjects[startIndex:stopIndex] {
-				i += startIndex
-				noOfElements := len(DataObjects[i])
-				request.Log("Serializing Object no : " + strconv.Itoa(i))
-				keyValue := getPostgresSqlRecordID(request, DataObjects[i])
-				DataObjects[i][strings.ToLower(request.Body.Parameters.KeyProperty)] = keyValue
-				idData[strconv.Itoa(i)] = keyValue
-				if keyValue == "" {
-					response.IsSuccess = false
-					response.Message = "Failed inserting multiple object in Postgres"
-					request.Log(response.Message)
-					request.Log("Inavalid ID request")
-					return response
-				}
-
-				var keyArray = make([]string, noOfElements)
-				var valueArray = make([]string, noOfElements)
-
-				for index := 0; index < len(indexNames); index++ {
-					if indexNames[index] != "osheaders" {
-
-						if _, ok := DataObjects[i][indexNames[index]].(string); ok {
-							keyArray[index] = indexNames[index]
-							valueArray[index] = DataObjects[i][indexNames[index]].(string)
-						} else {
-							fmt.Println("Non string value detected, Will be strigified!")
-							keyArray[index] = indexNames[index]
-							valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
-						}
-					} else {
-						// __osHeaders Catched!
-						keyArray[index] = "osheaders"
-						valueArray[index] = ConvertOsheaders(DataObjects[i][indexNames[index]].(messaging.ControlHeaders))
-					}
-
-				}
-				argValueList += "("
-
-				//Build the query string
-				for i := 0; i < noOfElements; i++ {
-					if i != noOfElements-1 {
-						argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
-					} else {
-						argValueList = argValueList + "'" + valueArray[i] + "'"
-					}
-				}
-
-				i -= startIndex
-				if i != len(DataObjects[startIndex:stopIndex])-1 {
-					argValueList += "),"
-				} else {
-					argValueList += ")"
-				}
-
-			}
-
-			//DEBUG USE : Display Query information
-			//	fmt.Println("Table Name : " + request.Controls.Class)
-			//	fmt.Println("Key list : " + argKeyList)
-			//fmt.Println("Value list : " + argValueList)
-			//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES " + argValueList + ";")
-			request.Log("INSERT INTO " + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
-			_, err := session.Query("INSERT INTO " + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
-			if err != nil {
-				setStatus[statusIndex] = false
-				request.Log("ERROR : " + err.Error())
-			} else {
-				request.Log("INSERTED SUCCESSFULLY")
-				setStatus[statusIndex] = true
-			}
-
-			statusIndex++
-			startIndex += 500
-			stopIndex += 500
-		}
-
-		if remainderFromSets > 0 {
-			argValueList = ""
-			start := len(DataObjects) - remainderFromSets
-
-			for i, _ := range DataObjects[start:len(DataObjects)] {
-				i += start
-				noOfElements := len(DataObjects[i])
-				request.Log("Serializing Object no : " + strconv.Itoa(i))
-				keyValue := getPostgresSqlRecordID(request, DataObjects[i])
-				DataObjects[i][strings.ToLower(request.Body.Parameters.KeyProperty)] = keyValue
-				idData[strconv.Itoa(i)] = keyValue
-				if keyValue == "" {
-					response.IsSuccess = false
-					response.Message = "Failed inserting multiple object in Postgres"
-					request.Log(response.Message)
-					request.Log("Inavalid ID request")
-					return response
-				}
-
-				var keyArray = make([]string, noOfElements)
-				var valueArray = make([]string, noOfElements)
-
-				for index := 0; index < len(indexNames); index++ {
-					if indexNames[index] != "osheaders" {
-
-						if _, ok := DataObjects[i][indexNames[index]].(string); ok {
-							keyArray[index] = indexNames[index]
-							valueArray[index] = DataObjects[i][indexNames[index]].(string)
-						} else {
-							fmt.Println("Non string value detected, Will be strigified!")
-							keyArray[index] = indexNames[index]
-							valueArray[index] = getStringByObject(DataObjects[i][indexNames[index]])
-						}
-					} else {
-						// __osHeaders Catched!
-						keyArray[index] = "osheaders"
-						valueArray[index] = ConvertOsheaders(DataObjects[i][indexNames[index]].(messaging.ControlHeaders))
-					}
-
-				}
-
-				argValueList += "("
-
-				//Build the query string
-				for i := 0; i < noOfElements; i++ {
-					if i != noOfElements-1 {
-						argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
-					} else {
-						argValueList = argValueList + "'" + valueArray[i] + "'"
-					}
-				}
-
-				i -= start
-				if i != len(DataObjects[start:len(DataObjects)])-1 {
-					argValueList += "),"
-				} else {
-					argValueList += ")"
-				}
-
-			}
-
-			//DEBUG USE : Display Query information
-			//	fmt.Println("Table Name : " + request.Controls.Class)
-			//	fmt.Println("Key list : " + argKeyList)
-			//fmt.Println("Value list : " + argValueList)
-			//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES " + argValueList + ";")
-			request.Log("INSERT INTO " + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
-			_, err := session.Query("INSERT INTO " + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES " + argValueList + ";")
-			if err != nil {
-				setStatus[statusIndex] = false
-				request.Log("ERROR : " + err.Error())
-			} else {
-				request.Log("INSERTED SUCCESSFULLY")
-				setStatus[statusIndex] = true
-			}
-		}
-
-		isAllCompleted := true
-		for _, value := range setStatus {
-			if value == false {
-				isAllCompleted = false
-				break
-			}
-		}
-
-		if isAllCompleted {
-			response.IsSuccess = true
-			response.Message = "Successfully inserted many objects in to Postgres"
-			request.Log(response.Message)
-		} else {
-			response.IsSuccess = false
-			response.Message = "Error inserting many objects in to Postgres"
-			request.Log(response.Message)
-			response.GetErrorResponse("Error inserting many objects in to Postgres")
-		}
-
+	for index, obj := range request.Body.Objects {
+		//id := repository.getRecordID(request, obj)
+		fmt.Println(obj)
+		id := request.Body.Objects[index][request.Body.Parameters.KeyProperty]
+		idData[strconv.Itoa(index)] = id
+		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
 	}
 
-	//Update Response
 	var DataMap []map[string]interface{}
 	DataMap = make([]map[string]interface{}, 1)
-	var actualInput map[string]interface{}
-	actualInput = make(map[string]interface{})
-	actualInput["ID"] = idData
-	DataMap[0] = actualInput
-	response.Data = DataMap
+	var idMap map[string]interface{}
+	idMap = make(map[string]interface{})
+	idMap["ID"] = idData
+	DataMap[0] = idMap
 
-	session.Close()
+	response := repository.queryStore(request)
+	response.Data = DataMap
 	return response
 }
 
 func (repository PostgresRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Starting INSERT-SINGLE")
-	response := RepositoryResponse{}
+	term.Write("Executing Insert-Single!", 2)
+	//return repository.queryStore(request)
+	//id := repository.getRecordID(request, request.Body.Object)
+	id := request.Body.Object[request.Body.Parameters.KeyProperty]
+	request.Controls.Id = id.(string)
+	request.Body.Object[request.Body.Parameters.KeyProperty] = id
 
-	keyValue := getPostgresSqlRecordID(request, nil)
-	session, isError, errorMessage := getPostgresConnection(request)
-
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
-	} else if keyValue != "" {
-		//change field names to Lower Case
-		var DataObject map[string]interface{}
-		DataObject = make(map[string]interface{})
-
-		for key, value := range request.Body.Object {
-			if key == "__osHeaders" {
-				DataObject["osheaders"] = value
-			} else {
-				DataObject[strings.ToLower(key)] = value
-			}
-		}
-
-		noOfElements := len(DataObject)
-		DataObject[strings.ToLower(request.Body.Parameters.KeyProperty)] = keyValue
-
-		if createPostgresTable(request, session) {
-			request.Log("Table Verified Successfully!")
-		} else {
-			response.IsSuccess = false
-			return response
-		}
-
-		indexNames := getPostgresFieldOrder(request)
-
-		var argKeyList string
-		var argValueList string
-
-		//create keyvalue list
-
-		for i := 0; i < len(indexNames); i++ {
-			if i != len(indexNames)-1 {
-				argKeyList = argKeyList + indexNames[i] + ", "
-			} else {
-				argKeyList = argKeyList + indexNames[i]
-			}
-		}
-
-		var keyArray = make([]string, noOfElements)
-		var valueArray = make([]string, noOfElements)
-
-		// Process A :start identifying individual data in array and convert to string
-		for index := 0; index < len(indexNames); index++ {
-			if indexNames[index] != "osheaders" {
-
-				if _, ok := DataObject[indexNames[index]].(string); ok {
-					keyArray[index] = indexNames[index]
-					valueArray[index] = DataObject[indexNames[index]].(string)
-				} else {
-					fmt.Println("Non string value detected, Will be strigified!")
-					keyArray[index] = indexNames[index]
-					valueArray[index] = getStringByObject(DataObject[indexNames[index]])
-				}
-			} else {
-				// __osHeaders Catched!
-				keyArray[index] = "osheaders"
-				valueArray[index] = ConvertOsheaders(DataObject[indexNames[index]].(messaging.ControlHeaders))
-			}
-
-		}
-
-		//Build the query string
-		for i := 0; i < noOfElements; i++ {
-			if i != noOfElements-1 {
-				argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
-			} else {
-				argValueList = argValueList + "'" + valueArray[i] + "'"
-			}
-		}
-		//..........................................
-
-		//DEBUG USE : Display Query information
-		//fmt.Println("Table Name : " + request.Controls.Class)
-		//fmt.Println("Key list : " + argKeyList)
-		//fmt.Println("Value list : " + argValueList)
-		//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES (" + argValueList + ")")
-		_, err := session.Query("INSERT INTO " + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES (" + argValueList + ")")
-		if err != nil {
-			response.IsSuccess = false
-			response.GetErrorResponse("Error inserting one object in Postgres" + err.Error())
-			if strings.Contains(err.Error(), "duplicate key value") {
-				response.IsSuccess = true
-				response.Message = "No Change since record already Available!"
-				request.Log(response.Message)
-				return response
-			}
-		} else {
-			response.IsSuccess = true
-			response.Message = "Successfully inserted one object in Postgres"
-			request.Log(response.Message)
-		}
-	}
-
+	//Add IDs to return Data
 	var Data []map[string]interface{}
 	Data = make([]map[string]interface{}, 1)
-	var actualData map[string]interface{}
-	actualData = make(map[string]interface{})
-	actualData["ID"] = keyValue
-	Data[0] = actualData
+	var idData map[string]interface{}
+	idData = make(map[string]interface{})
+	idData["ID"] = id
+	Data[0] = idData
+
+	response := repository.queryStore(request)
 	response.Data = Data
-
-	session.Close()
 	return response
-}
-
-func createPostgresTable(request *messaging.ObjectRequest, session *sql.DB) (status bool) {
-	status = false
-
-	//get table list
-	classBytes := executePostgresGetClasses(request)
-	var classList []string
-	err := json.Unmarshal(classBytes, &classList)
-	if err != nil {
-		status = false
-	} else {
-		fmt.Print("Class List : ")
-		fmt.Println(classList)
-		for _, className := range classList {
-			if strings.ToLower(request.Controls.Class) == className {
-				fmt.Println("Table Already Available")
-				status = true
-				//Get all fields
-				classBytes := executePostgresGetFields(request)
-				var tableFieldList []string
-				_ = json.Unmarshal(classBytes, &tableFieldList)
-				//Check For missing fields. If any ALTER TABLE
-				var recordFieldList []string
-				var recordFieldType []string
-				if request.Body.Object == nil {
-					recordFieldList = make([]string, len(request.Body.Objects[0]))
-					recordFieldType = make([]string, len(request.Body.Objects[0]))
-					index := 0
-					for key, value := range request.Body.Objects[0] {
-						if key == "__osHeaders" {
-							recordFieldList[index] = "osheaders"
-							recordFieldType[index] = "text"
-						} else {
-							recordFieldList[index] = strings.ToLower(key)
-							recordFieldType[index] = getDataType(value)
-						}
-						index++
-					}
-				} else {
-					recordFieldList = make([]string, len(request.Body.Object))
-					recordFieldType = make([]string, len(request.Body.Object))
-					index := 0
-					for key, value := range request.Body.Object {
-						if key == "__osHeaders" {
-							recordFieldList[index] = "osheaders"
-							recordFieldType[index] = "text"
-						} else {
-							recordFieldList[index] = strings.ToLower(key)
-							recordFieldType[index] = getDataType(value)
-						}
-						index++
-					}
-				}
-
-				var newFields []string
-				var newTypes []string
-
-				//check for new Fields
-				for key, fieldName := range recordFieldList {
-					isAvailable := false
-					for _, tableField := range tableFieldList {
-						if fieldName == tableField {
-							isAvailable = true
-							break
-						}
-					}
-
-					if !isAvailable {
-						newFields = append(newFields, fieldName)
-						newTypes = append(newTypes, recordFieldType[key])
-					}
-				}
-
-				//ALTER TABLES
-
-				for key, _ := range newFields {
-					_, er := session.Query("ALTER TABLE " + strings.ToLower(request.Controls.Class) + " ADD COLUMN " + newFields[key] + " " + newTypes[key] + ";")
-					if er != nil {
-						status = false
-						request.Log("Table Alter Failed : " + er.Error())
-						return
-					} else {
-						status = true
-						request.Log("Table Alter Success!")
-					}
-				}
-
-				return
-			}
-		}
-
-		// if not available
-		//get one object
-		var dataObject map[string]interface{}
-		dataObject = make(map[string]interface{})
-
-		if request.Body.Object != nil {
-			for key, value := range request.Body.Object {
-				if key == "__osHeaders" {
-					dataObject["osheaders"] = value
-				} else {
-					dataObject[strings.ToLower(key)] = value
-				}
-			}
-		} else {
-			for key, value := range request.Body.Objects[0] {
-				if key == "__osHeaders" {
-					dataObject["osheaders"] = value
-				} else {
-					dataObject[strings.ToLower(key)] = value
-				}
-			}
-		}
-		//read fields
-		noOfElements := len(dataObject)
-		var keyArray = make([]string, noOfElements)
-		var dataTypeArray = make([]string, noOfElements)
-
-		var startIndex int = 0
-
-		for key, value := range dataObject {
-			keyArray[startIndex] = key
-			dataTypeArray[startIndex] = getDataType(value)
-			startIndex = startIndex + 1
-
-		}
-
-		//Create Table
-
-		var argKeyList2 string
-
-		for i := 0; i < noOfElements; i++ {
-			if i != noOfElements-1 {
-				if keyArray[i] == strings.ToLower(request.Body.Parameters.KeyProperty) {
-					argKeyList2 = argKeyList2 + keyArray[i] + " text PRIMARY KEY, "
-				} else {
-					argKeyList2 = argKeyList2 + keyArray[i] + " " + dataTypeArray[i] + ", "
-				}
-
-			} else {
-				if keyArray[i] == strings.ToLower(request.Body.Parameters.KeyProperty) {
-					argKeyList2 = argKeyList2 + keyArray[i] + " text PRIMARY KEY"
-				} else {
-					argKeyList2 = argKeyList2 + keyArray[i] + " " + dataTypeArray[i]
-				}
-
-			}
-		}
-
-		request.Log("create table " + strings.ToLower(request.Controls.Class) + "(" + argKeyList2 + ");")
-
-		_, er := session.Query("create table " + strings.ToLower(request.Controls.Class) + "(" + argKeyList2 + ");")
-		if er != nil {
-			status = false
-			request.Log("Table Creation Failed : " + er.Error())
-			return
-		}
-
-		status = true
-
-	}
-
-	return
-}
-
-func getPostgresFieldOrder(request *messaging.ObjectRequest) []string {
-	var returnArray []string
-	//read fields
-	byteValue := executePostgresGetFields(request)
-
-	err := json.Unmarshal(byteValue, &returnArray)
-	if err != nil {
-		request.Log("Converstion of Json Failed!")
-		returnArray = make([]string, 1)
-		returnArray[0] = "nil"
-		return returnArray
-	}
-
-	return returnArray
 }
 
 func (repository PostgresRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Starting UPDATE-MULTIPLE")
-	response := RepositoryResponse{}
-	session, isError, errorMessage := getPostgresConnection(request)
-
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
-	} else {
-
-		if createPostgresTable(request, session) {
-			request.Log("Table Verified Successfully!")
-		} else {
-			response.IsSuccess = false
-			return response
-		}
-
-		for i := 0; i < len(request.Body.Objects); i++ {
-			noOfElements := len(request.Body.Objects[i])
-			var keyUpdate = make([]string, noOfElements)
-			var valueUpdate = make([]string, noOfElements)
-
-			var startIndex = 0
-			for key, value := range request.Body.Objects[i] {
-
-				if key != "__osHeaders" {
-
-					//if str, ok := value.(string); ok {
-					if _, ok := value.(string); ok {
-
-						//Implement all MAP related logic here. All correct data are being caught in here
-						keyUpdate[startIndex] = key
-						valueUpdate[startIndex] = value.(string)
-						startIndex = startIndex + 1
-
-					} else {
-						request.Log("Non string value detected, Will be strigified!")
-						keyUpdate[startIndex] = key
-						valueUpdate[startIndex] = getStringByObject(value)
-						startIndex = startIndex + 1
-					}
-				} else {
-					// __osHeaders Catched!
-					keyUpdate[startIndex] = "osheaders"
-					valueUpdate[startIndex] = ConvertOsheaders(value.(messaging.ControlHeaders))
-					startIndex = startIndex + 1
-				}
-			}
-
-			var argValueList string
-
-			//Build the query string
-			for i := 0; i < noOfElements; i++ {
-				if i != noOfElements-1 {
-					argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'" + ", "
-				} else {
-					argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'"
-				}
-			}
-
-			//DEBUG USE : Display Query information
-			//	fmt.Println("Table Name : " + request.Controls.Class)
-			//	fmt.Println("Value list : " + argValueList)
-			_, err := session.Query("UPDATE " + strings.ToLower(request.Controls.Class) + " SET " + argValueList + " WHERE " + strings.ToLower(request.Body.Parameters.KeyProperty) + " =" + "'" + request.Body.Objects[i][request.Body.Parameters.KeyProperty].(string) + "'")
-			if err != nil {
-				response.IsSuccess = false
-				request.Log("Error updating object in Postgres  : " + getNoSqlKey(request) + ", " + err.Error())
-				response.GetErrorResponse("Error updating one object in Postgres because no match was found!" + err.Error())
-			} else {
-				response.IsSuccess = true
-				response.Message = "Successfully updating one object in Postgres "
-				request.Log(response.Message)
-			}
-		}
-
-	}
-
-	session.Close()
-	return response
+	return repository.queryStore(request)
 }
 
 func (repository PostgresRepository) UpdateSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Starting UPDATE-SINGLE")
-	response := RepositoryResponse{}
-	session, isError, errorMessage := getPostgresConnection(request)
-
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
-	} else {
-
-		if createPostgresTable(request, session) {
-			request.Log("Table Verified Successfully!")
-		} else {
-			response.IsSuccess = false
-			return response
-		}
-
-		noOfElements := len(request.Body.Object)
-		var keyUpdate = make([]string, noOfElements)
-		var valueUpdate = make([]string, noOfElements)
-
-		var startIndex = 0
-		for key, value := range request.Body.Object {
-
-			if key != "__osHeaders" {
-
-				if _, ok := value.(string); ok {
-					//Implement all MAP related logic here. All correct data are being caught in here
-					keyUpdate[startIndex] = strings.ToLower(key)
-					valueUpdate[startIndex] = value.(string)
-					startIndex = startIndex + 1
-
-				} else {
-					request.Log("Non string value detected, Will be strigified!")
-					keyUpdate[startIndex] = strings.ToLower(key)
-					valueUpdate[startIndex] = getStringByObject(value)
-					startIndex = startIndex + 1
-				}
-			} else {
-				//  __osHeaders Catched!
-				keyUpdate[startIndex] = "osheaders"
-				valueUpdate[startIndex] = ConvertOsheaders(value.(messaging.ControlHeaders))
-				startIndex = startIndex + 1
-			}
-		}
-
-		var argValueList string
-
-		//Build the query string
-		for i := 0; i < noOfElements; i++ {
-			if i != noOfElements-1 {
-				argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'" + ", "
-			} else {
-				argValueList = argValueList + keyUpdate[i] + " = " + "'" + valueUpdate[i] + "'"
-			}
-		}
-
-		//DEBUG USE : Display Query information
-		//fmt.Println("Table Name : " + request.Controls.Class)
-		//fmt.Println("Value list : " + argValueList)
-
-		_, err := session.Query("UPDATE " + strings.ToLower(request.Controls.Class) + " SET " + argValueList + " WHERE " + strings.ToLower(request.Body.Parameters.KeyProperty) + " =" + "'" + request.Controls.Id + "'")
-		if err != nil {
-			response.IsSuccess = false
-			request.Log("Error updating object in Postgres  : " + request.Controls.Id + ", " + err.Error())
-			response.GetErrorResponse("Error updating one object in Postgres because no match was found!" + err.Error())
-		} else {
-			response.IsSuccess = true
-			response.Message = "Successfully updating one object in Postgres "
-			request.Log(response.Message)
-		}
-
-	}
-
-	session.Close()
-	return response
+	return repository.queryStore(request)
 }
 
 func (repository PostgresRepository) DeleteMultiple(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Starting DELETE-MULTIPLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := getPostgresConnection(request)
-
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
-	} else {
+	conn, err, _ := repository.getConnection(request)
+	if !err {
+		isError := false
 		for _, obj := range request.Body.Objects {
-			_, err := session.Query("DELETE FROM " + strings.ToLower(request.Controls.Class) + " WHERE " + strings.ToLower(request.Body.Parameters.KeyProperty) + " = '" + obj[request.Body.Parameters.KeyProperty].(string) + "'")
+			query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKeyById(request, obj))
+			err := repository.executeNonQuery(conn, query)
 			if err != nil {
-				response.IsSuccess = false
-				request.Log("Error deleting object in Postgres : " + err.Error())
-				response.GetErrorResponse("Error deleting one object in Postgres because no match was found!" + err.Error())
-			} else {
-				response.IsSuccess = true
-				response.Message = "Successfully deleted one object in Postgres"
-				request.Log(response.Message)
+				isError = true
 			}
 		}
+		if isError {
+			response.IsSuccess = false
+			response.Message = "Error deleting all objects. Please double check data!"
+		} else {
+			response.IsSuccess = true
+			response.Message = "Successfully Deleted all objects from Postgres repository!"
+		}
+	} else {
+		response.IsSuccess = false
+		response.Message = "Error deleting all objects!"
 	}
-
-	session.Close()
 	return response
 }
 
 func (repository PostgresRepository) DeleteSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Starting DELETE-SINGLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := getPostgresConnection(request)
-
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
-	} else {
-
-		_, err := session.Query("DELETE FROM " + strings.ToLower(request.Controls.Class) + " WHERE " + strings.ToLower(request.Body.Parameters.KeyProperty) + " = '" + request.Controls.Id + "'")
+	conn, err, _ := repository.getConnection(request)
+	if !err {
+		query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKey(request))
+		fmt.Println(query)
+		err := repository.executeNonQuery(conn, query)
 		if err != nil {
 			response.IsSuccess = false
-			request.Log("Error deleting object in Postgres : " + err.Error())
-			response.GetErrorResponse("Error deleting one object in Postgres because no match was found!" + err.Error())
+			response.Message = "Failed Deleting from Postgres repository : " + err.Error()
 		} else {
 			response.IsSuccess = true
-			response.Message = "Successfully deleted one object in Postgres"
-			request.Log(response.Message)
+			response.Message = "Successfully Deleted from Postgres repository!"
 		}
+	} else {
+		response.IsSuccess = false
+		response.Message = "Failed Deleting from Postgres repository"
 	}
-
-	session.Close()
 	return response
 }
 
 func (repository PostgresRepository) Special(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
-	request.Log("Starting SPECIAL!")
 	queryType := request.Body.Special.Type
-
 	switch queryType {
 	case "getFields":
 		request.Log("Starting GET-FIELDS sub routine!")
-		fieldsInByte := executePostgresGetFields(request)
-		if fieldsInByte != nil {
-			response.IsSuccess = true
-			response.Message = "Successfully Retrieved Fileds on Class : " + strings.ToLower(request.Controls.Class)
-			response.GetResponseWithBody(fieldsInByte)
-		} else {
-			response.IsSuccess = false
-			response.Message = "Aborted! Unsuccessful Retrieving Fileds on Class : " + strings.ToLower(request.Controls.Class)
-			errorMessage := response.Message
-			response.GetErrorResponse(errorMessage)
-		}
+		query := "select column_name from information_schema.columns where table_name='" + request.Controls.Class + "';"
+		return repository.queryCommonMany(query, request)
 	case "getClasses":
 		request.Log("Starting GET-CLASSES sub routine")
-		fieldsInByte := executePostgresGetClasses(request)
-		if fieldsInByte != nil {
-			response.IsSuccess = true
-			response.Message = "Successfully Retrieved Fileds on Class : " + strings.ToLower(request.Controls.Class)
-			response.GetResponseWithBody(fieldsInByte)
-		} else {
-			response.IsSuccess = false
-			response.Message = "Aborted! Unsuccessful Retrieving Fileds on Class : " + strings.ToLower(request.Controls.Class)
-			errorMessage := response.Message
-			response.GetErrorResponse(errorMessage)
-		}
+		query := "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
+		return repository.queryCommonMany(query, request)
 	case "getNamespaces":
 		request.Log("Starting GET-NAMESPACES sub routine")
-		fieldsInByte := executePostgresGetNamespaces(request)
-		if fieldsInByte != nil {
-			response.IsSuccess = true
-			response.Message = "Successfully Retrieved All Namespaces"
-			response.GetResponseWithBody(fieldsInByte)
-		} else {
-			response.IsSuccess = false
-			response.Message = "Aborted! Unsuccessful Retrieving All Namespaces"
-			errorMessage := response.Message
-			response.GetErrorResponse(errorMessage)
-		}
+		query := "SELECT datname FROM pg_database WHERE datistemplate = false;"
+		return repository.queryCommonMany(query, request)
 	case "getSelected":
-		request.Log("Starting GET-SELECTED sub routine")
-		fieldsInByte := executePostgresGetSelected(request)
-		if fieldsInByte != nil {
-			response.IsSuccess = true
-			response.Message = "Successfully Retrieved All Namespaces"
-			response.GetResponseWithBody(fieldsInByte)
+		request.Log("Get-Selected not implemented in Postgres repository. Use Get-Query for custom querying in Postgres Repository")
+		return getDefaultNotImplemented()
+	case "DropClass":
+		request.Log("Starting Delete-Class sub routine")
+		conn, err, _ := repository.getConnection(request)
+		if !err {
+			query := "DROP TABLE " + request.Controls.Class
+			err := repository.executeNonQuery(conn, query)
+			if err != nil {
+				response.IsSuccess = false
+				response.Message = "Error Dropping Table in Postgres Repository : " + err.Error()
+			} else {
+				delete(availableTables, (repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class))
+				delete(tableCache, (repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class))
+				response.IsSuccess = true
+				response.Message = "Successfully Dropped Table : " + request.Controls.Class
+			}
 		} else {
 			response.IsSuccess = false
-			response.Message = "Aborted! Unsuccessful Retrieving All Namespaces"
-			errorMessage := response.Message
-			response.GetErrorResponse(errorMessage)
+			response.Message = "Connection Failed to Postgres Server"
+		}
+	case "DropNamespace":
+		request.Log("Starting Delete-Database sub routine")
+		conn, err, _ := repository.getConnection(request)
+		if !err {
+			query := "DROP DATABASE " + repository.getDatabaseName(request.Controls.Namespace)
+			err := repository.executeNonQuery(conn, query)
+			if err != nil {
+				response.IsSuccess = false
+				response.Message = "Error Dropping Table in Postgres Repository : " + err.Error()
+			} else {
+				//Delete Namespace from availableDbs
+				delete(availableDbs, repository.getDatabaseName(request.Controls.Namespace))
+				//Delete all associated Classes from it's TableCache and availableTables
+				for key, _ := range availableTables {
+					if strings.Contains(key, repository.getDatabaseName(request.Controls.Namespace)) {
+						delete(availableTables, key)
+						delete(tableCache, key)
+					}
+				}
+				response.IsSuccess = true
+				response.Message = "Successfully Dropped Table : " + request.Controls.Class
+			}
+		} else {
+			response.IsSuccess = false
+			response.Message = "Connection Failed to Postgres Server"
 		}
 	default:
 		return repository.GetAll(request)
@@ -1455,336 +378,12 @@ func (repository PostgresRepository) Special(request *messaging.ObjectRequest) R
 }
 
 func (repository PostgresRepository) Test(request *messaging.ObjectRequest) {
-
 }
 
 //Sub Routines
 
-func executePostgresGetFields(request *messaging.ObjectRequest) (returnByte []byte) {
-
-	class := strings.ToLower(request.Controls.Class)
-	session, isError, _ := getPostgresConnection(request)
-	if isError == true {
-		returnByte = nil
-	} else {
-		isError = false
-
-		var returnMap map[string]interface{}
-		returnMap = make(map[string]interface{})
-
-		rows, err := session.Query("select column_name from information_schema.columns where table_name='" + class + "';")
-
-		if err != nil {
-			request.Log("Error executing query in Postgres SQL")
-		} else {
-			request.Log("Successfully executed query in Postgres SQL")
-			columns, _ := rows.Columns()
-			count := len(columns)
-			values := make([]interface{}, count)
-			valuePtrs := make([]interface{}, count)
-
-			index := 0
-			for rows.Next() {
-
-				var tempMap map[string]interface{}
-				tempMap = make(map[string]interface{})
-
-				for i, _ := range columns {
-					valuePtrs[i] = &values[i]
-				}
-
-				rows.Scan(valuePtrs...)
-
-				for i, col := range columns {
-
-					var v interface{}
-
-					val := values[i]
-
-					b, ok := val.([]byte)
-
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
-
-					tempMap[col] = v
-
-				}
-
-				returnMap[strconv.Itoa(index)] = tempMap["column_name"]
-				index++
-			}
-
-			var FieldArray []string
-			FieldArray = make([]string, len(returnMap))
-
-			for key, value := range returnMap {
-				index, _ := strconv.Atoi(key)
-				FieldArray[index] = value.(string)
-			}
-
-			byteValue, errMarshal := json.Marshal(FieldArray)
-			if errMarshal != nil {
-				request.Log("Error converting to byte array")
-				byteValue = nil
-			} else {
-				request.Log("Successfully converted result to byte array")
-			}
-
-			returnByte = byteValue
-		}
-
-	}
-	session.Close()
-	return returnByte
-}
-
-func executePostgresGetClasses(request *messaging.ObjectRequest) (returnByte []byte) {
-	session, isError, _ := getPostgresConnection(request)
-	if isError == true {
-		returnByte = nil
-	} else {
-		isError = false
-
-		var returnMap map[string]interface{}
-		returnMap = make(map[string]interface{})
-
-		rows, err := session.Query(" SELECT table_name FROM information_schema.tables WHERE table_schema='public';")
-
-		if err != nil {
-			request.Log("Error executing query in Postgres SQL")
-		} else {
-			request.Log("Successfully executed query in Postgres SQL")
-			columns, _ := rows.Columns()
-			count := len(columns)
-			values := make([]interface{}, count)
-			valuePtrs := make([]interface{}, count)
-
-			index := 0
-			for rows.Next() {
-
-				var tempMap map[string]interface{}
-				tempMap = make(map[string]interface{})
-
-				for i, _ := range columns {
-					valuePtrs[i] = &values[i]
-				}
-
-				rows.Scan(valuePtrs...)
-
-				for i, col := range columns {
-
-					var v interface{}
-
-					val := values[i]
-
-					b, ok := val.([]byte)
-
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
-
-					tempMap[col] = v
-
-				}
-
-				returnMap[strconv.Itoa(index)] = tempMap["table_name"]
-				index++
-			}
-
-			var FieldArray []string
-			FieldArray = make([]string, len(returnMap))
-
-			for key, value := range returnMap {
-				index, _ := strconv.Atoi(key)
-				FieldArray[index] = value.(string)
-			}
-
-			byteValue, errMarshal := json.Marshal(FieldArray)
-			if errMarshal != nil {
-				request.Log("Error converting to byte array")
-				byteValue = nil
-			} else {
-				request.Log("Successfully converted result to byte array")
-			}
-
-			returnByte = byteValue
-		}
-
-	}
-
-	session.Close()
-	return returnByte
-}
-
-func executePostgresGetNamespaces(request *messaging.ObjectRequest) (returnByte []byte) {
-	session, isError, _ := getPostgresConnection(request)
-	if isError == true {
-		returnByte = nil
-	} else {
-		isError = false
-
-		var returnMap map[string]interface{}
-		returnMap = make(map[string]interface{})
-
-		rows, err := session.Query("SELECT datname FROM pg_database WHERE datistemplate = false;")
-
-		if err != nil {
-			request.Log("Error executing query in Postgres SQL")
-		} else {
-			request.Log("Successfully executed query in Postgres SQL")
-			columns, _ := rows.Columns()
-			count := len(columns)
-			values := make([]interface{}, count)
-			valuePtrs := make([]interface{}, count)
-
-			index := 0
-			for rows.Next() {
-
-				var tempMap map[string]interface{}
-				tempMap = make(map[string]interface{})
-
-				for i, _ := range columns {
-					valuePtrs[i] = &values[i]
-				}
-
-				rows.Scan(valuePtrs...)
-
-				for i, col := range columns {
-
-					var v interface{}
-
-					val := values[i]
-
-					b, ok := val.([]byte)
-
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
-
-					tempMap[col] = v
-
-				}
-
-				returnMap[strconv.Itoa(index)] = tempMap["datname"]
-				index++
-			}
-
-			var FieldArray []string
-			FieldArray = make([]string, len(returnMap))
-
-			for key, value := range returnMap {
-				index, _ := strconv.Atoi(key)
-				FieldArray[index] = value.(string)
-			}
-
-			byteValue, errMarshal := json.Marshal(FieldArray)
-			if errMarshal != nil {
-				request.Log("Error converting to byte array")
-				byteValue = nil
-			} else {
-				request.Log("Successfully converted result to byte array")
-			}
-
-			returnByte = byteValue
-		}
-
-	}
-
-	session.Close()
-	return returnByte
-}
-
-func executePostgresGetSelected(request *messaging.ObjectRequest) (returnByte []byte) {
-
-	session, isError, _ := getPostgresConnection(request)
-	if isError == true {
-		request.Log("Error Connecting to Postgres")
-	} else {
-		var returnMap map[string]interface{}
-		returnMap = make(map[string]interface{})
-
-		var selectedItemsQuery string
-
-		var requestedFields []string
-		request.Log("Requested Field List : " + request.Body.Special.Parameters)
-		if request.Body.Special.Parameters == "*" {
-			request.Log("All fields requested")
-			requestedFields = make([]string, 1)
-			requestedFields[0] = "*"
-			selectedItemsQuery = "*"
-		} else {
-			requestedFields = strings.Split(request.Body.Special.Parameters, " ")
-
-			for key, value := range requestedFields {
-				if key == len(requestedFields)-1 {
-					selectedItemsQuery += value
-				} else {
-					selectedItemsQuery += (value + ",")
-				}
-			}
-		}
-		request.Log("SELECT " + selectedItemsQuery + " FROM " + strings.ToLower(request.Controls.Class))
-		rows, err := session.Query("SELECT " + selectedItemsQuery + " FROM " + strings.ToLower(request.Controls.Class))
-
-		if err != nil {
-			request.Log("Error Fetching data from Postgres")
-		} else {
-			request.Log("Successfully fetched data from Postgres")
-			columns, _ := rows.Columns()
-			count := len(columns)
-			values := make([]interface{}, count)
-			valuePtrs := make([]interface{}, count)
-
-			index := 0
-			for rows.Next() {
-
-				var tempMap map[string]interface{}
-				tempMap = make(map[string]interface{})
-
-				for i, _ := range columns {
-					valuePtrs[i] = &values[i]
-				}
-
-				rows.Scan(valuePtrs...)
-
-				for i, col := range columns {
-
-					var v interface{}
-
-					val := values[i]
-
-					b, ok := val.([]byte)
-
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
-					tempMap[col] = v
-				}
-
-				returnMap[strconv.Itoa(index)] = tempMap
-				index++
-			}
-
-			byteValue, _ := json.Marshal(returnMap)
-			returnByte = byteValue
-		}
-
-	}
-
-	session.Close()
-	return returnByte
-}
-
-func getPostgresSqlRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
+/*
+func (repository PostgresRepository) getRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
 	isGUIDKey := false
 	isAutoIncrementId := false //else MANUAL key from the user
 
@@ -1815,7 +414,7 @@ func getPostgresSqlRecordID(request *messaging.ObjectRequest, obj map[string]int
 		returnID = uuid.NewV1().String()
 	} else if isAutoIncrementId {
 		request.Log("Automatic Increment Key generation requested!")
-		session, isError, _ := getPostgresConnection(request)
+		session, isError, _ := repository.getConnection(request)
 		if isError {
 			returnID = ""
 			request.Log("Connecting to MySQL Failed!")
@@ -1913,5 +512,610 @@ func getPostgresSqlRecordID(request *messaging.ObjectRequest, obj map[string]int
 		}
 	}
 
+	return
+}
+*/
+func (repository PostgresRepository) queryCommonMany(query string, request *messaging.ObjectRequest) RepositoryResponse {
+	return repository.queryCommon(query, request, false)
+}
+
+func (repository PostgresRepository) queryCommonOne(query string, request *messaging.ObjectRequest) RepositoryResponse {
+	return repository.queryCommon(query, request, true)
+}
+
+func (repository PostgresRepository) queryCommon(query string, request *messaging.ObjectRequest, isOne bool) RepositoryResponse {
+	response := RepositoryResponse{}
+
+	conn, err, _ := repository.getConnection(request)
+	if !err {
+		var err error
+		dbName := repository.getDatabaseName(request.Controls.Namespace)
+		err = repository.buildTableCache(conn, dbName, request.Controls.Class)
+		if err != nil {
+
+		}
+
+		var obj interface{}
+		tableName := dbName + "." + request.Controls.Class
+		if isOne {
+			obj, err = repository.executeQueryOne(conn, query, tableName)
+		} else {
+			obj, err = repository.executeQueryMany(conn, query, tableName)
+		}
+
+		if err == nil {
+			response.GetSuccessResByObject(obj)
+		} else {
+			var empty interface{}
+			response.GetSuccessResByObject(empty)
+		}
+	} else {
+		response.GetErrorResponse("Error connecting to Postgres")
+	}
+
+	return response
+}
+
+func (repository PostgresRepository) buildTableCache(conn *sql.DB, dbName string, class string) (err error) {
+	if tableCache == nil {
+		tableCache = make(map[string]map[string]string)
+	}
+
+	_, ok := tableCache[dbName+"."+class]
+
+	if !ok {
+		var exResult []map[string]interface{}
+		exResult, err = repository.executeQueryMany(conn, "select column_name, data_type from information_schema.columns where table_name = '"+strings.ToLower(class)+"';", nil)
+		if err == nil {
+			newMap := make(map[string]string)
+
+			for _, cRow := range exResult {
+				newMap[cRow["column_name"].(string)] = cRow["data_type"].(string)
+			}
+			tableCache[dbName+"."+class] = newMap
+		}
+	}
+
+	return
+}
+
+func (repository PostgresRepository) executeQueryOne(conn *sql.DB, query string, tableName interface{}) (result map[string]interface{}, err error) {
+	rows, err := conn.Query(query)
+
+	if err == nil {
+		var resultSet []map[string]interface{}
+		resultSet, err = repository.rowsToMap(rows, tableName)
+		if len(resultSet) > 0 {
+			result = resultSet[0]
+		}
+
+	} else {
+		term.Write(err.Error(), 1)
+		if strings.HasPrefix(err.Error(), "does not exist") {
+			err = nil
+			result = make(map[string]interface{})
+		}
+	}
+
+	return
+}
+
+func (repository PostgresRepository) executeQueryMany(conn *sql.DB, query string, tableName interface{}) (result []map[string]interface{}, err error) {
+	fmt.Println(query)
+	rows, err := conn.Query(query)
+
+	if err == nil {
+		result, err = repository.rowsToMap(rows, tableName)
+	} else {
+		if strings.HasPrefix(err.Error(), "does not exist") {
+			err = nil
+			result = make([]map[string]interface{}, 0)
+		}
+	}
+
+	return
+}
+
+func (repository PostgresRepository) rowsToMap(rows *sql.Rows, tableName interface{}) (tableMap []map[string]interface{}, err error) {
+
+	columns, _ := rows.Columns()
+	count := len(columns)
+	values := make([]interface{}, count)
+	valuePtrs := make([]interface{}, count)
+
+	var cacheItem map[string]string
+
+	if tableName != nil {
+		tName := tableName.(string)
+		cacheItem = tableCache[tName]
+	}
+
+	for rows.Next() {
+
+		for i, _ := range columns {
+			valuePtrs[i] = &values[i]
+		}
+
+		rows.Scan(valuePtrs...)
+
+		rowMap := make(map[string]interface{})
+
+		for i, col := range columns {
+			if col == "__os_id" || col == "__osHeaders" {
+				continue
+			}
+			var v interface{}
+			val := values[i]
+			b, ok := val.([]byte)
+			if ok {
+				if cacheItem != nil {
+					t, ok := cacheItem[col]
+					if ok {
+						v = repository.sqlToGolang(b, t)
+					}
+				}
+
+				if v == nil {
+					if b == nil {
+						v = nil
+					} else if strings.ToLower(string(b)) == "null" {
+						v = nil
+					} else {
+						v = string(b)
+					}
+
+				}
+			} else {
+				v = val
+			}
+			rowMap[col] = v
+		}
+		tableMap = append(tableMap, rowMap)
+	}
+
+	return
+}
+
+func (repository PostgresRepository) sqlToGolang(b []byte, t string) interface{} {
+	if b == nil {
+		return nil
+	}
+
+	if len(b) == 0 {
+		return b
+	}
+
+	var outData interface{}
+
+	tmp := string(b)
+	switch t {
+	case "boolean":
+		if len(b) == 0 {
+			outData = false
+		} else {
+			if b[0] == 1 {
+				outData = true
+			} else {
+				outData = false
+			}
+		}
+
+		break
+	case "double precision":
+		fData, err := strconv.ParseFloat(tmp, 64)
+		if err != nil {
+			term.Write(err.Error(), 1)
+			outData = tmp
+		} else {
+			outData = fData
+		}
+		break
+	//case "text":
+	//case "blob":
+	default:
+		if len(tmp) == 4 {
+			if strings.ToLower(tmp) == "null" {
+				outData = nil
+				break
+			}
+		}
+
+		/*
+			var m map[string]interface{}
+			var ml []map[string]interface{}
+
+
+			if (string(tmp[0]) == "{"){
+				err := json.Unmarshal([]byte(tmp), &m)
+				if err == nil {
+					outData = m
+				}else{
+					fmt.Println(err.Error())
+					outData = tmp
+				}
+			}else if (string(tmp[0]) == "["){
+				err := json.Unmarshal([]byte(tmp), &ml)
+				if err == nil {
+					outData = ml
+				}else{
+					fmt.Println(err.Error())
+					outData = tmp
+				}
+			}else{
+				outData = tmp
+			}
+		*/
+		if string(tmp[0]) == "^" {
+			byteData := []byte(tmp)
+			bdata := string(byteData[1:])
+			decData, _ := base64.StdEncoding.DecodeString(bdata)
+			outData = repository.getInterfaceValue(string(decData))
+
+		} else {
+			outData = repository.getInterfaceValue(tmp)
+		}
+
+		break
+	}
+
+	return outData
+}
+
+func (repository PostgresRepository) queryStore(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+
+	conn, _, _ := repository.getConnection(request)
+
+	script, err := repository.getStoreScript(conn, request)
+
+	queryArray := strings.Split(script, "###")
+
+	if len(queryArray) > 1 && err == nil {
+		//Multiple Updates
+		status := make([]bool, len(queryArray)-1)
+		for index := 0; index < (len(queryArray) - 1); index++ {
+			err := repository.executeNonQuery(conn, queryArray[index])
+			if err == nil {
+				status[index] = true
+			} else {
+				status[index] = false
+			}
+		}
+		for _, stat := range status {
+			if stat == false {
+				response.IsSuccess = false
+				response.Message = "Error Updating All Objects in Postgres. Check Data!"
+				return response
+			}
+		}
+
+		response.IsSuccess = true
+		response.Message = "Successfully stored object(s) in Postgres"
+
+	} else {
+		if err == nil {
+			err := repository.executeNonQuery(conn, script)
+			if err == nil {
+				response.IsSuccess = true
+				response.Message = "Successfully stored object(s) in Postgres"
+			} else {
+				response.IsSuccess = false
+				response.Message = "Error storing data in Postgres : " + err.Error()
+			}
+		} else {
+			response.IsSuccess = false
+			response.Message = "Error generating Postgres query : " + err.Error()
+		}
+	}
+
+	return response
+}
+
+func (repository PostgresRepository) getByKey(conn *sql.DB, namespace string, class string, id string) (obj map[string]interface{}) {
+	query := "SELECT * FROM " + strings.ToLower(class) + " WHERE __os_id = '" + id + "'"
+	fmt.Println(query)
+	obj, _ = repository.executeQueryOne(conn, query, nil)
+	return
+}
+
+func (repository PostgresRepository) getStoreScript(conn *sql.DB, request *messaging.ObjectRequest) (query string, err error) {
+	namespace := request.Controls.Namespace
+	class := request.Controls.Class
+	var schemaObj map[string]interface{}
+	var allObjects []map[string]interface{}
+	if request.Body.Object != nil {
+		schemaObj = request.Body.Object
+		allObjects = make([]map[string]interface{}, 1)
+		allObjects[0] = schemaObj
+	} else {
+		if request.Body.Objects != nil {
+			if len(request.Body.Objects) != 0 {
+				schemaObj = request.Body.Objects[0]
+				allObjects = request.Body.Objects
+			} else {
+				err = errors.New("No objects available to store")
+				return
+			}
+		} else {
+			err = errors.New("No objects available to store")
+			return
+		}
+
+	}
+
+	repository.checkSchema(conn, namespace, class, schemaObj)
+
+	query = ""
+
+	isFirstRow := true
+	var keyArray []string
+
+	for _, obj := range allObjects {
+
+		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj))
+
+		if currentObject == nil {
+			if isFirstRow {
+				query += ("INSERT INTO " + class)
+			}
+
+			id := ""
+
+			if obj["OriginalIndex"] == nil {
+				id = getNoSqlKeyById(request, obj)
+			} else {
+				id = obj["OriginalIndex"].(string)
+			}
+
+			keyList := ""
+			valueList := ""
+
+			if isFirstRow {
+				for k, _ := range obj {
+					keyList += ("," + k)
+					keyArray = append(keyArray, k)
+				}
+			}
+			fmt.Println(keyArray)
+			for _, k := range keyArray {
+				v := obj[k]
+				valueList += ("," + repository.getSqlFieldValue(v))
+			}
+
+			if isFirstRow {
+				query += "(__os_id" + keyList + ") VALUES "
+			} else {
+				query += ","
+			}
+
+			//query += ("('" + getNoSqlKeyById(request, obj) + "'" + valueList + ")")
+			query += ("('" + id + "'" + valueList + ")")
+
+		} else {
+			updateValues := ""
+			isFirst := true
+			for k, v := range obj {
+				if isFirst {
+					isFirst = false
+				} else {
+					updateValues += ","
+				}
+
+				updateValues += (k + "=" + repository.getSqlFieldValue(v))
+			}
+			query += ("UPDATE " + class + " SET " + updateValues + " WHERE __os_id='" + getNoSqlKeyById(request, obj) + "';###")
+		}
+
+		if isFirstRow {
+			isFirstRow = false
+		}
+	}
+
+	return
+}
+
+func (repository PostgresRepository) getDeleteScript(namespace string, class string, id string) string {
+	return "DELETE FROM " + strings.ToLower(class) + " WHERE __os_id = '" + id + "'"
+}
+
+func (repository PostgresRepository) getCreateScript(namespace string, class string, obj map[string]interface{}) string {
+	query := "CREATE TABLE IF NOT EXISTS " + class + "(__os_id TEXT"
+	for k, v := range obj {
+		query += (", " + k + " " + repository.golangToSql(v))
+	}
+	query += ")"
+	return query
+}
+
+func (repository PostgresRepository) checkAvailabilityDb(conn *sql.DB, dbName string) (err error) {
+	if availableDbs == nil {
+		availableDbs = make(map[string]interface{})
+	}
+
+	if availableDbs[dbName] != nil {
+		return
+	}
+
+	dbQuery := "SELECT datname FROM pg_database WHERE datistemplate = false AND datname='" + dbName + "';"
+	dbResult, err := repository.executeQueryOne(conn, dbQuery, nil)
+
+	if err == nil {
+		if dbResult["datname"] == nil {
+			repository.executeNonQuery(conn, "CREATE DATABASE "+dbName+";")
+		}
+		availableDbs[dbName] = true
+	} else {
+		term.Write(err.Error(), 1)
+	}
+
+	return
+}
+
+func (repository PostgresRepository) checkAvailabilityTable(conn *sql.DB, dbName string, namespace string, class string, obj map[string]interface{}) (err error) {
+
+	if availableTables == nil {
+		availableTables = make(map[string]interface{})
+	}
+
+	if availableTables[dbName+"."+class] == nil {
+		var tableResult map[string]interface{}
+		tableResult, err = repository.executeQueryOne(conn, "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name like '"+strings.ToLower(class)+"';", nil)
+		fmt.Println(tableResult)
+		if err == nil {
+			if tableResult["table_name"] == nil {
+				script := repository.getCreateScript(namespace, class, obj)
+				term.Write(script, 2)
+				err = repository.executeNonQuery(conn, script)
+
+				if err != nil {
+					term.Write(err.Error(), 1)
+					return
+				}
+			}
+
+			availableTables[dbName+"."+class] = true
+
+		} else {
+			return
+		}
+	}
+	fmt.Println(1)
+	err = repository.buildTableCache(conn, dbName, class)
+	fmt.Println(2)
+	alterColumns := ""
+	cacheItem := tableCache[dbName+"."+class]
+	isFirst := true
+	for k, v := range obj {
+		_, ok := cacheItem[strings.ToLower(k)]
+		if !ok {
+			if isFirst {
+				isFirst = false
+			} else {
+				alterColumns += ", "
+			}
+
+			alterColumns += ("ADD COLUMN " + k + " " + repository.golangToSql(v))
+		}
+	}
+
+	if len(alterColumns) != 0 {
+		alterQuery := "ALTER TABLE " + class + " " + alterColumns
+		term.Write(alterQuery, 2)
+		err = repository.executeNonQuery(conn, alterQuery)
+	}
+
+	return
+}
+
+func (repository PostgresRepository) checkSchema(conn *sql.DB, namespace string, class string, obj map[string]interface{}) {
+	dbName := repository.getDatabaseName(namespace)
+	err := repository.checkAvailabilityDb(conn, dbName)
+
+	if err == nil {
+		err := repository.checkAvailabilityTable(conn, dbName, namespace, class, obj)
+
+		if err != nil {
+			term.Write(err.Error(), 1)
+		}
+	}
+}
+
+func (repository PostgresRepository) getJson(m interface{}) string {
+	bytes, _ := json.Marshal(m)
+	return string(bytes[:len(bytes)])
+}
+
+func (repository PostgresRepository) getSqlFieldValue(value interface{}) string {
+	var strValue string
+	switch v := value.(type) {
+	case bool:
+		if value.(bool) == true {
+			strValue = "true"
+		} else {
+			strValue = "false"
+		}
+		break
+	case string:
+		sval := fmt.Sprint(value)
+		if strings.ContainsAny(sval, "\"'\n\r\t") {
+			sEnc := base64.StdEncoding.EncodeToString([]byte(sval))
+			strValue = "'^" + sEnc + "'"
+		} else {
+			strValue = "'" + sval + "'"
+		}
+		/*else if (strings.Contains(sval, "'")){
+		  		    sEnc := base64.StdEncoding.EncodeToString([]byte(sval))
+		      		strValue = "'^" + sEnc + "'";
+		  		}*/
+		break
+	default:
+		strValue = "'" + repository.getJson(v) + "'"
+		break
+
+	}
+
+	return strValue
+}
+
+func (repository PostgresRepository) golangToSql(value interface{}) string {
+	var strValue string
+	//fmt.Println(reflect.TypeOf(value))
+	switch value.(type) {
+	case string:
+		strValue = "TEXT"
+	case bool:
+		strValue = "Boolean"
+		break
+	case uint:
+	case int:
+	//case uintptr:
+	case uint8:
+	case uint16:
+	case uint32:
+	case uint64:
+	case int8:
+	case int16:
+	case int32:
+	case int64:
+		strValue = "bigint"
+		break
+	case float32:
+	case float64:
+		strValue = "double precision"
+		break
+	default:
+		strValue = "bytea"
+		break
+
+	}
+
+	return strValue
+}
+
+func (repository PostgresRepository) getInterfaceValue(tmp string) (outData interface{}) {
+	var m interface{}
+	if string(tmp[0]) == "{" || string(tmp[0]) == "[" {
+		err := json.Unmarshal([]byte(tmp), &m)
+		if err == nil {
+			outData = m
+		} else {
+			term.Write(err.Error(), 1)
+			outData = tmp
+		}
+	} else {
+		outData = tmp
+	}
+	return
+}
+
+func (repository PostgresRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
+	var stmt *sql.Stmt
+	fmt.Println(query)
+	stmt, err = conn.Prepare(query)
+	_, err = stmt.Exec()
+	if err != nil {
+		fmt.Println(err.Error())
+		term.Write(err.Error(), 1)
+	}
 	return
 }
