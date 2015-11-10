@@ -22,13 +22,14 @@ func (c DistributedConfigDownloader) DownloadConfiguration(securityToken string,
 	retConfig := getDefaultConfigurations(getConfigurationIndex("Default", configAll), configAll)
 	//Check for overriding Configurations
 	isOverride, overrideIndex := CheckIfOverridable(configAll, namespace, class)
+	fmt.Println("++++++++")
+	fmt.Println(isOverride)
+	fmt.Println("++++++++")
 	//if Overridable ->
 	if isOverride {
-
-		for _, value := range overrideIndex {
-			retConfig = overrideConfigurations(value, configAll, retConfig)
+		for x := 0; x < len(overrideIndex); x++ {
+			retConfig = overrideConfigurations(overrideIndex[x], configAll, retConfig)
 		}
-
 	}
 	//Copy Auto Incremental Settings to Final return Configurations
 	//retConfig.AutoIncrementMetaData = retIncrementConfig.AutoIncrementMetaData
@@ -46,29 +47,23 @@ func CheckIfOverridable(configAll []interface{}, namespace string, class string)
 	for x := 0; x < len(configAll); x++ {
 		configMap := configAll[x].(map[string]interface{})
 
-		if strings.Contains(namespace, strings.Replace(configMap["StoreId"].(string), "*", "", 1)) {
-			fmt.Println("NAMESPACE RANGE OVERRIDE")
+		if configMap["StoreId"].(string) == namespace+"."+class {
+			fmt.Println("NAMESPACE, CLASS OVERRIDE")
 			isOverride = true
 			overideIndex[index] = x
 			index++
-		}
-
-		if configMap["StoreId"].(string) == namespace+".*" {
-			fmt.Println("CLASS RANGE OVERRIDE")
-			isOverride = true
-			overideIndex[index] = x
-			index++
-		}
-
-		if configMap["StoreId"].(string) == "*."+class {
+		} else if configMap["StoreId"].(string) == "*."+class {
 			fmt.Println("CLASS OVERRIDE")
 			isOverride = true
 			overideIndex[index] = x
 			index++
-		}
-
-		if configMap["StoreId"].(string) == namespace+"."+class {
-			fmt.Println("NAMESPACE, CLASS OVERRIDE")
+		} else if configMap["StoreId"].(string) == namespace+".*" {
+			fmt.Println("CLASS RANGE OVERRIDE")
+			isOverride = true
+			overideIndex[index] = x
+			index++
+		} else if strings.Contains(namespace, strings.Replace(configMap["StoreId"].(string), "*", "", 1)) {
+			fmt.Println("NAMESPACE RANGE OVERRIDE")
 			isOverride = true
 			overideIndex[index] = x
 			index++

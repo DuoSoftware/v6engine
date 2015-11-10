@@ -1036,3 +1036,311 @@ Executing repository : MYSQL DB - Success
 2015-11-10 @ 15:38:35  Getting settings for get all
 2015-11-10 @ 15:38:35  Executing repository : CloudSQL
 2015-11-10 @ 15:38:35  Executing repository : CloudSQL - Success
+2015-11-10 @ 16:31:55  Starting replicated storage engine
+2015-11-10 @ 16:31:55  Getting settings for get all
+2015-11-10 @ 16:31:55  Executing repository : Elastic Search
+2015-11-10 @ 16:31:55  Starting GETALL
+2015-11-10 @ 16:31:55  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-10 @ 16:31:55  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:32:04  Starting replicated storage engine
+2015-11-10 @ 16:32:04  Getting settings for get all
+2015-11-10 @ 16:32:04  Executing repository : CloudSQL
+2015-11-10 @ 16:32:04  Executing repository : CloudSQL - Success
+2015-11-10 @ 16:33:07  Starting replicated storage engine
+2015-11-10 @ 16:33:07  Getting settings for get all
+2015-11-10 @ 16:33:07  Executing repository : Elastic Search
+2015-11-10 @ 16:33:07  Starting GETALL
+2015-11-10 @ 16:33:07  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:33:18  Starting replicated storage engine
+2015-11-10 @ 16:33:18  Getting settings for get all
+2015-11-10 @ 16:33:18  Executing repository : Elastic Search
+2015-11-10 @ 16:33:18  Starting GETALL
+2015-11-10 @ 16:33:18  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:33:26  Starting replicated storage engine
+2015-11-10 @ 16:33:26  Getting settings for get all
+2015-11-10 @ 16:33:26  Executing repository : Elastic Search
+2015-11-10 @ 16:33:26  Starting GETALL
+2015-11-10 @ 16:33:26  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-10 @ 16:33:26  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:33:32  Starting replicated storage engine
+2015-11-10 @ 16:33:32  Getting settings for get all
+2015-11-10 @ 16:33:32  Executing repository : Elastic Search
+2015-11-10 @ 16:33:32  Starting GETALL
+2015-11-10 @ 16:33:32  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-10 @ 16:33:32  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:33:53  Starting replicated storage engine
+2015-11-10 @ 16:33:53  Getting settings for get all
+2015-11-10 @ 16:33:53  Executing repository : CloudSQL
+2015-11-10 @ 16:33:53  Executing repository : CloudSQL - Success
+2015-11-10 @ 16:37:15  Starting replicated storage engine
+2015-11-10 @ 16:37:15  Getting settings for get all
+2015-11-10 @ 16:37:15  Executing repository : CloudSQL
+2015-11-10 @ 16:37:15  Executing repository : CloudSQL - Success
+2015-11-10 @ 16:37:21  Starting replicated storage engine
+2015-11-10 @ 16:37:21  Getting settings for get all
+2015-11-10 @ 16:37:21  Executing repository : Elastic Search
+2015-11-10 @ 16:37:21  Starting GETALL
+2015-11-10 @ 16:37:21  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-10 @ 16:37:21  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:37:21  Starting replicated storage engine
+2015-11-10 @ 16:37:21  Getting settings for get all
+2015-11-10 @ 16:37:21  Executing repository : Elastic Search
+2015-11-10 @ 16:37:21  Starting GETALL
+2015-11-10 @ 16:37:21  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:37:35  Starting replicated storage engine
+2015-11-10 @ 16:37:35  Getting settings for get all
+2015-11-10 @ 16:37:35  Executing repository : Elastic Search
+2015-11-10 @ 16:37:35  Starting GETALL
+2015-11-10 @ 16:37:35  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-10 @ 16:37:35  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:37:39  Starting replicated storage engine
+2015-11-10 @ 16:37:39  Getting settings for get all
+2015-11-10 @ 16:37:39  Executing repository : Elastic Search
+2015-11-10 @ 16:37:39  Starting GETALL
+2015-11-10 @ 16:37:39  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:37:43  Starting replicated storage engine
+2015-11-10 @ 16:37:43  Getting settings for get all
+2015-11-10 @ 16:37:43  Executing repository : CloudSQL
+2015-11-10 @ 16:37:43  Executing repository : CloudSQL - Success
+2015-11-10 @ 16:41:50  Starting replicated storage engine
+2015-11-10 @ 16:41:50  Getting settings for get all
+2015-11-10 @ 16:41:50  Executing repository : CloudSQL
+2015-11-10 @ 16:41:50  Executing repository : CloudSQL - Success
+2015-11-10 @ 16:42:13  Starting replicated storage engine
+2015-11-10 @ 16:42:13  Getting settings for get all
+2015-11-10 @ 16:42:13  Executing repository : CloudSQL
+2015-11-10 @ 16:42:13  Executing repository : CloudSQL - Success
+2015-11-10 @ 16:48:34  Starting replicated storage engine
+2015-11-10 @ 16:48:34  Getting settings for get all
+2015-11-10 @ 16:48:34  Executing repository : Elastic Search
+2015-11-10 @ 16:48:34  Starting GETALL
+2015-11-10 @ 16:48:34  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-10 @ 16:48:34  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:43  Starting replicated storage engine
+2015-11-10 @ 16:48:43  Getting settings for get all
+2015-11-10 @ 16:48:43  Executing repository : Elastic Search
+2015-11-10 @ 16:48:43  Starting GETALL
+2015-11-10 @ 16:48:43  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:46  Starting replicated storage engine
+2015-11-10 @ 16:48:46  Getting settings for get all
+2015-11-10 @ 16:48:46  Executing repository : Elastic Search
+2015-11-10 @ 16:48:46  Starting GETALL
+2015-11-10 @ 16:48:46  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:47  Starting replicated storage engine
+2015-11-10 @ 16:48:47  Getting settings for get all
+2015-11-10 @ 16:48:47  Executing repository : Elastic Search
+2015-11-10 @ 16:48:47  Starting GETALL
+2015-11-10 @ 16:48:47  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:47  Starting replicated storage engine
+2015-11-10 @ 16:48:47  Getting settings for get all
+2015-11-10 @ 16:48:47  Executing repository : Elastic Search
+2015-11-10 @ 16:48:47  Starting GETALL
+2015-11-10 @ 16:48:47  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:49  Starting replicated storage engine
+2015-11-10 @ 16:48:49  Getting settings for get all
+2015-11-10 @ 16:48:49  Executing repository : Elastic Search
+2015-11-10 @ 16:48:49  Starting GETALL
+2015-11-10 @ 16:48:49  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:49  Starting replicated storage engine
+2015-11-10 @ 16:48:49  Getting settings for get all
+2015-11-10 @ 16:48:49  Executing repository : Elastic Search
+2015-11-10 @ 16:48:49  Starting GETALL
+2015-11-10 @ 16:48:49  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:50  Starting replicated storage engine
+2015-11-10 @ 16:48:50  Getting settings for get all
+2015-11-10 @ 16:48:50  Executing repository : Elastic Search
+2015-11-10 @ 16:48:50  Starting GETALL
+2015-11-10 @ 16:48:50  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:51  Starting replicated storage engine
+2015-11-10 @ 16:48:51  Getting settings for get all
+2015-11-10 @ 16:48:51  Executing repository : Elastic Search
+2015-11-10 @ 16:48:51  Starting GETALL
+2015-11-10 @ 16:48:51  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:52  Starting replicated storage engine
+2015-11-10 @ 16:48:52  Getting settings for get all
+2015-11-10 @ 16:48:52  Executing repository : Elastic Search
+2015-11-10 @ 16:48:52  Starting GETALL
+2015-11-10 @ 16:48:52  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:53  Starting replicated storage engine
+2015-11-10 @ 16:48:53  Getting settings for get all
+2015-11-10 @ 16:48:53  Executing repository : Elastic Search
+2015-11-10 @ 16:48:53  Starting GETALL
+2015-11-10 @ 16:48:53  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:54  Starting replicated storage engine
+2015-11-10 @ 16:48:54  Getting settings for get all
+2015-11-10 @ 16:48:54  Executing repository : Elastic Search
+2015-11-10 @ 16:48:54  Starting GETALL
+2015-11-10 @ 16:48:54  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:55  Starting replicated storage engine
+2015-11-10 @ 16:48:55  Getting settings for get all
+2015-11-10 @ 16:48:55  Executing repository : Elastic Search
+2015-11-10 @ 16:48:55  Starting GETALL
+2015-11-10 @ 16:48:55  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:56  Starting replicated storage engine
+2015-11-10 @ 16:48:56  Getting settings for get all
+2015-11-10 @ 16:48:56  Executing repository : Elastic Search
+2015-11-10 @ 16:48:56  Starting GETALL
+2015-11-10 @ 16:48:56  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:58  Starting replicated storage engine
+2015-11-10 @ 16:48:58  Getting settings for get all
+2015-11-10 @ 16:48:58  Executing repository : Elastic Search
+2015-11-10 @ 16:48:58  Starting GETALL
+2015-11-10 @ 16:48:58  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:48:59  Starting replicated storage engine
+2015-11-10 @ 16:48:59  Getting settings for get all
+2015-11-10 @ 16:48:59  Executing repository : Elastic Search
+2015-11-10 @ 16:48:59  Starting GETALL
+2015-11-10 @ 16:48:59  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:00  Starting replicated storage engine
+2015-11-10 @ 16:49:00  Getting settings for get all
+2015-11-10 @ 16:49:00  Executing repository : Elastic Search
+2015-11-10 @ 16:49:00  Starting GETALL
+2015-11-10 @ 16:49:00  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:01  Starting replicated storage engine
+2015-11-10 @ 16:49:01  Getting settings for get all
+2015-11-10 @ 16:49:01  Executing repository : Elastic Search
+2015-11-10 @ 16:49:01  Starting GETALL
+2015-11-10 @ 16:49:01  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:02  Starting replicated storage engine
+2015-11-10 @ 16:49:02  Getting settings for get all
+2015-11-10 @ 16:49:02  Executing repository : Elastic Search
+2015-11-10 @ 16:49:02  Starting GETALL
+2015-11-10 @ 16:49:02  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:03  Starting replicated storage engine
+2015-11-10 @ 16:49:03  Getting settings for get all
+2015-11-10 @ 16:49:03  Executing repository : Elastic Search
+2015-11-10 @ 16:49:03  Starting GETALL
+2015-11-10 @ 16:49:03  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:04  Starting replicated storage engine
+2015-11-10 @ 16:49:04  Getting settings for get all
+2015-11-10 @ 16:49:04  Executing repository : Elastic Search
+2015-11-10 @ 16:49:04  Starting GETALL
+2015-11-10 @ 16:49:04  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:04  Starting replicated storage engine
+2015-11-10 @ 16:49:04  Getting settings for get all
+2015-11-10 @ 16:49:04  Executing repository : Elastic Search
+2015-11-10 @ 16:49:04  Starting GETALL
+2015-11-10 @ 16:49:04  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:05  Starting replicated storage engine
+2015-11-10 @ 16:49:05  Getting settings for get all
+2015-11-10 @ 16:49:05  Executing repository : Elastic Search
+2015-11-10 @ 16:49:05  Starting GETALL
+2015-11-10 @ 16:49:05  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:07  Starting replicated storage engine
+2015-11-10 @ 16:49:07  Getting settings for get all
+2015-11-10 @ 16:49:07  Executing repository : Elastic Search
+2015-11-10 @ 16:49:07  Starting GETALL
+2015-11-10 @ 16:49:07  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:10  Starting replicated storage engine
+2015-11-10 @ 16:49:10  Getting settings for get all
+2015-11-10 @ 16:49:10  Executing repository : CloudSQL
+2015-11-10 @ 16:49:10  Executing repository : CloudSQL - Success
+2015-11-10 @ 16:49:22  Starting replicated storage engine
+2015-11-10 @ 16:49:22  Getting settings for get all
+2015-11-10 @ 16:49:22  Executing repository : Elastic Search
+2015-11-10 @ 16:49:22  Starting GETALL
+2015-11-10 @ 16:49:22  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:25  Starting replicated storage engine
+2015-11-10 @ 16:49:25  Getting settings for get all
+2015-11-10 @ 16:49:25  Executing repository : Elastic Search
+2015-11-10 @ 16:49:25  Starting GETALL
+2015-11-10 @ 16:49:25  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:25  Starting replicated storage engine
+2015-11-10 @ 16:49:25  Getting settings for get all
+2015-11-10 @ 16:49:25  Executing repository : Elastic Search
+2015-11-10 @ 16:49:25  Starting GETALL
+2015-11-10 @ 16:49:25  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:26  Starting replicated storage engine
+2015-11-10 @ 16:49:26  Getting settings for get all
+2015-11-10 @ 16:49:26  Executing repository : Elastic Search
+2015-11-10 @ 16:49:26  Starting GETALL
+2015-11-10 @ 16:49:26  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:28  Starting replicated storage engine
+2015-11-10 @ 16:49:28  Getting settings for get all
+2015-11-10 @ 16:49:28  Executing repository : Elastic Search
+2015-11-10 @ 16:49:28  Starting GETALL
+2015-11-10 @ 16:49:28  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:33  Starting replicated storage engine
+2015-11-10 @ 16:49:33  Getting settings for get all
+2015-11-10 @ 16:49:33  Executing repository : Elastic Search
+2015-11-10 @ 16:49:33  Starting GETALL
+2015-11-10 @ 16:49:33  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-10 @ 16:49:33  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:36  Starting replicated storage engine
+2015-11-10 @ 16:49:36  Getting settings for get all
+2015-11-10 @ 16:49:36  Executing repository : Elastic Search
+2015-11-10 @ 16:49:36  Starting GETALL
+2015-11-10 @ 16:49:36  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:37  Starting replicated storage engine
+2015-11-10 @ 16:49:37  Getting settings for get all
+2015-11-10 @ 16:49:37  Executing repository : Elastic Search
+2015-11-10 @ 16:49:37  Starting GETALL
+2015-11-10 @ 16:49:37  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:49:40  Starting replicated storage engine
+2015-11-10 @ 16:49:40  Getting settings for get all
+2015-11-10 @ 16:49:40  Executing repository : CloudSQL
+2015-11-10 @ 16:49:40  Executing repository : CloudSQL - Success
+2015-11-10 @ 16:51:00  Starting replicated storage engine
+2015-11-10 @ 16:51:00  Getting settings for get by key
+2015-11-10 @ 16:51:00  Executing repository : Elastic Search
+2015-11-10 @ 16:51:00  Starting GET-BY-KEY
+2015-11-10 @ 16:51:00  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-10 @ 16:51:00  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:51:02  Starting replicated storage engine
+2015-11-10 @ 16:51:02  Getting settings for get by key
+2015-11-10 @ 16:51:02  Executing repository : Elastic Search
+2015-11-10 @ 16:51:02  Starting GET-BY-KEY
+2015-11-10 @ 16:51:02  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:51:05  Starting replicated storage engine
+2015-11-10 @ 16:51:05  Getting settings for get by key
+2015-11-10 @ 16:51:05  Executing repository : Elastic Search
+2015-11-10 @ 16:51:05  Starting GET-BY-KEY
+2015-11-10 @ 16:51:05  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:51:06  Starting replicated storage engine
+2015-11-10 @ 16:51:06  Getting settings for get by key
+2015-11-10 @ 16:51:06  Executing repository : Elastic Search
+2015-11-10 @ 16:51:06  Starting GET-BY-KEY
+2015-11-10 @ 16:51:06  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:51:08  Starting replicated storage engine
+2015-11-10 @ 16:51:08  Getting settings for get by key
+2015-11-10 @ 16:51:08  Executing repository : Elastic Search
+2015-11-10 @ 16:51:08  Starting GET-BY-KEY
+2015-11-10 @ 16:51:08  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:51:09  Starting replicated storage engine
+2015-11-10 @ 16:51:09  Getting settings for get by key
+2015-11-10 @ 16:51:09  Executing repository : Elastic Search
+2015-11-10 @ 16:51:09  Starting GET-BY-KEY
+2015-11-10 @ 16:51:09  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:51:17  Starting replicated storage engine
+2015-11-10 @ 16:51:17  Getting settings for get by key
+2015-11-10 @ 16:51:17  Executing repository : CloudSQL
+2015-11-10 @ 16:51:17  Executing repository : CloudSQL - Success
+2015-11-10 @ 16:51:22  Starting replicated storage engine
+2015-11-10 @ 16:51:22  Getting settings for get by key
+2015-11-10 @ 16:51:22  Executing repository : CloudSQL
+2015-11-10 @ 16:51:22  Executing repository : CloudSQL - Success
+2015-11-10 @ 16:51:25  Starting replicated storage engine
+2015-11-10 @ 16:51:25  Getting settings for get by key
+2015-11-10 @ 16:51:25  Executing repository : Elastic Search
+2015-11-10 @ 16:51:25  Starting GET-BY-KEY
+2015-11-10 @ 16:51:25  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:51:27  Starting replicated storage engine
+2015-11-10 @ 16:51:27  Getting settings for get by key
+2015-11-10 @ 16:51:27  Executing repository : Elastic Search
+2015-11-10 @ 16:51:27  Starting GET-BY-KEY
+2015-11-10 @ 16:51:27  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:51:28  Starting replicated storage engine
+2015-11-10 @ 16:51:28  Getting settings for get by key
+2015-11-10 @ 16:51:28  Executing repository : Elastic Search
+2015-11-10 @ 16:51:28  Starting GET-BY-KEY
+2015-11-10 @ 16:51:28  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:51:29  Starting replicated storage engine
+2015-11-10 @ 16:51:29  Getting settings for get by key
+2015-11-10 @ 16:51:29  Executing repository : Elastic Search
+2015-11-10 @ 16:51:29  Starting GET-BY-KEY
+2015-11-10 @ 16:51:29  Executing repository : Elastic Search - Success
+2015-11-10 @ 16:51:30  Starting replicated storage engine
+2015-11-10 @ 16:51:30  Getting settings for get by key
+2015-11-10 @ 16:51:30  Executing repository : Elastic Search
+2015-11-10 @ 16:51:30  Starting GET-BY-KEY
+2015-11-10 @ 16:51:30  Executing repository : Elastic Search - Success
