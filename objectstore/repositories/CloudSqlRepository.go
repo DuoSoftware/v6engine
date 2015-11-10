@@ -416,6 +416,8 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 				id = obj["OriginalIndex"].(string)
 			}
 
+			delete(obj, "OriginalIndex")
+
 			keyList := ""
 			valueList := ""
 
@@ -471,10 +473,13 @@ func (repository CloudSqlRepository) getCreateScript(namespace string, class str
 	query := "CREATE TABLE IF NOT EXISTS " + repository.getDatabaseName(namespace) + "." + class + "(__os_id TEXT"
 
 	for k, v := range obj {
-		query += (", " + k + " " + repository.golangToSql(v))
+		if k != "OriginalIndex" {
+			query += (", " + k + " " + repository.golangToSql(v))
+		}
 	}
 
 	query += ")"
+	fmt.Println(query)
 	return query
 }
 
@@ -538,16 +543,18 @@ func (repository CloudSqlRepository) checkAvailabilityTable(conn *sql.DB, dbName
 	cacheItem := tableCache[dbName+"."+class]
 	isFirst := true
 	for k, v := range obj {
-		_, ok := cacheItem[k]
-		if !ok {
-			if isFirst {
-				isFirst = false
-			} else {
-				alterColumns += ", "
-			}
+		if k != "OriginalIndex" {
+			_, ok := cacheItem[k]
+			if !ok {
+				if isFirst {
+					isFirst = false
+				} else {
+					alterColumns += ", "
+				}
 
-			alterColumns += ("ADD COLUMN " + k + " " + repository.golangToSql(v))
-			repository.addColumnToTableCache(dbName, class, k, repository.golangToSql(v))
+				alterColumns += ("ADD COLUMN " + k + " " + repository.golangToSql(v))
+				repository.addColumnToTableCache(dbName, class, k, repository.golangToSql(v))
+			}
 		}
 	}
 

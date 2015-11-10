@@ -2,12 +2,29 @@ package main
 
 import (
 	//"bufio"
+	"duov6.com/cebadapter"
 	"duov6.com/recordmanager/processes"
 	"fmt"
 	//"os"
 )
 
 func main() {
+
+	cebadapter.Attach("ObjectStore", func(s bool) {
+		cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
+			fmt.Println("Store Configuration Successfully Loaded...")
+			fmt.Println(data)
+			agent := cebadapter.GetAgent()
+
+			agent.Client.OnEvent("globalConfigChanged.StoreConfig", func(from string, name string, data map[string]interface{}, resources map[string]interface{}) {
+				cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
+					fmt.Println("Store Configuration Successfully Updated...")
+				})
+			})
+		})
+		fmt.Println("Successfully registered in CEB")
+	})
+
 	paint()
 	fmt.Println("Starting Elastic Record Manager!")
 	fmt.Println()
