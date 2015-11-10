@@ -149,12 +149,6 @@ func getInstanceData(namespace string, class string, ipAddress string) []map[str
 			currentMap["OriginalIndex"] = hit.Id
 			byteData, _ := hit.Source.MarshalJSON()
 
-			fmt.Println("---------------------------")
-			fmt.Println(hit.Fields)
-			fmt.Println(hit.Explanation)
-			fmt.Println(data.ScrollId)
-			fmt.Println("---------------------------")
-
 			json.Unmarshal(byteData, &currentMap)
 
 			allMaps[index] = currentMap
