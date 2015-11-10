@@ -546,7 +546,8 @@ func (repository PostgresRepository) queryCommon(query string, request *messagin
 		if err == nil {
 			response.GetSuccessResByObject(obj)
 		} else {
-			var empty interface{}
+			var empty map[string]interface{}
+			empty = make(map[string]interface{})
 			response.GetSuccessResByObject(empty)
 		}
 	} else {

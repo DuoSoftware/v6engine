@@ -62,7 +62,8 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 
 	if err != nil {
 		if strings.Contains(err.Error(), "record not found") {
-			var empty interface{}
+			var empty map[string]interface{}
+			empty = make(map[string]interface{})
 			response.GetSuccessResByObject(empty)
 		} else {
 			errorMessage := "Error retrieving object from elastic search : " + err.Error()
@@ -136,7 +137,8 @@ func (repository ElasticRepository) GetByKey(request *messaging.ObjectRequest) R
 
 	if err != nil {
 		if strings.Contains(err.Error(), "record not found") {
-			var empty interface{}
+			var empty map[string]interface{}
+			empty = make(map[string]interface{})
 			response.GetSuccessResByObject(empty)
 		}
 	} else {

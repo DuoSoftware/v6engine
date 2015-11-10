@@ -46,6 +46,13 @@ func CheckIfOverridable(configAll []interface{}, namespace string, class string)
 	for x := 0; x < len(configAll); x++ {
 		configMap := configAll[x].(map[string]interface{})
 
+		if strings.Contains(namespace, strings.Replace(configMap["StoreId"].(string), "*", "", 1)) {
+			fmt.Println("NAMESPACE RANGE OVERRIDE")
+			isOverride = true
+			overideIndex[index] = x
+			index++
+		}
+
 		if configMap["StoreId"].(string) == namespace+".*" {
 			fmt.Println("CLASS RANGE OVERRIDE")
 			isOverride = true
@@ -53,8 +60,8 @@ func CheckIfOverridable(configAll []interface{}, namespace string, class string)
 			index++
 		}
 
-		if strings.Contains(namespace, strings.Replace(configMap["StoreId"].(string), "*", "", 1)) {
-			fmt.Println("NAMESPACE RANGE OVERRIDE")
+		if configMap["StoreId"].(string) == "*."+class {
+			fmt.Println("CLASS OVERRIDE")
 			isOverride = true
 			overideIndex[index] = x
 			index++
@@ -67,12 +74,6 @@ func CheckIfOverridable(configAll []interface{}, namespace string, class string)
 			index++
 		}
 
-		if configMap["StoreId"].(string) == "*."+class {
-			fmt.Println("NAMESPACE, CLASS OVERRIDE")
-			isOverride = true
-			overideIndex[index] = x
-			index++
-		}
 	}
 	return
 }

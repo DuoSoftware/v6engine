@@ -342,6 +342,10 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 				configObject := configuration.ConfigurationManager{}.Get(headerToken, headerNamespace, headerClass)
 				objectRequest.Configuration = configObject
 
+				fmt.Println("---------------------")
+				fmt.Println(configObject)
+				fmt.Println("---------------------")
+
 				if canAddHeader {
 					repositories.FillControlHeaders(objectRequest)
 				}
