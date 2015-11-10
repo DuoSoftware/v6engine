@@ -881,3 +881,31 @@ Executing repository : MYSQL DB - Success
 2015-11-10 @ 10:58:48  Getting settings for get by filtering
 2015-11-10 @ 10:58:48  Executing repository : Postgres DB
 2015-11-10 @ 10:58:48  Executing repository : Postgres DB - Success
+2015-11-10 @ 14:18:38  Starting replicated storage engine
+2015-11-10 @ 14:18:38  Getting settings for get all
+2015-11-10 @ 14:18:38  Executing repository : CloudSQL
+2015-11-10 @ 14:18:39  Executing repository : CloudSQL - Success
+2015-11-10 @ 14:18:47  Starting replicated storage engine
+2015-11-10 @ 14:18:47  Getting settings for get all
+2015-11-10 @ 14:18:47  Executing repository : Elastic Search
+2015-11-10 @ 14:18:47  Starting GETALL
+2015-11-10 @ 14:18:47  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-10 @ 14:18:47  Executing repository : Elastic Search - Success
+2015-11-10 @ 14:19:01  Starting replicated storage engine
+2015-11-10 @ 14:19:01  Getting settings for get all
+2015-11-10 @ 14:19:01  Executing repository : CloudSQL
+2015-11-10 @ 14:19:01  Executing repository : CloudSQL - Success
+2015-11-10 @ 14:19:09  Starting replicated storage engine
+2015-11-10 @ 14:19:09  Getting settings for get all
+2015-11-10 @ 14:19:09  Executing repository : CloudSQL
+2015-11-10 @ 14:19:09  Executing repository : CloudSQL - Success
+2015-11-10 @ 14:19:24  Starting replicated storage engine
+2015-11-10 @ 14:19:24  Getting settings for get all
+2015-11-10 @ 14:19:24  Executing repository : CloudSQL
+2015-11-10 @ 14:19:24  Executing repository : CloudSQL - Success
+2015-11-10 @ 14:19:27  Starting replicated storage engine
+2015-11-10 @ 14:19:27  Getting settings for get all
+2015-11-10 @ 14:19:27  Executing repository : Elastic Search
+2015-11-10 @ 14:19:27  Starting GETALL
+2015-11-10 @ 14:19:27  Establishing new connection for Elastic Search 127.0.0.1:9200
+2015-11-10 @ 14:19:27  Executing repository : Elastic Search - Success

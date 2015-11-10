@@ -66,6 +66,13 @@ func CheckIfOverridable(configAll []interface{}, namespace string, class string)
 			overideIndex[index] = x
 			index++
 		}
+
+		if configMap["StoreId"].(string) == "*."+class {
+			fmt.Println("NAMESPACE, CLASS OVERRIDE")
+			isOverride = true
+			overideIndex[index] = x
+			index++
+		}
 	}
 	return
 }
