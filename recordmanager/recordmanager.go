@@ -118,6 +118,22 @@ func main() {
 		}
 	}
 
+	if response == "e" {
+		fmt.Println("Remove Anomaly Selected.")
+		fmt.Println("Specify IP Address : ")
+		_, err := fmt.Scanln(&ipAddress)
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			status := processes.RemoveAnomaly(ipAddress)
+			if status {
+				fmt.Println("All Anomalies Resolved! :D ")
+			} else {
+				fmt.Println("An error occured! :( ")
+			}
+		}
+	}
+
 }
 
 func paint() {

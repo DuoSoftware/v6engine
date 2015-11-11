@@ -187,3 +187,38 @@ func getUniqueRecordMap(inputMap map[int]string) map[int]string {
 	}
 	return outputMap
 }
+
+//Anomaly Remover
+
+func RemoveAnomaly(ipAddress string) (status bool) {
+	status = true
+	for _, namespace := range getDownloadAllowList(getNamespaces(ipAddress)) {
+		for _, class := range getClasses(namespace, ipAddress) {
+			fmt.Println("Resolving Namespace : " + namespace + " Class : " + class)
+			getInstanceData(namespace, class, ipAddress)
+
+		}
+
+	}
+	return status
+}
+
+func resolveInstance(namespace string, class string, ipAddress string) {
+	conn := getConnection(ipAddress)
+	skip := "0"
+	take := "100000000"
+
+	query := "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
+	data, err := conn.Search(namespace, class, nil, query)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		for _, hit := range data.Hits.Hits {
+			if strings.Contains(hit.Id, (namespace + "." + class + "." + namespace + "." + class)) {
+				fmt.Println(hit.Id)
+			}
+		}
+
+	}
+}
