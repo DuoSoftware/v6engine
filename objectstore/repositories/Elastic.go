@@ -182,10 +182,16 @@ func (repository ElasticRepository) setOneElastic(request *messaging.ObjectReque
 	response := RepositoryResponse{}
 	conn := repository.getConnection(request)
 
-	id := repository.getRecordID(request, request.Body.Object)
-	request.Body.Object[request.Body.Parameters.KeyProperty] = id
+	key := ""
+	id := ""
+	if request.Body.Object["OriginalIndex"] != nil {
+		key = request.Body.Object["OriginalIndex"].(string)
+	} else {
+		id = repository.getRecordID(request, request.Body.Object)
+		request.Body.Object[request.Body.Parameters.KeyProperty] = id
+		key = request.Controls.Namespace + "." + request.Controls.Class + "." + id
+	}
 	request.Body.Object["timestamp"] = repository.getTimestamp()
-	key := request.Controls.Namespace + "." + request.Controls.Class + "." + id
 	_, err := conn.Index(request.Controls.Namespace, request.Controls.Class, key, nil, request.Body.Object)
 	if err != nil {
 		term.Write(err.Error(), 1)
@@ -221,11 +227,17 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 	Data = make(map[string]interface{})
 
 	for index, obj := range request.Body.Objects {
-		id := repository.getRecordID(request, obj)
-		nosqlid := request.Controls.Namespace + "." + request.Controls.Class + "." + id
-		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
+		nosqlid := ""
+		if obj["OriginalIndex"] != nil {
+			nosqlid = obj["OriginalIndex"].(string)
+			Data[strconv.Itoa(CountIndex)] = nosqlid
+		} else {
+			id := repository.getRecordID(request, obj)
+			nosqlid = request.Controls.Namespace + "." + request.Controls.Class + "." + id
+			request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
+			Data[strconv.Itoa(CountIndex)] = id
+		}
 		request.Body.Objects[index]["timestamp"] = repository.getTimestamp()
-		Data[strconv.Itoa(CountIndex)] = id
 		CountIndex++
 		indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
 	}

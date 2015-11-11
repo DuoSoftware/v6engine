@@ -427,7 +427,7 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 					keyArray = append(keyArray, k)
 				}
 			}
-			fmt.Println(keyArray)
+			//fmt.Println(keyArray)
 			for _, k := range keyArray {
 				v := obj[k]
 				valueList += ("," + repository.getSqlFieldValue(v))
