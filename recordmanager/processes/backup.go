@@ -195,7 +195,7 @@ func RemoveAnomaly(ipAddress string) (status bool) {
 	for _, namespace := range getDownloadAllowList(getNamespaces(ipAddress)) {
 		for _, class := range getClasses(namespace, ipAddress) {
 			fmt.Println("Resolving Namespace : " + namespace + " Class : " + class)
-			getInstanceData(namespace, class, ipAddress)
+			resolveInstance(namespace, class, ipAddress)
 
 		}
 
@@ -216,7 +216,10 @@ func resolveInstance(namespace string, class string, ipAddress string) {
 	} else {
 		for _, hit := range data.Hits.Hits {
 			if strings.Contains(hit.Id, (namespace + "." + class + "." + namespace + "." + class)) {
-				fmt.Println(hit.Id)
+				_, err := conn.Delete(namespace, class, hit.Id, nil)
+				if err != nil {
+					fmt.Println(err.Error())
+				}
 			}
 		}
 

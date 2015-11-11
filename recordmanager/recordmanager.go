@@ -33,6 +33,7 @@ func main() {
 	fmt.Println("		[b] : RESTORE new instance.")
 	fmt.Println("		[c] : Export to Couchbase")
 	fmt.Println("		[d] : Export to MySQL")
+	fmt.Println("		[e] : Resolve OriginalIndex Elastic Anomalies")
 	fmt.Println()
 
 	var ipAddress string
