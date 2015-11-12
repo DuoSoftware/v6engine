@@ -922,7 +922,12 @@ func (repository PostgresRepository) getDeleteScript(namespace string, class str
 func (repository PostgresRepository) getCreateScript(namespace string, class string, obj map[string]interface{}) string {
 	query := "CREATE TABLE IF NOT EXISTS " + class + "(__os_id TEXT"
 	for k, v := range obj {
-		query += (", " + k + " " + repository.golangToSql(v))
+		//query += (", " + k + " " + repository.golangToSql(v))
+		for k, v := range obj {
+			if k != "OriginalIndex" {
+				query += (", " + k + " " + repository.golangToSql(v))
+			}
+		}
 	}
 	query += ")"
 	return query
