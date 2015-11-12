@@ -923,10 +923,8 @@ func (repository PostgresRepository) getCreateScript(namespace string, class str
 	query := "CREATE TABLE IF NOT EXISTS " + class + "(__os_id TEXT"
 	for k, v := range obj {
 		//query += (", " + k + " " + repository.golangToSql(v))
-		for k, v := range obj {
-			if k != "OriginalIndex" {
-				query += (", " + k + " " + repository.golangToSql(v))
-			}
+		if k != "OriginalIndex" {
+			query += (", " + k + " " + repository.golangToSql(v))
 		}
 	}
 	query += ")"
