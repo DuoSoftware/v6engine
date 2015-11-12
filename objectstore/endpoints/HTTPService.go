@@ -4,7 +4,7 @@ import (
 	"duov6.com/FileServer"
 	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
-	"duov6.com/objectstore/backup"
+	//"duov6.com/objectstore/backup"
 	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/processors"
@@ -257,21 +257,21 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					message = "Error converting request : " + rerr.Error()
 					isSuccess = false
 				} else {
-
-					//Start writing to JsonStack
-					if r.Method == "POST" {
-						var temprequestBody messaging.RequestBody
-						_ = json.Unmarshal(rb, &temprequestBody)
-						if temprequestBody.Object != nil || temprequestBody.Objects != nil {
-							backup.SaveInsertJsons(rb, headerNamespace, headerClass)
+					/*
+						//Start writing to JsonStack
+						if r.Method == "POST" {
+							var temprequestBody messaging.RequestBody
+							_ = json.Unmarshal(rb, &temprequestBody)
+							if temprequestBody.Object != nil || temprequestBody.Objects != nil {
+								backup.SaveInsertJsons(rb, headerNamespace, headerClass)
+							}
+						} else if r.Method == "PUT" {
+							backup.SaveUpdateJsons(rb, headerNamespace, headerClass)
+						} else if r.Method == "DELETE" {
+							backup.SaveDeleteJsons(rb, headerNamespace, headerClass)
 						}
-					} else if r.Method == "PUT" {
-						backup.SaveUpdateJsons(rb, headerNamespace, headerClass)
-					} else if r.Method == "DELETE" {
-						backup.SaveDeleteJsons(rb, headerNamespace, headerClass)
-					}
-					//Writing to JsonStack ends here
-
+						//Writing to JsonStack ends here
+					*/
 					err := json.Unmarshal(rb, &requestBody)
 					if err != nil {
 						message = "JSON Parse error in Request : " + err.Error()
@@ -341,10 +341,6 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 
 				configObject := configuration.ConfigurationManager{}.Get(headerToken, headerNamespace, headerClass)
 				objectRequest.Configuration = configObject
-
-				fmt.Println("---------------------")
-				fmt.Println(configObject)
-				fmt.Println("---------------------")
 
 				if canAddHeader {
 					repositories.FillControlHeaders(objectRequest)

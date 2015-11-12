@@ -22,9 +22,7 @@ func (c DistributedConfigDownloader) DownloadConfiguration(securityToken string,
 	retConfig := getDefaultConfigurations(getConfigurationIndex("Default", configAll), configAll)
 	//Check for overriding Configurations
 	isOverride, overrideIndex := CheckIfOverridable(configAll, namespace, class)
-	fmt.Println("++++++++")
-	fmt.Println(isOverride)
-	fmt.Println("++++++++")
+
 	//if Overridable ->
 	if isOverride {
 		for x := 0; x < len(overrideIndex); x++ {

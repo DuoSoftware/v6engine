@@ -617,8 +617,25 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 	connInt := connmanager.Get("MYSQL", request.Controls.Namespace)
 
 	if connInt != nil {
-		conn = connInt.(*sql.DB)
+		term.Write("Connection Already Available.. Pinging Now....", 2)
+		temp := connInt.(*sql.DB)
+		err2 := temp.Ping()
+		if err2 != nil {
+			term.Write(err2.Error(), 1)
+			term.Write("Ping Failed! Creating a new Connection!", 2)
+			var c *sql.DB
+			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
+			connmanager.Set("MYSQL", request.Controls.Namespace, c)
+			conn = c
+			return
+		}
+		term.Write("Ping Successful! Reusing Same Connection!", 2)
+		conn = temp
+		//conn = connInt.(*sql.DB)
+
 	} else {
+		term.Write("!No Connection Found! Creating Brand New Connection!", 2)
 		var c *sql.DB
 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")

@@ -1344,3 +1344,63 @@ Executing repository : MYSQL DB - Success
 2015-11-10 @ 16:51:30  Executing repository : Elastic Search
 2015-11-10 @ 16:51:30  Starting GET-BY-KEY
 2015-11-10 @ 16:51:30  Executing repository : Elastic Search - Success
+2015-11-12 @ 19:31:58  Starting replicated storage engine
+2015-11-12 @ 19:31:58  Getting settings for single insert
+2015-11-12 @ 19:31:58  Executing repository : CloudSQL
+2015-11-12 @ 19:31:58  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:32:04  Starting replicated storage engine
+2015-11-12 @ 19:32:04  Getting settings for get all
+2015-11-12 @ 19:32:04  Executing repository : CloudSQL
+2015-11-12 @ 19:32:04  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:34:13  Starting replicated storage engine
+2015-11-12 @ 19:34:13  Getting settings for get all
+2015-11-12 @ 19:34:13  Executing repository : CloudSQL
+2015-11-12 @ 19:34:13  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:34:23  Starting replicated storage engine
+2015-11-12 @ 19:34:23  Getting settings for get all
+2015-11-12 @ 19:34:23  Executing repository : CloudSQL
+2015-11-12 @ 19:34:23  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:36:26  Starting replicated storage engine
+2015-11-12 @ 19:36:26  Getting settings for get all
+2015-11-12 @ 19:36:26  Executing repository : CloudSQL
+2015-11-12 @ 19:36:26  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:36:35  Starting replicated storage engine
+2015-11-12 @ 19:36:35  Getting settings for get all
+2015-11-12 @ 19:36:35  Executing repository : CloudSQL
+2015-11-12 @ 19:36:35  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:36:48  Starting replicated storage engine
+2015-11-12 @ 19:36:48  Getting settings for get all
+2015-11-12 @ 19:36:48  Executing repository : CloudSQL
+2015-11-12 @ 19:36:48  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:38:42  Starting replicated storage engine
+2015-11-12 @ 19:38:42  Getting settings for get all
+2015-11-12 @ 19:38:42  Executing repository : CloudSQL
+2015-11-12 @ 19:38:42  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:38:50  Starting replicated storage engine
+2015-11-12 @ 19:38:50  Getting settings for get all
+2015-11-12 @ 19:38:50  Executing repository : CloudSQL
+2015-11-12 @ 19:38:50  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:39:01  Starting replicated storage engine
+2015-11-12 @ 19:39:01  Getting settings for get all
+2015-11-12 @ 19:39:01  Executing repository : CloudSQL
+2015-11-12 @ 19:39:01  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:39:15  Starting replicated storage engine
+2015-11-12 @ 19:39:15  Getting settings for get all
+2015-11-12 @ 19:39:15  Executing repository : CloudSQL
+2015-11-12 @ 19:39:15  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:39:16  Starting replicated storage engine
+2015-11-12 @ 19:39:16  Getting settings for get all
+2015-11-12 @ 19:39:16  Executing repository : CloudSQL
+2015-11-12 @ 19:39:16  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:39:16  Starting replicated storage engine
+2015-11-12 @ 19:39:16  Getting settings for get all
+2015-11-12 @ 19:39:16  Executing repository : CloudSQL
+2015-11-12 @ 19:39:16  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:39:17  Starting replicated storage engine
+2015-11-12 @ 19:39:17  Getting settings for get all
+2015-11-12 @ 19:39:17  Executing repository : CloudSQL
+2015-11-12 @ 19:39:17  Executing repository : CloudSQL - Success
+2015-11-12 @ 19:39:18  Starting replicated storage engine
+2015-11-12 @ 19:39:18  Getting settings for get all
+2015-11-12 @ 19:39:18  Executing repository : CloudSQL
+2015-11-12 @ 19:39:18  Executing repository : CloudSQL - Success
