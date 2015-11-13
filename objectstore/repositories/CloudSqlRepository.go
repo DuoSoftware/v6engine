@@ -162,6 +162,7 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 		response.IsSuccess = false
 		response.Message = "Error deleting all objects! : " + err.Error()
 	}
+	conn.Close()
 	return response
 }
 
@@ -183,6 +184,7 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 		response.IsSuccess = false
 		response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
 	}
+	conn.Close()
 	return response
 }
 
@@ -227,6 +229,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			response.IsSuccess = false
 			response.Message = "Connection Failed to CloudSQL Server"
 		}
+		conn.Close()
 	case "DropNamespace":
 		request.Log("Starting Delete-Database sub routine")
 		conn, err := repository.getConnection(request)
@@ -253,6 +256,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			response.IsSuccess = false
 			response.Message = "Connection Failed to CloudSQL Server"
 		}
+		conn.Close()
 	default:
 		return repository.GetAll(request)
 
@@ -298,7 +302,7 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 	} else {
 		response.GetErrorResponse("Error connecting to CloudSQL : " + err.Error())
 	}
-
+	conn.Close()
 	return response
 }
 
@@ -357,7 +361,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 			response.Message = "Error generating CloudSQL query : " + err.Error()
 		}
 	}
-
+	conn.Close()
 	return response
 }
 
@@ -614,34 +618,35 @@ func (repository CloudSqlRepository) checkSchema(conn *sql.DB, namespace string,
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
-	connInt := connmanager.Get("MYSQL", request.Controls.Namespace)
+	//connInt := connmanager.Get("MYSQL", request.Controls.Namespace)
 
-	if connInt != nil {
-		term.Write("Connection Already Available.. Pinging Now....", 2)
-		temp := connInt.(*sql.DB)
-		err2 := temp.Ping()
-		if err2 != nil {
-			term.Write(err2.Error(), 1)
-			term.Write("Ping Failed! Creating a new Connection!", 2)
-			var c *sql.DB
-			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-			connmanager.Set("MYSQL", request.Controls.Namespace, c)
-			conn = c
-			return
-		}
-		term.Write("Ping Successful! Reusing Same Connection!", 2)
-		conn = temp
-		//conn = connInt.(*sql.DB)
+	// if connInt != nil {
+	// 	term.Write("Connection Already Available.. Pinging Now....", 2)
+	// 	temp := connInt.(*sql.DB)
+	// 	err2 := temp.Ping()
+	// 	if err2 != nil {
+	// 		term.Write(err2.Error(), 1)
+	// 		term.Write("Ping Failed! Creating a new Connection!", 2)
+	// 		var c *sql.DB
+	// 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+	// 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
+	// 		connmanager.Set("MYSQL", request.Controls.Namespace, c)
+	// 		conn = c
+	// 		return
+	// 	}
+	// 	term.Write("Ping Successful! Reusing Same Connection!", 2)
+	// 	conn = temp
+	// 	//conn = connInt.(*sql.DB)
 
-	} else {
-		term.Write("!No Connection Found! Creating Brand New Connection!", 2)
-		var c *sql.DB
-		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-		connmanager.Set("MYSQL", request.Controls.Namespace, c)
-		conn = c
-	}
+	// } else {
+	//term.Write("!No Connection Found! Creating Brand New Connection!", 2)
+	term.Write("Creating MySQL Connection!", 2)
+	var c *sql.DB
+	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+	c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
+	connmanager.Set("MYSQL", request.Controls.Namespace, c)
+	conn = c
+	//}
 
 	return
 }
@@ -949,6 +954,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 		session, isError := repository.getConnection(request)
 		if isError != nil {
 			returnID = ""
+			session.Close()
 			return
 		} else {
 			//Reading maxCount from DB
@@ -960,6 +966,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 				err := repository.executeNonQuery(session, createDomainAttrQuery)
 				if err != nil {
 					returnID = ""
+					session.Close()
 					return
 				} else {
 					//insert record with count 1 and return
@@ -967,9 +974,11 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					err = repository.executeNonQuery(session, insertQuery)
 					if err != nil {
 						returnID = ""
+						session.Close()
 						return
 					} else {
 						returnID = "1"
+						session.Close()
 						return
 					}
 				}
@@ -984,9 +993,11 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					err := repository.executeNonQuery(session, insertNewClassQuery)
 					if err != nil {
 						returnID = ""
+						session.Close()
 						return
 					} else {
 						returnID = "1"
+						session.Close()
 						return
 					}
 				} else {
@@ -999,11 +1010,13 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					err = repository.executeNonQuery(session, updateQuery)
 					if err != nil {
 						returnID = ""
+						session.Close()
 						return
 					}
 				}
 			}
 		}
+		session.Close()
 	} else {
 		returnID = obj[request.Body.Parameters.KeyProperty].(string)
 	}
