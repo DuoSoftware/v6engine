@@ -82,7 +82,7 @@ type User struct {
 	//OtherData       map[string]string
 }
 
-// Configuration For Auth Servicer
+// A AuthConfig represent Configuration For Auth Servicer
 type AuthConfig struct { // Auth Config
 	Cirtifcate    string // ssl cirtificate
 	PrivateKey    string // Private Key
@@ -95,7 +95,7 @@ type AuthConfig struct { // Auth Config
 	Password      string // Password
 }
 
-//Auth Code request class
+// A Auth Code request class
 type AuthCode struct {// Clas starts here
 	ApplicationID string // Application ID 
 	Code          string // Code for authendication
