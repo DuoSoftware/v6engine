@@ -94,6 +94,7 @@ type AuthConfig struct {
 	Password      string
 }
 
+//Auth Code request class
 type AuthCode struct {
 	ApplicationID string
 	Code          string
