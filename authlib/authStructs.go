@@ -82,22 +82,23 @@ type User struct {
 	//OtherData       map[string]string
 }
 
-type AuthConfig struct {
-	Cirtifcate    string
-	PrivateKey    string
-	Https_Enabled bool
-	StoreID       string
-	Smtpserver    string
-	Smtpusername  string
-	Smtppassword  string
-	UserName      string
-	Password      string
+// Configuration For Auth Servicer
+type AuthConfig struct { // Auth Config
+	Cirtifcate    string // ssl cirtificate
+	PrivateKey    string // Private Key
+	Https_Enabled bool // Https enabled or not
+	StoreID       string // Store ID 
+	Smtpserver    string // Smptp Server Address
+	Smtpusername  string // SMTP Username 
+	Smtppassword  string // SMTP password
+	UserName      string // UserName login to advanced service potal
+	Password      string // Password
 }
 
 //Auth Code request class
-type AuthCode struct {
-	ApplicationID string
-	Code          string
-	UserID        string
-	URI           string
+type AuthCode struct {// Clas starts here
+	ApplicationID string // Application ID 
+	Code          string // Code for authendication
+	UserID        string // User ID of the person who is getting activated
+	URI           string // Auth URI
 }
