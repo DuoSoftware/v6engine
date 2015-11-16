@@ -6,7 +6,9 @@ import (
 )
 
 func main() {
+	fmt.Println(1)
 	db, err := hivething.Connect("159.203.73.174:10000", hivething.DefaultOptions)
+	fmt.Println(2)
 	if err != nil {
 		// handle
 	}

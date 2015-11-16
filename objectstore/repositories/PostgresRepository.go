@@ -10,17 +10,13 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/lib/pq"
-	//"github.com/twinj/uuid"
+	"github.com/twinj/uuid"
 	"strconv"
 	"strings"
 )
 
 type PostgresRepository struct {
 }
-
-//var availableDbs map[string]interface{} //:= make(map[string]bool)
-//var availableTables map[string]interface{}
-//var tableCache map[string]map[string]string
 
 func (repository PostgresRepository) GetRepositoryName() string {
 	return "Postgres DB"
@@ -205,14 +201,11 @@ func (repository PostgresRepository) GetByKey(request *messaging.ObjectRequest) 
 
 func (repository PostgresRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Insert-Multiple!", 2)
-	//return repository.queryStore(request)
 	var idData map[string]interface{}
 	idData = make(map[string]interface{})
 
 	for index, obj := range request.Body.Objects {
-		//id := repository.getRecordID(request, obj)
-		fmt.Println(obj)
-		id := request.Body.Objects[index][request.Body.Parameters.KeyProperty]
+		id := repository.getRecordID(request, obj)
 		idData[strconv.Itoa(index)] = id
 		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
 	}
@@ -231,10 +224,8 @@ func (repository PostgresRepository) InsertMultiple(request *messaging.ObjectReq
 
 func (repository PostgresRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Insert-Single!", 2)
-	//return repository.queryStore(request)
-	//id := repository.getRecordID(request, request.Body.Object)
-	id := request.Body.Object[request.Body.Parameters.KeyProperty]
-	request.Controls.Id = id.(string)
+	id := repository.getRecordID(request, request.Body.Object)
+	request.Controls.Id = id
 	request.Body.Object[request.Body.Parameters.KeyProperty] = id
 
 	//Add IDs to return Data
@@ -382,7 +373,6 @@ func (repository PostgresRepository) Test(request *messaging.ObjectRequest) {
 
 //Sub Routines
 
-/*
 func (repository PostgresRepository) getRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
 	isGUIDKey := false
 	isAutoIncrementId := false //else MANUAL key from the user
@@ -399,11 +389,11 @@ func (repository PostgresRepository) getRecordID(request *messaging.ObjectReques
 
 	} else {
 		//multiple requests
-		if (obj[strings.ToLower(request.Body.Parameters.KeyProperty)].(string) == "-999") || (request.Body.Parameters.AutoIncrement == true) {
+		if (obj[request.Body.Parameters.KeyProperty].(string) == "-999") || (request.Body.Parameters.AutoIncrement == true) {
 			isAutoIncrementId = true
 		}
 
-		if (obj[strings.ToLower(request.Body.Parameters.KeyProperty)].(string) == "-888") || (request.Body.Parameters.GUIDKey == true) {
+		if (obj[request.Body.Parameters.KeyProperty].(string) == "-888") || (request.Body.Parameters.GUIDKey == true) {
 			isGUIDKey = true
 		}
 
@@ -417,7 +407,7 @@ func (repository PostgresRepository) getRecordID(request *messaging.ObjectReques
 		session, isError, _ := repository.getConnection(request)
 		if isError {
 			returnID = ""
-			request.Log("Connecting to MySQL Failed!")
+			request.Log("Connecting to POSTGRES Failed!")
 		} else {
 			//Read Table domainClassAttributes
 			request.Log("Reading maxCount from DB")
@@ -508,13 +498,13 @@ func (repository PostgresRepository) getRecordID(request *messaging.ObjectReques
 		if obj == nil {
 			returnID = request.Controls.Id
 		} else {
-			returnID = obj[strings.ToLower(request.Body.Parameters.KeyProperty)].(string)
+			returnID = obj[request.Body.Parameters.KeyProperty].(string)
 		}
 	}
 
 	return
 }
-*/
+
 func (repository PostgresRepository) queryCommonMany(query string, request *messaging.ObjectRequest) RepositoryResponse {
 	return repository.queryCommon(query, request, false)
 }
@@ -988,8 +978,10 @@ func (repository PostgresRepository) checkAvailabilityTable(conn *sql.DB, dbName
 	fmt.Println(2)
 	alterColumns := ""
 	cacheItem := tableCache[dbName+"."+class]
+	fmt.Println(cacheItem)
 	isFirst := true
 	for k, v := range obj {
+		fmt.Println(k)
 		_, ok := cacheItem[strings.ToLower(k)]
 		if !ok {
 			if isFirst {
@@ -999,6 +991,7 @@ func (repository PostgresRepository) checkAvailabilityTable(conn *sql.DB, dbName
 			}
 
 			alterColumns += ("ADD COLUMN " + k + " " + repository.golangToSql(v))
+			repository.addColumnToTableCache(dbName, class, k, repository.golangToSql(v))
 		}
 	}
 
@@ -1009,6 +1002,13 @@ func (repository PostgresRepository) checkAvailabilityTable(conn *sql.DB, dbName
 	}
 
 	return
+}
+
+func (repository PostgresRepository) addColumnToTableCache(dbName string, class string, field string, datatype string) {
+	dataMap := make(map[string]string)
+	dataMap = tableCache[dbName+"."+class]
+	dataMap[strings.ToLower(field)] = datatype
+	tableCache[dbName+"."+class] = dataMap
 }
 
 func (repository PostgresRepository) checkSchema(conn *sql.DB, namespace string, class string, obj map[string]interface{}) {

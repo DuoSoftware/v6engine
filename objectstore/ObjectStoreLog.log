@@ -1404,3 +1404,109 @@ Executing repository : MYSQL DB - Success
 2015-11-12 @ 19:39:18  Getting settings for get all
 2015-11-12 @ 19:39:18  Executing repository : CloudSQL
 2015-11-12 @ 19:39:18  Executing repository : CloudSQL - Success
+2015-11-16 @ 16:30:41  Starting replicated storage engine
+2015-11-16 @ 16:30:41  Getting settings for get all
+2015-11-16 @ 16:30:41  Executing repository : Postgres DB
+2015-11-16 @ 16:30:43  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:31:24  Starting replicated storage engine
+2015-11-16 @ 16:31:24  Getting settings for single insert
+2015-11-16 @ 16:31:24  Executing repository : Postgres DB
+2015-11-16 @ 16:31:25  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:31:28  Starting replicated storage engine
+2015-11-16 @ 16:31:28  Getting settings for get all
+2015-11-16 @ 16:31:28  Executing repository : Postgres DB
+2015-11-16 @ 16:31:29  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:31:42  Starting replicated storage engine
+2015-11-16 @ 16:31:42  Getting settings for single insert
+2015-11-16 @ 16:31:42  Executing repository : Postgres DB
+2015-11-16 @ 16:31:42  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:31:48  Starting replicated storage engine
+2015-11-16 @ 16:31:48  Getting settings for get all
+2015-11-16 @ 16:31:48  Executing repository : Postgres DB
+2015-11-16 @ 16:31:49  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:32:20  Starting replicated storage engine
+2015-11-16 @ 16:32:20  Getting settings for single insert
+2015-11-16 @ 16:32:20  Executing repository : Postgres DB
+2015-11-16 @ 16:36:26  Starting replicated storage engine
+2015-11-16 @ 16:36:26  Getting settings for single insert
+2015-11-16 @ 16:36:26  Executing repository : Postgres DB
+2015-11-16 @ 16:36:26  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:36:47  Starting replicated storage engine
+2015-11-16 @ 16:36:47  Getting settings for get all
+2015-11-16 @ 16:36:47  Executing repository : Postgres DB
+2015-11-16 @ 16:36:47  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:37:18  Starting replicated storage engine
+2015-11-16 @ 16:37:18  Getting settings for single insert
+2015-11-16 @ 16:37:18  Executing repository : Postgres DB
+2015-11-16 @ 16:37:39  Starting replicated storage engine
+2015-11-16 @ 16:37:39  Getting settings for single insert
+2015-11-16 @ 16:37:39  Executing repository : Postgres DB
+2015-11-16 @ 16:43:58  Starting replicated storage engine
+2015-11-16 @ 16:43:58  Getting settings for single insert
+2015-11-16 @ 16:43:58  Executing repository : Postgres DB
+2015-11-16 @ 16:43:59  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:44:32  Starting replicated storage engine
+2015-11-16 @ 16:44:32  Getting settings for single insert
+2015-11-16 @ 16:44:32  Executing repository : Postgres DB
+2015-11-16 @ 16:44:32  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:44:54  Starting replicated storage engine
+2015-11-16 @ 16:44:54  Getting settings for single insert
+2015-11-16 @ 16:44:54  Executing repository : Postgres DB
+2015-11-16 @ 16:44:54  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:44:58  Starting replicated storage engine
+2015-11-16 @ 16:44:58  Getting settings for get all
+2015-11-16 @ 16:44:58  Executing repository : Postgres DB
+2015-11-16 @ 16:44:58  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:53:09  Starting replicated storage engine
+2015-11-16 @ 16:53:09  Getting settings for single insert
+2015-11-16 @ 16:53:09  Executing repository : Postgres DB
+2015-11-16 @ 16:55:25  Starting replicated storage engine
+2015-11-16 @ 16:55:25  Getting settings for single insert
+2015-11-16 @ 16:55:25  Executing repository : Postgres DB
+2015-11-16 @ 16:55:25  Automatic Increment Key generation requested!
+2015-11-16 @ 16:55:25  Reading maxCount from DB
+2015-11-16 @ 16:55:25  No Class found.. Must be a new namespace
+2015-11-16 @ 16:55:25  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:55:28  Starting replicated storage engine
+2015-11-16 @ 16:55:28  Getting settings for single insert
+2015-11-16 @ 16:55:28  Executing repository : Postgres DB
+2015-11-16 @ 16:55:28  Automatic Increment Key generation requested!
+2015-11-16 @ 16:55:28  Reading maxCount from DB
+2015-11-16 @ 16:55:29  Record Available!
+2015-11-16 @ 16:55:29  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:55:30  Starting replicated storage engine
+2015-11-16 @ 16:55:30  Getting settings for single insert
+2015-11-16 @ 16:55:30  Executing repository : Postgres DB
+2015-11-16 @ 16:55:30  Automatic Increment Key generation requested!
+2015-11-16 @ 16:55:30  Reading maxCount from DB
+2015-11-16 @ 16:55:30  Record Available!
+2015-11-16 @ 16:55:31  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:55:31  Starting replicated storage engine
+2015-11-16 @ 16:55:31  Getting settings for single insert
+2015-11-16 @ 16:55:31  Executing repository : Postgres DB
+2015-11-16 @ 16:55:31  Automatic Increment Key generation requested!
+2015-11-16 @ 16:55:31  Reading maxCount from DB
+2015-11-16 @ 16:55:31  Record Available!
+2015-11-16 @ 16:55:32  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:55:34  Starting replicated storage engine
+2015-11-16 @ 16:55:34  Getting settings for get all
+2015-11-16 @ 16:55:34  Executing repository : Postgres DB
+2015-11-16 @ 16:55:34  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:55:57  Starting replicated storage engine
+2015-11-16 @ 16:55:57  Getting settings for single insert
+2015-11-16 @ 16:55:57  Executing repository : Postgres DB
+2015-11-16 @ 16:55:57  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:56:03  Starting replicated storage engine
+2015-11-16 @ 16:56:03  Getting settings for single insert
+2015-11-16 @ 16:56:03  Executing repository : Postgres DB
+2015-11-16 @ 16:56:03  Manual Key requested!
+2015-11-16 @ 16:56:04  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:58:17  Starting replicated storage engine
+2015-11-16 @ 16:58:17  Getting settings for get all
+2015-11-16 @ 16:58:17  Executing repository : Postgres DB
+2015-11-16 @ 16:58:17  Executing repository : Postgres DB - Success
+2015-11-16 @ 16:59:20  Starting replicated storage engine
+2015-11-16 @ 16:59:20  Getting settings for special operation
+2015-11-16 @ 16:59:20  Executing repository : Postgres DB
+2015-11-16 @ 16:59:20  Starting GET-NAMESPACES sub routine
+2015-11-16 @ 16:59:20  Executing repository : Postgres DB - Success
