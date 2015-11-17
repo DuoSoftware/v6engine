@@ -29,7 +29,10 @@ type FileData struct {
 	Body     string
 }
 
-func (h *HTTPService) Start() {
+var isLoggable bool
+
+func (h *HTTPService) Start(isLogEnabled bool) {
+	isLoggable = isLogEnabled
 	term.Write("Object Store Listening on Port : 3000", 2)
 	m := martini.Classic()
 	m.Use(cors.Allow(&cors.Options{
@@ -277,9 +280,20 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 						message = "JSON Parse error in Request : " + err.Error()
 						isSuccess = false
 					} else {
-						fmt.Println("***********************************")
-						fmt.Println(requestBody)
-						fmt.Println("***********************************")
+						fmt.Println(isLoggable)
+						if isLoggable {
+							fmt.Println("-----------------------------------------------------------------------------")
+							fmt.Println("Primary Key : " + requestBody.Parameters.KeyProperty)
+							fmt.Print("Query : ")
+							fmt.Println(requestBody.Query)
+							fmt.Print("Special : ")
+							fmt.Println(requestBody.Special)
+							fmt.Print("Single Object : ")
+							fmt.Println(requestBody.Object)
+							fmt.Print("Multiple Objects : ")
+							fmt.Println(requestBody.Objects)
+							fmt.Println("-----------------------------------------------------------------------------")
+						}
 						objectRequest.Body = requestBody
 					}
 				}

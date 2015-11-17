@@ -5,20 +5,33 @@ import (
 	"duov6.com/objectstore/endpoints"
 	"duov6.com/objectstore/unittesting"
 	"fmt"
+	"os"
 )
 
 func main() {
+
+	arguments := os.Args[1:]
+	var IsLoggable bool
+	if len(arguments) > 0 {
+		if arguments[0] == "true" || arguments[0] == "True" || arguments[0] == "TRUE" {
+			IsLoggable = true
+		} else {
+			IsLoggable = false
+		}
+	} else {
+		IsLoggable = false
+	}
 	var isUnitTestMode bool = false
 
 	if isUnitTestMode {
 		unittesting.Start()
 	} else {
 		splash()
-		initialize()
+		initialize(IsLoggable)
 	}
 }
 
-func initialize() {
+func initialize(isLogEnabled bool) {
 
 	cebadapter.Attach("ObjectStore", func(s bool) {
 		cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
@@ -47,7 +60,7 @@ func initialize() {
 	})
 
 	httpServer := endpoints.HTTPService{}
-	go httpServer.Start()
+	go httpServer.Start(isLogEnabled)
 
 	bulkService := endpoints.BulkTransferService{}
 	go bulkService.Start()
