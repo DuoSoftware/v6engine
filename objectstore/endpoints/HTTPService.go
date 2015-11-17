@@ -277,6 +277,9 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 						message = "JSON Parse error in Request : " + err.Error()
 						isSuccess = false
 					} else {
+						fmt.Println("***********************************")
+						fmt.Println(requestBody)
+						fmt.Println("***********************************")
 						objectRequest.Body = requestBody
 					}
 				}

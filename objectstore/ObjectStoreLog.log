@@ -1510,3 +1510,8 @@ Executing repository : MYSQL DB - Success
 2015-11-16 @ 16:59:20  Executing repository : Postgres DB
 2015-11-16 @ 16:59:20  Starting GET-NAMESPACES sub routine
 2015-11-16 @ 16:59:20  Executing repository : Postgres DB - Success
+2015-11-16 @ 17:53:31  Starting replicated storage engine
+2015-11-16 @ 17:53:31  Getting settings for single insert
+2015-11-16 @ 17:53:31  Executing repository : Postgres DB
+2015-11-16 @ 17:53:31  Manual Key requested!
+2015-11-16 @ 17:53:31  Executing repository : Postgres DB - Success
