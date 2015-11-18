@@ -15,7 +15,7 @@ import (
 	"encoding/json"
 	"net/http"
 )
-
+// A ServiceConfig represents a configuration for galang
 type ServiceConfig struct {
 	AuthService    bool
 	AppService     bool
@@ -96,7 +96,7 @@ func runRestFul() {
 	gorest.RegisterService(new(config.ConfigSvc))
 	gorest.RegisterService(new(statservice.StatSvc))
 	gorest.RegisterService(new(apisvc.ApiSvc))
-	
+
 	c := authlib.GetConfig()
 	email.EmailAddress = c.Smtpusername
 	email.Password = c.Smtppassword
