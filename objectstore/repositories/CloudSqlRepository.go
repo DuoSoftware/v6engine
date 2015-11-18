@@ -77,6 +77,8 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 		tokens := strings.Split(request.Body.Query.Parameters, ":")
 		fieldName := tokens[0]
 		fieldValue := tokens[1]
+		fieldName = strings.TrimSpace(fieldName)
+		fieldValue = strings.TrimSpace(fieldValue)
 		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "';"
 	} else {
 		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + ";"
