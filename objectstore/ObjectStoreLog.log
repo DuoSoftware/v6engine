@@ -1545,3 +1545,84 @@ Executing repository : MYSQL DB - Success
 2015-11-17 @ 11:41:13  Executing repository : Postgres DB
 2015-11-17 @ 11:41:13  Manual Key requested!
 2015-11-17 @ 11:41:13  Executing repository : Postgres DB - Success
+2015-11-19 @ 11:50:09  Starting replicated storage engine
+2015-11-19 @ 11:50:09  Getting settings for single delete
+2015-11-19 @ 11:50:09  Executing repository : Hive
+2015-11-19 @ 11:50:09  Starting DELETE-SINGLE
+2015-11-19 @ 11:50:09  Get Search not implemented in Hive Db repository
+2015-11-19 @ 11:50:09  Executing repository : Hive - Failed
+2015-11-19 @ 11:50:09  Transaction failed Rollbacking!!!
+2015-11-19 @ 16:13:23  Starting replicated storage engine
+2015-11-19 @ 16:13:23  Getting settings for special operation
+2015-11-19 @ 16:13:23  Executing repository : CloudSQL
+2015-11-19 @ 16:13:23  Starting GET-FIELDS sub routine!
+2015-11-19 @ 16:13:23  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:13:42  Starting replicated storage engine
+2015-11-19 @ 16:13:42  Getting settings for special operation
+2015-11-19 @ 16:13:42  Executing repository : CloudSQL
+2015-11-19 @ 16:13:42  Starting GET-CLASSES sub routine
+2015-11-19 @ 16:13:42  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:18:36  Starting replicated storage engine
+2015-11-19 @ 16:18:36  Getting settings for special operation
+2015-11-19 @ 16:18:36  Executing repository : CloudSQL
+2015-11-19 @ 16:18:36  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:19:08  Starting replicated storage engine
+2015-11-19 @ 16:19:08  Getting settings for special operation
+2015-11-19 @ 16:19:08  Executing repository : CloudSQL
+2015-11-19 @ 16:19:08  Starting GET-CLASSES sub routine
+2015-11-19 @ 16:19:08  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:19:14  Starting replicated storage engine
+2015-11-19 @ 16:19:14  Getting settings for special operation
+2015-11-19 @ 16:19:14  Executing repository : CloudSQL
+2015-11-19 @ 16:19:14  Starting GET-FIELDS sub routine!
+2015-11-19 @ 16:19:14  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:20:12  Starting replicated storage engine
+2015-11-19 @ 16:20:12  Getting settings for special operation
+2015-11-19 @ 16:20:12  Executing repository : CloudSQL
+2015-11-19 @ 16:20:12  Starting GET-FIELDS sub routine!
+2015-11-19 @ 16:20:12  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:22:22  Starting replicated storage engine
+2015-11-19 @ 16:22:22  Getting settings for special operation
+2015-11-19 @ 16:22:22  Executing repository : CloudSQL
+2015-11-19 @ 16:22:22  Starting GET-FIELDS sub routine!
+2015-11-19 @ 16:22:22  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:23:53  Starting replicated storage engine
+2015-11-19 @ 16:23:53  Getting settings for special operation
+2015-11-19 @ 16:23:53  Executing repository : CloudSQL
+2015-11-19 @ 16:23:53  Starting GET-FIELDS sub routine!
+2015-11-19 @ 16:23:53  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:24:42  Starting replicated storage engine
+2015-11-19 @ 16:24:42  Getting settings for special operation
+2015-11-19 @ 16:24:42  Executing repository : CloudSQL
+2015-11-19 @ 16:24:42  Starting GET-FIELDS sub routine!
+2015-11-19 @ 16:24:42  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:26:03  Starting replicated storage engine
+2015-11-19 @ 16:26:03  Getting settings for special operation
+2015-11-19 @ 16:26:03  Executing repository : CloudSQL
+2015-11-19 @ 16:26:03  Starting GET-FIELDS sub routine!
+2015-11-19 @ 16:26:03  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:27:16  Starting replicated storage engine
+2015-11-19 @ 16:27:16  Getting settings for special operation
+2015-11-19 @ 16:27:16  Executing repository : CloudSQL
+2015-11-19 @ 16:27:16  Starting GET-FIELDS sub routine!
+2015-11-19 @ 16:27:17  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:28:21  Starting replicated storage engine
+2015-11-19 @ 16:28:21  Getting settings for special operation
+2015-11-19 @ 16:28:21  Executing repository : CloudSQL
+2015-11-19 @ 16:28:21  Starting GET-FIELDS sub routine!
+2015-11-19 @ 16:28:21  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:30:00  Starting replicated storage engine
+2015-11-19 @ 16:30:00  Getting settings for special operation
+2015-11-19 @ 16:30:00  Executing repository : CloudSQL
+2015-11-19 @ 16:30:00  Starting GET-FIELDS sub routine!
+2015-11-19 @ 16:30:00  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:31:14  Starting replicated storage engine
+2015-11-19 @ 16:31:14  Getting settings for special operation
+2015-11-19 @ 16:31:14  Executing repository : CloudSQL
+2015-11-19 @ 16:31:14  Starting GET-FIELDS sub routine!
+2015-11-19 @ 16:31:14  Executing repository : CloudSQL - Success
+2015-11-19 @ 16:31:21  Starting replicated storage engine
+2015-11-19 @ 16:31:21  Getting settings for special operation
+2015-11-19 @ 16:31:21  Executing repository : CloudSQL
+2015-11-19 @ 16:31:21  Starting GET-CLASSES sub routine
+2015-11-19 @ 16:31:21  Executing repository : CloudSQL - Success
