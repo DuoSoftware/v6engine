@@ -224,7 +224,7 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 	return u
 }
 
-// Helps to activate the users
+// UserActivation Helps to activate the users
 func (h *AuthHandler) UserActivation(token string) bool {
 	//respond := ""
 	//check user from db
