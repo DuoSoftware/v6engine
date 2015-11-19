@@ -48,12 +48,17 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 		take = request.Extras["take"].(string)
 	}
 
-	orderby := "desc"
+	orderbyfield := ""
 	var query string
 
 	if request.Extras["orderby"] != nil {
-		orderby = request.Extras["orderby"].(string)
-		query = "{\"sort\" : [{\"timestamp\" : {\"order\" : \"" + orderby + "\"}}],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+		orderbyfield = request.Extras["orderby"].(string)
+		operator := "asc"
+		query = "{\"sort\" : [{\"" + orderbyfield + "\" : {\"order\" : \"" + operator + "\"}}],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+	} else if request.Extras["orderbydsc"] != nil {
+		orderbyfield = request.Extras["orderbydsc"].(string)
+		operator := "desc"
+		query = "{\"sort\" : [{\"" + orderbyfield + "\" : {\"order\" : \"" + operator + "\"}}],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
 	} else {
 		query = "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
 	}
@@ -191,7 +196,6 @@ func (repository ElasticRepository) setOneElastic(request *messaging.ObjectReque
 		request.Body.Object[request.Body.Parameters.KeyProperty] = id
 		key = request.Controls.Namespace + "." + request.Controls.Class + "." + id
 	}
-	request.Body.Object["timestamp"] = repository.getTimestamp()
 	_, err := conn.Index(request.Controls.Namespace, request.Controls.Class, key, nil, request.Body.Object)
 	if err != nil {
 		term.Write(err.Error(), 1)
@@ -237,7 +241,6 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 			request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
 			Data[strconv.Itoa(CountIndex)] = id
 		}
-		request.Body.Objects[index]["timestamp"] = repository.getTimestamp()
 		CountIndex++
 		indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
 	}
@@ -758,18 +761,5 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 	} else {
 		return obj[request.Body.Parameters.KeyProperty].(string)
 	}
-	return
-}
-
-func (repository ElasticRepository) getTimestamp() (retTime string) {
-	currentTime := time.Now().Local()
-	year := strconv.Itoa(currentTime.Year())
-	month := strconv.Itoa(int(currentTime.Month()))
-	day := strconv.Itoa(currentTime.Day())
-	hour := strconv.Itoa(currentTime.Hour())
-	minute := strconv.Itoa(currentTime.Minute())
-	second := strconv.Itoa(currentTime.Second())
-	retTime = (year + "-" + month + "-" + day + "T" + hour + ":" + minute + ":" + second)
-
 	return
 }

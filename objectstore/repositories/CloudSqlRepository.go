@@ -27,18 +27,38 @@ func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) Re
 	term.Write("Executing Get-All!", 2)
 	isSkippable := false
 	isTakable := false
+	isOrderByAsc := false
+	isOrderByDesc := false
+	orderbyfield := ""
 	skip := "0"
 	take := "100000"
 
 	if request.Extras["skip"] != nil {
 		skip = request.Extras["skip"].(string)
+		isSkippable = true
 	}
 
 	if request.Extras["take"] != nil {
 		take = request.Extras["take"].(string)
+		isTakable = true
+	}
+
+	if request.Extras["orderby"] != nil {
+		orderbyfield = request.Extras["orderby"].(string)
+		isOrderByAsc = true
+	} else if request.Extras["orderbydsc"] != nil {
+		orderbyfield = request.Extras["orderbydsc"].(string)
+		isOrderByDesc = true
 	}
 
 	query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+
+	if isOrderByAsc {
+		query += " order by " + orderbyfield + " asc "
+	} else if isOrderByDesc {
+		query += " order by " + orderbyfield + " desc "
+	}
+
 	if isTakable {
 		query += " limit " + take
 	}

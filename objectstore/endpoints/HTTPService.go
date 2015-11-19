@@ -222,6 +222,14 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 		objectRequest.Extras["take"] = r.URL.Query().Get("take")
 	}
 
+	if r.URL.Query().Get("orderBy") != "" {
+		objectRequest.Extras["orderby"] = r.URL.Query().Get("orderBy")
+	}
+
+	if r.URL.Query().Get("orderByDsc") != "" {
+		objectRequest.Extras["orderbydsc"] = r.URL.Query().Get("orderByDsc")
+	}
+
 	if r.URL.Query().Get("orderby") != "" {
 		objectRequest.Extras["orderby"] = r.URL.Query().Get("orderby")
 	}
