@@ -12,24 +12,26 @@ import (
 	"fmt"
 	"strings"
 )
-
+// A AuthHandler represents a Method collection for Auth
 type AuthHandler struct {
 	//Config AuthConfig
 }
 
+// newAuthHandler will create a new AuthHandler
 func newAuthHandler() *AuthHandler {
-	authhld := new(AuthHandler)
+	authhld := new(AuthHandler) // Create new Object
 	//authhld.Config = GetConfig()
-	return authhld
+	return authhld // Return new Object
 }
-
+// A ActivationEmail represents Access tokens for Email activations
 type ActivationEmail struct {
-	GUUserID string
-	Token    string
+	GUUserID string // GUUserID
+	Token    string // Token for the email actiavte form
 }
 
+// AppAutherize Autherize the application for the user
 func (h *AuthHandler) AppAutherize(ApplicationID, UserID string) bool {
-	bytes, err := client.Go("ignore", "com.duosoftware.auth", "atherized").GetOne().ByUniqueKey(ApplicationID + "-" + UserID).Ok()
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "atherized").GetOne().ByUniqueKey(ApplicationID + "-" + UserID).Ok() // fetech user autherized
 	term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
 	if err == "" {
 		if bytes != nil {
@@ -45,6 +47,7 @@ func (h *AuthHandler) AppAutherize(ApplicationID, UserID string) bool {
 	return false
 }
 
+// GetAuthCode helps to get the Code to authendicate and add wait for the authendications
 func (h *AuthHandler) GetAuthCode(ApplicationID, UserID, URI string) string {
 	var a AuthCode
 	a.ApplicationID = ApplicationID
@@ -56,6 +59,7 @@ func (h *AuthHandler) GetAuthCode(ApplicationID, UserID, URI string) string {
 	return a.Code
 }
 
+// AutherizeApp autherize apps using the secret key that the application provided
 func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID string) (bool, string) {
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "authcode").GetOne().ByUniqueKey(Code).Ok()
 	term.Write("AutherizeApp For ApplicationID "+ApplicationID+" Code "+Code+" Secret "+AppSecret+" Err "+err, term.Debug)
@@ -87,6 +91,7 @@ func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID string
 
 }
 
+// AddSession helps to keep the session
 func (h *AuthHandler) AddSession(a AuthCertificate) {
 	var c session.AuthCertificate
 	c.ClientIP = a.ClientIP
@@ -100,6 +105,7 @@ func (h *AuthHandler) AddSession(a AuthCertificate) {
 	session.AddSession(c)
 }
 
+// LogOut make you logout,
 func (h *AuthHandler) LogOut(a AuthCertificate) {
 	client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().ByUniqueKey(a.SecurityToken)
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
@@ -107,6 +113,7 @@ func (h *AuthHandler) LogOut(a AuthCertificate) {
 	//return true
 }
 
+// GetSession helps to get the session
 func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 	//bytes, err := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKey(key).Ok()
 	//term.Write("GetSession For SecurityToken "+key, term.Debug)
@@ -130,6 +137,7 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 	return c, "Error Session Not Found"
 }
 
+// ForgetPassword to help the user to reset password
 func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 	u, error := h.GetUser(emailaddress)
 	if error == "" {
@@ -150,6 +158,7 @@ func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 	return false
 }
 
+// ChangePassword Changes the password
 func (h *AuthHandler) ChangePassword(a AuthCertificate, newPassword string) bool {
 	u, error := h.GetUser(a.Email)
 	if error == "" {
@@ -162,6 +171,7 @@ func (h *AuthHandler) ChangePassword(a AuthCertificate, newPassword string) bool
 	return false
 }
 
+// SaveUser helps to save the users
 func (h *AuthHandler) SaveUser(u User, update bool) User {
 	term.Write("SaveUser saving user  "+u.Name, term.Debug)
 
@@ -214,6 +224,7 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 	return u
 }
 
+// Helps to activate the users
 func (h *AuthHandler) UserActivation(token string) bool {
 	//respond := ""
 	//check user from db
@@ -250,6 +261,8 @@ func (h *AuthHandler) UserActivation(token string) bool {
 	return false
 }
 
+
+// Login helps to authedicate the users
 func (h *AuthHandler) Login(email, password string) (User, string) {
 	term.Write("Login  user  email"+email, term.Debug)
 	term.Write(Config.UserName, term.Debug)
@@ -281,6 +294,7 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 	return user, "Error Validating user"
 }
 
+// GetUser Helps to retrive the User
 func (h *AuthHandler) GetUser(email string) (User, string) {
 	term.Write("Login  user  email"+email, term.Debug)
 	term.Write(Config.UserName, term.Debug)
