@@ -291,6 +291,8 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 						fmt.Println(isLoggable)
 						if isLoggable {
 							fmt.Println("-----------------------------------------------------------------------------")
+							fmt.Print(string(rb))
+							fmt.Println("-----------------------------------------------------------------------------")
 							fmt.Println("Primary Key : " + requestBody.Parameters.KeyProperty)
 							fmt.Print("Query : ")
 							fmt.Println(requestBody.Query)

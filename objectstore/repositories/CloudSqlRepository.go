@@ -218,19 +218,52 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 	switch queryType {
 	case "getFields":
 		request.Log("Starting GET-FIELDS sub routine!")
-		query := "describe " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
-		return repository.queryCommonMany(query, request)
+		query := "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
+		repoResponse := repository.queryCommonMany(query, request)
+		var mapArray []map[string]interface{}
+		err := json.Unmarshal(repoResponse.Body, &mapArray)
+		if err != nil {
+			term.Write(err.Error(), 1)
+			repoResponse.Body = nil
+			return repoResponse
+		} else {
+			valueArray := make([]string, len(mapArray))
+			for index, value := range mapArray {
+				valueArray[index] = value["COLUMN_NAME"].(string)
+			}
+			repoResponse.Body, _ = json.Marshal(valueArray)
+			return repoResponse
+		}
 	case "getClasses":
 		request.Log("Starting GET-CLASSES sub routine")
 		query := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + repository.getDatabaseName(request.Controls.Namespace) + "';"
-		return repository.queryCommonMany(query, request)
+		repoResponse := repository.queryCommonMany(query, request)
+		var mapArray []map[string]interface{}
+		err := json.Unmarshal(repoResponse.Body, &mapArray)
+		if err != nil {
+			term.Write(err.Error(), 1)
+			repoResponse.Body = nil
+			return repoResponse
+		} else {
+			valueArray := make([]string, len(mapArray))
+			for index, value := range mapArray {
+				valueArray[index] = value["TABLE_NAME"].(string)
+			}
+			repoResponse.Body, _ = json.Marshal(valueArray)
+			return repoResponse
+		}
 	case "getNamespaces":
 		request.Log("Starting GET-NAMESPACES sub routine")
 		query := "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME != 'information_schema' AND SCHEMA_NAME !='mysql' AND SCHEMA_NAME !='performance_schema';"
 		return repository.queryCommonMany(query, request)
 	case "getSelected":
-		request.Log("Get-Selected not implemented in CloudSQL repository. Use Get-Query for custom querying in CloudSQL Repository")
-		return getDefaultNotImplemented()
+		fieldNames := strings.Split(strings.TrimSpace(request.Body.Special.Parameters), " ")
+		query := "select " + fieldNames[0]
+		for x := 1; x < len(fieldNames); x++ {
+			query += "," + fieldNames[x]
+		}
+		query += " from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+		return repository.queryCommonMany(query, request)
 	case "DropClass":
 		request.Log("Starting Delete-Class sub routine")
 		conn, err := repository.getConnection(request)
