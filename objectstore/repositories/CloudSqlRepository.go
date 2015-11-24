@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"duov6.com/common"
 	"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/queryparser"
@@ -756,6 +757,7 @@ func (repository CloudSqlRepository) getSqlFieldValue(value interface{}) string 
 
 func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 	var strValue string
+
 	//fmt.Println(reflect.TypeOf(value))
 	switch value.(type) {
 	case string:
@@ -986,6 +988,7 @@ func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string,
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
 	fmt.Println(query)
+	common.PublishLog("ObjectStoreLog.log", query)
 	var stmt *sql.Stmt
 	stmt, err = conn.Prepare(query)
 	_, err = stmt.Exec()
