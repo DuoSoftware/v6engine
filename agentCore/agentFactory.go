@@ -16,7 +16,7 @@ import (
 
 
 var agentInstance *core.Agent;
-
+//initializes a new agent
 func New(agentClass string, callback func(s bool))(err error){
 
 	data, err := ioutil.ReadFile("./agent.config")
