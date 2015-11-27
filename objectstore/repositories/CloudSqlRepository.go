@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"database/sql"
-	"duov6.com/common"
+	//"duov6.com/common"
 	"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/queryparser"
@@ -185,7 +185,7 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 		response.IsSuccess = false
 		response.Message = "Error deleting all objects! : " + err.Error()
 	}
-	conn.Close()
+	repository.closeConnection(conn)
 	return response
 }
 
@@ -207,7 +207,7 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 		response.IsSuccess = false
 		response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
 	}
-	conn.Close()
+	repository.closeConnection(conn)
 	return response
 }
 
@@ -285,7 +285,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			response.IsSuccess = false
 			response.Message = "Connection Failed to CloudSQL Server"
 		}
-		conn.Close()
+		repository.closeConnection(conn)
 	case "DropNamespace":
 		request.Log("Starting Delete-Database sub routine")
 		conn, err := repository.getConnection(request)
@@ -312,7 +312,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			response.IsSuccess = false
 			response.Message = "Connection Failed to CloudSQL Server"
 		}
-		conn.Close()
+		repository.closeConnection(conn)
 	default:
 		return repository.GetAll(request)
 
@@ -365,7 +365,7 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 	} else {
 		response.GetErrorResponse("Error connecting to CloudSQL : " + err.Error())
 	}
-	conn.Close()
+	repository.closeConnection(conn)
 	return response
 }
 
@@ -424,7 +424,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 			response.Message = "Error generating CloudSQL query : " + err.Error()
 		}
 	}
-	conn.Close()
+	repository.closeConnection(conn)
 	return response
 }
 
@@ -546,7 +546,7 @@ func (repository CloudSqlRepository) getCreateScript(namespace string, class str
 	}
 
 	query += ")"
-	fmt.Println(query)
+	//fmt.Println(query)
 	return query
 }
 
@@ -682,7 +682,6 @@ func (repository CloudSqlRepository) checkSchema(conn *sql.DB, namespace string,
 
 func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
 	//connInt := connmanager.Get("MYSQL", request.Controls.Namespace)
-
 	// if connInt != nil {
 	// 	term.Write("Connection Already Available.. Pinging Now....", 2)
 	// 	temp := connInt.(*sql.DB)
@@ -702,7 +701,7 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 	// 	//conn = connInt.(*sql.DB)
 
 	// } else {
-	//term.Write("!No Connection Found! Creating Brand New Connection!", 2)
+	term.Write("!No Connection Found! Creating Brand New Connection!", 2)
 	term.Write("Creating MySQL Connection!", 2)
 	var c *sql.DB
 	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
@@ -987,8 +986,8 @@ func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string,
 }
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
-	fmt.Println(query)
-	common.PublishLog("ObjectStoreLog.log", query)
+	//fmt.Println(query)
+	//common.PublishLog("ObjectStoreLog.log", query)
 	var stmt *sql.Stmt
 	stmt, err = conn.Prepare(query)
 	_, err = stmt.Exec()
@@ -1019,7 +1018,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 		session, isError := repository.getConnection(request)
 		if isError != nil {
 			returnID = ""
-			session.Close()
+			repository.closeConnection(session)
 			return
 		} else {
 			//Reading maxCount from DB
@@ -1031,7 +1030,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 				err := repository.executeNonQuery(session, createDomainAttrQuery)
 				if err != nil {
 					returnID = ""
-					session.Close()
+					repository.closeConnection(session)
 					return
 				} else {
 					//insert record with count 1 and return
@@ -1039,11 +1038,11 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					err = repository.executeNonQuery(session, insertQuery)
 					if err != nil {
 						returnID = ""
-						session.Close()
+						repository.closeConnection(session)
 						return
 					} else {
 						returnID = "1"
-						session.Close()
+						repository.closeConnection(session)
 						return
 					}
 				}
@@ -1058,11 +1057,11 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					err := repository.executeNonQuery(session, insertNewClassQuery)
 					if err != nil {
 						returnID = ""
-						session.Close()
+						repository.closeConnection(session)
 						return
 					} else {
 						returnID = "1"
-						session.Close()
+						repository.closeConnection(session)
 						return
 					}
 				} else {
@@ -1075,15 +1074,24 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					err = repository.executeNonQuery(session, updateQuery)
 					if err != nil {
 						returnID = ""
-						session.Close()
+						repository.closeConnection(session)
 						return
 					}
 				}
 			}
 		}
-		session.Close()
+		repository.closeConnection(session)
 	} else {
 		returnID = obj[request.Body.Parameters.KeyProperty].(string)
 	}
 	return
+}
+
+func (repository CloudSqlRepository) closeConnection(conn *sql.DB) {
+	err := conn.Close()
+	if err != nil {
+		term.Write(err.Error(), 1)
+	} else {
+		term.Write("Connection Closed!", 2)
+	}
 }

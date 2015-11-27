@@ -2,3 +2,4 @@ objectstore/ObjectStore.exe
 objectstore/JsonStack/
 objectstore/ObjectStoreLog.log
 duoauth/
+*.xlsx

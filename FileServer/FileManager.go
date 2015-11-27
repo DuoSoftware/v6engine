@@ -216,7 +216,8 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 	return fileResponse
 }
 
-func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
+//Original
+/*func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
 	fmt.Println("Inserting Records to Database....")
 	rowcount := 0
 	colunmcount := 0
@@ -293,7 +294,183 @@ func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool
 
 	}
 	return false
+}*/
+
+//1000 wise
+func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
+	fmt.Println("Inserting Records to Database....")
+	rowcount := 0
+	colunmcount := 0
+	var exceldata []map[string]interface{}
+	var colunName []string
+
+	blockSizeRecords, _ := strconv.Atoi(request.Parameters["BlockSize"])
+
+	//file read
+	xlFile, error := xlsx.OpenFile(excelFileName)
+	fmt.Println("File Opened")
+	if error == nil {
+		for _, sheet := range xlFile.Sheets {
+			rowcount = (sheet.MaxRow - 1)
+			colunmcount = sheet.MaxCol
+			colunName = make([]string, colunmcount)
+			for _, row := range sheet.Rows {
+				for j, cel := range row.Cells {
+					colunName[j] = cel.String()
+				}
+				break
+			}
+			fmt.Println(rowcount)
+			wholeRowIndex := 1
+			//exceldata = make(([]map[string]interface{}), blockSizeRecords-1)
+			//exceldata = make(([]map[string]interface{}), rowcount)
+			if error == nil {
+				for _, sheet := range xlFile.Sheets {
+					rowIndex := 1
+					for rownumber, row := range sheet.Rows {
+						currentRow := make(map[string]interface{})
+						if rownumber != 0 {
+							//exceldata[rownumber-1] = currentRow
+							for cellnumber, cell := range row.Cells {
+								if cellnumber == 0 {
+									//exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+									currentRow[colunName[cellnumber]] = cell.String()
+								} else if cell.Type() == 0 {
+									currentRow[colunName[cellnumber]] = cell.String()
+									//exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+								} else if cell.Type() == 2 {
+									dd, _ := cell.Float()
+									//exceldata[rownumber-1][colunName[cellnumber]] = float64(dd)
+									currentRow[colunName[cellnumber]] = float64(dd)
+								} else if cell.Type() == 3 {
+									//exceldata[rownumber-1][colunName[cellnumber]] = cell.Bool()
+									currentRow[colunName[cellnumber]] = cell.Bool()
+								} else {
+									//exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+									currentRow[colunName[cellnumber]] = cell.String()
+								}
+							}
+							exceldata = append(exceldata, currentRow)
+							if rowIndex == blockSizeRecords || wholeRowIndex == rowcount {
+								fmt.Println(wholeRowIndex)
+								//fmt.Println(exceldata)
+								//Id := colunName[0]
+								//var extraMap map[string]interface{}
+								//extraMap = make(map[string]interface{})
+								//extraMap["File"] = "exceldata"
+								//go client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
+								rowIndex = 1
+								exceldata = nil
+							} else {
+								rowIndex++
+							}
+							wholeRowIndex++
+						}
+
+					}
+				}
+			}
+			return true
+		}
+
+	}
+	return false
 }
+
+//test
+/*func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
+	fmt.Println("Inserting Records to Database....")
+	rowcount := 0
+	colunmcount := 0
+	var exceldata []map[string]interface{}
+	var colunName []string
+
+	blockSizeRecords, _ := strconv.Atoi(request.Parameters["BlockSize"])
+
+	//file read
+	xlFile, error := xlsx.OpenFile(excelFileName)
+	if error == nil {
+		for _, sheet := range xlFile.Sheets {
+			rowcount = (sheet.MaxRow - 1)
+			colunmcount = sheet.MaxCol
+			colunName = make([]string, colunmcount)
+			for _, row := range sheet.Rows {
+				for j, cel := range row.Cells {
+					colunName[j] = cel.String()
+				}
+				break
+			}
+			fmt.Println(rowcount)
+			wholeRowIndex := 1
+			//exceldata = make(([]map[string]interface{}), blockSizeRecords-1)
+			//exceldata = make(([]map[string]interface{}), rowcount)
+			if error == nil {
+				for _, sheet := range xlFile.Sheets {
+					rowIndex := 1
+					for rownumber, row := range sheet.Rows {
+						currentRow := make(map[string]interface{})
+						if rownumber != 0 {
+							//exceldata[rownumber-1] = currentRow
+							for cellnumber, cell := range row.Cells {
+								if cellnumber == 0 {
+									//exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+									currentRow[colunName[cellnumber]] = cell.String()
+								} else if cell.Type() == 0 {
+									currentRow[colunName[cellnumber]] = cell.String()
+									//exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+								} else if cell.Type() == 2 {
+									dd, _ := cell.Float()
+									//exceldata[rownumber-1][colunName[cellnumber]] = float64(dd)
+									currentRow[colunName[cellnumber]] = float64(dd)
+								} else if cell.Type() == 3 {
+									//exceldata[rownumber-1][colunName[cellnumber]] = cell.Bool()
+									currentRow[colunName[cellnumber]] = cell.Bool()
+								} else {
+									//exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+									currentRow[colunName[cellnumber]] = cell.String()
+								}
+							}
+							exceldata = append(exceldata, currentRow)
+							if rowIndex == blockSizeRecords || wholeRowIndex == rowcount {
+								Id := colunName[0]
+								var extraMap map[string]interface{}
+								extraMap = make(map[string]interface{})
+								extraMap["File"] = "exceldata"
+								//fmt.Println("Namespace : " + request.Parameters["namespace"])
+								//fmt.Println("Keyfield : " + Id)
+								//fmt.Println("filename : " + getExcelFileName(excelFileName))
+								client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
+								rowIndex = 1
+								exceldata = nil
+							} else {
+								rowIndex++
+							}
+							wholeRowIndex++
+						}
+
+					}
+				}
+			}
+
+		}
+
+	}
+	return false
+}
+*/
+/*func PrepareXcelFiles(excelFileName string) (numberOfFiles int) {
+	rowcount := 0
+	colunmcount := 0
+	xlFile, error := xlsx.OpenFile(excelFileName)
+	if error == nil {
+		for _, sheet := range xlFile.Sheets {
+			rowcount = (sheet.MaxRow - 1)
+			colunmcount = sheet.MaxCol
+			if rowcount >
+		}
+	}
+	return
+}*/
 
 func checkIfFile(params string) (fileType string) {
 	var tempArray []string

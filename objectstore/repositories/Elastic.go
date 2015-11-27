@@ -6,6 +6,7 @@ import (
 	"duov6.com/objectstore/queryparser"
 	"duov6.com/term"
 	"encoding/json"
+	"fmt"
 	"github.com/mattbaird/elastigo/lib"
 	"github.com/twinj/uuid"
 	"io/ioutil"
@@ -610,9 +611,10 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 		query = "{\"query\":{\"query_string\" : {\"query\" : \"" + request.Body.Special.Extras["Keyword"].(string) + "\"}}}"
 	} else {
 		//GET-ALL Detected!
-		query = "{\"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
+		query = "{\"from\": " + "0" + ", \"size\": " + "10000000" + ", \"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
+		//query = "{\"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
 	}
-
+	fmt.Println(query)
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
 	if err != nil {
@@ -651,9 +653,10 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 				}
 				outMap[index] = currentMap
 			}
-
+			fmt.Println("Returning Selected Map")
 			returnByte, _ = json.Marshal(outMap)
 		} else {
+			fmt.Println("Returning Full Map")
 			returnByte, _ = json.Marshal(allMaps)
 		}
 
@@ -661,6 +664,49 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 
 	return
 }
+
+/*func (repository ElasticRepository) executeGetSelectedFields(request *messaging.ObjectRequest) (returnByte []byte) {
+	conn := repository.getConnection(request)
+
+	fieldNames := strings.Split(request.Body.Special.Parameters, " ")
+
+	fieldString := "\"" + fieldNames[0] + "\""
+
+	for index := 1; index < len(fieldNames); index++ {
+		fieldString += "," + "\"" + fieldNames[index] + "\""
+	}
+
+	fmt.Println(fieldString)
+
+	query := "{\"fields\":[" + fieldString + "],\"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
+
+	fmt.Println(query)
+
+	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
+
+	if err != nil {
+		term.Write(err.Error(), 1)
+		fmt.Println("ayyo")
+	} else {
+		var allMaps []map[string]interface{}
+		allMaps = make([]map[string]interface{}, data.Hits.Len())
+
+		for index, hit := range data.Hits.Hits {
+			var currentMap map[string]interface{}
+			currentMap = make(map[string]interface{})
+			byteData, _ := hit.Source.MarshalJSON()
+			json.Unmarshal(byteData, &currentMap)
+			allMaps[index] = currentMap
+		}
+
+		fmt.Println(allMaps)
+
+		returnByte, _ = json.Marshal(allMaps)
+
+	}
+
+	return
+}*/
 
 // Helper Functions
 
