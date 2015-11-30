@@ -1,40 +1,24 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package main
 
 import (
-	"io/ioutil"
-	"log"
-	"time"
-
+	"fmt"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/cloud"
 	"google.golang.org/cloud/datastore"
+	"io/ioutil"
+	"log"
+	"time"
 )
 
 func main() {
-	ExamplePut1()
+
+	put()
+	//get()
+	//delete()
 }
 
-// TODO(djd): reevaluate this example given new Client config.
 func Example_auth() *datastore.Client {
-	// Initialize an authorized context with Google Developers Console
-	// JSON key. Read the google package examples to learn more about
-	// different authorization flows you can use.
-	// http://godoc.org/golang.org/x/oauth2/google
 	jsonKey, err := ioutil.ReadFile("DUOWORLD-60d1c8c347de.json")
 	if err != nil {
 		log.Fatal(err)
@@ -52,92 +36,63 @@ func Example_auth() *datastore.Client {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Use the client (see other examples).
 	return client
 }
 
-func ExampleGet() {
-	ctx := context.Background()
-	client, err := datastore.NewClient(ctx, "duo-world")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	type Article struct {
-		Title       string
-		Description string
-		Body        string `datastore:",noindex"`
-		Author      *datastore.Key
-		PublishedAt time.Time
-	}
-	key := datastore.NewKey(ctx, "Article", "articled1", 0, nil)
-	article := &Article{}
-	if err := client.Get(ctx, key, article); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func ExamplePut() {
-	ctx := context.Background()
-	client, err := datastore.NewClient(ctx, "duo-world")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	type Article struct {
-		Title       string
-		Description string
-		Body        string `datastore:",noindex"`
-		Author      *datastore.Key
-		PublishedAt time.Time
-	}
-	newKey := datastore.NewIncompleteKey(ctx, "Article", nil)
-	_, err = client.Put(ctx, newKey, &Article{
-		Title:       "The title of the article",
-		Description: "The description of the article...",
-		Body:        "...",
-		Author:      datastore.NewKey(ctx, "Author", "jbd", 0, nil),
-		PublishedAt: time.Now(),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func ExamplePut1() {
+func put() {
 	ctx := context.Background()
 	client := Example_auth()
 
-	type Article struct {
-		Title       string
-		Description string
-		Body        string `datastore:",noindex"`
-		Author      *datastore.Key
-		PublishedAt time.Time
-	}
-	newKey := datastore.NewIncompleteKey(ctx, "Article", nil)
-	_, err := client.Put(ctx, newKey, &Article{
-		Title:       "The title of the article",
-		Description: "The description of the article...",
-		Body:        "...",
-		Author:      datastore.NewKey(ctx, "Author", "jbd", 0, nil),
+	key := datastore.NewKey(ctx, "Book", "700", 0, nil)
+
+	_, err := client.Put(ctx, key, &Book{
+		Title:       "111",
+		Description: "22222",
+		Body:        "33333",
+		Author:      "4444",
 		PublishedAt: time.Now(),
 	})
+
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println(key)
+	}
+
+}
+
+func get() {
+	ctx := context.Background()
+	client := Example_auth()
+
+	key := datastore.NewKey(ctx, "Book", "700", 0, nil)
+	fmt.Println(key.Namespace())
+	book := &Book{}
+	if err := client.Get(ctx, key, book); err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println(key.Namespace())
+		fmt.Println(book)
 	}
 }
 
-func ExampleDelete() {
-	ctx := context.Background()
-	client, err := datastore.NewClient(ctx, "duo-world")
-	if err != nil {
-		log.Fatal(err)
-	}
+type Book struct {
+	Title       string
+	Description string
+	Body        string `datastore:",noindex"`
+	Author      string
+	PublishedAt time.Time
+}
 
-	key := datastore.NewKey(ctx, "Article", "articled1", 0, nil)
+func delete() {
+	ctx := context.Background()
+	client := Example_auth()
+	key := datastore.NewKey(ctx, "Book", "700", 0, nil)
+
 	if err := client.Delete(ctx, key); err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Deleted!")
 	}
 }
 
@@ -277,59 +232,3 @@ func ExampleTransaction() {
 	}
 
 }
-
-/*
-func getCtx() context.Context {
-    // Initialize an authorized transport with Google Developers Console
-    // JSON key. Read the google package examples to learn more about
-    // different authorization flows you can use.
-    // http://godoc.org/golang.org/x/oauth2/google
-    opts, err := oauth2.New(
-        google.ServiceAccountJSONKey("CassandraTest-key.json"),
-        oauth2.Scope(datastore.ScopeDatastore),
-    )
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    //titanium-goods-766 is the project id for CassandraTest (under sthilakan@eyeota.com)
-
-    ctx := cloud.NewContext("titanium-goods-766", &http.Client{Transport: opts.NewTransport()})
-
-    // Use the context (see other examples)
-    return ctx
-}
-
-type contactInfoEntity struct {
-    EmailKey  *datastore.Key
-    FirstName string
-    LastName  string
-}
-
-func main() {
-    ctx := getCtx()
-    fmt.Println("successfully got context", ctx)
-
-    err := putEntity(ctx, "fname1", "lname1", "email1")
-
-    if err != nil {
-        fmt.Println("Error:", err)
-    } else {
-        fmt.Println("success")
-    }
-}
-
-func putEntity(ctx context.Context, firstName string, lastName string, email string) error {
-    key := datastore.NewKey(ctx, "contactInfoEntity", email, 0, nil)
-
-    contactInfoEntity := contactInfoEntity{
-        EmailKey:  key,
-        FirstName: firstName,
-        LastName:  lastName,
-    }
-
-    _, err := datastore.Put(ctx, key, &contactInfoEntity)
-
-    return err
-}
-*/

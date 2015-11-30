@@ -17,8 +17,8 @@ func Create(code string) AbstractRepository {
 		repository = HiveRepository{}
 	case "POSTGRES":
 		repository = PostgresRepository{}
-	case "MYSQL":
-		repository = MysqlRepository{}
+	case "GoogleDataStore":
+		repository = GoogleDataStoreRepository{}
 	case "MSSQL":
 		repository = MssqlRepository{}
 	case "CLOUDSQL":

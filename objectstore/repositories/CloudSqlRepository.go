@@ -1048,12 +1048,12 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 				}
 			} else {
 				//This is a new Class.. Create New entry
-				readQuery := "SELECT maxCount FROM " + getMySQLnamespace(request) + ".domainClassAttributes where class = '" + strings.ToLower(request.Controls.Class) + "';"
-				myMap, _ := repository.executeQueryOne(session, readQuery, (getMySQLnamespace(request) + ".domainClassAttributes"))
+				readQuery := "SELECT maxCount FROM " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes where class = '" + strings.ToLower(request.Controls.Class) + "';"
+				myMap, _ := repository.executeQueryOne(session, readQuery, (repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes"))
 
 				if len(myMap) == 0 {
 					request.Log("New Class! New record for this class will be inserted")
-					insertNewClassQuery := "INSERT INTO " + getMySQLnamespace(request) + ".domainClassAttributes (class,maxCount,version) values ('" + strings.ToLower(request.Controls.Class) + "', '1', '" + uuid.NewV1().String() + "');"
+					insertNewClassQuery := "INSERT INTO " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes (class,maxCount,version) values ('" + strings.ToLower(request.Controls.Class) + "', '1', '" + uuid.NewV1().String() + "');"
 					err := repository.executeNonQuery(session, insertNewClassQuery)
 					if err != nil {
 						returnID = ""
@@ -1070,7 +1070,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					maxCount, err := strconv.Atoi(myMap["maxCount"].(string))
 					maxCount++
 					returnID = strconv.Itoa(maxCount)
-					updateQuery := "UPDATE " + getMySQLnamespace(request) + ".domainClassAttributes SET maxCount='" + returnID + "' WHERE class = '" + strings.ToLower(request.Controls.Class) + "' ;"
+					updateQuery := "UPDATE " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes SET maxCount='" + returnID + "' WHERE class = '" + strings.ToLower(request.Controls.Class) + "' ;"
 					err = repository.executeNonQuery(session, updateQuery)
 					if err != nil {
 						returnID = ""
