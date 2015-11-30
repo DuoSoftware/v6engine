@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	//"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -215,7 +216,7 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 	return fileResponse
 }
 
-//Original
+//Original - working huge overhead
 /*func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
 	fmt.Println("Inserting Records to Database....")
 	rowcount := 0
@@ -295,7 +296,7 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 	return false
 }*/
 
-//1000 wise
+//working new
 func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
 	fmt.Println("Inserting Records to Database....")
 	rowcount := 0
@@ -376,9 +377,14 @@ func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool
 	return false
 }
 
-//test
+//test code
 /*func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
 	fmt.Println("Inserting Records to Database....")
+
+	//split and save massive xcel files to smaller files
+	splitExcelData(excelFileName)
+	//get filenames in directory
+	releventFiles := getReleventExcelSplits(excelFileName)
 	rowcount := 0
 	colunmcount := 0
 	var exceldata []map[string]interface{}
@@ -388,6 +394,7 @@ func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool
 
 	//file read
 	xlFile, error := xlsx.OpenFile(excelFileName)
+	fmt.Println("File Opened")
 	if error == nil {
 		for _, sheet := range xlFile.Sheets {
 			rowcount = (sheet.MaxRow - 1)
@@ -431,13 +438,12 @@ func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool
 							}
 							exceldata = append(exceldata, currentRow)
 							if rowIndex == blockSizeRecords || wholeRowIndex == rowcount {
+								fmt.Println(wholeRowIndex)
+								//fmt.Println(exceldata)
 								Id := colunName[0]
 								var extraMap map[string]interface{}
 								extraMap = make(map[string]interface{})
 								extraMap["File"] = "exceldata"
-								//fmt.Println("Namespace : " + request.Parameters["namespace"])
-								//fmt.Println("Keyfield : " + Id)
-								//fmt.Println("filename : " + getExcelFileName(excelFileName))
 								client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
 								rowIndex = 1
 								exceldata = nil
@@ -450,25 +456,11 @@ func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool
 					}
 				}
 			}
-
+			return true
 		}
 
 	}
 	return false
-}
-*/
-/*func PrepareXcelFiles(excelFileName string) (numberOfFiles int) {
-	rowcount := 0
-	colunmcount := 0
-	xlFile, error := xlsx.OpenFile(excelFileName)
-	if error == nil {
-		for _, sheet := range xlFile.Sheets {
-			rowcount = (sheet.MaxRow - 1)
-			colunmcount = sheet.MaxCol
-			if rowcount >
-		}
-	}
-	return
 }*/
 
 func checkIfFile(params string) (fileType string) {
@@ -489,7 +481,7 @@ func getExcelFileName(path string) (fileName string) {
 	return
 }
 
-func createExcelFile(fileName string, columns []string, data []map[string]interface{}) {
+/*func createExcelFile(fileName string, columns []string, data []map[string]interface{}) {
 	var file *xlsx.File
 	var sheet *xlsx.Sheet
 	var row *xlsx.Row
@@ -521,7 +513,7 @@ func createExcelFile(fileName string, columns []string, data []map[string]interf
 	}
 }
 
-func main(fileName string) {
+func splitExcelData(fileName string) {
 	rowcount := 0
 	colunmcount := 0
 	var exceldata []map[string]interface{}
@@ -571,3 +563,11 @@ func main(fileName string) {
 
 	}
 }
+
+func getReleventExcelSplits(fileName string) []string {
+	fileName = strings.TrimSpace(fileName)
+	tokens := strings.Split(fileName, ".")
+	files1, _ := filepath.Glob("*" + tokens[0])
+	return files1
+}
+*/
