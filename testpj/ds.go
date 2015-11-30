@@ -43,15 +43,38 @@ func put() {
 	ctx := context.Background()
 	client := Example_auth()
 
-	key := datastore.NewKey(ctx, "Book", "700", 0, nil)
+	key := datastore.NewKey(ctx, "huehuehue", "701", 0, nil)
 
-	_, err := client.Put(ctx, key, &Book{
-		Title:       "111",
-		Description: "22222",
-		Body:        "33333",
-		Author:      "4444",
-		PublishedAt: time.Now(),
-	})
+	// _, err := client.Put(ctx, key, &Book{
+	// 	Title:       "111",
+	// 	Description: "22222",
+	// 	Body:        "33333",
+	// 	Author:      "4444",
+	// 	PublishedAt: time.Now(),
+	// })
+
+	var dk map[string]interface{}
+	dk = make(map[string]interface{})
+	dk["1"] = "hehe"
+	dk["2"] = 123
+
+	// asdf := datastore.PropertyList{
+	// 	datastore.Property{Name: "time", Value: time.Now()},
+	// 	datastore.Property{Name: "email", Value: "me@myhost.com"},
+	// 	datastore.Property{Name: "1", Value: 1231452},
+	// 	datastore.Property{Name: "2", Value: "fdsa"},
+	// 	datastore.Property{Name: "3", Value: "huehuehue"},
+	// }
+
+	var props datastore.PropertyList
+	//props = append(props, datastore.Property{Name: "time", Value: time.Now()})
+	//props = append(props, datastore.Property{Name: "email", Value: "me@myhost.com"})
+
+	for key, value := range dk {
+		props = append(props, datastore.Property{Name: key, Value: value})
+	}
+
+	_, err := client.Put(ctx, key, &props)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -59,6 +82,24 @@ func put() {
 		fmt.Println(key)
 	}
 
+}
+
+type DynEnt map[string]interface{}
+
+func (d *DynEnt) Load(ch <-chan datastore.Property) error {
+	// Note: you might want to clear current values from the map or create a new map
+	for p := range ch { // Read until channel is closed
+		(*d)[p.Name] = p.Value
+	}
+	return nil
+}
+
+func (d *DynEnt) Save(ch chan<- datastore.Property) error {
+	for k, v := range *d {
+		ch <- datastore.Property{Name: k, Value: v}
+	}
+	close(ch) // Channel must be closed
+	return nil
 }
 
 func get() {
@@ -82,6 +123,11 @@ type Book struct {
 	Body        string `datastore:",noindex"`
 	Author      string
 	PublishedAt time.Time
+}
+
+type Record struct {
+	_os_id string
+	object map[string]interface{}
 }
 
 func delete() {

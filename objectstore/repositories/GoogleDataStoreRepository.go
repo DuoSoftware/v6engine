@@ -23,7 +23,7 @@ func (repository GoogleDataStoreRepository) GetRepositoryName() string {
 	return "GoogleDataStore"
 }
 
-func (repository GoogleDataStoreRepository) getConnection(request *messaging.ObjectRequest) (client *datastore.Client, err error, projectID string) {
+func (repository GoogleDataStoreRepository) getConnection(request *messaging.ObjectRequest) (client *datastore.Client, projectID string, err error) {
 	dataStoreConfig := request.Configuration.ServerConfiguration["GoogleDataStore"]
 
 	keyFile := dataStoreConfig["KeyFile"]
