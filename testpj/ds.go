@@ -13,8 +13,8 @@ import (
 
 func main() {
 
-	put()
-	//get()
+	//put()
+	get()
 	//delete()
 }
 
@@ -43,32 +43,14 @@ func put() {
 	ctx := context.Background()
 	client := Example_auth()
 
-	key := datastore.NewKey(ctx, "huehuehue", "701", 0, nil)
-
-	// _, err := client.Put(ctx, key, &Book{
-	// 	Title:       "111",
-	// 	Description: "22222",
-	// 	Body:        "33333",
-	// 	Author:      "4444",
-	// 	PublishedAt: time.Now(),
-	// })
+	key := datastore.NewKey(ctx, "asdf", "702", 0, nil)
 
 	var dk map[string]interface{}
 	dk = make(map[string]interface{})
-	dk["1"] = "hehe"
-	dk["2"] = 123
-
-	// asdf := datastore.PropertyList{
-	// 	datastore.Property{Name: "time", Value: time.Now()},
-	// 	datastore.Property{Name: "email", Value: "me@myhost.com"},
-	// 	datastore.Property{Name: "1", Value: 1231452},
-	// 	datastore.Property{Name: "2", Value: "fdsa"},
-	// 	datastore.Property{Name: "3", Value: "huehuehue"},
-	// }
+	dk["Name"] = "Prasad"
+	dk["Age"] = 23
 
 	var props datastore.PropertyList
-	//props = append(props, datastore.Property{Name: "time", Value: time.Now()})
-	//props = append(props, datastore.Property{Name: "email", Value: "me@myhost.com"})
 
 	for key, value := range dk {
 		props = append(props, datastore.Property{Name: key, Value: value})
@@ -84,50 +66,26 @@ func put() {
 
 }
 
-type DynEnt map[string]interface{}
-
-func (d *DynEnt) Load(ch <-chan datastore.Property) error {
-	// Note: you might want to clear current values from the map or create a new map
-	for p := range ch { // Read until channel is closed
-		(*d)[p.Name] = p.Value
-	}
-	return nil
-}
-
-func (d *DynEnt) Save(ch chan<- datastore.Property) error {
-	for k, v := range *d {
-		ch <- datastore.Property{Name: k, Value: v}
-	}
-	close(ch) // Channel must be closed
-	return nil
-}
-
 func get() {
 	ctx := context.Background()
 	client := Example_auth()
 
-	key := datastore.NewKey(ctx, "Book", "700", 0, nil)
-	fmt.Println(key.Namespace())
-	book := &Book{}
-	if err := client.Get(ctx, key, book); err != nil {
+	key := datastore.NewKey(ctx, "asdf", "702", 0, nil)
+
+	var props datastore.PropertyList
+
+	if err := client.Get(ctx, key, &props); err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println(key.Namespace())
-		fmt.Println(book)
+		fmt.Println(props)
+		for _, v := range props {
+			fmt.Println(v.Name)     //string
+			fmt.Println(v.Value)    //interface{}
+			fmt.Println(v.NoIndex)  //bool
+			fmt.Println(v.Multiple) //bool
+			fmt.Println("----------------------")
+		}
 	}
-}
-
-type Book struct {
-	Title       string
-	Description string
-	Body        string `datastore:",noindex"`
-	Author      string
-	PublishedAt time.Time
-}
-
-type Record struct {
-	_os_id string
-	object map[string]interface{}
 }
 
 func delete() {

@@ -3,7 +3,7 @@ package repositories
 import (
 	"duov6.com/objectstore/messaging"
 	//"encoding/json"
-	//"fmt"
+	"fmt"
 	"github.com/twinj/uuid"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
@@ -23,11 +23,11 @@ func (repository GoogleDataStoreRepository) GetRepositoryName() string {
 	return "GoogleDataStore"
 }
 
-func (repository GoogleDataStoreRepository) getConnection(request *messaging.ObjectRequest) (client *datastore.Client, projectID string, err error) {
+func (repository GoogleDataStoreRepository) getConnection(request *messaging.ObjectRequest) (client *datastore.Client, err error) {
 	dataStoreConfig := request.Configuration.ServerConfiguration["GoogleDataStore"]
 
 	keyFile := dataStoreConfig["KeyFile"]
-	projectID = dataStoreConfig["ProjectID"]
+	projectID := dataStoreConfig["ProjectID"]
 
 	jsonKey, err := ioutil.ReadFile(keyFile)
 	if err != nil {
@@ -89,6 +89,31 @@ func (repository GoogleDataStoreRepository) GetByKey(request *messaging.ObjectRe
 	request.Log("Starting GET-BY-KEY")
 	response := RepositoryResponse{}
 
+	ctx := context.Background()
+	client, err := repository.getConnection(request)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		key := datastore.NewKey(ctx, request.Controls.Namespace, request.Controls.Id, 0, nil)
+
+		var props datastore.PropertyList
+		var data map[string]interface{}
+		data = make(map[string]interface{})
+
+		if err := client.Get(ctx, key, &props); err != nil {
+			term.Write(err.Error(), 1)
+		} else {
+			for _, value := range props {
+				data[value.Name] = value.Value
+			}
+		}
+
+		response.IsSuccess = true
+		response.Message = "Values Retrieved Successfully from Google DataStore!"
+		response.GetSuccessResByObject(data)
+
+	}
 	return response
 }
 

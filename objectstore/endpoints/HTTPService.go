@@ -81,7 +81,7 @@ func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request
 	blockSize := "1000"
 	for _, value := range configObject.StoreConfiguration["INSERT-MULTIPLE"] {
 		if value == "ELASTIC" {
-			blockSize = "200" //If Elastic is there reduce Transfer block size to 200
+			blockSize = "100" //If Elastic is there reduce Transfer block size to 200
 			break
 		}
 	}

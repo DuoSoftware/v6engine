@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"time"
 	//"path/filepath"
 	"strconv"
 	"strings"
@@ -217,7 +218,7 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 }
 
 //Original - working huge overhead
-/*func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
+func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
 	fmt.Println("Inserting Records to Database....")
 	rowcount := 0
 	colunmcount := 0
@@ -272,6 +273,9 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 			fmt.Println("filename : " + getExcelFileName(excelFileName))
 
 			noOfElementsPerSet, _ := strconv.Atoi(request.Parameters["BlockSize"])
+			fmt.Println("---------------")
+			fmt.Println(noOfElementsPerSet)
+			fmt.Println("---------------")
 			noOfSets := (len(exceldata) / noOfElementsPerSet)
 			remainderFromSets := 0
 			remainderFromSets = (len(exceldata) - (noOfSets * noOfElementsPerSet))
@@ -283,21 +287,27 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 				client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata[startIndex:stopIndex]).Ok()
 				startIndex += noOfElementsPerSet
 				stopIndex += noOfElementsPerSet
+				if noOfElementsPerSet < 500 {
+					time.Sleep(2 * time.Second)
+				}
 			}
 
 			if remainderFromSets > 0 {
 				start := len(exceldata) - remainderFromSets
 				client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata[start:len(exceldata)]).Ok()
+				if noOfElementsPerSet < 500 {
+					time.Sleep(2 * time.Second)
+				}
 			}
 			return true
 		}
 
 	}
 	return false
-}*/
+}
 
 //working new
-func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
+/*func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
 	fmt.Println("Inserting Records to Database....")
 	rowcount := 0
 	colunmcount := 0
@@ -376,7 +386,7 @@ func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool
 	}
 	return false
 }
-
+*/
 //test code
 /*func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
 	fmt.Println("Inserting Records to Database....")

@@ -1,0 +1,11 @@
+{
+  "type": "service_account",
+  "private_key_id": "60d1c8c347de50afe4d25084eb63f86db32da85b",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCMRp5bT3aXrQV7\nDA7oua4wgMaegEHSlA/XwjtpEtOc5OIJqPvb/VtUi5kaDhctHn2Gg8+6dxQJGm3m\nK1Z1rUsipKYcvbMmpHYFvtzwJKeTM7zZpW4jrDSsQazSumQHC6N64DwJGdmg+h2/\naR8AvMW8MnAPJHKrB+fMZvRsYhH25xtimUD+37SPuAPfoKjA2tmxWdem15cRGEeN\nPoAJgYb6y7Tykzv0QFKcpvHmcsI54rzVQbL85OGhtep35bXm3F2rZ5dzM6z9Gm7t\njDJJ3WKhStE2PRkc49OPt1fIryCdsj8IZkILouk1eT1SUYhphBBzeKWW5svF7tBY\nLktwtL5RAgMBAAECggEBAITHt8/w6O3rzltJ77blQ/gPfXK9LxE4K8LszTXJp1tE\n4J2KQlVbfh8KQPMD0XZY/TLeBDyZyPJQ/SQ5c47SaWOyfLaJ7lGurTUFFLePyruw\n5psSV64WrIk9ZWzXGCX/I1EFfm6S9IjHGG99/uXAyl85Uw9STeSNCCJYdhc9wYl2\niR+qCN77YtrlKkPdz8KCLm7ruRGm1f5DmU5Otn8jvgznoTKN3B98REnGIHdCP7kp\nI6fCQ8t4m7JJAU3jltiKK5v4Sq2xjpPu9RxmML4Hnq6b/mL9072O1+YEraiU7irF\nBpkLPSE0wGIzAZBCeQH7SL+hs+1RdeAHpKSELCHwYlECgYEA8993/QdPjkkg2pTv\nMzdIpMASH/9TM4tVCbFpxwbgqCV8AAlZ/xeD2MCY7LUBFsI9165Zyjg1r9ugoUui\nhrJnh4+swy23D3ArkTO2THrDHss4nMYNTzleUYYBKj4IqafhCOWV7VpZESnSdhED\n/5XGtrBmhFkKYZhLsOsLUiN/saUCgYEAk0BYy9v6qQ7b+TDX3R/i8iwKJJXcAAgL\nWnlBnnKBprHuKdP4iEnoE1gIFcj3IJ9tFQ0Ql5WzPwRMbbPx2jCvPKGsus0uF2ba\nkRIpiHIQiRCY68q0e94jTH6aK9pLDh1EiOesuIYdiYbl4XeAuaG6GITojyw79781\naE+9HrjZoj0CgYA4Of+qIPNgtM+UVd5Iiqh/A6GqKu395lP25iajMpy9Z9cNExri\ny4MkiFM50AmuO56Siao+C3OlVhfU2GFieOORx7hnT7TzJEOHOMsBGxS9ltE4pBkR\neQKb/S9rk93fb8tch8JndPswD9psSkQHu3qTSFx6iyTvl3NsGOUFTRX12QKBgGbB\nP3W641c39E8XQ3ueNbty+fz/yo8HDg0rkpvkIg9WGPF9ZvCMSnO9OZ8iJznPpspK\n3Ko7H+M4t7DSIlJ1KMPxulx8s85GyvzzJKJ/noRXXa8lO/84S3+k1ScG5NtLlzjG\nGqSFinUe+qn0v5JKhld33+WRI6PF/Zn2Eu4uZkitAoGAJkI983FQr2TUk/wViGZu\nJr4hU4SDLd4oUwjC5qzSSrWAIo9odGAdLhPii0Lt/KIYvnImU9V6D4p0IlH78IBp\nLWiu4P6vLH+IqpwuaXehQuncsSEFjSi7+l5UnrMzKNWGx/m4gwtju+WW9XzkMVY8\nV1YePGsd+YTP4foPt9CIOi0=\n-----END PRIVATE KEY-----\n",
+  "client_email": "account-7@duo-world.iam.gserviceaccount.com",
+  "client_id": "106531350860376586931",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/account-7%40duo-world.iam.gserviceaccount.com"
+}
