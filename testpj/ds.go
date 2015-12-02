@@ -8,14 +8,17 @@ import (
 	"google.golang.org/cloud/datastore"
 	"io/ioutil"
 	"log"
+	"reflect"
 	"time"
 )
 
 func main() {
 
 	//put()
-	get()
+	//get()
 	//delete()
+	//getKeys()
+	//curser()
 }
 
 func Example_auth() *datastore.Client {
@@ -43,12 +46,13 @@ func put() {
 	ctx := context.Background()
 	client := Example_auth()
 
-	key := datastore.NewKey(ctx, "asdf", "702", 0, nil)
+	ctx = datastore.WithNamespace(ctx, "huehuehue")
+	key := datastore.NewKey(ctx, "asdf", "708", 0, nil)
 
 	var dk map[string]interface{}
 	dk = make(map[string]interface{})
-	dk["Name"] = "Prasad"
-	dk["Age"] = 23
+	dk["Name"] = "ayyo"
+	dk["Age"] = 789
 
 	var props datastore.PropertyList
 
@@ -66,10 +70,50 @@ func put() {
 
 }
 
+func getKeys() {
+	props := make([]datastore.PropertyList, 0)
+	ctx := context.Background()
+	client := Example_auth()
+	ctx = datastore.WithNamespace(ctx, "huehuehue")
+	q := datastore.NewQuery("asdf")
+	_, err := client.GetAll(ctx, q, &props)
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println(props)
+	}
+}
+
+func curser() {
+	ctx := context.Background()
+	client := Example_auth()
+	ctx = datastore.WithNamespace(ctx, "huehuehue")
+	q := datastore.NewQuery("asdf")
+
+	t := client.Run(ctx, q)
+	for {
+		fmt.Println("--------------------")
+		cur, _ := t.Cursor()
+		fmt.Println(cur.String())
+		var props datastore.PropertyList
+		_, err := t.Next(&props)
+		if err == datastore.Done {
+			fmt.Println("Done")
+			break
+		}
+		if err != nil {
+			fmt.Println("Error Fetching Next : " + err.Error())
+			break
+		}
+		// Do something with the Person p
+		fmt.Println(props)
+	}
+}
+
 func get() {
 	ctx := context.Background()
 	client := Example_auth()
-
+	//ctx = datastore.WithNamespace(ctx, "Default")
 	key := datastore.NewKey(ctx, "asdf", "702", 0, nil)
 
 	var props datastore.PropertyList

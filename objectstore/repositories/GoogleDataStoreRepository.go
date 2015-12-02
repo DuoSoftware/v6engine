@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"duov6.com/objectstore/messaging"
-	//"encoding/json"
+	"encoding/json"
 	"fmt"
 	"github.com/twinj/uuid"
 	"golang.org/x/net/context"
@@ -11,9 +11,10 @@ import (
 	"google.golang.org/cloud/datastore"
 	"io/ioutil"
 	//"time"
-	//"strconv"
+	"strconv"
 	//"strings"
 	"duov6.com/term"
+	"reflect"
 )
 
 type GoogleDataStoreRepository struct {
@@ -56,11 +57,78 @@ func (repository GoogleDataStoreRepository) GetAll(request *messaging.ObjectRequ
 	request.Log("Starting GET-ALL")
 	response := RepositoryResponse{}
 
+	isOrderByAsc := false
+	isOrderByDesc := false
+	orderbyfield := ""
+
+	skip := 0
+	take := 100
+
+	if request.Extras["skip"] != nil {
+		if intValue, err := strconv.Atoi(request.Extras["skip"].(string)); err == nil {
+			skip = intValue
+		}
+	}
+	if request.Extras["take"] != nil {
+		if intValue, err := strconv.Atoi(request.Extras["take"].(string)); err == nil {
+			take = intValue
+		}
+	}
+	if request.Extras["orderby"] != nil {
+		orderbyfield = request.Extras["orderby"].(string)
+		isOrderByAsc = true
+	} else if request.Extras["orderbydsc"] != nil {
+		orderbyfield = request.Extras["orderbydsc"].(string)
+		isOrderByDesc = true
+	}
+
+	ctx := context.Background()
+	client, err := repository.getConnection(request)
+	ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+
+		props := make([]datastore.PropertyList, 0)
+		var data []map[string]interface{}
+
+		var query *datastore.Query
+
+		if isOrderByAsc {
+			query = datastore.NewQuery(request.Controls.Class).Offset(skip).Limit(take).Order(orderbyfield)
+		} else if isOrderByDesc {
+			query = datastore.NewQuery(request.Controls.Class).Offset(skip).Limit(take).Order(("-" + orderbyfield))
+		} else {
+			query = datastore.NewQuery(request.Controls.Class).Offset(skip).Limit(take)
+		}
+
+		_, err := client.GetAll(ctx, query, &props)
+		if err != nil {
+			term.Write(err.Error(), 1)
+		} else {
+			//data recieved! :)
+			for index := 0; index < len(props); index++ {
+				var record map[string]interface{}
+				record = make(map[string]interface{})
+				for _, value := range props[index] {
+					if value.Name != "_os_id" && value.Name != "__osHeaders" {
+						record[value.Name] = repository.GQLToGolang(value.Value)
+					}
+				}
+				data = append(data, record)
+			}
+		}
+
+		response.IsSuccess = true
+		response.Message = "Values Retrieved Successfully from Google DataStore!"
+		response.GetSuccessResByObject(data)
+	}
 	return response
 }
 
 func (repository GoogleDataStoreRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("GetSearch not implemented in Redis repository")
+	request.Log("GetSearch not implemented in Google DataStore repository")
 	return getDefaultNotImplemented()
 }
 
@@ -72,16 +140,15 @@ func (repository GoogleDataStoreRepository) GetQuery(request *messaging.ObjectRe
 	switch queryType {
 	case "Query":
 		if request.Body.Query.Parameters != "*" {
-			request.Log("Support for SQL Query not implemented in Cassandra Db repository")
+			request.Log("GetQuery not implemented in Google DataStore repository")
 			return getDefaultNotImplemented()
 		} else {
 			return repository.GetAll(request)
 		}
 	default:
-		request.Log(queryType + " not implemented in Redis Db repository")
+		request.Log(queryType + " not implemented in Google DataStore Db repository")
 		return getDefaultNotImplemented()
 	}
-
 	return response
 }
 
@@ -91,11 +158,12 @@ func (repository GoogleDataStoreRepository) GetByKey(request *messaging.ObjectRe
 
 	ctx := context.Background()
 	client, err := repository.getConnection(request)
+	ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
 
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		key := datastore.NewKey(ctx, request.Controls.Namespace, request.Controls.Id, 0, nil)
+		key := datastore.NewKey(ctx, request.Controls.Class, getNoSqlKey(request), 0, nil)
 
 		var props datastore.PropertyList
 		var data map[string]interface{}
@@ -105,7 +173,9 @@ func (repository GoogleDataStoreRepository) GetByKey(request *messaging.ObjectRe
 			term.Write(err.Error(), 1)
 		} else {
 			for _, value := range props {
-				data[value.Name] = value.Value
+				if value.Name != "_os_id" && value.Name != "__osHeaders" {
+					data[value.Name] = repository.GQLToGolang(value.Value)
+				}
 			}
 		}
 
@@ -119,27 +189,154 @@ func (repository GoogleDataStoreRepository) GetByKey(request *messaging.ObjectRe
 
 func (repository GoogleDataStoreRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting INSERT-MULTIPLE")
-	return setManyRedis(request)
+	return repository.setManyDataStore(request)
+}
+
+func (repository GoogleDataStoreRepository) setManyDataStore(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+	var idData map[string]interface{}
+	idData = make(map[string]interface{})
+
+	ctx := context.Background()
+	client, err := repository.getConnection(request)
+	ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
+
+	if err == nil {
+
+		for index, obj := range request.Body.Objects {
+			id := repository.getRecordID(request, obj)
+			idData[strconv.Itoa(index)] = id
+			request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
+		}
+
+		var keys []*datastore.Key
+		keys = make([]*datastore.Key, len(request.Body.Objects))
+		var propArray []datastore.PropertyList
+		propArray = make([]datastore.PropertyList, len(request.Body.Objects))
+		//var propArray []interface{}
+		//propArray = make([]interface{}, len(request.Body.Objects))
+
+		for index := 0; index < len(request.Body.Objects); index++ {
+			keys[index] = datastore.NewKey(ctx, request.Controls.Class, getNoSqlKeyById(request, request.Body.Objects[index]), 0, nil)
+			var props datastore.PropertyList
+			props = append(props, datastore.Property{Name: "_os_id", Value: getNoSqlKeyById(request, request.Body.Objects[index])})
+			for key, value := range request.Body.Objects[index] {
+				props = append(props, datastore.Property{Name: key, Value: repository.GolangToGQL(value)})
+			}
+			propArray[index] = props
+		}
+
+		if _, err := client.PutMulti(ctx, keys, propArray); err != nil {
+			request.Log(err.Error())
+			response.IsSuccess = false
+			response.Message = "Error storing object in Google DataStore : " + err.Error()
+		} else {
+			response.IsSuccess = true
+			response.Message = "Successfully stored object in Google DataStore"
+		}
+
+	} else {
+		request.Log("Connection Failed!")
+		response.IsSuccess = false
+		response.Message = "Connection Failed to Google DataStore"
+	}
+
+	var DataMap []map[string]interface{}
+	DataMap = make([]map[string]interface{}, 1)
+	var idMap map[string]interface{}
+	idMap = make(map[string]interface{})
+	idMap["ID"] = idData
+	DataMap[0] = idMap
+	response.Data = DataMap
+
+	return response
 }
 
 func (repository GoogleDataStoreRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting INSERT-SINGLE")
-	return setOneRedis(request)
+	return repository.setOneDataStore(request)
+}
+
+func (repository GoogleDataStoreRepository) setOneDataStore(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+
+	id := repository.getRecordID(request, request.Body.Object)
+	request.Controls.Id = id
+	request.Body.Object[request.Body.Parameters.KeyProperty] = id
+
+	ctx := context.Background()
+	client, err := repository.getConnection(request)
+	ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
+
+	key := datastore.NewKey(ctx, request.Controls.Class, getNoSqlKey(request), 0, nil)
+
+	var props datastore.PropertyList
+	props = append(props, datastore.Property{Name: "_os_id", Value: getNoSqlKey(request)})
+	for key, value := range request.Body.Object {
+		props = append(props, datastore.Property{Name: key, Value: repository.GolangToGQL(value)})
+	}
+
+	_, err = client.Put(ctx, key, &props)
+	if err != nil {
+		response.IsSuccess = false
+		response.Message = "Error Insert/Update Object in Google DataStore! : " + err.Error()
+		request.Log(err.Error())
+	} else {
+		response.IsSuccess = true
+		response.Message = "Successfully stored object in Google DataStore"
+	}
+
+	//Add IDs to return Data
+	var Data []map[string]interface{}
+	Data = make([]map[string]interface{}, 1)
+	var idData map[string]interface{}
+	idData = make(map[string]interface{})
+	idData["ID"] = id
+	Data[0] = idData
+	response.Data = Data
+	return response
 }
 
 func (repository GoogleDataStoreRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting UPDATE-MULTIPLE")
-	return setManyRedis(request)
+	return repository.setManyDataStore(request)
 }
 
 func (repository GoogleDataStoreRepository) UpdateSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting UPDATE-SINGLE")
-	return setOneRedis(request)
+	return repository.setOneDataStore(request)
 }
 
 func (repository GoogleDataStoreRepository) DeleteMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting DELETE-MULTIPLE")
 	response := RepositoryResponse{}
+
+	ctx := context.Background()
+	client, err := repository.getConnection(request)
+	if err == nil {
+		ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
+
+		var keys []*datastore.Key
+		keys = make([]*datastore.Key, len(request.Body.Objects))
+
+		for index, obj := range request.Body.Objects {
+			keys[index] = datastore.NewKey(ctx, request.Controls.Class, getNoSqlKeyById(request, obj), 0, nil)
+		}
+
+		if err := client.DeleteMulti(ctx, keys); err != nil {
+			response.IsSuccess = false
+			response.Message = "Error deleting objects in Google DataStore : " + err.Error()
+			request.Log(err.Error())
+		} else {
+			response.IsSuccess = true
+			response.Message = "Success deleting objects in Google DataStore!"
+		}
+	} else {
+		response.IsSuccess = false
+		response.Message = "No Connection to DataStore : " + err.Error()
+		request.Log(err.Error())
+	}
+
 	return response
 }
 
@@ -147,6 +344,26 @@ func (repository GoogleDataStoreRepository) DeleteSingle(request *messaging.Obje
 	request.Log("Starting DELETE-SINGLE")
 	response := RepositoryResponse{}
 
+	ctx := context.Background()
+	client, err := repository.getConnection(request)
+	if err == nil {
+		ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
+
+		key := datastore.NewKey(ctx, request.Controls.Class, getNoSqlKey(request), 0, nil)
+
+		if err := client.Delete(ctx, key); err != nil {
+			response.IsSuccess = false
+			response.Message = "Error deleting object in Google DataStore : " + err.Error()
+			request.Log(err.Error())
+		} else {
+			response.IsSuccess = true
+			response.Message = "Success deleting object in Google DataStore!"
+		}
+	} else {
+		response.IsSuccess = false
+		response.Message = "No Connection to DataStore : " + err.Error()
+		request.Log(err.Error())
+	}
 	return response
 }
 
@@ -198,6 +415,98 @@ func (repository GoogleDataStoreRepository) getRecordID(request *messaging.Objec
 		} else {
 			returnID = obj[request.Body.Parameters.KeyProperty].(string)
 		}
+	}
+
+	return
+}
+
+func (repository GoogleDataStoreRepository) GolangToGQL(input interface{}) (value interface{}) {
+
+	varType := reflect.TypeOf(input)
+
+	switch varType.String() {
+	case "string":
+		value = input
+	case "bool":
+		value = input
+		break
+	case "uint":
+	case "int":
+	case "uint16":
+	case "uint32":
+	case "uint64":
+	case "int8":
+	case "int16":
+	case "int32":
+	case "int64":
+		value = input
+		break
+	case "float32":
+	case "float64":
+		value = input
+		break
+	case "byte":
+		value = input
+		break
+	default:
+		if byteVal, err := json.Marshal(input); err == nil {
+			value = byteVal
+		} else {
+			value = []byte("{}")
+		}
+		break
+	}
+
+	return
+}
+
+func (repository GoogleDataStoreRepository) GQLToGolang(input interface{}) (value interface{}) {
+
+	varType := reflect.TypeOf(input)
+	switch varType.String() {
+	case "string":
+		value = input
+	case "bool":
+		value = input
+		break
+	case "uint":
+	case "int":
+	case "uint16":
+	case "uint32":
+	case "uint64":
+	case "int8":
+	case "int16":
+	case "int32":
+	case "int64":
+		value = input
+		break
+	case "float32":
+	case "float64":
+		value = input
+		break
+	case "[]byte":
+	case "[]uint8":
+		var m interface{}
+		arr := input.([]byte)
+		if string(arr[0]) == "{" || string(arr[0]) == "[" {
+			err := json.Unmarshal(input.([]byte), &m)
+			if err == nil {
+				value = m
+			} else {
+				term.Write(err.Error(), 1)
+				value = input
+			}
+		} else {
+			value = input
+		}
+		break
+	default:
+		if byteVal, err := json.Marshal(input); err == nil {
+			value = byteVal
+		} else {
+			value = []byte("{}")
+		}
+		break
 	}
 
 	return
