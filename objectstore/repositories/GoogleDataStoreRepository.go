@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"duov6.com/objectstore/messaging"
+	"duov6.com/term"
 	"encoding/json"
 	"fmt"
 	"github.com/twinj/uuid"
@@ -10,11 +11,9 @@ import (
 	"google.golang.org/cloud"
 	"google.golang.org/cloud/datastore"
 	"io/ioutil"
-	//"time"
-	"strconv"
-	//"strings"
-	"duov6.com/term"
 	"reflect"
+	"strconv"
+	"strings"
 )
 
 type GoogleDataStoreRepository struct {
@@ -120,16 +119,105 @@ func (repository GoogleDataStoreRepository) GetAll(request *messaging.ObjectRequ
 			}
 		}
 
+		bytesValue, _ := json.Marshal(data)
+		if len(bytesValue) == 4 {
+			bytesValue = []byte("{}")
+		}
+
 		response.IsSuccess = true
 		response.Message = "Values Retrieved Successfully from Google DataStore!"
-		response.GetSuccessResByObject(data)
+		response.GetResponseWithBody(bytesValue)
 	}
 	return response
 }
 
 func (repository GoogleDataStoreRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("GetSearch not implemented in Google DataStore repository")
-	return getDefaultNotImplemented()
+	term.Write("Executing Get-Search!", 2)
+	response := RepositoryResponse{}
+
+	isOrderByAsc := false
+	isOrderByDesc := false
+	orderbyfield := ""
+
+	skip := 0
+	take := 100
+
+	if request.Extras["skip"] != nil {
+		if intValue, err := strconv.Atoi(request.Extras["skip"].(string)); err == nil {
+			skip = intValue
+		}
+	}
+	if request.Extras["take"] != nil {
+		if intValue, err := strconv.Atoi(request.Extras["take"].(string)); err == nil {
+			take = intValue
+		}
+	}
+	if request.Extras["orderby"] != nil {
+		orderbyfield = request.Extras["orderby"].(string)
+		isOrderByAsc = true
+	} else if request.Extras["orderbydsc"] != nil {
+		orderbyfield = request.Extras["orderbydsc"].(string)
+		isOrderByDesc = true
+	}
+
+	ctx := context.Background()
+	client, err := repository.getConnection(request)
+	ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
+
+	var query *datastore.Query
+	if strings.Contains(request.Body.Query.Parameters, ":") {
+		tokens := strings.Split(request.Body.Query.Parameters, ":")
+		fieldName := tokens[0]
+		fieldValue := tokens[1]
+		fieldName = strings.TrimSpace(fieldName)
+		fieldValue = strings.TrimSpace(fieldValue)
+		fmt.Println(fieldValue)
+		fmt.Println(fieldName)
+		if isOrderByAsc {
+			query = datastore.NewQuery(request.Controls.Class).Filter((fieldName + " ="), repository.getSearchToken(fieldValue)).Offset(skip).Limit(take).Order(orderbyfield)
+		} else if isOrderByDesc {
+			query = datastore.NewQuery(request.Controls.Class).Filter((fieldName + " ="), repository.getSearchToken(fieldValue)).Offset(skip).Limit(take).Order(("-" + orderbyfield))
+		} else {
+			query = datastore.NewQuery(request.Controls.Class).Filter((fieldName + " ="), repository.getSearchToken(fieldValue)).Offset(skip).Limit(take)
+		}
+	} else {
+		query = datastore.NewQuery(request.Controls.Class).Offset(skip).Limit(take)
+	}
+
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+
+		props := make([]datastore.PropertyList, 0)
+		var data []map[string]interface{}
+
+		_, err := client.GetAll(ctx, query, &props)
+		if err != nil {
+			term.Write(err.Error(), 1)
+		} else {
+			//data recieved! :)
+			for index := 0; index < len(props); index++ {
+				var record map[string]interface{}
+				record = make(map[string]interface{})
+				for _, value := range props[index] {
+					if value.Name != "_os_id" && value.Name != "__osHeaders" {
+						record[value.Name] = repository.GQLToGolang(value.Value)
+					}
+				}
+				data = append(data, record)
+			}
+		}
+
+		bytesValue, _ := json.Marshal(data)
+		if len(bytesValue) == 4 {
+			bytesValue = []byte("{}")
+		}
+
+		response.IsSuccess = true
+		response.Message = "Values Retrieved Successfully from Google DataStore!"
+		response.GetResponseWithBody(bytesValue)
+	}
+	return response
 }
 
 func (repository GoogleDataStoreRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
@@ -456,6 +544,27 @@ func (repository GoogleDataStoreRepository) GolangToGQL(input interface{}) (valu
 		break
 	}
 
+	return
+}
+
+func (repository GoogleDataStoreRepository) getSearchToken(input string) (value interface{}) {
+	var interfaceType interface{}
+
+	if floatValue, err := strconv.ParseFloat(input, 64); err == nil {
+		value = floatValue
+		return
+	} else if intValue, err := strconv.Atoi(input); err == nil {
+		value = intValue
+		return
+	} else if boolValue, err := strconv.ParseBool(input); err == nil {
+		value = boolValue
+		return
+	} else if err := json.Unmarshal([]byte(input), &interfaceType); err == nil {
+		value, _ = json.Marshal(interfaceType)
+	} else {
+		value = input
+		return
+	}
 	return
 }
 
