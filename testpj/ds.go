@@ -280,3 +280,39 @@ func ExampleTransaction() {
 	}
 
 }
+
+/*
+func setManyDataStore(objects []map[string]interface{}) {
+		ctx := context.Background()
+		client, err := getDataStoreClient() //have connection code in another function
+		ctx = datastore.WithNamespace(ctx, "CompanyA")
+
+		if err == nil {
+
+			var keys []*datastore.Key
+			keys = make([]*datastore.Key, len(Objects))
+			var propArray []datastore.PropertyList
+			propArray = make([]datastore.PropertyList, len(Objects))
+
+			for index := 0; index < len(Objects); index++ {
+				keys[index] = datastore.NewKey(ctx, "users", "", index, nil)
+
+				var props datastore.PropertyList
+
+				for key, value := range Objects[index] {
+					props = append(props, datastore.Property{Name: key, Value: value})
+				}
+				propArray[index] = props
+			}
+
+			if _, err := client.PutMulti(ctx, keys, &propArray); err != nil {
+				fmt.Println(err.Error())
+			} else {
+				fmt.Println("Success!")
+			}
+
+		} else {
+			fmt.Println("Connection Failed")
+		}
+	}
+*/

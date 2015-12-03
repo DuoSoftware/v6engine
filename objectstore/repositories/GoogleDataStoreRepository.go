@@ -211,19 +211,18 @@ func (repository GoogleDataStoreRepository) setManyDataStore(request *messaging.
 
 		var keys []*datastore.Key
 		keys = make([]*datastore.Key, len(request.Body.Objects))
-		var propArray []datastore.PropertyList
-		propArray = make([]datastore.PropertyList, len(request.Body.Objects))
-		//var propArray []interface{}
-		//propArray = make([]interface{}, len(request.Body.Objects))
+
+		propArray := make([]interface{}, len(request.Body.Objects))
 
 		for index := 0; index < len(request.Body.Objects); index++ {
 			keys[index] = datastore.NewKey(ctx, request.Controls.Class, getNoSqlKeyById(request, request.Body.Objects[index]), 0, nil)
 			var props datastore.PropertyList
+			props = datastore.PropertyList{}
 			props = append(props, datastore.Property{Name: "_os_id", Value: getNoSqlKeyById(request, request.Body.Objects[index])})
 			for key, value := range request.Body.Objects[index] {
 				props = append(props, datastore.Property{Name: key, Value: repository.GolangToGQL(value)})
 			}
-			propArray[index] = props
+			propArray[index] = &props
 		}
 
 		if _, err := client.PutMulti(ctx, keys, propArray); err != nil {
