@@ -74,7 +74,7 @@ func setManyDataStore(Objects []map[string]interface{}) {
 		var keys []*datastore.Key
 		keys = make([]*datastore.Key, len(Objects))
 
-		// var propArray []datastore.PropertyList
+		// var propArray []*datastore.PropertyList
 		// propArray = make([]datastore.PropertyList, len(Objects))
 
 		// for i, _ := range propArray {

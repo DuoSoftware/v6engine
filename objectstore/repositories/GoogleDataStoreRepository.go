@@ -490,13 +490,46 @@ func (repository GoogleDataStoreRepository) getRecordID(request *messaging.Objec
 	}
 
 	if isGUIDKey {
-		request.Log("GUID Key generation requested!")
+		//GUID Key generation requested!
 		returnID = uuid.NewV1().String()
 	} else if isAutoIncrementId {
-		request.Log("Automatic Increment Key generation requested!")
+		//Automatic Increment Key generation requested!
 		returnID = uuid.NewV1().String()
+		ctx := context.Background()
+		client, err := repository.getConnection(request)
+		ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
+
+		if err == nil {
+			//read from Namespace->domainClassAttributes
+			//if there, increment and save.. return id
+			//else create new record and save 1.. return 1
+			key := datastore.NewKey(ctx, "domainClassAttributes", request.Controls.Class, 0, nil)
+			if existingRecord := repository.getByKey(client, ctx, key); existingRecord != nil {
+				newId, _ := strconv.Atoi(existingRecord["maxCount"].(string))
+				newId++
+				//update new Id
+				existingRecord["maxCount"] = strconv.Itoa(newId)
+				existingRecord["version"] = uuid.NewV1().String()
+				//update record
+				repository.setAtomicRecord(client, ctx, key, existingRecord)
+				returnID = strconv.Itoa(newId)
+				return
+			} else {
+				//No record Available.. Create one.. return 1
+				var insertRecord map[string]interface{}
+				insertRecord = make(map[string]interface{})
+				insertRecord["class"] = request.Controls.Class
+				insertRecord["maxCount"] = "1"
+				insertRecord["version"] = uuid.NewV1().String()
+				repository.setAtomicRecord(client, ctx, key, insertRecord)
+				returnID = "1"
+				return
+			}
+		} else {
+			returnID = uuid.NewV1().String()
+		}
 	} else {
-		request.Log("Manual Key requested!")
+		//Manual Key requested!
 		if obj == nil {
 			returnID = request.Controls.Id
 		} else {
@@ -505,6 +538,43 @@ func (repository GoogleDataStoreRepository) getRecordID(request *messaging.Objec
 	}
 
 	return
+}
+
+func (repository GoogleDataStoreRepository) getByKey(client *datastore.Client, ctx context.Context, key *datastore.Key) map[string]interface{} {
+
+	var props datastore.PropertyList
+	var data map[string]interface{}
+	data = make(map[string]interface{})
+
+	if err := client.Get(ctx, key, &props); err != nil {
+		term.Write(err.Error(), 1)
+		data = nil
+	} else {
+		for _, value := range props {
+			if value.Name != "_os_id" && value.Name != "__osHeaders" {
+				data[value.Name] = repository.GQLToGolang(value.Value)
+			}
+		}
+	}
+
+	return data
+}
+
+func (repository GoogleDataStoreRepository) setAtomicRecord(client *datastore.Client, ctx context.Context, key *datastore.Key, data map[string]interface{}) {
+
+	var props datastore.PropertyList
+
+	for key, value := range data {
+		props = append(props, datastore.Property{Name: key, Value: value})
+	}
+
+	_, err := client.Put(ctx, key, &props)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println(key)
+	}
 }
 
 func (repository GoogleDataStoreRepository) GolangToGQL(input interface{}) (value interface{}) {
