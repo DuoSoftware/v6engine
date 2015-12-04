@@ -8,7 +8,7 @@ import (
 	"google.golang.org/cloud/datastore"
 	"io/ioutil"
 	"log"
-	"reflect"
+	//"reflect"
 	"time"
 )
 
@@ -17,7 +17,7 @@ func main() {
 	//put()
 	//get()
 	//delete()
-	//getKeys()
+	getKeys()
 	//curser()
 }
 
@@ -74,28 +74,27 @@ func getKeys() {
 	props := make([]datastore.PropertyList, 0)
 	ctx := context.Background()
 	client := Example_auth()
-	ctx = datastore.WithNamespace(ctx, "huehuehue")
-	q := datastore.NewQuery("asdf")
-	_, err := client.GetAll(ctx, q, &props)
+	ctx = datastore.WithNamespace(ctx, "com.test.com")
+	q := datastore.NewQuery("twwwp").KeysOnly()
+	key, err := client.GetAll(ctx, q, &props)
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
 		fmt.Println(props)
+		fmt.Println(key)
 	}
 }
 
 func curser() {
 	ctx := context.Background()
 	client := Example_auth()
-	ctx = datastore.WithNamespace(ctx, "huehuehue")
-	q := datastore.NewQuery("asdf")
+	ctx = datastore.WithNamespace(ctx, "com.test.com")
+	q := datastore.NewQuery("twwwp").KeysOnly()
 
 	t := client.Run(ctx, q)
 	for {
-		fmt.Println("--------------------")
-		cur, _ := t.Cursor()
-		fmt.Println(cur.String())
-		var props datastore.PropertyList
+		//cur, _ := t.Cursor()
+		var props *datastore.Key
 		_, err := t.Next(&props)
 		if err == datastore.Done {
 			fmt.Println("Done")

@@ -11,27 +11,27 @@ import (
 
 func main() {
 
-	var allMaps []map[string]interface{}
-	allMaps = make([]map[string]interface{}, 2)
+	// var allMaps []map[string]interface{}
+	// allMaps = make([]map[string]interface{}, 2)
 
-	var map1 map[string]interface{}
-	map1 = make(map[string]interface{})
-	map1["Id"] = "700"
-	map1["Name"] = "Jay"
-	map1["Age"] = "23"
+	// var map1 map[string]interface{}
+	// map1 = make(map[string]interface{})
+	// map1["Id"] = "700"
+	// map1["Name"] = "Jay"
+	// map1["Age"] = "23"
 
-	var map2 map[string]interface{}
-	map2 = make(map[string]interface{})
-	map2["Id"] = "800"
-	map2["Name"] = "Peter"
-	map2["Age"] = "30"
+	// var map2 map[string]interface{}
+	// map2 = make(map[string]interface{})
+	// map2["Id"] = "800"
+	// map2["Name"] = "Peter"
+	// map2["Age"] = "30"
 
-	allMaps[0] = map1
-	allMaps[1] = map2
+	// allMaps[0] = map1
+	// allMaps[1] = map2
 
-	setManyDataStore(allMaps)
+	// setManyDataStore(allMaps)
 	//ExampleTransaction(allMaps)
-	//getMultiDataStore()
+	getMultiDataStore()
 
 	//ExamplePutMulti_interfaceSlice()
 }
@@ -114,13 +114,14 @@ func getMultiDataStore() {
 
 		var keys []*datastore.Key
 		keys = make([]*datastore.Key, 1)
-		var propArray []datastore.PropertyList
-		propArray = make([]datastore.PropertyList, 1)
+		//var propArray []datastore.PropertyList
+		//propArray = make([]datastore.PropertyList, 1)
 
 		keys[0] = datastore.NewKey(ctx, "users", "600", 0, nil)
 
-		if err := client.GetMulti(ctx, keys, propArray); err == nil {
-			fmt.Println(propArray)
+		if err := client.GetMulti(ctx, keys, nil); err == nil {
+			//fmt.Println(propArray)
+			fmt.Println(keys)
 		} else {
 			fmt.Println(err.Error())
 		}
