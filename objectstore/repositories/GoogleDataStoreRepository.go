@@ -230,11 +230,55 @@ func (repository GoogleDataStoreRepository) GetQuery(request *messaging.ObjectRe
 		if request.Body.Query.Parameters != "*" {
 			request.Log("GetQuery not implemented in Google DataStore repository")
 			return getDefaultNotImplemented()
+
+			// ctx := context.Background()
+			// client, err := repository.getConnection(request)
+			// ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
+
+			// var bytesValue []byte
+
+			// if err != nil {
+			// 	bytesValue = getEmptyByteObject()
+			// } else {
+			// 	props := make([]datastore.PropertyList, 0)
+			// 	var data []map[string]interface{}
+
+			// 	var query *datastore.Query
+
+			// 	query := queryparser.GetQuery(request.Body.Query.Parameters)
+
+			// 	_, err := client.GetAll(ctx, query, &props)
+			// 	if err != nil {
+			// 		term.Write(err.Error(), 1)
+			// 		bytesValue = getEmptyByteObject()
+			// 	} else {
+			// 		//data recieved! :)
+			// 		for index := 0; index < len(props); index++ {
+			// 			var record map[string]interface{}
+			// 			record = make(map[string]interface{})
+			// 			for _, value := range props[index] {
+			// 				if value.Name != "_os_id" && value.Name != "__osHeaders" {
+			// 					record[value.Name] = repository.GQLToGolang(value.Value)
+			// 				}
+			// 			}
+			// 			data = append(data, record)
+			// 		}
+			// 	}
+
+			// 	bytesValue, _ := json.Marshal(data)
+			// 	if len(bytesValue) == 4 {
+			// 		bytesValue = getEmptyByteObject()
+			// 	}
+
+			// 	response.IsSuccess = true
+			// 	response.Message = "Values Retrieved Successfully from Google DataStore!"
+			// 	response.GetResponseWithBody(bytesValue)
+			// }
 		} else {
 			return repository.GetAll(request)
 		}
 	default:
-		request.Log(queryType + " not implemented in Google DataStore Db repository")
+		request.Log(queryType + " is not implemented in Google DataStore Db repository")
 		return getDefaultNotImplemented()
 	}
 	return response

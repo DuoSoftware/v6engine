@@ -70,17 +70,31 @@ func put() {
 
 }
 
+// func getKeys() {
+// 	props := make([]datastore.PropertyList, 0)
+// 	ctx := context.Background()
+// 	client := Example_auth()
+// 	q := datastore.NewQuery("__namespace__")
+// 	key, err := client.GetAll(ctx, q, &props)
+// 	if err != nil {
+// 		fmt.Println(err.Error())
+// 	} else {
+// 		fmt.Println(props)
+// 		fmt.Println(key)
+// 	}
+// }
+
 func getKeys() {
 	props := make([]datastore.PropertyList, 0)
 	ctx := context.Background()
 	client := Example_auth()
-	q := datastore.NewQuery("__namespace__")
-	key, err := client.GetAll(ctx, q, &props)
+	ctx = datastore.WithNamespace(ctx, "com.jayyy.com")
+	q := datastore.NewQuery("haalda").Filter("Name >", "adsf")
+	_, err := client.GetAll(ctx, q, &props)
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
 		fmt.Println(props)
-		fmt.Println(key)
 	}
 }
 
