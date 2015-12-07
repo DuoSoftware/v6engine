@@ -107,3 +107,10 @@ func ConvertOsheaders(input messaging.ControlHeaders) string {
 	myStr := "{\"Class\":\"" + input.Class + "\",\"LastUdated\":\"2" + input.LastUdated + "\",\"Namespace\":\"" + input.Namespace + "\",\"Tenant\":\"" + input.Tenant + "\",\"Version\":\"" + input.Version + "\"}"
 	return myStr
 }
+
+func getEmptyByteObject() (returnByte []byte) {
+	var empty map[string]interface{}
+	empty = make(map[string]interface{})
+	returnByte, _ = json.Marshal(empty)
+	return
+}

@@ -19,9 +19,6 @@ import (
 type GoogleDataStoreRepository struct {
 }
 
-var namespaceList []string
-var classList map[string][]string
-
 func (repository GoogleDataStoreRepository) GetRepositoryName() string {
 	return "GoogleDataStore"
 }
@@ -124,7 +121,7 @@ func (repository GoogleDataStoreRepository) GetAll(request *messaging.ObjectRequ
 
 		bytesValue, _ := json.Marshal(data)
 		if len(bytesValue) == 4 {
-			bytesValue = []byte("{}")
+			bytesValue = getEmptyByteObject()
 		}
 
 		response.IsSuccess = true
@@ -213,7 +210,7 @@ func (repository GoogleDataStoreRepository) GetSearch(request *messaging.ObjectR
 
 		bytesValue, _ := json.Marshal(data)
 		if len(bytesValue) == 4 {
-			bytesValue = []byte("{}")
+			bytesValue = getEmptyByteObject()
 		}
 
 		response.IsSuccess = true
@@ -270,9 +267,14 @@ func (repository GoogleDataStoreRepository) GetByKey(request *messaging.ObjectRe
 			}
 		}
 
+		bytesValue, _ := json.Marshal(data)
+		if len(bytesValue) == 4 {
+			bytesValue = getEmptyByteObject()
+		}
+
 		response.IsSuccess = true
 		response.Message = "Values Retrieved Successfully from Google DataStore!"
-		response.GetSuccessResByObject(data)
+		response.GetResponseWithBody(bytesValue)
 
 	}
 	return response
@@ -280,7 +282,6 @@ func (repository GoogleDataStoreRepository) GetByKey(request *messaging.ObjectRe
 
 func (repository GoogleDataStoreRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting INSERT-MULTIPLE")
-	repository.verifyNamespaceClassList(request)
 	return repository.setManyDataStore(request)
 }
 
@@ -345,7 +346,6 @@ func (repository GoogleDataStoreRepository) setManyDataStore(request *messaging.
 
 func (repository GoogleDataStoreRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting INSERT-SINGLE")
-	repository.verifyNamespaceClassList(request)
 	return repository.setOneDataStore(request)
 }
 
@@ -460,8 +460,6 @@ func (repository GoogleDataStoreRepository) DeleteSingle(request *messaging.Obje
 }
 
 func (repository GoogleDataStoreRepository) Special(request *messaging.ObjectRequest) RepositoryResponse {
-	//request.Log("Special not implemented in Redis repository")
-	//return getDefaultNotImplemented()
 	term.Write("Executing Special!", 2)
 	response := RepositoryResponse{}
 	queryType := request.Body.Special.Type
@@ -469,26 +467,29 @@ func (repository GoogleDataStoreRepository) Special(request *messaging.ObjectReq
 	switch queryType {
 	case "getFields":
 		request.Log("Starting GET-FIELDS sub routine!")
-		if byteArray := repository.executeGetFields(request); string(byteArray) != "[]" {
-			response.IsSuccess = true
-			response.Message = "Successfully Recieved Field Names"
-			response.GetResponseWithBody(byteArray)
-		} else {
-			response.IsSuccess = false
-			response.Message = "Failed Recieving Field Names"
-			response.GetErrorResponse(response.Message)
-		}
+		byteArray := repository.executeGetFields(request)
+		response.IsSuccess = true
+		response.Message = "Successfully Recieved Field Names"
+		response.GetResponseWithBody(byteArray)
 	case "getClasses":
 		request.Log("Starting GET-CLASSES sub routine")
-		request.Log("Not implemented in Cloud DataStore repository")
-		return getDefaultNotImplemented()
+		byteArray := repository.executeGetClasses(request)
+		response.IsSuccess = true
+		response.Message = "Successfully Recieved Field Names"
+		response.GetResponseWithBody(byteArray)
 	case "getNamespaces":
 		request.Log("Starting GET-NAMESPACES sub routine")
-		request.Log("Not implemented in Cloud DataStore repository")
-		return getDefaultNotImplemented()
+		byteArray := repository.executeGetNamespaces(request)
+		response.IsSuccess = true
+		response.Message = "Successfully Recieved Field Names"
+		response.GetResponseWithBody(byteArray)
 	case "getSelected":
-		request.Log("Not implemented in Cloud DataStore repository")
-		return getDefaultNotImplemented()
+		request.Log("Starting GET-SELECTED sub routine!")
+		byteArray := repository.executeGetSelected(request)
+		response.IsSuccess = true
+		response.Message = "Successfully Recieved Field Names"
+		response.GetResponseWithBody(byteArray)
+
 	case "DropClass":
 		request.Log("Starting Delete-Class sub routine")
 		request.Log("Not implemented in Cloud DataStore repository")
@@ -743,7 +744,7 @@ func (repository GoogleDataStoreRepository) executeGetFields(request *messaging.
 
 	if err != nil {
 		term.Write(err.Error(), 1)
-		returnBytes = []byte("[]")
+		returnBytes = getEmptyByteObject()
 	} else {
 
 		props := make([]datastore.PropertyList, 0)
@@ -756,7 +757,7 @@ func (repository GoogleDataStoreRepository) executeGetFields(request *messaging.
 
 		_, err := client.GetAll(ctx, query, &props)
 		if err != nil {
-			returnBytes = []byte("[]")
+			returnBytes = getEmptyByteObject()
 			term.Write(err.Error(), 1)
 		} else {
 			//data recieved! :)
@@ -770,149 +771,141 @@ func (repository GoogleDataStoreRepository) executeGetFields(request *messaging.
 		}
 
 		returnBytes, _ = json.Marshal(data)
+		if len(returnBytes) == 4 {
+			returnBytes = getEmptyByteObject()
+		}
 	}
 
 	return
 }
 
-func (repository GoogleDataStoreRepository) verifyNamespaceClassList(request *messaging.ObjectRequest) {
+func (repository GoogleDataStoreRepository) executeGetNamespaces(request *messaging.ObjectRequest) (returnBytes []byte) {
 	ctx := context.Background()
-	client, _ := repository.getConnection(request)
-	ctx = datastore.WithNamespace(ctx, "meta_data")
-	if namespaceList == nil {
+	client, err := repository.getConnection(request)
+	if err != nil {
+		term.Write(err.Error(), 1)
+		returnBytes = getEmptyByteObject()
+	} else {
 		props := make([]datastore.PropertyList, 0)
-		query := datastore.NewQuery("namespace_cache")
+		var data []string
+		query := datastore.NewQuery("__namespace__").Offset(1)
+		keys, err := client.GetAll(ctx, query, &props)
+		if err != nil {
+			returnBytes = getEmptyByteObject()
+			term.Write(err.Error(), 1)
+		} else {
+			fmt.Println(props)
+			for index := 0; index < len(keys); index++ {
+				data = append(data, keys[index].Name())
+			}
+		}
+		returnBytes, _ = json.Marshal(data)
+		if len(returnBytes) == 4 {
+			returnBytes = getEmptyByteObject()
+		}
+	}
+	return
+}
+
+func (repository GoogleDataStoreRepository) executeGetClasses(request *messaging.ObjectRequest) (returnBytes []byte) {
+	ctx := context.Background()
+	client, err := repository.getConnection(request)
+	ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
+	if err != nil {
+		term.Write(err.Error(), 1)
+		returnBytes = getEmptyByteObject()
+	} else {
+		props := make([]datastore.PropertyList, 0)
+		var data []string
+		query := datastore.NewQuery("__kind__").Offset(7)
+		keys, err := client.GetAll(ctx, query, &props)
+		if err != nil {
+			returnBytes = getEmptyByteObject()
+			term.Write(err.Error(), 1)
+		} else {
+			fmt.Println(props)
+			for index := 0; index < len(keys); index++ {
+				data = append(data, keys[index].Name())
+			}
+		}
+
+		returnBytes, _ = json.Marshal(data)
+		if len(returnBytes) == 4 {
+			returnBytes = getEmptyByteObject()
+		}
+	}
+	return
+}
+
+func (repository GoogleDataStoreRepository) executeGetSelected(request *messaging.ObjectRequest) (returnBytes []byte) {
+	isOrderByAsc := false
+	isOrderByDesc := false
+	orderbyfield := ""
+
+	skip := 0
+	take := 100
+
+	if request.Extras["skip"] != nil {
+		if intValue, err := strconv.Atoi(request.Extras["skip"].(string)); err == nil {
+			skip = intValue
+		}
+	}
+	if request.Extras["take"] != nil {
+		if intValue, err := strconv.Atoi(request.Extras["take"].(string)); err == nil {
+			take = intValue
+		}
+	}
+	if request.Extras["orderby"] != nil {
+		orderbyfield = request.Extras["orderby"].(string)
+		isOrderByAsc = true
+	} else if request.Extras["orderbydsc"] != nil {
+		orderbyfield = request.Extras["orderbydsc"].(string)
+		isOrderByDesc = true
+	}
+
+	ctx := context.Background()
+	client, err := repository.getConnection(request)
+	ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
+	selectedValues := request.Body.Special.Parameters
+	if err != nil {
+		fmt.Println(err.Error())
+		returnBytes = getEmptyByteObject()
+	} else {
+		props := make([]datastore.PropertyList, 0)
+		var data []map[string]interface{}
+
+		var query *datastore.Query
+
+		if isOrderByAsc {
+			query = datastore.NewQuery(request.Controls.Class).Offset(skip).Limit(take).Order(orderbyfield)
+		} else if isOrderByDesc {
+			query = datastore.NewQuery(request.Controls.Class).Offset(skip).Limit(take).Order(("-" + orderbyfield))
+		} else {
+			query = datastore.NewQuery(request.Controls.Class).Offset(skip).Limit(take)
+		}
+
 		_, err := client.GetAll(ctx, query, &props)
 		if err != nil {
 			term.Write(err.Error(), 1)
 		} else {
+			//data recieved! :)
 			for index := 0; index < len(props); index++ {
+				var record map[string]interface{}
+				record = make(map[string]interface{})
 				for _, value := range props[index] {
-					if value.Name == "Namespace" {
-						namespaceList = append(namespaceList, (value.Value).(string))
-						continue
-					}
-				}
-			}
-		}
-	}
-
-	if classList == nil {
-		classList = make(map[string][]string)
-		for _, namespace := range namespaceList {
-
-			props := make([]datastore.PropertyList, 0)
-			var classes []string
-
-			query := datastore.NewQuery("class_cache").Filter("Namespace", namespace)
-
-			_, err := client.GetAll(ctx, query, &props)
-			if err != nil {
-				term.Write(err.Error(), 1)
-			} else {
-				//data recieved! :)
-				for index := 0; index < len(props); index++ {
-					for _, value := range props[index] {
-						if value.Name == "Class" {
-							classes = append(classes, value.Value.(string))
-							break
+					if value.Name != "_os_id" && value.Name != "__osHeaders" {
+						if strings.Contains(selectedValues, value.Name) {
+							record[value.Name] = repository.GQLToGolang(value.Value)
 						}
 					}
 				}
+				data = append(data, record)
 			}
-			if len(classes) > 0 {
-				classList[namespace] = classes
-			}
-
 		}
-
-	}
-
-	//Add Namespace if not available
-	isNamespaceAvailable := false
-	for _, namespace := range namespaceList {
-		if request.Controls.Namespace == namespace {
-			isNamespaceAvailable = true
-			break
+		returnBytes, _ = json.Marshal(data)
+		if len(returnBytes) == 4 {
+			returnBytes = getEmptyByteObject()
 		}
 	}
-	if !isNamespaceAvailable {
-		namespaceList = append(namespaceList, request.Controls.Namespace)
-		var insertMap map[string]interface{}
-		insertMap = make(map[string]interface{})
-		insertMap["Id"] = uuid.NewV1().String()
-		insertMap["Namespace"] = request.Controls.Namespace
-		key := datastore.NewKey(ctx, "namespace_cache", insertMap["Id"].(string), 0, nil)
-		repository.setAtomicRecord(client, ctx, key, insertMap)
-	}
-
-	//Add Class if not available
-	isClassAvailable := false
-	for _, class := range classList[request.Controls.Namespace] {
-		if request.Controls.Class == class {
-			isClassAvailable = true
-			break
-		}
-	}
-	if !isClassAvailable {
-		classList[request.Controls.Namespace] = append(classList[request.Controls.Namespace], request.Controls.Class)
-		var insertMap map[string]interface{}
-		insertMap = make(map[string]interface{})
-		insertMap["Id"] = uuid.NewV1().String()
-		insertMap["Namespace"] = request.Controls.Namespace
-		insertMap["Class"] = request.Controls.Class
-		key := datastore.NewKey(ctx, "class_cache", insertMap["Id"].(string), 0, nil)
-		repository.setAtomicRecord(client, ctx, key, insertMap)
-	}
-
-	fmt.Print("Namespaces List : ")
-	fmt.Println(namespaceList)
-	fmt.Print("Classes List : ")
-	fmt.Println(classList)
-}
-
-func (repository GoogleDataStoreRepository) executeDropNamespace(request *messaging.ObjectRequest) (status bool) {
-
-	if namespaceList == nil || classList == nil {
-		repository.verifyNamespaceClassList(request)
-	}
-
-	ctx := context.Background()
-	client, _ := repository.getConnection(request)
-	ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
-	status = true
-	//get all classes for namespace... iterate thru them... get all keys... delete all records for those keys
-	classesList := classList[request.Controls.Namespace]
-	for _, className := range classesList {
-		//get All Keys
-		props := make([]datastore.PropertyList, 0)
-		query := datastore.NewQuery(className).KeysOnly()
-		if keys, err := client.GetAll(ctx, query, &props); err == nil {
-			fmt.Println(props)
-			//Delete All
-			if err := client.DeleteMulti(ctx, keys); err == nil {
-				term.Write("Successfully deleted Records in : "+className, 2)
-			}
-			//get table data from cache and delete them too... read keys and then delete..... on MONDAY
-		} else {
-			//Hold up! Error!
-			term.Write(err.Error(), 1)
-			status = false
-		}
-
-	}
-	return
-}
-
-func (repository GoogleDataStoreRepository) executeDropClass(request *messaging.ObjectRequest) (status bool) {
-
-	if namespaceList == nil || classList == nil {
-		repository.verifyNamespaceClassList(request)
-	}
-
-	// ctx := context.Background()
-	// client, _ := repository.getConnection(request)
-	// ctx = datastore.WithNamespace(ctx, "meta_data")
-	status = true
 	return
 }

@@ -74,8 +74,7 @@ func getKeys() {
 	props := make([]datastore.PropertyList, 0)
 	ctx := context.Background()
 	client := Example_auth()
-	ctx = datastore.WithNamespace(ctx, "com.test.com")
-	q := datastore.NewQuery("twwwp").KeysOnly()
+	q := datastore.NewQuery("__namespace__")
 	key, err := client.GetAll(ctx, q, &props)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -134,7 +133,7 @@ func get() {
 func delete() {
 	ctx := context.Background()
 	client := Example_auth()
-	key := datastore.NewKey(ctx, "Book", "700", 0, nil)
+	key := datastore.NewKey(ctx, "Bossssok", "70da0", 0, nil)
 
 	if err := client.Delete(ctx, key); err != nil {
 		fmt.Println(err.Error())

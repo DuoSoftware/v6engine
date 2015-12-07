@@ -3,3 +3,4 @@ objectstore/JsonStack/
 objectstore/ObjectStoreLog.log
 duoauth/
 *.xlsx
+objectstore/ObjectStoreLog.log
