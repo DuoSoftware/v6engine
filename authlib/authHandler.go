@@ -213,9 +213,6 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 				client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
 			}
 		}
-		//} else {
-		//term.Write("SaveUser saving user store Error #"+err.Error(), term.Error)
-		//}
 	} else {
 		term.Write("SaveUser saving user fetech Error #"+err, term.Error)
 	}
@@ -226,8 +223,6 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 
 // UserActivation Helps to activate the users
 func (h *AuthHandler) UserActivation(token string) bool {
-	//respond := ""
-	//check user from db
 	bytes, err := client.Go("ignore", "com.duosoftware.com", "activation").GetOne().ByUniqueKey(token).Ok()
 	if err == "" {
 		var uList ActivationEmail
