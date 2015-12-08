@@ -42,6 +42,8 @@ func (h *HTTPService) Start(isLogEnabled bool) {
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
+	//Read Version
+	m.Get("/", versionHandler)
 	//READ BY KEY
 	m.Get("/:namespace/:class/:id", handleRequest)
 	//READ BY KEYWORD
@@ -59,6 +61,11 @@ func (h *HTTPService) Start(isLogEnabled bool) {
 	m.Delete("/:namespace/:class", handleRequest)
 
 	m.Run()
+}
+
+func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	versionData := "{\"name\": \"Objectstore\",\"version\": \"1.0.0-alpha\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	fmt.Fprintf(w, versionData)
 }
 
 func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
