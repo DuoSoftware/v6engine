@@ -22,15 +22,16 @@ func (app *Apphanler) Get(ApplicationID string, securityToken string) (App Appli
 	var a Application
 	if err == "" {
 		if bytes != nil || status == "error" {
-			var uList []Application
+			//var uList []Application
 			err := json.Unmarshal(bytes, &m)
 			if err == nil {
-				App.AppICON = m["iconUrl"]
-				App.SecretKey = m["SecretKey"]
-				App.ApplicationID = m["ApplicationID"]
-				App.Name = m["Name"]
-				App.Description = m["Description"]
 
+				App.AppICON = m["iconUrl"].(string)
+				App.SecretKey = m["SecretKey"].(string)
+				App.ApplicationID = m["ApplicationID"].(string)
+				App.Name = m["Name"].(string)
+				App.Description = m["Description"].(string)
+				//App = a
 				errMessage = ""
 				return
 			} else {
