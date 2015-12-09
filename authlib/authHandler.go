@@ -253,7 +253,7 @@ func (h *AuthHandler) UserActivation(token string) bool {
 // Login helps to authedicate the users
 func (h *AuthHandler) Login(email, password string) (User, string) {
 	term.Write("Login  user  email"+email, term.Debug)
-	term.WriteConfig.UserName, term.Debug)
+	term.Write(Config.UserName, term.Debug)
 
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(email).Ok()
 	fmt.Println(string(bytes));
