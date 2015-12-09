@@ -15,6 +15,7 @@ type Apphanler struct {
 
 func (app *Apphanler) Get(ApplicationID string, securityToken string) (App Application, errMessage string) {
 	term.Write("Get  App  by ID"+ApplicationID, term.Debug)
+	m := make(map[string]interface{})
 	s, status := session.GetSession(securityToken, "Nil")
 	bytes, err := client.Go(securityToken, s.Domain, "application").GetOne().ByUniqueKey(ApplicationID).Ok()
 	//bytes, err := client.Go(securityToken, "com.duosoftware.application", "apps").GetOne().ByUniqueKey(ApplicationID).Ok()
@@ -22,10 +23,14 @@ func (app *Apphanler) Get(ApplicationID string, securityToken string) (App Appli
 	if err == "" {
 		if bytes != nil || status == "error" {
 			var uList []Application
-			err := json.Unmarshal(bytes, &uList)
+			err := json.Unmarshal(bytes, &m)
+			if err == nil {
+				App.AppICON = m["iconUrl"]
+				App.SecretKey = m["SecretKey"]
+				App.ApplicationID = m["ApplicationID"]
+				App.Name = m["Name"]
+				App.Description = m["Description"]
 
-			if err == nil && len(uList) != 0 {
-				App = uList[0]
 				errMessage = ""
 				return
 			} else {
@@ -40,17 +45,13 @@ func (app *Apphanler) Get(ApplicationID string, securityToken string) (App Appli
 			App = a
 			errMessage = "Application Not Found " + ApplicationID
 			return
-
 		}
-
 	} else {
-
 		term.Write("Login  user  Error "+err, term.Error)
 		App = a
 		errMessage = "Get Application  Error " + err
 		return
 	}
-
 	App = a
 	errMessage = "Unable to process"
 	return
@@ -58,7 +59,6 @@ func (app *Apphanler) Get(ApplicationID string, securityToken string) (App Appli
 
 func (app *Apphanler) Add(a Application, securityToken string) (ourApp Application, errMessage string) {
 	term.Write("Add saving Application  "+a.Name, term.Debug)
-
 	s, err := session.GetSession(securityToken, "Nil")
 	if err != "" {
 		ourApp = a
@@ -68,22 +68,17 @@ func (app *Apphanler) Add(a Application, securityToken string) (ourApp Applicati
 	bytes, err := client.Go(securityToken, s.Domain, "apps").GetOne().ByUniqueKey(a.ApplicationID).Ok()
 	//bytes, err := client.Go(securityToken, "com.duosoftware.application", "apps").GetOne().ByUniqueKey(a.ApplicationID).Ok()
 	if err == "" {
-
 		var uList Application
-
 		json.Unmarshal(bytes, &uList)
-
 		if bytes == nil {
 			a.ApplicationID = common.GetGUID()
 			a.SecretKey = common.RandText(10)
 			//security token token from header
 			term.Write("Add saving Add aplication  "+a.Name+" New App "+a.ApplicationID, term.Debug)
-
 			client.Go(securityToken, s.Domain, "apps").StoreObject().WithKeyField("ApplicationID").AndStoreOne(a).Ok()
 			//client.Go(securityToken, "com.duosoftware.Application", "apps").StoreObject().WithKeyField("ApplicationID").AndStoreOne(a).Ok()
 			OtherData := make(map[string]string)
 			OtherData["Description"] = a.Description
-
 			pog.Add(s.UserID, a.ApplicationID, a.Name, "admin", OtherData, pog.SecInfo{s.Domain, s.SecurityToken})
 			ourApp = a
 			errMessage = ""
@@ -97,7 +92,6 @@ func (app *Apphanler) Add(a Application, securityToken string) (ourApp Applicati
 			errMessage = ""
 			return
 		}
-
 	} else {
 		term.Write("SaveUser saving user fetech Error 1#"+err, term.Error)
 		errMessage = "SaveUser saving user fetech Error #" + err

@@ -76,9 +76,7 @@ func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID string
 				appAth.AppliccatioID = ApplicationID
 				appAth.AutherizeKey = ApplicationID + "-" + UserID
 				appAth.Name = application.Name
-
 				client.Go("ignore", "com.duosoftware.auth", "atherized").StoreObject().WithKeyField("AutherizeKey").AndStoreOne(appAth).Ok()
-
 				return true, ""
 			}
 		} else {
@@ -133,7 +131,6 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 		term.Write("GetSession Error "+err, term.Error)
 	}
 	term.Write("GetSession No Session for SecurityToken "+key, term.Debug)
-
 	return c, "Error Session Not Found"
 }
 
@@ -174,7 +171,6 @@ func (h *AuthHandler) ChangePassword(a AuthCertificate, newPassword string) bool
 // SaveUser helps to save the users
 func (h *AuthHandler) SaveUser(u User, update bool) User {
 	term.Write("SaveUser saving user  "+u.Name, term.Debug)
-
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(u.EmailAddress).Ok()
 	if err == "" {
 		var uList User
@@ -230,14 +226,12 @@ func (h *AuthHandler) UserActivation(token string) bool {
 		if err == nil || bytes == nil {
 			//new user
 			if err != nil {
-
 				term.Write("Token Not Found", term.Debug)
 				return false
-
 			} else {
 				//uList[0].GUUserID
 				var u User
-				var inputParams map[string]string
+				var iputParams map[string]string
 				inputParams = make(map[string]string)
 				inputParams["email"] = u.EmailAddress
 				inputParams["name"] = u.Name
@@ -256,11 +250,10 @@ func (h *AuthHandler) UserActivation(token string) bool {
 	return false
 }
 
-
 // Login helps to authedicate the users
 func (h *AuthHandler) Login(email, password string) (User, string) {
 	term.Write("Login  user  email"+email, term.Debug)
-	term.Write(Config.UserName, term.Debug)
+	term.WriteConfig.UserName, term.Debug)
 
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(email).Ok()
 	fmt.Println(string(bytes));
@@ -285,11 +278,10 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 	} else {
 		term.Write("Login  user  Error "+err, term.Error)
 	}
-
 	return user, "Error Validating user"
 }
 
-// GetUser Helps to retrive the User
+// GetUser elps to retrive the User
 func (h *AuthHandler) GetUser(email string) (User, string) {
 	term.Write("Login  user  email"+email, term.Debug)
 	term.Write(Config.UserName, term.Debug)
