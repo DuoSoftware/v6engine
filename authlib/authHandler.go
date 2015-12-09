@@ -231,7 +231,7 @@ func (h *AuthHandler) UserActivation(token string) bool {
 			} else {
 				//uList[0].GUUserID
 				var u User
-				var iputParams map[string]string
+				var inputParams map[string]string
 				inputParams = make(map[string]string)
 				inputParams["email"] = u.EmailAddress
 				inputParams["name"] = u.Name
