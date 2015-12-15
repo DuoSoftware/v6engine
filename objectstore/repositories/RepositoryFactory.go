@@ -19,6 +19,8 @@ func Create(code string) AbstractRepository {
 		repository = PostgresRepository{}
 	case "GoogleDataStore":
 		repository = GoogleDataStoreRepository{}
+	case "GoogleBigTable":
+		repository = GoogleBigTableRepository{}
 	case "MSSQL":
 		repository = MssqlRepository{}
 	case "CLOUDSQL":

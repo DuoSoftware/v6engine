@@ -94,6 +94,11 @@ func getStringByObject(obj interface{}) string {
 	}
 }
 
+func getByteByValue(input interface{}) (value []byte) {
+	value, _ = json.Marshal(input)
+	return
+}
+
 func getSQLnamespace(request *messaging.ObjectRequest) string {
 	return (strings.Replace(request.Controls.Namespace, ".", "", -1))
 }

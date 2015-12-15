@@ -4,7 +4,7 @@ import (
 	"duov6.com/FileServer"
 	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
-	//"duov6.com/objectstore/backup"
+	"duov6.com/objectstore/backup"
 	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/processors"
@@ -30,9 +30,11 @@ type FileData struct {
 }
 
 var isLoggable bool
+var isJsonStack bool
 
-func (h *HTTPService) Start(isLogEnabled bool) {
+func (h *HTTPService) Start(isLogEnabled bool, isJsonStackEnabled bool) {
 	isLoggable = isLogEnabled
+	isJsonStack = isJsonStackEnabled
 	term.Write("Object Store Listening on Port : 3000", 2)
 	m := martini.Classic()
 	m.Use(cors.Allow(&cors.Options{
@@ -275,7 +277,8 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					message = "Error converting request : " + rerr.Error()
 					isSuccess = false
 				} else {
-					/*
+
+					if isJsonStack {
 						//Start writing to JsonStack
 						if r.Method == "POST" {
 							var temprequestBody messaging.RequestBody
@@ -289,13 +292,14 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 							backup.SaveDeleteJsons(rb, headerNamespace, headerClass)
 						}
 						//Writing to JsonStack ends here
-					*/
+					}
+
 					err := json.Unmarshal(rb, &requestBody)
 					if err != nil {
 						message = "JSON Parse error in Request : " + err.Error()
 						isSuccess = false
 					} else {
-						fmt.Println(isLoggable)
+
 						if isLoggable {
 							fmt.Println("-----------------------------------------------------------------------------")
 							fmt.Print(string(rb))

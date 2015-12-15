@@ -6,32 +6,41 @@ import (
 	"duov6.com/objectstore/unittesting"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func main() {
 
 	arguments := os.Args[1:]
 	var IsLoggable bool
+	var IsJsonStackEnabled bool
 	if len(arguments) > 0 {
-		if arguments[0] == "true" || arguments[0] == "True" || arguments[0] == "TRUE" {
+
+		if strings.EqualFold(arguments[0], "true") {
 			IsLoggable = true
+		} else if strings.EqualFold(arguments[1], "true") {
+			IsJsonStackEnabled = true
 		} else {
 			IsLoggable = false
+			IsJsonStackEnabled = false
 		}
+
 	} else {
 		IsLoggable = false
+		IsJsonStackEnabled = false
 	}
+
 	var isUnitTestMode bool = false
 
 	if isUnitTestMode {
 		unittesting.Start()
 	} else {
 		splash()
-		initialize(IsLoggable)
+		initialize(IsLoggable, IsJsonStackEnabled)
 	}
 }
 
-func initialize(isLogEnabled bool) {
+func initialize(isLogEnabled bool, isJsonStack bool) {
 
 	cebadapter.Attach("ObjectStore", func(s bool) {
 		cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
@@ -45,22 +54,11 @@ func initialize(isLogEnabled bool) {
 				})
 			})
 		})
-
-		// cebadapter.GetLatestGlobalConfig("AutoIncrementMetaStore", func(data []interface{}) {
-		// 	fmt.Println("AutoIncrementMetaStore Configuration Successfully Loaded...")
-		// 	agent := cebadapter.GetAgent()
-		// 	fmt.Println(data)
-		// 	agent.Client.OnEvent("globalConfigChanged.AutoIncrementMetaStore", func(from string, name string, data map[string]interface{}, resources map[string]interface{}) {
-		// 		cebadapter.GetLatestGlobalConfig("AutoIncrementMetaStore", func(data []interface{}) {
-		// 			fmt.Println("AutoIncrementMetaStore Configuration Successfully Updated...")
-		// 		})
-		// 	})
-		// })
 		fmt.Println("Successfully registered in CEB")
 	})
 
 	httpServer := endpoints.HTTPService{}
-	go httpServer.Start(isLogEnabled)
+	go httpServer.Start(isLogEnabled, isJsonStack)
 
 	bulkService := endpoints.BulkTransferService{}
 	go bulkService.Start()
