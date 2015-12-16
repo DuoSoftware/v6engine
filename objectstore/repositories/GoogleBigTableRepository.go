@@ -164,14 +164,22 @@ func (repository GoogleBigTableRepository) GetSearch(request *messaging.ObjectRe
 			for _, v := range r {
 				var record map[string]interface{}
 				record = make(map[string]interface{})
+				isValidRecord := false
 				for _, o := range v {
 					columnTokens := strings.Split(o.Column, ":")
 					columnName := columnTokens[1]
 					if columnName != "__osHeaders" {
 						record[columnName] = repository.GQLToGolang(o.Value)
+						if columnName == fieldName && repository.GQLToGolang(o.Value) == repository.getSearchToken(fieldValue) {
+							isValidRecord = true
+						}
 					}
 				}
-				data = append(data, record)
+
+				if isValidRecord {
+					data = append(data, record)
+					isValidRecord = false
+				}
 			}
 			return true
 		}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)))
@@ -296,6 +304,8 @@ func (repository GoogleBigTableRepository) setManyBigTable(request *messaging.Ob
 		return response
 	}
 
+	insertStatus := make([]bool, len(request.Body.Objects))
+
 	//validate schema
 	repository.validateSchema(request)
 
@@ -308,15 +318,13 @@ func (repository GoogleBigTableRepository) setManyBigTable(request *messaging.Ob
 		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
 
 		//check if record available in DB
-		if temp := repository.getByKey(client, ctx, request, getNoSqlKeyById(request, obj)); temp != nil {
+		if temp := repository.getByKey(tbl, ctx, request, getNoSqlKeyById(request, obj)); temp != nil {
 			//delete row
 			mut := bigtable.NewMutation()
 			mut.DeleteRow()
 			err := tbl.Apply(ctx, getNoSqlKeyById(request, obj), mut)
 			if err != nil {
-				response.IsSuccess = false
-				response.Message = err.Error()
-				return response
+				request.Log(err.Error())
 			}
 		}
 
@@ -330,12 +338,30 @@ func (repository GoogleBigTableRepository) setManyBigTable(request *messaging.Ob
 
 		err = tbl.Apply(ctx, getNoSqlKeyById(request, obj), mut)
 		if err != nil {
-			response.IsSuccess = false
-			response.Message = err.Error()
-			return response
+			insertStatus[index] = false
+		} else {
+			insertStatus[index] = true
 		}
 
 	}
+
+	isAllDone := true
+	for _, status := range insertStatus {
+		if !status {
+			isAllDone = false
+			break
+		}
+	}
+	fmt.Println(insertStatus)
+	fmt.Println(isAllDone)
+	if !isAllDone {
+		response.IsSuccess = false
+		response.Message = "Inserting Some Elements Failed"
+	} else {
+		response.IsSuccess = true
+		response.Message = "Success inserting/updating multiple values in BigTable"
+	}
+
 	client.Close()
 	var DataMap []map[string]interface{}
 	DataMap = make([]map[string]interface{}, 1)
@@ -360,6 +386,9 @@ func (repository GoogleBigTableRepository) setOneBigTable(request *messaging.Obj
 	request.Controls.Id = id
 	request.Body.Object[request.Body.Parameters.KeyProperty] = id
 
+	//validate schema
+	repository.validateSchema(request)
+
 	ctx := context.Background()
 	client, err := repository.getConnection(request)
 
@@ -369,15 +398,11 @@ func (repository GoogleBigTableRepository) setOneBigTable(request *messaging.Obj
 		return response
 	}
 
-	//validate schema
-
-	repository.validateSchema(request)
-
 	//open table
 	tbl := client.Open(request.Controls.Namespace)
 
 	//check if record available in DB
-	if temp := repository.getByKey(client, ctx, request, getNoSqlKey(request)); temp != nil {
+	if temp := repository.getByKey(tbl, ctx, request, getNoSqlKey(request)); temp != nil {
 		//delete row
 		mut := bigtable.NewMutation()
 		mut.DeleteRow()
@@ -390,7 +415,6 @@ func (repository GoogleBigTableRepository) setOneBigTable(request *messaging.Obj
 	}
 
 	//Insert New Record
-
 	mut := bigtable.NewMutation()
 
 	for key, value := range request.Body.Object {
@@ -401,7 +425,9 @@ func (repository GoogleBigTableRepository) setOneBigTable(request *messaging.Obj
 	if err != nil {
 		response.IsSuccess = false
 		response.Message = err.Error()
-		return response
+	} else {
+		response.IsSuccess = true
+		response.Message = "Successfully Inserted/Update BigTable"
 	}
 
 	client.Close()
@@ -427,6 +453,8 @@ func (repository GoogleBigTableRepository) validateSchema(request *messaging.Obj
 		return
 	}
 
+	fmt.Println(tableNames)
+
 	tableString := ""
 
 	for _, name := range tableNames {
@@ -442,7 +470,12 @@ func (repository GoogleBigTableRepository) validateSchema(request *messaging.Obj
 	}
 
 	//validate Class
-	_ = adminClient.CreateColumnFamily(ctx, request.Controls.Namespace, request.Controls.Class)
+	err2 := adminClient.CreateColumnFamily(ctx, request.Controls.Namespace, request.Controls.Class)
+	if err != nil {
+		fmt.Println(err2.Error())
+	} else {
+		fmt.Println("Created New Class : " + request.Controls.Class)
+	}
 
 	adminClient.Close()
 
@@ -542,12 +575,22 @@ func (repository GoogleBigTableRepository) Special(request *messaging.ObjectRequ
 		response.GetResponseWithBody(byteArray)
 	case "DropClass":
 		request.Log("Starting Delete-Class sub routine")
-		request.Log("Not implemented in Cloud DataStore repository")
-		return getDefaultNotImplemented()
+		if status := repository.executeDropClass(request); status {
+			response.IsSuccess = true
+			response.Message = "Successfully dropped class : " + request.Controls.Class
+		} else {
+			response.IsSuccess = false
+			response.Message = "Failed dropping class : " + request.Controls.Class
+		}
 	case "DropNamespace":
 		request.Log("Starting Delete-Database sub routine")
-		request.Log("Not implemented in Cloud DataStore repository")
-		return getDefaultNotImplemented()
+		if status := repository.executeDropNamespace(request); status {
+			response.IsSuccess = true
+			response.Message = "Successfully dropped class : " + request.Controls.Class
+		} else {
+			response.IsSuccess = false
+			response.Message = "Failed dropping class : " + request.Controls.Class
+		}
 	default:
 		return repository.GetAll(request)
 
@@ -636,9 +679,8 @@ func (repository GoogleBigTableRepository) getRecordID(request *messaging.Object
 	return
 }
 
-func (repository GoogleBigTableRepository) getByKey(client *bigtable.Client, ctx context.Context, request *messaging.ObjectRequest, key string) (data map[string]interface{}) {
-
-	tbl := client.Open(request.Controls.Namespace)
+func (repository GoogleBigTableRepository) getByKey(tbl *bigtable.Table, ctx context.Context, request *messaging.ObjectRequest, key string) (data map[string]interface{}) {
+	data = make(map[string]interface{})
 
 	rowRange := bigtable.SingleRow(key)
 	err := tbl.ReadRows(ctx, rowRange, func(r bigtable.Row) bool {
@@ -653,12 +695,12 @@ func (repository GoogleBigTableRepository) getByKey(client *bigtable.Client, ctx
 		}
 		return true
 	}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)))
-
-	client.Close()
-
+	fmt.Println(data)
 	if err != nil {
 		data = nil
 	}
+
+	fmt.Println(data)
 
 	return
 
@@ -671,11 +713,14 @@ func (repository GoogleBigTableRepository) setAtomicRecord(client *bigtable.Clie
 func (repository GoogleBigTableRepository) getSearchToken(input string) (value interface{}) {
 	var interfaceType interface{}
 
-	if floatValue, err := strconv.ParseFloat(input, 64); err == nil {
+	if intValue, err := strconv.Atoi(input); err == nil {
+		value = intValue
+		return
+	} else if floatValue, err := strconv.ParseFloat(input, 32); err == nil {
 		value = floatValue
 		return
-	} else if intValue, err := strconv.Atoi(input); err == nil {
-		value = intValue
+	} else if floatValue, err := strconv.ParseFloat(input, 64); err == nil {
+		value = floatValue
 		return
 	} else if boolValue, err := strconv.ParseBool(input); err == nil {
 		value = boolValue
@@ -737,7 +782,7 @@ func (repository GoogleBigTableRepository) executeGetFields(request *messaging.O
 				break
 			}
 			return true
-		}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)))
+		}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)), bigtable.LimitRows(1))
 
 		client.Close()
 	}
@@ -813,6 +858,36 @@ func (repository GoogleBigTableRepository) executeGetSelected(request *messaging
 		returnBytes, _ = json.Marshal(data)
 	} else {
 		returnBytes = getEmptyByteObject()
+	}
+	return
+}
+
+func (repository GoogleBigTableRepository) executeDropNamespace(request *messaging.ObjectRequest) (status bool) {
+	ctx := context.Background()
+	status = true
+
+	if adminClient, err := repository.getAdminConnection(request); err == nil {
+		if err = adminClient.DeleteTable(ctx, request.Controls.Namespace); err != nil {
+			status = false
+		}
+		adminClient.Close()
+	} else {
+		status = false
+	}
+	return
+}
+
+func (repository GoogleBigTableRepository) executeDropClass(request *messaging.ObjectRequest) (status bool) {
+	ctx := context.Background()
+	status = true
+
+	if adminClient, err := repository.getAdminConnection(request); err == nil {
+		if err = adminClient.DeleteColumnFamily(ctx, request.Controls.Namespace, request.Controls.Class); err != nil {
+			status = false
+		}
+		adminClient.Close()
+	} else {
+		status = false
 	}
 	return
 }
