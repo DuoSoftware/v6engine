@@ -351,16 +351,12 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 		if err == nil {
 			bytes, _ := json.Marshal(obj)
 			if len(bytes) == 4 {
-				var empty map[string]interface{}
-				empty = make(map[string]interface{})
-				response.GetSuccessResByObject(empty)
+				response.GetResponseWithBody(getEmptyByteObject())
 			} else {
 				response.GetResponseWithBody(bytes)
 			}
 		} else {
-			var empty map[string]interface{}
-			empty = make(map[string]interface{})
-			response.GetSuccessResByObject(empty)
+			response.GetResponseWithBody(getEmptyByteObject())
 		}
 	} else {
 		response.GetErrorResponse("Error connecting to CloudSQL : " + err.Error())

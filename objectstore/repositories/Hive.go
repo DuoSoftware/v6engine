@@ -338,12 +338,12 @@ func (repository HiveRepository) executeGetFields(request *messaging.ObjectReque
 		byteValue, errMarshal := json.Marshal(allFields)
 
 		if errMarshal != nil {
-			byteValue = nil
+			byteValue = getEmptyByteObject()
 		}
 
 		returnByte = byteValue
 	} else {
-		returnByte = nil
+		returnByte = getEmptyByteObject()
 	}
 
 	return
@@ -396,12 +396,12 @@ func (repository HiveRepository) executeGetDataTypes(request *messaging.ObjectRe
 		byteValue, errMarshal := json.Marshal(allMaps)
 
 		if errMarshal != nil {
-			byteValue = nil
+			byteValue = getEmptyByteObject()
 		}
 
 		returnByte = byteValue
 	} else {
-		returnByte = nil
+		returnByte = getEmptyByteObject()
 	}
 
 	return
@@ -461,10 +461,12 @@ func (repository HiveRepository) executeGetClasses(request *messaging.ObjectRequ
 		byteValue, errMarshal := json.Marshal(allClasses)
 
 		if errMarshal != nil {
-			byteValue = nil
+			byteValue = getEmptyByteObject()
 		}
 
 		returnByte = byteValue
+	} else {
+		returnByte = getEmptyByteObject()
 	}
 
 	return
@@ -512,10 +514,12 @@ func (repository HiveRepository) executeGetNamespaces(request *messaging.ObjectR
 		byteValue, errMarshal := json.Marshal(allClasses)
 
 		if errMarshal != nil {
-			byteValue = nil
+			byteValue = getEmptyByteObject()
 		}
 
 		returnByte = byteValue
+	} else {
+		returnByte = getEmptyByteObject()
 	}
 
 	return
@@ -585,7 +589,7 @@ func (repository HiveRepository) executeGetSelected(request *messaging.ObjectReq
 		returnByte = byteValue
 
 	} else {
-		returnByte = []byte("Error fetching values from HIVE server!")
+		returnByte = getEmptyByteObject()
 	}
 
 	return

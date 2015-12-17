@@ -105,6 +105,7 @@ func (repository GoogleDataStoreRepository) GetAll(request *messaging.ObjectRequ
 		_, err := client.GetAll(ctx, query, &props)
 		if err != nil {
 			term.Write(err.Error(), 1)
+			response.GetResponseWithBody(getEmptyByteObject())
 		} else {
 			//data recieved! :)
 			for index := 0; index < len(props); index++ {
@@ -193,6 +194,7 @@ func (repository GoogleDataStoreRepository) GetSearch(request *messaging.ObjectR
 
 		_, err := client.GetAll(ctx, query, &props)
 		if err != nil {
+			response.GetResponseWithBody(getEmptyByteObject())
 			term.Write(err.Error(), 1)
 		} else {
 			//data recieved! :)
@@ -294,6 +296,7 @@ func (repository GoogleDataStoreRepository) GetByKey(request *messaging.ObjectRe
 
 	if err != nil {
 		fmt.Println(err.Error())
+		response.GetResponseWithBody(getEmptyByteObject())
 	} else {
 		key := datastore.NewKey(ctx, request.Controls.Class, getNoSqlKey(request), 0, nil)
 

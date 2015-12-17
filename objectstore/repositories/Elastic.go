@@ -67,15 +67,7 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "record not found") {
-			var empty map[string]interface{}
-			empty = make(map[string]interface{})
-			response.GetSuccessResByObject(empty)
-		} else {
-			errorMessage := "Error retrieving object from elastic search : " + err.Error()
-			term.Write(errorMessage, 1)
-			response.GetErrorResponse(errorMessage)
-		}
+		response.GetResponseWithBody(getEmptyByteObject())
 	} else {
 		var allMaps []map[string]interface{}
 		allMaps = make([]map[string]interface{}, data.Hits.Len())
@@ -142,11 +134,7 @@ func (repository ElasticRepository) GetByKey(request *messaging.ObjectRequest) R
 	data, err := conn.Get(request.Controls.Namespace, request.Controls.Class, key, nil)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "record not found") {
-			var empty map[string]interface{}
-			empty = make(map[string]interface{})
-			response.GetSuccessResByObject(empty)
-		}
+		response.GetResponseWithBody(getEmptyByteObject())
 	} else {
 		bytes, err := data.Source.MarshalJSON()
 		//Get Data to struct
@@ -409,6 +397,7 @@ func (repository ElasticRepository) executeQuery(request *messaging.ObjectReques
 	}
 	if err != nil {
 		term.Write(err.Error(), 1)
+		returnByte = getEmptyByteObject()
 	} else {
 		var allMaps []map[string]interface{}
 		allMaps = make([]map[string]interface{}, data.Hits.Len())
@@ -467,6 +456,7 @@ func (repository ElasticRepository) executeGetFields(request *messaging.ObjectRe
 
 	if err != nil {
 		term.Write(err.Error(), 1)
+		returnByte = getEmptyByteObject()
 	} else {
 		var allMaps []map[string]interface{}
 		allMaps = make([]map[string]interface{}, data.Hits.Len())

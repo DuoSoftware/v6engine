@@ -797,6 +797,7 @@ func (repository GoogleBigTableRepository) executeGetNamespaces(request *messagi
 
 	tableNames, err := adminClient.Tables(ctx)
 	if err != nil {
+		returnBytes = getEmptyByteObject()
 		fmt.Println(err.Error())
 		return
 	} else {
@@ -812,6 +813,7 @@ func (repository GoogleBigTableRepository) executeGetClasses(request *messaging.
 
 	tableInforStructs, err := adminClient.TableInfo(ctx, request.Controls.Namespace)
 	if err != nil {
+		returnBytes = getEmptyByteObject()
 		fmt.Println(err.Error())
 		return
 	} else {
