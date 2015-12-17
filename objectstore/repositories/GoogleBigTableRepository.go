@@ -219,7 +219,7 @@ func (repository GoogleBigTableRepository) GetQuery(request *messaging.ObjectReq
 	switch queryType {
 	case "Query":
 		if request.Body.Query.Parameters != "*" {
-			request.Log("GetQuery not implemented in Google DataStore repository")
+			request.Log("GetQuery not implemented in Google BigTable repository")
 			return getDefaultNotImplemented()
 		} else {
 			return repository.GetAll(request)
@@ -318,7 +318,7 @@ func (repository GoogleBigTableRepository) setManyBigTable(request *messaging.Ob
 		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
 
 		//check if record available in DB
-		if temp := repository.getByKey(tbl, ctx, request, getNoSqlKeyById(request, obj)); temp != nil {
+		if temp := repository.getByKey(tbl, ctx, request, getNoSqlKeyById(request, obj), request.Controls.Class); temp != nil {
 			//delete row
 			mut := bigtable.NewMutation()
 			mut.DeleteRow()
@@ -382,12 +382,12 @@ func (repository GoogleBigTableRepository) InsertSingle(request *messaging.Objec
 func (repository GoogleBigTableRepository) setOneBigTable(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
 
+	//validate schema
+	repository.validateSchema(request)
+
 	id := repository.getRecordID(request, request.Body.Object)
 	request.Controls.Id = id
 	request.Body.Object[request.Body.Parameters.KeyProperty] = id
-
-	//validate schema
-	repository.validateSchema(request)
 
 	ctx := context.Background()
 	client, err := repository.getConnection(request)
@@ -402,7 +402,7 @@ func (repository GoogleBigTableRepository) setOneBigTable(request *messaging.Obj
 	tbl := client.Open(request.Controls.Namespace)
 
 	//check if record available in DB
-	if temp := repository.getByKey(tbl, ctx, request, getNoSqlKey(request)); temp != nil {
+	if temp := repository.getByKey(tbl, ctx, request, getNoSqlKey(request), request.Controls.Class); temp != nil {
 		//delete row
 		mut := bigtable.NewMutation()
 		mut.DeleteRow()
@@ -453,8 +453,6 @@ func (repository GoogleBigTableRepository) validateSchema(request *messaging.Obj
 		return
 	}
 
-	fmt.Println(tableNames)
-
 	tableString := ""
 
 	for _, name := range tableNames {
@@ -470,12 +468,7 @@ func (repository GoogleBigTableRepository) validateSchema(request *messaging.Obj
 	}
 
 	//validate Class
-	err2 := adminClient.CreateColumnFamily(ctx, request.Controls.Namespace, request.Controls.Class)
-	if err != nil {
-		fmt.Println(err2.Error())
-	} else {
-		fmt.Println("Created New Class : " + request.Controls.Class)
-	}
+	_ = adminClient.CreateColumnFamily(ctx, request.Controls.Namespace, request.Controls.Class)
 
 	adminClient.Close()
 
@@ -633,40 +626,76 @@ func (repository GoogleBigTableRepository) getRecordID(request *messaging.Object
 		//GUID Key generation requested!
 		returnID = uuid.NewV1().String()
 	} else if isAutoIncrementId {
-		/*//Automatic Increment Key generation requested!
-		returnID = uuid.NewV1().String()
 		ctx := context.Background()
-		client, err := repository.getConnection(request)
+		//create domainClassAttributes if not there..
+		adminClient, err := repository.getAdminConnection(request)
+		if err != nil {
+			returnID = uuid.NewV1().String()
+			return
+		}
+		_ = adminClient.CreateColumnFamily(ctx, request.Controls.Namespace, "domainClassAttributes")
+		adminClient.Close()
 
-		if err == nil {
-			//read from Namespace->domainClassAttributes
-			//if there, increment and save.. return id
-			//else create new record and save 1.. return 1
-			key := datastore.NewKey(ctx, "domainClassAttributes", request.Controls.Class, 0, nil)
-			if existingRecord := repository.getByKey(client, ctx, key); existingRecord != nil {
-				newId, _ := strconv.Atoi(existingRecord["maxCount"].(string))
-				newId++
-				//update new Id
-				existingRecord["maxCount"] = strconv.Itoa(newId)
-				existingRecord["version"] = uuid.NewV1().String()
-				//update record
-				repository.setAtomicRecord(client, ctx, key, existingRecord)
-				returnID = strconv.Itoa(newId)
+		//check for record..
+		client, err := repository.getConnection(request)
+		if err != nil {
+			returnID = uuid.NewV1().String()
+			return
+		}
+		tbl := client.Open(request.Controls.Namespace)
+		result := repository.getByKey(tbl, ctx, request, request.Controls.Class, "domainClassAttributes")
+		if len(result) == 0 {
+			//new record
+			var insertRecord map[string]interface{}
+			insertRecord = make(map[string]interface{})
+			insertRecord["class"] = request.Controls.Class
+			insertRecord["maxCount"] = "1"
+			insertRecord["version"] = uuid.NewV1().String()
+
+			mut := bigtable.NewMutation()
+			for key, value := range insertRecord {
+				mut.Set("domainClassAttributes", key, bigtable.Now(), getByteByValue(value))
+			}
+			err = tbl.Apply(ctx, request.Controls.Class, mut)
+			if err != nil {
+				returnID = uuid.NewV1().String()
 				return
 			} else {
-				//No record Available.. Create one.. return 1
-				var insertRecord map[string]interface{}
-				insertRecord = make(map[string]interface{})
-				insertRecord["class"] = request.Controls.Class
-				insertRecord["maxCount"] = "1"
-				insertRecord["version"] = uuid.NewV1().String()
-				repository.setAtomicRecord(client, ctx, key, insertRecord)
 				returnID = "1"
 				return
 			}
-		} else {*/
-		returnID = uuid.NewV1().String()
-		//	}
+		} else {
+			//there is a record delete it first
+			mut := bigtable.NewMutation()
+			mut.DeleteRow()
+			err := tbl.Apply(ctx, request.Controls.Class, mut)
+			if err != nil {
+				returnID = uuid.NewV1().String()
+				return
+			} else {
+				//insert new id
+				var insertRecord map[string]interface{}
+				insertRecord = make(map[string]interface{})
+				insertRecord["class"] = request.Controls.Class
+				count, _ := strconv.Atoi(result["maxCount"].(string))
+				insertRecord["maxCount"] = strconv.Itoa((count + 1))
+				insertRecord["version"] = uuid.NewV1().String()
+				fmt.Println(count + 1)
+				mut := bigtable.NewMutation()
+				for key, value := range insertRecord {
+					mut.Set("domainClassAttributes", key, bigtable.Now(), getByteByValue(value))
+				}
+				err = tbl.Apply(ctx, request.Controls.Class, mut)
+				if err != nil {
+					returnID = uuid.NewV1().String()
+					return
+				} else {
+					returnID = strconv.Itoa((count + 1))
+					return
+				}
+			}
+		}
+		client.Close()
 	} else {
 		//Manual Key requested!
 		if obj == nil {
@@ -679,7 +708,7 @@ func (repository GoogleBigTableRepository) getRecordID(request *messaging.Object
 	return
 }
 
-func (repository GoogleBigTableRepository) getByKey(tbl *bigtable.Table, ctx context.Context, request *messaging.ObjectRequest, key string) (data map[string]interface{}) {
+func (repository GoogleBigTableRepository) getByKey(tbl *bigtable.Table, ctx context.Context, request *messaging.ObjectRequest, key string, class string) (data map[string]interface{}) {
 	data = make(map[string]interface{})
 
 	rowRange := bigtable.SingleRow(key)
@@ -694,14 +723,10 @@ func (repository GoogleBigTableRepository) getByKey(tbl *bigtable.Table, ctx con
 			}
 		}
 		return true
-	}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)))
-	fmt.Println(data)
+	}, bigtable.RowFilter(bigtable.FamilyFilter(class)))
 	if err != nil {
 		data = nil
 	}
-
-	fmt.Println(data)
-
 	return
 
 }
