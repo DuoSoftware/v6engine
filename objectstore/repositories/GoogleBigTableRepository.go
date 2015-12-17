@@ -317,16 +317,10 @@ func (repository GoogleBigTableRepository) setManyBigTable(request *messaging.Ob
 		idData[strconv.Itoa(index)] = id
 		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
 
-		//check if record available in DB
-		if temp := repository.getByKey(tbl, ctx, request, getNoSqlKeyById(request, obj), request.Controls.Class); temp != nil {
-			//delete row
-			mut := bigtable.NewMutation()
-			mut.DeleteRow()
-			err := tbl.Apply(ctx, getNoSqlKeyById(request, obj), mut)
-			if err != nil {
-				request.Log(err.Error())
-			}
-		}
+		//delete row if available.
+		mutt := bigtable.NewMutation()
+		mutt.DeleteRow()
+		_ = tbl.Apply(ctx, getNoSqlKeyById(request, obj), mutt)
 
 		//Insert New Record
 
@@ -401,18 +395,10 @@ func (repository GoogleBigTableRepository) setOneBigTable(request *messaging.Obj
 	//open table
 	tbl := client.Open(request.Controls.Namespace)
 
-	//check if record available in DB
-	if temp := repository.getByKey(tbl, ctx, request, getNoSqlKey(request), request.Controls.Class); temp != nil {
-		//delete row
-		mut := bigtable.NewMutation()
-		mut.DeleteRow()
-		err := tbl.Apply(ctx, getNoSqlKey(request), mut)
-		if err != nil {
-			response.IsSuccess = false
-			response.Message = err.Error()
-			return response
-		}
-	}
+	//delete existing record (If available)
+	mutt := bigtable.NewMutation()
+	mutt.DeleteRow()
+	_ = tbl.Apply(ctx, getNoSqlKey(request), mutt)
 
 	//Insert New Record
 	mut := bigtable.NewMutation()
