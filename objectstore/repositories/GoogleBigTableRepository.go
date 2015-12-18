@@ -10,7 +10,6 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/cloud"
 	"google.golang.org/cloud/bigtable"
-	"io/ioutil"
 	"strconv"
 	"strings"
 )
@@ -25,27 +24,35 @@ func (repository GoogleBigTableRepository) GetRepositoryName() string {
 func (repository GoogleBigTableRepository) getConnection(request *messaging.ObjectRequest) (client *bigtable.Client, err error) {
 	bigTableConfig := request.Configuration.ServerConfiguration["GoogleBigTable"]
 
-	keyFile := bigTableConfig["KeyFile"]
 	projectID := bigTableConfig["ProjectID"]
 	zone := bigTableConfig["zone"]
 	cluster := bigTableConfig["cluster"]
 
-	jsonKey, err := ioutil.ReadFile(keyFile)
+	var key map[string]string
+	key = make(map[string]string)
+	key["type"] = bigTableConfig["type"]
+	key["private_key_id"] = bigTableConfig["private_key_id"]
+	key["private_key"] = bigTableConfig["private_key"]
+	key["client_email"] = bigTableConfig["client_email"]
+	key["client_id"] = bigTableConfig["client_id"]
+	key["auth_uri"] = bigTableConfig["auth_uri"]
+	key["token_uri"] = bigTableConfig["token_uri"]
+	key["auth_provider_x509_cert_url"] = bigTableConfig["auth_provider_x509_cert_url"]
+	key["client_x509_cert_url"] = bigTableConfig["client_x509_cert_url"]
+
+	jsonKey := getByteByValue(key)
+
+	conf, err := google.JWTConfigFromJSON(
+		jsonKey,
+		bigtable.Scope,
+	)
 	if err != nil {
 		term.Write(err.Error(), 1)
 	} else {
-		conf, err := google.JWTConfigFromJSON(
-			jsonKey,
-			bigtable.Scope,
-		)
+		ctx := context.Background()
+		client, err = bigtable.NewClient(ctx, projectID, zone, cluster, cloud.WithTokenSource(conf.TokenSource(ctx)))
 		if err != nil {
 			term.Write(err.Error(), 1)
-		} else {
-			ctx := context.Background()
-			client, err = bigtable.NewClient(ctx, projectID, zone, cluster, cloud.WithTokenSource(conf.TokenSource(ctx)))
-			if err != nil {
-				term.Write(err.Error(), 1)
-			}
 		}
 	}
 
@@ -55,28 +62,36 @@ func (repository GoogleBigTableRepository) getConnection(request *messaging.Obje
 func (repository GoogleBigTableRepository) getAdminConnection(request *messaging.ObjectRequest) (client *bigtable.AdminClient, err error) {
 	bigTableConfig := request.Configuration.ServerConfiguration["GoogleBigTable"]
 
-	keyFile := bigTableConfig["KeyFile"]
 	projectID := bigTableConfig["ProjectID"]
 	zone := bigTableConfig["zone"]
 	cluster := bigTableConfig["cluster"]
 
-	jsonKey, err := ioutil.ReadFile(keyFile)
+	var key map[string]string
+	key = make(map[string]string)
+	key["type"] = bigTableConfig["type"]
+	key["private_key_id"] = bigTableConfig["private_key_id"]
+	key["private_key"] = bigTableConfig["private_key"]
+	key["client_email"] = bigTableConfig["client_email"]
+	key["client_id"] = bigTableConfig["client_id"]
+	key["auth_uri"] = bigTableConfig["auth_uri"]
+	key["token_uri"] = bigTableConfig["token_uri"]
+	key["auth_provider_x509_cert_url"] = bigTableConfig["auth_provider_x509_cert_url"]
+	key["client_x509_cert_url"] = bigTableConfig["client_x509_cert_url"]
+
+	jsonKey := getByteByValue(key)
+
+	conf, err := google.JWTConfigFromJSON(
+		jsonKey,
+		bigtable.Scope,
+		bigtable.AdminScope,
+	)
 	if err != nil {
 		term.Write(err.Error(), 1)
 	} else {
-		conf, err := google.JWTConfigFromJSON(
-			jsonKey,
-			bigtable.Scope,
-			bigtable.AdminScope,
-		)
+		ctx := context.Background()
+		client, err = bigtable.NewAdminClient(ctx, projectID, zone, cluster, cloud.WithTokenSource(conf.TokenSource(ctx)))
 		if err != nil {
 			term.Write(err.Error(), 1)
-		} else {
-			ctx := context.Background()
-			client, err = bigtable.NewAdminClient(ctx, projectID, zone, cluster, cloud.WithTokenSource(conf.TokenSource(ctx)))
-			if err != nil {
-				term.Write(err.Error(), 1)
-			}
 		}
 	}
 

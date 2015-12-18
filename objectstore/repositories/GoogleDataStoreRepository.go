@@ -10,7 +10,6 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/cloud"
 	"google.golang.org/cloud/datastore"
-	"io/ioutil"
 	"reflect"
 	"strconv"
 	"strings"
@@ -25,30 +24,36 @@ func (repository GoogleDataStoreRepository) GetRepositoryName() string {
 
 func (repository GoogleDataStoreRepository) getConnection(request *messaging.ObjectRequest) (client *datastore.Client, err error) {
 	dataStoreConfig := request.Configuration.ServerConfiguration["GoogleDataStore"]
-
-	keyFile := dataStoreConfig["KeyFile"]
 	projectID := dataStoreConfig["ProjectID"]
 
-	jsonKey, err := ioutil.ReadFile(keyFile)
+	var key map[string]string
+	key = make(map[string]string)
+	key["type"] = dataStoreConfig["type"]
+	key["private_key_id"] = dataStoreConfig["private_key_id"]
+	key["private_key"] = dataStoreConfig["private_key"]
+	key["client_email"] = dataStoreConfig["client_email"]
+	key["client_id"] = dataStoreConfig["client_id"]
+	key["auth_uri"] = dataStoreConfig["auth_uri"]
+	key["token_uri"] = dataStoreConfig["token_uri"]
+	key["auth_provider_x509_cert_url"] = dataStoreConfig["auth_provider_x509_cert_url"]
+	key["client_x509_cert_url"] = dataStoreConfig["client_x509_cert_url"]
+
+	jsonKey := getByteByValue(key)
+
+	conf, err := google.JWTConfigFromJSON(
+		jsonKey,
+		datastore.ScopeDatastore,
+		datastore.ScopeUserEmail,
+	)
 	if err != nil {
 		term.Write(err.Error(), 1)
 	} else {
-		conf, err := google.JWTConfigFromJSON(
-			jsonKey,
-			datastore.ScopeDatastore,
-			datastore.ScopeUserEmail,
-		)
+		ctx := context.Background()
+		client, err = datastore.NewClient(ctx, projectID, cloud.WithTokenSource(conf.TokenSource(ctx)))
 		if err != nil {
 			term.Write(err.Error(), 1)
-		} else {
-			ctx := context.Background()
-			client, err = datastore.NewClient(ctx, projectID, cloud.WithTokenSource(conf.TokenSource(ctx)))
-			if err != nil {
-				term.Write(err.Error(), 1)
-			}
 		}
 	}
-
 	return
 }
 
