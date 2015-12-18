@@ -108,7 +108,7 @@ func (repository GoogleBigTableRepository) GetAll(request *messaging.ObjectReque
 				data = append(data, record)
 			}
 			return true
-		}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)))
+		}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)), bigtable.RowFilter(bigtable.LatestNFilter(1)))
 
 		client.Close()
 
@@ -182,7 +182,7 @@ func (repository GoogleBigTableRepository) GetSearch(request *messaging.ObjectRe
 				}
 			}
 			return true
-		}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)))
+		}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)), bigtable.RowFilter(bigtable.LatestNFilter(1)))
 
 		client.Close()
 
@@ -256,7 +256,7 @@ func (repository GoogleBigTableRepository) GetByKey(request *messaging.ObjectReq
 				data = append(data, record)
 			}
 			return true
-		}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)))
+		}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)), bigtable.RowFilter(bigtable.LatestNFilter(1)))
 
 		client.Close()
 
@@ -317,13 +317,7 @@ func (repository GoogleBigTableRepository) setManyBigTable(request *messaging.Ob
 		idData[strconv.Itoa(index)] = id
 		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
 
-		//delete row if available.
-		mutt := bigtable.NewMutation()
-		mutt.DeleteRow()
-		_ = tbl.Apply(ctx, getNoSqlKeyById(request, obj), mutt)
-
 		//Insert New Record
-
 		mut := bigtable.NewMutation()
 
 		for key, value := range obj {
@@ -394,11 +388,6 @@ func (repository GoogleBigTableRepository) setOneBigTable(request *messaging.Obj
 
 	//open table
 	tbl := client.Open(request.Controls.Namespace)
-
-	//delete existing record (If available)
-	mutt := bigtable.NewMutation()
-	mutt.DeleteRow()
-	_ = tbl.Apply(ctx, getNoSqlKey(request), mutt)
 
 	//Insert New Record
 	mut := bigtable.NewMutation()
@@ -651,34 +640,25 @@ func (repository GoogleBigTableRepository) getRecordID(request *messaging.Object
 				return
 			}
 		} else {
-			//there is a record delete it first
+			//insert new id
+			var insertRecord map[string]interface{}
+			insertRecord = make(map[string]interface{})
+			insertRecord["class"] = request.Controls.Class
+			count, _ := strconv.Atoi(result["maxCount"].(string))
+			insertRecord["maxCount"] = strconv.Itoa((count + 1))
+			insertRecord["version"] = uuid.NewV1().String()
+			fmt.Println(count + 1)
 			mut := bigtable.NewMutation()
-			mut.DeleteRow()
-			err := tbl.Apply(ctx, request.Controls.Class, mut)
+			for key, value := range insertRecord {
+				mut.Set("domainClassAttributes", key, bigtable.Now(), getByteByValue(value))
+			}
+			err = tbl.Apply(ctx, request.Controls.Class, mut)
 			if err != nil {
 				returnID = uuid.NewV1().String()
 				return
 			} else {
-				//insert new id
-				var insertRecord map[string]interface{}
-				insertRecord = make(map[string]interface{})
-				insertRecord["class"] = request.Controls.Class
-				count, _ := strconv.Atoi(result["maxCount"].(string))
-				insertRecord["maxCount"] = strconv.Itoa((count + 1))
-				insertRecord["version"] = uuid.NewV1().String()
-				fmt.Println(count + 1)
-				mut := bigtable.NewMutation()
-				for key, value := range insertRecord {
-					mut.Set("domainClassAttributes", key, bigtable.Now(), getByteByValue(value))
-				}
-				err = tbl.Apply(ctx, request.Controls.Class, mut)
-				if err != nil {
-					returnID = uuid.NewV1().String()
-					return
-				} else {
-					returnID = strconv.Itoa((count + 1))
-					return
-				}
+				returnID = strconv.Itoa((count + 1))
+				return
 			}
 		}
 		client.Close()
@@ -709,7 +689,7 @@ func (repository GoogleBigTableRepository) getByKey(tbl *bigtable.Table, ctx con
 			}
 		}
 		return true
-	}, bigtable.RowFilter(bigtable.FamilyFilter(class)))
+	}, bigtable.RowFilter(bigtable.FamilyFilter(class)), bigtable.RowFilter(bigtable.LatestNFilter(1)))
 	if err != nil {
 		data = nil
 	}
@@ -864,7 +844,7 @@ func (repository GoogleBigTableRepository) executeGetSelected(request *messaging
 				data = append(data, record)
 			}
 			return true
-		}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)))
+		}, bigtable.RowFilter(bigtable.FamilyFilter(request.Controls.Class)), bigtable.RowFilter(bigtable.LatestNFilter(1)))
 
 		client.Close()
 

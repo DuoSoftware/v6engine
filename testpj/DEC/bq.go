@@ -70,11 +70,50 @@ func getAdminClient() *bigtable.AdminClient {
 	return client
 }
 
+func put2() {
+	ctx := context.Background()
+	adminClient := getAdminClient()
+	table := "com.budu.com"
+	_ = adminClient.CreateTable(ctx, "com.budu.com")
+	_ = adminClient.CreateColumnFamily(ctx, table, "pp")
+
+	client := getClient()
+	tbl := client.Open(table)
+
+	mut := bigtable.NewReadModifyWrite()
+	v1 := "huehue"
+	v2 := 123
+	v3 := false
+	v11, _ := json.Marshal(v1)
+	v22, _ := json.Marshal(v2)
+	v33, _ := json.Marshal(v3)
+	mut.AppendValue("pp", "col1", v11)
+	mut.AppendValue("pp", "col2", v22)
+	mut.AppendValue("pp", "col3", v33)
+
+	row, err := tbl.ApplyReadModifyWrite(ctx, "com.budu.com.pp.2", mut)
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		for _, v := range row {
+			var single map[string]interface{}
+			single = make(map[string]interface{})
+			for _, o := range v {
+				fmt.Println(o.Row)
+				single[o.Column] = GQLToGolang(o.Value)
+			}
+
+			fmt.Println(single)
+
+		}
+	}
+}
+
 func put() {
 	ctx := context.Background()
 	adminClient := getAdminClient()
 
-	table := "com.duosoftware.com"
+	table := "com.lolo.com"
 
 	tableNames, err := adminClient.Tables(ctx)
 	if err != nil {
@@ -99,7 +138,7 @@ func put() {
 		}
 	}
 
-	err = adminClient.CreateColumnFamily(ctx, table, "settings")
+	err = adminClient.CreateColumnFamily(ctx, table, "pp")
 	if err != nil {
 		fmt.Println(1.5)
 		fmt.Println(err.Error())
@@ -108,17 +147,17 @@ func put() {
 	client := getClient()
 	tbl := client.Open(table)
 	mut := bigtable.NewMutation()
-	v1 := "prasad"
-	v2 := 28
+	v1 := "yo prasad"
+	v2 := 41234
 	v3 := true
 	v11, _ := json.Marshal(v1)
 	v22, _ := json.Marshal(v2)
 	v33, _ := json.Marshal(v3)
 
-	mut.Set("settings", "col1", bigtable.Now(), v11)
-	mut.Set("settings", "col2", bigtable.Now(), v22)
-	mut.Set("settings", "col3", bigtable.Now(), v33)
-	err = tbl.Apply(ctx, "com.duosoftware.com.settings.1", mut)
+	mut.Set("pp", "col1", bigtable.Now(), v11)
+	mut.Set("pp", "col2", bigtable.Now(), v22)
+	mut.Set("pp", "col3", bigtable.Now(), v33)
+	err = tbl.Apply(ctx, "com.lolo.com.pp.1", mut)
 	if err != nil {
 		fmt.Println(2)
 		fmt.Println(err.Error())
@@ -128,13 +167,11 @@ func put() {
 func getAll() {
 	ctx := context.Background()
 	client := getClient()
-	tbl := client.Open("com.duosoftware.com")
-	// Read all the rows starting with "com.google.",
-	// but only fetch the columns in the "links" family.
+	tbl := client.Open("com.lolo.com")
 
 	var data []map[string]interface{}
 
-	rr := bigtable.PrefixRange("")
+	rr := bigtable.PrefixRange("com.lolo.com.pp")
 	err := tbl.ReadRows(ctx, rr, func(r bigtable.Row) bool {
 		// do something with r
 		for _, v := range r {
@@ -142,14 +179,14 @@ func getAll() {
 			single = make(map[string]interface{})
 			for _, o := range v {
 				fmt.Println(o.Row)
-				single[o.Column] = o.Value
+				single[o.Column] = GQLToGolang(o.Value)
 			}
 
 			data = append(data, single)
 
 		}
 		return true // keep going
-	}, bigtable.RowFilter(bigtable.FamilyFilter("settings")))
+	}, bigtable.RowFilter(bigtable.FamilyFilter("pp")), bigtable.RowFilter(bigtable.LatestNFilter(2)))
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -188,4 +225,32 @@ func delete() {
 		fmt.Println(2)
 		fmt.Println(err.Error())
 	}
+}
+
+func GQLToGolang(input []byte) (value interface{}) {
+
+	var boolValue bool
+	var intValue int
+	var floatValue64 float64
+	var floatValue32 float32
+	var stringValue string
+	var interfaceValue interface{}
+
+	if err := json.Unmarshal(input, &boolValue); err == nil {
+		value = boolValue
+	} else if err := json.Unmarshal(input, &intValue); err == nil {
+		value = intValue
+	} else if err := json.Unmarshal(input, &floatValue32); err == nil {
+		value = floatValue32
+	} else if err := json.Unmarshal(input, &floatValue64); err == nil {
+		value = floatValue64
+	} else if err := json.Unmarshal(input, &stringValue); err == nil {
+		value = stringValue
+	} else if err := json.Unmarshal(input, &interfaceValue); err == nil {
+		value = interfaceValue
+	} else {
+		value = input
+	}
+
+	return
 }
