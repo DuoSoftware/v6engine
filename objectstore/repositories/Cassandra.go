@@ -101,9 +101,7 @@ func (repository CassandraRepository) GetAll(request *messaging.ObjectRequest) R
 	} else {
 		isError = false
 
-		fmt.Println("-----------------------------")
 		_ = getCassandraFieldOrder(request)
-		fmt.Println("-----------------------------")
 
 		iter2 := session.Query("SELECT * FROM " + strings.ToLower(request.Controls.Class)).Iter()
 
