@@ -19,8 +19,12 @@ func GetQueryMaps(query string) (qObject structs.QueryObject) {
 		queryType = "GetFilteredOrdered"
 	} else if strings.Contains(query, " WHERE ") && !strings.Contains(query, " ORDER BY ") {
 		queryType = "GetFiltered"
+		qObject = getBasicMapping(query)
+		qObject = appendWhere(query, qObject)
 	} else if !strings.Contains(query, " WHERE ") && strings.Contains(query, " ORDER BY ") {
 		queryType = "GetOrdered"
+		qObject = getBasicMapping(query)
+		qObject = appendOrderBy(query, qObject)
 	} else if !strings.Contains(query, " WHERE ") && !strings.Contains(query, " ORDER BY ") {
 		queryType = "BasicGet"
 		qObject = getBasicMapping(query)
@@ -79,7 +83,18 @@ func appendWhere(query string, object structs.QueryObject) (qObject structs.Quer
 	}
 
 	whereSet = strings.TrimSpace(whereSet)
-
+	whereSet = prepareWhereClause(whereSet)
+	stringSet := getWhereSets(whereSet)
+	fmt.Println("--------")
+	for x := 0; x < len(stringSet); x++ {
+		fmt.Println(stringSet[x])
+	}
+	fmt.Println("--------")
+	// fmt.Println("--------")
+	// for x := 0; x < len(stringSet); x++ {
+	// 	fmt.Println(createArrayFromWhereString(stringSet[x]))
+	// }
+	// fmt.Println("--------")
 	return
 }
 
@@ -88,6 +103,11 @@ func getTableNameFromQuery(query string, queryType string) (tableName string) {
 	case "BasicGet":
 		fromIndex := (strings.Index(query, "FROM") + 4)
 		tableName = extractTableNameFromString(query[fromIndex:])
+		break
+	case "GetOrdered":
+		fromIndex := strings.Index(query, "FROM") + 4
+		orderByIndex := strings.Index(query, "ORDER BY")
+		tableName = extractTableNameFromString(query[fromIndex:orderByIndex])
 		break
 	default:
 		tableName = "undefined"
@@ -107,15 +127,135 @@ func extractTableNameFromString(input string) (tablename string) {
 
 func prepareWhereClause(input string) (output string) {
 	output = input
-	strings.Replace(input, " = ", "=", -1)
-	strings.Replace(input, " <> ", "!=", -1)
-	strings.Replace(input, " != ", "!=", -1)
-	strings.Replace(input, " > ", ">", -1)
-	strings.Replace(input, " < ", "<", -1)
-	strings.Replace(input, " >= ", ">=", -1)
-	strings.Replace(input, " <= ", "<=", -1)
-	strings.Replace(input, "NOT BETWEEN", "NOTBETWEEN", -1)
-	strings.Replace(input, "IN (", "IN(", -1)
+	output = strings.Replace(output, "  ", " ", -1)
+	output = strings.Replace(output, " = ", "=", -1)
+	output = strings.Replace(output, " =", "=", -1)
+	output = strings.Replace(output, "= ", "=", -1)
+	output = strings.Replace(output, " <> ", "!=", -1)
+	output = strings.Replace(output, "<> ", "!=", -1)
+	output = strings.Replace(output, " <>", "!=", -1)
+	output = strings.Replace(output, " != ", "!=", -1)
+	output = strings.Replace(output, "!= ", "!=", -1)
+	output = strings.Replace(output, " !=", "!=", -1)
+	output = strings.Replace(output, " > ", ">", -1)
+	output = strings.Replace(output, " >", ">", -1)
+	output = strings.Replace(output, "> ", ">", -1)
+	output = strings.Replace(output, " < ", "<", -1)
+	output = strings.Replace(output, "< ", "<", -1)
+	output = strings.Replace(output, " <", "<", -1)
+	output = strings.Replace(output, " >= ", ">=", -1)
+	output = strings.Replace(output, " >=", ">=", -1)
+	output = strings.Replace(output, ">= ", ">=", -1)
+	output = strings.Replace(output, " <= ", "<=", -1)
+	output = strings.Replace(output, " <=", "<=", -1)
+	output = strings.Replace(output, "<= ", "<=", -1)
+	output = strings.Replace(output, "NOT BETWEEN", "NOTBETWEEN", -1)
+	output = strings.Replace(output, "IN (", "IN(", -1)
+	output = strings.Replace(output, "NOT IN (", "NOTIN(", -1)
+	output = strings.Replace(output, "NOT IN(", "NOTIN(", -1)
+	return
+}
+
+func whereSeparator(whereClause string) (retArr []map[int][]string) {
+	whereClause = prepareWhereClause(whereClause)
+	whereTokens := strings.Split(whereClause, " ")
+
+	preFormattedQuery := ""
+	for x := 0; x < len(whereTokens); x++ {
+		token := whereTokens[x]
+		if token == "NOTBETWEEN" {
+			preFormattedQuery += "NOT BETWEEN" + " " + whereTokens[x+1] + " " + whereTokens[x+2] + " " + whereTokens[x+3]
+			x += 3
+		} else {
+			preFormattedQuery += (token + " ")
+		}
+	}
 
 	return
+}
+
+func getWhereSets(whereClause string) (set map[int]string) {
+	index := 0
+	set = make(map[int]string)
+	tokens := strings.Split(whereClause, " ")
+
+	for x := 0; x < len(tokens); x++ {
+		if strings.EqualFold(tokens[x], "between") && strings.EqualFold(tokens[x+2], "and") {
+			set[index-1] = (tokens[x-1] + " " + tokens[x] + " " + tokens[x+1] + " " + tokens[x+2] + " " + tokens[x+3])
+			x += 4
+		} else if strings.EqualFold(tokens[x], "notbetween") && strings.EqualFold(tokens[x+2], "and") {
+			set[index-1] = (tokens[x-1] + " " + tokens[x] + " " + tokens[x+1] + " " + tokens[x+2] + " " + tokens[x+3])
+			x += 4
+		} else if strings.Contains(tokens[x], "IN(") || strings.Contains(tokens[x], "NOTIN(") {
+			endIndex := -1
+			for y := x; y < len(tokens); y++ {
+				if strings.Contains(tokens[y], ")") {
+					endIndex = y + 1
+					break
+				}
+			}
+			indexValue := tokens[x-1] + " "
+
+			for z := x; z < endIndex; z++ {
+				indexValue += tokens[z] + " "
+				fmt.Println(tokens[z])
+			}
+
+			indexValue = strings.TrimSpace(indexValue)
+
+			set[index-1] = indexValue
+			x += len(tokens[x:endIndex]) + 1
+		} else {
+			set[index] = tokens[x]
+			index += 1
+		}
+	}
+	return
+}
+
+func createArrayFromWhereString(input string) (output []string) {
+	tokens := strings.Split(input, " ")
+
+	if len(tokens) > 3 {
+		if tokens[1] == "BETWEEN" && tokens[3] == "AND" {
+			output = tokens
+		} else if tokens[1] == "NOTBETWEEN" && tokens[3] == "AND" {
+			output = tokens
+		}
+	} else {
+		if strings.Contains(input, "!=") {
+			words := strings.Split(input, "!=")
+			output = makeFinalwhereArray("!=", words)
+		} else if strings.Contains(input, ">=") {
+			words := strings.Split(input, ">=")
+			output = makeFinalwhereArray(">=", words)
+		} else if strings.Contains(input, ">") {
+			words := strings.Split(input, ">")
+			output = makeFinalwhereArray(">", words)
+		} else if strings.Contains(input, "<=") {
+			words := strings.Split(input, "<=")
+			output = makeFinalwhereArray("<=", words)
+		} else if strings.Contains(input, "<") {
+			words := strings.Split(input, "<")
+			output = makeFinalwhereArray("<", words)
+		} else if strings.Contains(input, "=") {
+			words := strings.Split(input, "=")
+			output = makeFinalwhereArray("=", words)
+		}
+	}
+	return
+}
+
+func makeFinalwhereArray(sign string, words []string) []string {
+	index := 0
+	newArr := make([]string, (len(words) + len(words) + 1))
+	for x := 0; x < len(newArr); x++ {
+		if x%2 == 0 {
+			newArr[x] = words[index]
+			index += 1
+		} else {
+			newArr[x] = sign
+		}
+	}
+	return newArr
 }

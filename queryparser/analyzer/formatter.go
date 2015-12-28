@@ -2,7 +2,8 @@ package analyzer
 
 import (
 	"duov6.com/queryparser/common"
-	"fmt"
+	"errors"
+	//	"fmt"
 	"google.golang.org/cloud/datastore"
 	"strings"
 )
@@ -21,22 +22,45 @@ func GetOtherQuery(query string, repository string) (retQuery string, retDquery 
 	return
 }
 
-func PrepareSQLStatement(input string, repo string, namespace string, class string) (query string, isValid bool) {
+func PrepareSQLStatement(input string, repo string, namespace string, class string) (query string, isValid error) {
 	query = ""
-	isValid = true
+	isValid = nil
 
 	//check for complex queries...
 	fromIndex := strings.Index(input, " FROM ") + 5
 	fromSlice := input[fromIndex:]
 	if strings.Contains(fromSlice, "(") && strings.Contains(fromSlice, ")") {
-
+		switch repo {
+		case "CDS":
+			query = ""
+			isValid = errors.New("Complex queries are not allowed in Cloud SQL Repository!")
+			return
+			break
+		case "ES":
+			query = ""
+			isValid = errors.New("Complex queries are not allowed in Elastic Repository!")
+			return
+			break
+		default:
+			query = input
+			isValid = nil
+		}
 	}
 
-	queryTokens := strings.Split(input, " ")
+	trailerRemovedInput := strings.Replace(input, ";", "", -1)
+	queryTokens := strings.Split(trailerRemovedInput, " ")
 
 	for index := 0; index < len(queryTokens); index++ {
 		if strings.EqualFold(queryTokens[index], "select") {
 			queryTokens[index] = "SELECT"
+		} else if strings.EqualFold(queryTokens[index], "between") {
+			queryTokens[index] = "BETWEEN"
+		} else if strings.EqualFold(queryTokens[index], "in") && strings.Contains(queryTokens[index+1], "(") {
+			queryTokens[index] = "IN"
+		} else if strings.EqualFold(queryTokens[index], "not") && strings.EqualFold(queryTokens[index+1], "between") {
+			queryTokens[index] = "NOT"
+		} else if strings.EqualFold(queryTokens[index], "not") && strings.EqualFold(queryTokens[index+1], "in") {
+			queryTokens[index] = "NOT"
 		} else if strings.EqualFold(queryTokens[index], "from") {
 			queryTokens[index] = "FROM"
 		} else if strings.EqualFold(queryTokens[index], "where") {
@@ -53,7 +77,19 @@ func PrepareSQLStatement(input string, repo string, namespace string, class stri
 		} else if strings.EqualFold(queryTokens[index], "group") && strings.EqualFold(queryTokens[index+1], "by") {
 			queryTokens[index] = "GROUP"
 			queryTokens[index+1] = "BY"
-			isValid = false
+			isValid = errors.New("GROUP BY queries are not allowed!")
+		} else if strings.EqualFold(queryTokens[index], "asc") {
+			queryTokens[index] = "ASC"
+		} else if strings.EqualFold(queryTokens[index], "desc") {
+			queryTokens[index] = "DESC"
+		} else if strings.EqualFold(queryTokens[index], "asc,") {
+			queryTokens[index] = "ASC,"
+		} else if strings.EqualFold(queryTokens[index], "desc,") {
+			queryTokens[index] = "DESC,"
+		} else if strings.EqualFold(queryTokens[index], ",asc") {
+			queryTokens[index] = ",ASC"
+		} else if strings.EqualFold(queryTokens[index], ",desc") {
+			queryTokens[index] = ",DESC"
 		}
 	}
 
@@ -72,19 +108,19 @@ func formatTableNames(repo string, namespace string, class string, query string)
 		whereIndex := strings.Index(query, " WHERE ")
 		one := query[:fromIndex]
 		two := query[whereIndex:]
-		fmt.Println(1)
-		fmt.Println(one)
-		fmt.Println(two)
+		//fmt.Println(1)
+		//fmt.Println(one)
+		//fmt.Println(two)
 		retQurey = one + " " + common.GetSQLTableName(repo, namespace, class) + two
 
 	} else if strings.Contains(query, " WHERE ") && !strings.Contains(query, " ORDER BY ") {
 		fromIndex := strings.Index(query, " FROM ") + 5
 		whereIndex := strings.Index(query, " WHERE ")
-		fmt.Println(2)
+		//fmt.Println(2)
 		one := query[:fromIndex]
 		two := query[whereIndex:]
-		fmt.Println(one)
-		fmt.Println(two)
+		//fmt.Println(one)
+		//fmt.Println(two)
 		retQurey = one + " " + common.GetSQLTableName(repo, namespace, class) + two
 
 	} else if !strings.Contains(query, " WHERE ") && strings.Contains(query, " ORDER BY ") {
@@ -92,16 +128,16 @@ func formatTableNames(repo string, namespace string, class string, query string)
 		orderByIndex := strings.Index(query, " ORDER BY ")
 		one := query[:fromIndex]
 		two := query[orderByIndex:]
-		fmt.Println(3)
-		fmt.Println(one)
-		fmt.Println(two)
+		//fmt.Println(3)
+		//fmt.Println(one)
+		//fmt.Println(two)
 		retQurey = one + " " + common.GetSQLTableName(repo, namespace, class) + two
 
 	} else if !strings.Contains(query, " WHERE ") && !strings.Contains(query, " ORDER BY ") {
 		fromIndex := strings.Index(query, " FROM ") + 5
 		queryWithoutClass := query[:fromIndex]
-		fmt.Println(4)
-		fmt.Println(queryWithoutClass)
+		//fmt.Println(4)
+		//fmt.Println(queryWithoutClass)
 		retQurey = queryWithoutClass + " " + common.GetSQLTableName(repo, namespace, class)
 	}
 

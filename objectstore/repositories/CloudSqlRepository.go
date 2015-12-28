@@ -3,7 +3,7 @@ package repositories
 import (
 	"database/sql"
 	//"duov6.com/common"
-	"duov6.com/objectstore/connmanager"
+	//"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/queryparser"
 	"duov6.com/term"
@@ -697,16 +697,16 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 	// 	//conn = connInt.(*sql.DB)
 
 	// } else {
-	term.Write("!No Connection Found! Creating Brand New Connection!", 2)
+	//term.Write("!No Connection Found! Creating Brand New Connection!", 2)
 	term.Write("Creating MySQL Connection!", 2)
 	var c *sql.DB
 	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 	c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-	connmanager.Set("MYSQL", request.Controls.Namespace, c)
+	//connmanager.Set("MYSQL", request.Controls.Namespace, c)
 	conn = c
 	//}
-
-	return
+	fmt.Println("Created Connection!")
+	return conn, err
 }
 
 func (repository CloudSqlRepository) getDatabaseName(namespace string) string {
@@ -986,9 +986,14 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string)
 	//common.PublishLog("ObjectStoreLog.log", query)
 	var stmt *sql.Stmt
 	stmt, err = conn.Prepare(query)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
 	_, err = stmt.Exec()
 	if err != nil {
 		fmt.Println(err.Error())
+		return err
 	} else {
 		fmt.Println("Successfully Executed Query!")
 	}
@@ -1025,7 +1030,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 				createDomainAttrQuery := "create table " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);"
 				err := repository.executeNonQuery(session, createDomainAttrQuery)
 				if err != nil {
-					returnID = ""
+					returnID = "1"
 					repository.closeConnection(session)
 					return
 				} else {
@@ -1033,7 +1038,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					insertQuery := "INSERT INTO " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','1','" + uuid.NewV1().String() + "')"
 					err = repository.executeNonQuery(session, insertQuery)
 					if err != nil {
-						returnID = ""
+						returnID = "1"
 						repository.closeConnection(session)
 						return
 					} else {
