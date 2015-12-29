@@ -8,6 +8,7 @@ func ValidateSqlToken(token string) (isValid bool) {
 	for _, keyword := range GetKeywordArray() {
 		if keyword == strings.ToUpper(strings.TrimSpace(token)) {
 			isValid = false
+			break
 		} else {
 			isValid = true
 		}

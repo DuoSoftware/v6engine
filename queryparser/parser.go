@@ -56,15 +56,19 @@ func getQuery(queryString string, repository string, namespace string, class str
 		fmt.Println(preparedQuery)
 		//Create Query map from the normalized query
 		queryStruct := analyzer.GetQueryMaps(preparedQuery)
-		fmt.Println(queryStruct)
-		/*
-			//Do secondary validation.. for sql keywords
-			err = analyzer.ValidateQuery(queryStruct)
+		fmt.Println(queryStruct.Operation)
+		fmt.Println(queryStruct.SelectedFields)
+		fmt.Println(queryStruct.Table)
+		fmt.Println(queryStruct.Where)
+		fmt.Println(queryStruct.Orderby)
 
-			if err != nil {
-				fmt.Println(err.Error())
-				return
-			}*/
+		//Do secondary validation.. for sql keywords
+		err = analyzer.ValidateQuery(queryStruct)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			return query, queryItem, err
+		}
 	} else {
 		//reply other query
 		query, queryItem = analyzer.GetOtherQuery(queryString, repository)

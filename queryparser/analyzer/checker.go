@@ -27,26 +27,24 @@ func CaseInsensitiveContains(s, substr string) bool {
 func ValidateQuery(queryObject structs.QueryObject) (err error) {
 	//check for selected fields
 	for _, fieldName := range queryObject.SelectedFields {
-		if ValidateSqlToken(fieldName) {
+		if !ValidateSqlToken(fieldName) {
 			err = errors.New("SQL keyword used as Fieldname : " + fieldName)
 			return
 		}
 	}
 	//check for where clauses if available
 	for _, clause := range queryObject.Where {
-		if len(clause[0]) > 1 {
-			for _, value := range clause[0] {
-				if ValidateSqlToken(value) {
-					err = errors.New("SQL keyword used inside WHERE condition : " + value)
-					return
-				}
+		if len(clause) > 1 {
+			if !ValidateSqlToken(strings.ToUpper(clause[0])) {
+				err = errors.New("SQL keyword used inside WHERE condition : " + clause[0])
+				return
 			}
 		}
 	}
 	//check for order by clauses
-	for key, _ := range queryObject.Orderby {
-		if ValidateSqlToken(key) {
-			err = errors.New("SQL keyword used inside ORDER BY condition : " + key)
+	for _, field := range queryObject.Orderby {
+		if !ValidateSqlToken(field) {
+			err = errors.New("SQL keyword used inside ORDER BY condition : " + field)
 			return
 		}
 	}

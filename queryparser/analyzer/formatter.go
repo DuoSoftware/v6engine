@@ -3,7 +3,6 @@ package analyzer
 import (
 	"duov6.com/queryparser/common"
 	"errors"
-	//	"fmt"
 	"google.golang.org/cloud/datastore"
 	"strings"
 )
@@ -42,7 +41,7 @@ func PrepareSQLStatement(input string, repo string, namespace string, class stri
 			return
 			break
 		default:
-			query = input
+			query = ""
 			isValid = nil
 		}
 	}
@@ -108,19 +107,13 @@ func formatTableNames(repo string, namespace string, class string, query string)
 		whereIndex := strings.Index(query, " WHERE ")
 		one := query[:fromIndex]
 		two := query[whereIndex:]
-		//fmt.Println(1)
-		//fmt.Println(one)
-		//fmt.Println(two)
 		retQurey = one + " " + common.GetSQLTableName(repo, namespace, class) + two
 
 	} else if strings.Contains(query, " WHERE ") && !strings.Contains(query, " ORDER BY ") {
 		fromIndex := strings.Index(query, " FROM ") + 5
 		whereIndex := strings.Index(query, " WHERE ")
-		//fmt.Println(2)
 		one := query[:fromIndex]
 		two := query[whereIndex:]
-		//fmt.Println(one)
-		//fmt.Println(two)
 		retQurey = one + " " + common.GetSQLTableName(repo, namespace, class) + two
 
 	} else if !strings.Contains(query, " WHERE ") && strings.Contains(query, " ORDER BY ") {
@@ -128,16 +121,11 @@ func formatTableNames(repo string, namespace string, class string, query string)
 		orderByIndex := strings.Index(query, " ORDER BY ")
 		one := query[:fromIndex]
 		two := query[orderByIndex:]
-		//fmt.Println(3)
-		//fmt.Println(one)
-		//fmt.Println(two)
 		retQurey = one + " " + common.GetSQLTableName(repo, namespace, class) + two
 
 	} else if !strings.Contains(query, " WHERE ") && !strings.Contains(query, " ORDER BY ") {
 		fromIndex := strings.Index(query, " FROM ") + 5
 		queryWithoutClass := query[:fromIndex]
-		//fmt.Println(4)
-		//fmt.Println(queryWithoutClass)
 		retQurey = queryWithoutClass + " " + common.GetSQLTableName(repo, namespace, class)
 	}
 

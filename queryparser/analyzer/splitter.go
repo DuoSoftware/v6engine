@@ -1,7 +1,6 @@
 package analyzer
 
 import (
-	//"duov6.com/queryparser/analyzer"
 	"duov6.com/queryparser/structs"
 	"fmt"
 	"strings"
@@ -13,10 +12,12 @@ func GetQueryMaps(query string) (qObject structs.QueryObject) {
 	//GetOrdered - (select, from, orderby)
 	//GetFiltered - (select, from, where)
 	//GetFilteredOrdered - (select, from, where, orderby)
-
 	queryType := ""
 	if strings.Contains(query, " WHERE ") && strings.Contains(query, " ORDER BY ") {
 		queryType = "GetFilteredOrdered"
+		qObject = getBasicMapping(query)
+		qObject = appendOrderBy(query, qObject)
+		qObject = appendWhere(query, qObject)
 	} else if strings.Contains(query, " WHERE ") && !strings.Contains(query, " ORDER BY ") {
 		queryType = "GetFiltered"
 		qObject = getBasicMapping(query)
@@ -39,6 +40,12 @@ func getBasicMapping(query string) (qObject structs.QueryObject) {
 	unformattedFields := query[selectIndex:fromIndex]
 	unformattedFields = strings.TrimSpace(unformattedFields)
 	individualFields := strings.Split(unformattedFields, ",")
+
+	//clean var spaces
+	for x := 0; x < len(individualFields); x++ {
+		individualFields[x] = strings.TrimSpace(individualFields[x])
+	}
+
 	qObject.Operation = "SELECT"
 	qObject.SelectedFields = individualFields
 	qObject.Table = getTableNameFromQuery(query, "BasicGet")
@@ -85,16 +92,15 @@ func appendWhere(query string, object structs.QueryObject) (qObject structs.Quer
 	whereSet = strings.TrimSpace(whereSet)
 	whereSet = prepareWhereClause(whereSet)
 	stringSet := getWhereSets(whereSet)
-	fmt.Println("--------")
+
+	whereClauses := make(map[int][]string)
+
 	for x := 0; x < len(stringSet); x++ {
-		fmt.Println(stringSet[x])
+		whereClauses[x] = createArrayFromWhereString(stringSet[x])
 	}
-	fmt.Println("--------")
-	// fmt.Println("--------")
-	// for x := 0; x < len(stringSet); x++ {
-	// 	fmt.Println(createArrayFromWhereString(stringSet[x]))
-	// }
-	// fmt.Println("--------")
+
+	qObject.Where = whereClauses
+
 	return
 }
 
@@ -198,7 +204,6 @@ func getWhereSets(whereClause string) (set map[int]string) {
 
 			for z := x; z < endIndex; z++ {
 				indexValue += tokens[z] + " "
-				fmt.Println(tokens[z])
 			}
 
 			indexValue = strings.TrimSpace(indexValue)
@@ -216,11 +221,30 @@ func getWhereSets(whereClause string) (set map[int]string) {
 func createArrayFromWhereString(input string) (output []string) {
 	tokens := strings.Split(input, " ")
 
-	if len(tokens) > 3 {
+	if len(tokens) > 1 {
 		if tokens[1] == "BETWEEN" && tokens[3] == "AND" {
 			output = tokens
 		} else if tokens[1] == "NOTBETWEEN" && tokens[3] == "AND" {
 			output = tokens
+		} else if strings.Contains(input, "IN(") || strings.Contains(input, "NOTIN(") {
+			tempMap := make(map[int]string)
+			tempMap[0] = tokens[0]
+			if strings.Contains(input, "NOTIN(") {
+				tempMap[1] = "NOTIN"
+			} else {
+				tempMap[1] = "IN"
+			}
+			inStartIndex := strings.Index(input, "(")
+			inStopIndex := strings.Index(input, ")")
+			parameters := strings.Split(input[(inStartIndex+1):inStopIndex], ",")
+
+			for x := 0; x < len(parameters); x++ {
+				tempMap[x+2] = strings.TrimSpace(parameters[x])
+			}
+			output = make([]string, len(tempMap))
+			for x := 0; x < len(tempMap); x++ {
+				output[x] = tempMap[x]
+			}
 		}
 	} else {
 		if strings.Contains(input, "!=") {
@@ -241,14 +265,20 @@ func createArrayFromWhereString(input string) (output []string) {
 		} else if strings.Contains(input, "=") {
 			words := strings.Split(input, "=")
 			output = makeFinalwhereArray("=", words)
+		} else {
+			output = make([]string, 1)
+			output[0] = input
 		}
 	}
+
 	return
+
 }
 
 func makeFinalwhereArray(sign string, words []string) []string {
 	index := 0
-	newArr := make([]string, (len(words) + len(words) + 1))
+	newArr := make([]string, (len(words) + (len(words) - 1)))
+
 	for x := 0; x < len(newArr); x++ {
 		if x%2 == 0 {
 			newArr[x] = words[index]
@@ -257,5 +287,6 @@ func makeFinalwhereArray(sign string, words []string) []string {
 			newArr[x] = sign
 		}
 	}
+
 	return newArr
 }
