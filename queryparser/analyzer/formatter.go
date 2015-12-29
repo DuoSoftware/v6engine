@@ -7,12 +7,11 @@ import (
 	"strings"
 )
 
-func GetOtherQuery(query string, repository string) (retQuery string, retDquery *datastore.Query) {
+func GetOtherQuery(query string, repository string) (retQuery interface{}) {
 
 	switch repository {
 	case "CDS":
-		retQuery = ""
-		retDquery = nil
+		retQuery = datastore.NewQuery(query)
 		break
 	default:
 		retQuery = query
