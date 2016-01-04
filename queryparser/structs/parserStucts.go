@@ -13,3 +13,8 @@ type RepoRequest struct {
 	Query       string
 	Queryobject QueryObject
 }
+
+type RepoResponse struct {
+	Query interface{}
+	Err   error
+}

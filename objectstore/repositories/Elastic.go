@@ -506,6 +506,7 @@ func (repository ElasticRepository) executeQuery(request *messaging.ObjectReques
 
 	searchStr, isSelectedFields, selectedFields, fromClass := queryparser.GetQuery(request.Body.Query.Parameters)
 	query := "{\"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+	request.Log(query)
 	term.Write(query, 2)
 	var data elastigo.SearchResult
 	var err error

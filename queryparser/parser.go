@@ -4,7 +4,6 @@ import (
 	"duov6.com/queryparser/analyzer"
 	"duov6.com/queryparser/repositories"
 	"duov6.com/queryparser/structs"
-	//	"duov6.com/queryparser/repositories"
 	"fmt"
 	"google.golang.org/cloud/datastore"
 )
@@ -12,50 +11,64 @@ import (
 //This is the main entry point to the query parser
 
 func GetElasticQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, err := getQuery(queryString, "ES", namespace, class); err == nil {
+	if queryResult, er := getQuery(queryString, "ES", namespace, class); er == nil {
 		query = queryResult.(string)
+	} else {
+		err = er
 	}
 	return
 }
 
 func GetDataStoreQuery(queryString string, namespace string, class string) (query *datastore.Query, err error) {
-	if queryResult, err := getQuery(queryString, "CDS", namespace, class); err == nil {
+	if queryResult, er := getQuery(queryString, "CDS", namespace, class); er == nil {
 		query = queryResult.(*datastore.Query)
+	} else {
+		err = er
 	}
 	return
 }
 
 func GetMsSQLQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, err := getQuery(queryString, "MSSQL", namespace, class); err == nil {
+	if queryResult, er := getQuery(queryString, "MSSQL", namespace, class); er == nil {
 		query = queryResult.(string)
+	} else {
+		err = er
 	}
 	return
 }
 
 func GetCloudSQLQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, err := getQuery(queryString, "CSQL", namespace, class); err == nil {
+	if queryResult, er := getQuery(queryString, "CSQL", namespace, class); er == nil {
 		query = queryResult.(string)
+	} else {
+		err = er
 	}
 	return
 }
 
 func GetPostgresQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, err := getQuery(queryString, "PSQL", namespace, class); err == nil {
+	if queryResult, er := getQuery(queryString, "PSQL", namespace, class); er == nil {
 		query = queryResult.(string)
+	} else {
+		err = er
 	}
 	return
 }
 
 func GetMySQLQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, err := getQuery(queryString, "MYSQL", namespace, class); err == nil {
+	if queryResult, er := getQuery(queryString, "MYSQL", namespace, class); er == nil {
 		query = queryResult.(string)
+	} else {
+		err = er
 	}
 	return
 }
 
 func GetHiveQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, err := getQuery(queryString, "HSQL", namespace, class); err == nil {
+	if queryResult, er := getQuery(queryString, "HSQL", namespace, class); er == nil {
 		query = queryResult.(string)
+	} else {
+		err = er
 	}
 	return
 }
@@ -63,13 +76,14 @@ func GetHiveQuery(queryString string, namespace string, class string) (query str
 func getQuery(queryString string, repository string, namespace string, class string) (queryResult interface{}, err error) {
 	//get type of query
 	if queryType := analyzer.GetQueryType(queryString); queryType == "SQL" {
+		fmt.Println("SQL Query Identified!")
 		//Check is valid for preprocessing. Create normalized query
 		preparedQuery, err := analyzer.PrepareSQLStatement(queryString, repository, namespace, class)
 		if err != nil {
 			return queryResult, err
 		}
 
-		fmt.Println(preparedQuery)
+		fmt.Println("Prepared Query : " + preparedQuery)
 		//Create Query map from the normalized query
 		queryStruct := analyzer.GetQueryMaps(preparedQuery)
 		fmt.Println(queryStruct.Operation)
@@ -89,12 +103,19 @@ func getQuery(queryString string, repository string, namespace string, class str
 		queryRequest.Repository = repository
 		queryRequest.Query = preparedQuery
 		queryRequest.Queryobject = queryStruct
-		queryResult = repositories.Execute(queryRequest)
+
+		response := repositories.Execute(queryRequest)
+		if response.Err != nil {
+			err = response.Err
+			return response.Query, err
+		}
+
+		queryResult = response.Query
 
 	} else {
 		//reply other query
+		fmt.Println("OTHER")
 		queryResult = analyzer.GetOtherQuery(queryString, repository)
 	}
-	fmt.Println("huehuehue")
 	return
 }

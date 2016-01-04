@@ -92,7 +92,6 @@ func appendWhere(query string, object structs.QueryObject) (qObject structs.Quer
 	whereSet = strings.TrimSpace(whereSet)
 	whereSet = prepareWhereClause(whereSet)
 	stringSet := getWhereSets(whereSet)
-
 	whereClauses := make(map[int][]string)
 
 	for x := 0; x < len(stringSet); x++ {
@@ -155,6 +154,9 @@ func prepareWhereClause(input string) (output string) {
 	output = strings.Replace(output, " <= ", "<=", -1)
 	output = strings.Replace(output, " <=", "<=", -1)
 	output = strings.Replace(output, "<= ", "<=", -1)
+	output = strings.Replace(output, " LIKE ", "LIKE", -1)
+	output = strings.Replace(output, " LIKE", "LIKE", -1)
+	output = strings.Replace(output, "LIKE ", "LIKE", -1)
 	output = strings.Replace(output, "NOT BETWEEN", "NOTBETWEEN", -1)
 	output = strings.Replace(output, "IN (", "IN(", -1)
 	output = strings.Replace(output, "NOT IN (", "NOTIN(", -1)
@@ -184,14 +186,13 @@ func getWhereSets(whereClause string) (set map[int]string) {
 	index := 0
 	set = make(map[int]string)
 	tokens := strings.Split(whereClause, " ")
-
 	for x := 0; x < len(tokens); x++ {
 		if strings.EqualFold(tokens[x], "between") && strings.EqualFold(tokens[x+2], "and") {
 			set[index-1] = (tokens[x-1] + " " + tokens[x] + " " + tokens[x+1] + " " + tokens[x+2] + " " + tokens[x+3])
-			x += 4
+			x += 3
 		} else if strings.EqualFold(tokens[x], "notbetween") && strings.EqualFold(tokens[x+2], "and") {
 			set[index-1] = (tokens[x-1] + " " + tokens[x] + " " + tokens[x+1] + " " + tokens[x+2] + " " + tokens[x+3])
-			x += 4
+			x += 3
 		} else if strings.Contains(tokens[x], "IN(") || strings.Contains(tokens[x], "NOTIN(") {
 			endIndex := -1
 			for y := x; y < len(tokens); y++ {
@@ -209,7 +210,7 @@ func getWhereSets(whereClause string) (set map[int]string) {
 			indexValue = strings.TrimSpace(indexValue)
 
 			set[index-1] = indexValue
-			x += len(tokens[x:endIndex]) + 1
+			x += len(tokens[x:endIndex]) - 1
 		} else {
 			set[index] = tokens[x]
 			index += 1
@@ -265,6 +266,9 @@ func createArrayFromWhereString(input string) (output []string) {
 		} else if strings.Contains(input, "=") {
 			words := strings.Split(input, "=")
 			output = makeFinalwhereArray("=", words)
+		} else if strings.Contains(input, "LIKE") {
+			words := strings.Split(input, "LIKE")
+			output = makeFinalwhereArray("LIKE", words)
 		} else {
 			output = make([]string, 1)
 			output[0] = input

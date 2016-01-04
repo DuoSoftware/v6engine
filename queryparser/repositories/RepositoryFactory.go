@@ -4,7 +4,7 @@ func Create(code string) AbstractRepository {
 	var repository AbstractRepository
 	switch code {
 	case "ES":
-		repository = CommonSQL{}
+		repository = ElasticSearch{}
 	case "MYSQL":
 		repository = CommonSQL{}
 	case "MSSQL":

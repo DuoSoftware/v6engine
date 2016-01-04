@@ -6,5 +6,5 @@ import (
 
 type AbstractRepository interface {
 	GetName(request structs.RepoRequest) string
-	GetQuery(request structs.RepoRequest) interface{}
+	GetQuery(request structs.RepoRequest) structs.RepoResponse
 }

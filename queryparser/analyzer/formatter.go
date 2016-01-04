@@ -25,7 +25,7 @@ func PrepareSQLStatement(input string, repo string, namespace string, class stri
 	isValid = nil
 
 	//check for complex queries...
-	fromIndex := strings.Index(input, " FROM ") + 5
+	/*fromIndex := strings.Index(input, " FROM ") + 5
 	fromSlice := input[fromIndex:]
 	if strings.Contains(fromSlice, "(") && strings.Contains(fromSlice, ")") {
 		switch repo {
@@ -43,7 +43,7 @@ func PrepareSQLStatement(input string, repo string, namespace string, class stri
 			query = ""
 			isValid = nil
 		}
-	}
+	}*/
 
 	trailerRemovedInput := strings.Replace(input, ";", "", -1)
 	queryTokens := strings.Split(trailerRemovedInput, " ")

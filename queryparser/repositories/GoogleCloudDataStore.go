@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"duov6.com/queryparser/structs"
+	"google.golang.org/cloud/datastore"
 )
 
 type GoogleCloudDataStore struct {
@@ -11,7 +12,8 @@ func (repository GoogleCloudDataStore) GetName(request structs.RepoRequest) stri
 	return "GoogleCloudDataStore"
 }
 
-func (repository GoogleCloudDataStore) GetQuery(request structs.RepoRequest) interface{} {
-	var result interface{}
-	return result
+func (repository GoogleCloudDataStore) GetQuery(request structs.RepoRequest) structs.RepoResponse {
+	response := structs.RepoResponse{}
+	response.Query = datastore.NewQuery(request.Query)
+	return response
 }
