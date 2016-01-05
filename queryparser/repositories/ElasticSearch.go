@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"duov6.com/queryparser/structs"
-	"fmt"
 	"strings"
 )
 
@@ -17,94 +16,110 @@ func (repository ElasticSearch) GetQuery(request structs.RepoRequest) structs.Re
 	response := structs.RepoResponse{}
 	response.Query = request.Query
 
-	queryString := ""
+	queryString := "{"
+	queryString += repository.GetFieldsJson(request)
+	queryString += repository.GetOrderByJson(request)
 
-	fmt.Println("-----------------------------------")
-	queryString += "{" + repository.GetFieldsJson(request) + ", "
+	queryString += "\"query\":{\"query_string\" : {"
 
-	// fmt.Println(repository.GetFieldsJson(request))
-
-	if len(request.Queryobject.Orderby) != 0 {
-		// 	fmt.Println(repository.GetOrderByJson(request))
-		queryString += repository.GetOrderByJson(request) + ", "
+	if repository.checkInvalidCharsWHERE(request) {
+		queryString += "\"default_operator\" : \"AND\","
 	}
 
 	if len(request.Queryobject.Where) != 0 {
-		// 	fmt.Println(repository.GetWhereJson(request))
-		queryString += "\"query\":{\"query_string\" : {\"query\" : \"" + repository.GetWhereJson(request) + "\"}}"
+		queryString += "\"query\" : \"" + repository.GetWhereJson(request) + "\"}"
 	} else {
-		queryString += "\"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}"
+		queryString += "\"query\" : \"" + "*" + "\"}"
 	}
 
-	queryString += "}"
-
+	queryString += "}}"
 	response.Query = queryString
-
-	fmt.Println("-----------------------------------")
 	return response
+}
+
+func (repository ElasticSearch) checkInvalidCharsWHERE(request structs.RepoRequest) (status bool) {
+	status = false
+	for _, array := range request.Queryobject.Where {
+		for _, keyword := range array {
+			if strings.Contains(keyword, "@") || strings.Contains(keyword, ".") || strings.Contains(keyword, "-") || strings.Contains(keyword, " ") {
+				status = true
+				break
+			}
+		}
+	}
+	return status
 }
 
 func (repository ElasticSearch) GetFieldsJson(request structs.RepoRequest) (json string) {
 	fields := request.Queryobject.SelectedFields
-	json = "\"_source\": [\""
 
-	for x := 0; x < (len(fields)); x++ {
-		if x != len(fields)-1 {
-			json += fields[x] + "\",\""
-		} else {
-			json += fields[x] + "\""
+	if len(fields) == 1 && fields[0] == "*" {
+		json = ""
+	} else {
+		json = "\"_source\": [\""
+		for x := 0; x < (len(fields)); x++ {
+			if x != len(fields)-1 {
+				json += fields[x] + "\",\""
+			} else {
+				json += fields[x] + "\""
+			}
 		}
+		json += "], "
 	}
-
-	json += "]"
 	return
 }
 
 func (repository ElasticSearch) GetOrderByJson(request structs.RepoRequest) (json string) {
 	orderBy := request.Queryobject.Orderby
-	json = "\"sort\" : ["
 
-	index := 0
-	for order, field := range orderBy {
-		if index != len(orderBy)-1 {
-			json += "{\"" + field + "\" : { \"order\" : \"" + order + "\"}},"
-		} else {
-			json += "{\"" + field + "\" : { \"order\" : \"" + order + "\"}}"
+	if len(orderBy) != 0 {
+		json = "\"sort\" : ["
+
+		index := 0
+		for order, field := range orderBy {
+			if index != len(orderBy)-1 {
+				json += "{\"" + field + "\" : { \"order\" : \"" + order + "\"}},"
+			} else {
+				json += "{\"" + field + "\" : { \"order\" : \"" + order + "\"}}"
+			}
+			index += 1
 		}
-		index += 1
-	}
 
-	json += "]"
+		json += "], "
+	} else {
+		json = ""
+	}
 	return
 }
 
 func (repository ElasticSearch) GetWhereJson(request structs.RepoRequest) (json string) {
 
 	json = ""
+	if len(request.Queryobject.Where) != 0 {
 
-	for x := 0; x < len(request.Queryobject.Where); x++ {
-		if status := repository.checkIfCombiner(request.Queryobject.Where[x]); status {
-			json += " " + request.Queryobject.Where[x][0] + " "
-		} else {
-			//normalize operators
-			operatorPattern := "NOTBETWEEN=LIKE!NOTIN<BETWEEN>IN=!="
-			if strings.Contains(operatorPattern, request.Queryobject.Where[x][1]) {
-				operator := repository.getElasticOperator(request.Queryobject.Where[x][1])
-				request.Queryobject.Where[x][1] = operator
-				//fmt.Println(operator)
-			}
-			//check if complex operator... if not process as simple if condition
-			complexPattern := "BETWEEN-NOTBETWEEN-IN-NOTIN-LIKE"
-			if strings.Contains(complexPattern, request.Queryobject.Where[x][1]) {
-				//fmt.Println("cc")
-				json += repository.processComplexOperatorString(request.Queryobject.Where[x])
+		for x := 0; x < len(request.Queryobject.Where); x++ {
+			if status := repository.checkIfCombiner(request.Queryobject.Where[x]); status {
+				json += " " + request.Queryobject.Where[x][0] + " "
 			} else {
-				//fmt.Println("ss")
-				json += repository.processNonComplexOperatorString(request.Queryobject.Where[x])
+				//normalize operators
+				operatorPattern := "NOTBETWEEN=LIKE!NOTIN<BETWEEN>IN=!="
+				if strings.Contains(operatorPattern, request.Queryobject.Where[x][1]) {
+					operator := repository.getElasticOperator(request.Queryobject.Where[x][1])
+					request.Queryobject.Where[x][1] = operator
+				}
+				//check if complex operator... if not process as simple if condition
+				complexPattern := "BETWEEN-NOTBETWEEN-IN-NOTIN-LIKE"
+				if strings.Contains(complexPattern, request.Queryobject.Where[x][1]) {
+					json += repository.processComplexOperatorString(request.Queryobject.Where[x])
+				} else {
+					json += repository.processNonComplexOperatorString(request.Queryobject.Where[x])
+				}
 			}
 		}
-	}
+		json = strings.Replace(json, "'", "", -1)
+	} else {
 
+	}
 	return
 }
 
@@ -154,41 +169,20 @@ func (repository ElasticSearch) processComplexOperatorString(arr []string) (outp
 }
 
 func (repository ElasticSearch) processNonComplexOperatorString(arr []string) (output string) {
-	fmt.Println("*****")
-	for x := 0; x < len(arr); x++ {
-		fmt.Println(arr[x])
-	}
-	fmt.Println("*****")
+
 	output += "("
 	if arr[1] == "NOT:" {
 		output += "NOT "
 		arr[1] = ":"
 		for x := 0; x < len(arr); x++ {
-			val := ""
-			val = strings.Replace(arr[x], "(", "", -1)
-			// val = strings.Replace(val, ")", "", -1)
-			val = strings.Replace(arr[x], "'", "", -1)
-			output = val
-			//output += arr[x]
+			output += arr[x]
 		}
 	} else {
 		for x := 0; x < len(arr); x++ {
-			val := ""
-			//val = strings.Replace(arr[x], "(", "", -1)
-			// val = strings.Replace(val, ")", "", -1)
-			val = strings.Replace(arr[x], "'", "", -1)
-			output = val
-			//output += arr[x]
+			output += arr[x]
 		}
 	}
 	output += ")"
-	return output
-}
-
-func (repository ElasticSearch) getProcessedArray(arr []string) (output string) {
-	for x := 0; x < len(arr); x++ {
-		arr[x] = strings.Replace(arr[x], "'", "", -1)
-	}
 	return output
 }
 
