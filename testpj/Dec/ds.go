@@ -88,7 +88,8 @@ func getKeys() {
 	ctx := context.Background()
 	client := Example_auth()
 	ctx = datastore.WithNamespace(ctx, "com.jay.com")
-	q := datastore.NewQuery("test1").Filter("Name !=", "asdf")
+	q := datastore.NewQuery("test1").Filter("Name =", "adsf")
+	fmt.Println(q)
 	_, err := client.GetAll(ctx, q, &props)
 	if err != nil {
 		fmt.Println(err.Error())

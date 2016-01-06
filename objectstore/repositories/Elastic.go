@@ -3,7 +3,7 @@ package repositories
 import (
 	"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
-	"duov6.com/objectstore/queryparser"
+	"duov6.com/queryparser"
 	"duov6.com/term"
 	"encoding/json"
 	"fmt"
@@ -43,7 +43,7 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 		skip = request.Extras["skip"].(string)
 	}
 
-	take := "100000"
+	take := "100"
 
 	if request.Extras["take"] != nil {
 		take = request.Extras["take"].(string)
@@ -207,54 +207,6 @@ func (repository ElasticRepository) setOneElastic(request *messaging.ObjectReque
 	return response
 }
 
-/*func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequest) RepositoryResponse {
-	response := RepositoryResponse{}
-
-	conn := repository.getConnection(request)
-
-	indexer := conn.NewBulkIndexer(200)
-	nowTime := time.Now()
-
-	CountIndex := 0
-	var Data map[string]interface{}
-	Data = make(map[string]interface{})
-
-	for index, obj := range request.Body.Objects {
-		nosqlid := ""
-		if obj["OriginalIndex"] != nil {
-			nosqlid = obj["OriginalIndex"].(string)
-			Data[strconv.Itoa(CountIndex)] = nosqlid
-		} else {
-			id := repository.getRecordID(request, obj)
-			nosqlid = request.Controls.Namespace + "." + request.Controls.Class + "." + id
-			request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
-			Data[strconv.Itoa(CountIndex)] = id
-		}
-		CountIndex++
-		indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
-	}
-	indexer.Start()
-	numerrors := indexer.NumErrors()
-
-	if numerrors != 0 {
-		term.Write("Elastic Search bulk insert error!", 1)
-		response.GetErrorResponse("Elastic Search bulk insert error")
-	} else {
-		response.IsSuccess = true
-		response.Message = "Successfully inserted bulk to Elastic Search"
-	}
-
-	//Update Response
-	var DataMap []map[string]interface{}
-	DataMap = make([]map[string]interface{}, 1)
-	var actualInput map[string]interface{}
-	actualInput = make(map[string]interface{})
-	actualInput["ID"] = Data
-	DataMap[0] = actualInput
-	response.Data = DataMap
-	return response
-}*/
-
 func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
 
@@ -344,7 +296,6 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 			fmt.Println("Inserted Last Stub!")
 		}
 		statusIndex++
-		time.Sleep(1200 * time.Millisecond)
 	}
 
 	isAllCompleted := true
@@ -504,67 +455,39 @@ func (repository ElasticRepository) Test(request *messaging.ObjectRequest) {
 func (repository ElasticRepository) executeQuery(request *messaging.ObjectRequest) (returnByte []byte) {
 	conn := repository.getConnection(request)
 
-	searchStr, isSelectedFields, selectedFields, fromClass := queryparser.GetQuery(request.Body.Query.Parameters)
-	query := "{\"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
-	request.Log(query)
-	term.Write(query, 2)
-	var data elastigo.SearchResult
-	var err error
+	var query string
 
-	if fromClass == "" {
-		data, err = conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
-	} else {
-		data, err = conn.Search(request.Controls.Namespace, fromClass, nil, query)
-	}
+	query, err := queryparser.GetElasticQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class)
+
 	if err != nil {
-		term.Write(err.Error(), 1)
 		returnByte = getEmptyByteObject()
+		return
+	}
+
+	fmt.Print("Elastic JSON Query : ")
+	fmt.Println(query)
+
+	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
+
+	if err != nil {
+		returnByte = getEmptyByteObject()
+		return
 	} else {
 		var allMaps []map[string]interface{}
 		allMaps = make([]map[string]interface{}, data.Hits.Len())
-
 		for index, hit := range data.Hits.Hits {
 			var currentMap map[string]interface{}
 			currentMap = make(map[string]interface{})
 			byteData, _ := hit.Source.MarshalJSON()
 			json.Unmarshal(byteData, &currentMap)
+			delete(currentMap, "__osHeaders")
 			allMaps[index] = currentMap
 		}
 
-		for _, value := range selectedFields {
-			if value == "*" {
-				isSelectedFields = false
-			}
-		}
-
-		if isSelectedFields {
-			var fields []string
-			fields = selectedFields
-
-			//create map to store data
-			var outMap []map[string]interface{}
-			outMap = make([]map[string]interface{}, len(allMaps))
-
-			for index, value := range allMaps {
-
-				var currentMap map[string]interface{}
-				currentMap = make(map[string]interface{})
-
-				for key, value2 := range value {
-					for _, value3 := range fields {
-						if key == value3 {
-							currentMap[key] = value2
-						}
-					}
-				}
-				outMap[index] = currentMap
-			}
-			returnByte, _ = json.Marshal(outMap)
-		} else {
-			returnByte, _ = json.Marshal(allMaps)
-		}
+		returnByte, _ = json.Marshal(allMaps)
 	}
-	return
+
+	return returnByte
 }
 
 func (repository ElasticRepository) executeGetFields(request *messaging.ObjectRequest) (returnByte []byte) {
@@ -659,124 +582,18 @@ func (repository ElasticRepository) executeGetNamespaces(request *messaging.Obje
 }
 
 func (repository ElasticRepository) executeGetSelectedFields(request *messaging.ObjectRequest) (returnByte []byte) {
-	conn := repository.getConnection(request)
 
-	isKeyDefined := false
-	isKeywordDefined := false
+	skip := "0"
 
-	if (request.Body.Special.Extras["KeyValue"] != "") && (request.Body.Special.Extras["KeyValue"] != " ") && (request.Body.Special.Extras["KeyValue"] != nil) {
-		isKeyDefined = true
+	if request.Extras["skip"] != nil {
+		skip = request.Extras["skip"].(string)
 	}
 
-	if (request.Body.Special.Extras["Keyword"] != "") && (request.Body.Special.Extras["Keyword"] != " ") && (request.Body.Special.Extras["Keyword"] != nil) {
-		isKeywordDefined = true
+	take := "100"
+
+	if request.Extras["take"] != nil {
+		take = request.Extras["take"].(string)
 	}
-
-	if (request.Body.Special.Extras["KeyValue"] == "*") || (request.Body.Special.Extras["Keyword"] == "*") {
-		isKeyDefined = false
-		isKeywordDefined = false
-	}
-
-	var query string
-
-	if isKeyDefined {
-		//Key Field Detected
-		key := request.Controls.Namespace + "." + request.Controls.Class + "." + request.Body.Special.Extras["KeyValue"].(string)
-		data, err := conn.Get(request.Controls.Namespace, request.Controls.Class, key, nil)
-		if err != nil {
-			term.Write(err.Error(), 1)
-		} else {
-			var currentMap map[string]interface{}
-			currentMap = make(map[string]interface{})
-			bytes, _ := data.Source.MarshalJSON()
-			json.Unmarshal(bytes, &currentMap)
-
-			if request.Body.Special.Parameters != "*" {
-				//get fields list
-				var fields []string
-				fields = strings.Split(request.Body.Special.Parameters, " ")
-
-				//create map to store data
-				var outMap map[string]interface{}
-				outMap = make(map[string]interface{})
-
-				for key, value2 := range currentMap {
-					for _, value3 := range fields {
-						if key == value3 {
-							outMap[key] = value2
-						}
-					}
-
-				}
-				returnByte, _ = json.Marshal(outMap)
-			} else {
-				returnByte, _ = json.Marshal(currentMap)
-			}
-
-		}
-
-		return
-
-	} else if isKeywordDefined {
-		//Keyword Detected
-		query = "{\"query\":{\"query_string\" : {\"query\" : \"" + request.Body.Special.Extras["Keyword"].(string) + "\"}}}"
-	} else {
-		//GET-ALL Detected!
-		query = "{\"from\": " + "0" + ", \"size\": " + "10000000" + ", \"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
-		//query = "{\"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
-	}
-	fmt.Println(query)
-	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
-
-	if err != nil {
-		term.Write(err.Error(), 1)
-	} else {
-		var allMaps []map[string]interface{}
-		allMaps = make([]map[string]interface{}, data.Hits.Len())
-
-		for index, hit := range data.Hits.Hits {
-			var currentMap map[string]interface{}
-			currentMap = make(map[string]interface{})
-			byteData, _ := hit.Source.MarshalJSON()
-			json.Unmarshal(byteData, &currentMap)
-			allMaps[index] = currentMap
-		}
-
-		if request.Body.Special.Parameters != "*" {
-			//get fields list
-			var fields []string
-			fields = strings.Split(request.Body.Special.Parameters, " ")
-
-			//create map to store data
-			var outMap []map[string]interface{}
-			outMap = make([]map[string]interface{}, len(allMaps))
-
-			for index, value := range allMaps {
-				var currentMap map[string]interface{}
-				currentMap = make(map[string]interface{})
-
-				for key, value2 := range value {
-					for _, value3 := range fields {
-						if key == value3 {
-							currentMap[key] = value2
-						}
-					}
-				}
-				outMap[index] = currentMap
-			}
-			fmt.Println("Returning Selected Map")
-			returnByte, _ = json.Marshal(outMap)
-		} else {
-			fmt.Println("Returning Full Map")
-			returnByte, _ = json.Marshal(allMaps)
-		}
-
-	}
-
-	return
-}
-
-/*func (repository ElasticRepository) executeGetSelectedFields(request *messaging.ObjectRequest) (returnByte []byte) {
 	conn := repository.getConnection(request)
 
 	fieldNames := strings.Split(request.Body.Special.Parameters, " ")
@@ -787,9 +604,7 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 		fieldString += "," + "\"" + fieldNames[index] + "\""
 	}
 
-	fmt.Println(fieldString)
-
-	query := "{\"fields\":[" + fieldString + "],\"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
+	query := "{\"_source\":[" + fieldString + "],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
 
 	fmt.Println(query)
 
@@ -817,7 +632,7 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 	}
 
 	return
-}*/
+}
 
 // Helper Functions
 

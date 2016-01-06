@@ -40,14 +40,19 @@ func (repository GoogleCloudDataStore) GetOrderBy(request structs.RepoRequest, q
 }
 
 func (repository GoogleCloudDataStore) GetFields(request structs.RepoRequest, queryIn *datastore.Query) (queryOut *datastore.Query) {
-	projectArgs := make([]reflect.Value, len(request.Queryobject.SelectedFields))
 
-	for key, value := range request.Queryobject.SelectedFields {
-		projectArgs[key] = reflect.ValueOf(value)
+	if len(request.Queryobject.SelectedFields) == 1 && request.Queryobject.SelectedFields[0] == "*" {
+		queryOut = queryIn
+	} else {
+		projectArgs := make([]reflect.Value, len(request.Queryobject.SelectedFields))
+
+		for key, value := range request.Queryobject.SelectedFields {
+			projectArgs[key] = reflect.ValueOf(value)
+		}
+
+		project_return_values := reflect.ValueOf(queryIn).MethodByName("Project").Call(projectArgs)
+		queryOut = project_return_values[0].Interface().(*datastore.Query)
 	}
-
-	project_return_values := reflect.ValueOf(queryIn).MethodByName("Project").Call(projectArgs)
-	queryOut = project_return_values[0].Interface().(*datastore.Query)
 	return queryOut
 }
 
@@ -86,8 +91,19 @@ func (repository GoogleCloudDataStore) checkIfCombiner(arr []string) (status boo
 	return status
 }
 
+func (repository GoogleCloudDataStore) getNormalizedArray(input []string) (output []string) {
+	output = make([]string, len(input))
+
+	for x := 0; x < len(input); x++ {
+		output[x] = strings.Replace(input[x], "'", "", -1)
+	}
+
+	return output
+}
+
 func (repository GoogleCloudDataStore) processComplexOperatorString(arr []string, input *datastore.Query) (output *datastore.Query) {
 	output = input
+	arr = repository.getNormalizedArray(arr)
 	operator := arr[1]
 	switch operator {
 	case "BETWEEN":
@@ -111,6 +127,7 @@ func (repository GoogleCloudDataStore) processComplexOperatorString(arr []string
 }
 
 func (repository GoogleCloudDataStore) processNonComplexOperatorString(arr []string, input *datastore.Query) (output *datastore.Query) {
+	arr = repository.getNormalizedArray(arr)
 	operator := arr[1]
 	switch operator {
 	case "=":

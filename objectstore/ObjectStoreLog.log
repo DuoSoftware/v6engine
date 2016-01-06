@@ -2,3 +2,58 @@
 {"query":{"query_string" : {"query" : "NOT Address : 'The AND NOT Address : Heaven' OR NOT Id : 900"}}}
 {"query":{"query_string" : {"query" : "EmailAddress:'user7 AND EmailAddress : unp.com'"}}}
 {"query":{"query_string" : {"query" : "NOT EmailAddress : 'user7 AND NOT EmailAddress : unp.com'"}}}
+2016-01-06 @ 13:59:39  Starting replicated storage engine
+2016-01-06 @ 13:59:39  Getting settings for get all
+2016-01-06 @ 13:59:39  Executing repository : GoogleDataStore
+2016-01-06 @ 13:59:39  Starting GET-ALL
+2016-01-06 @ 13:59:44  Executing repository : GoogleDataStore - Success
+2016-01-06 @ 13:59:59  Starting replicated storage engine
+2016-01-06 @ 13:59:59  Getting settings for get all
+2016-01-06 @ 13:59:59  Executing repository : GoogleDataStore
+2016-01-06 @ 13:59:59  Starting GET-ALL
+2016-01-06 @ 14:00:01  Executing repository : GoogleDataStore - Success
+2016-01-06 @ 14:00:03  Starting replicated storage engine
+2016-01-06 @ 14:00:03  Getting settings for get all
+2016-01-06 @ 14:00:03  Executing repository : GoogleDataStore
+2016-01-06 @ 14:00:03  Starting GET-ALL
+2016-01-06 @ 14:00:04  Executing repository : GoogleDataStore - Success
+2016-01-06 @ 14:00:05  Starting replicated storage engine
+2016-01-06 @ 14:00:05  Getting settings for get all
+2016-01-06 @ 14:00:05  Executing repository : GoogleDataStore
+2016-01-06 @ 14:00:05  Starting GET-ALL
+2016-01-06 @ 14:00:05  Starting replicated storage engine
+2016-01-06 @ 14:00:05  Getting settings for get all
+2016-01-06 @ 14:00:05  Executing repository : GoogleDataStore
+2016-01-06 @ 14:00:05  Starting GET-ALL
+2016-01-06 @ 14:00:06  Starting replicated storage engine
+2016-01-06 @ 14:00:06  Getting settings for get all
+2016-01-06 @ 14:00:06  Executing repository : GoogleDataStore
+2016-01-06 @ 14:00:06  Starting GET-ALL
+2016-01-06 @ 14:00:06  Executing repository : GoogleDataStore - Success
+2016-01-06 @ 14:00:07  Starting replicated storage engine
+2016-01-06 @ 14:00:07  Getting settings for get all
+2016-01-06 @ 14:00:07  Executing repository : GoogleDataStore
+2016-01-06 @ 14:00:07  Starting GET-ALL
+2016-01-06 @ 14:00:07  Executing repository : GoogleDataStore - Success
+2016-01-06 @ 14:00:07  Executing repository : GoogleDataStore - Success
+2016-01-06 @ 14:00:08  Executing repository : GoogleDataStore - Success
+2016-01-06 @ 14:01:04  Starting replicated storage engine
+2016-01-06 @ 14:01:04  Getting settings for get all
+2016-01-06 @ 14:01:04  Executing repository : GoogleDataStore
+2016-01-06 @ 14:01:04  Starting GET-ALL
+2016-01-06 @ 14:01:07  Executing repository : GoogleDataStore - Success
+2016-01-06 @ 14:01:11  Starting replicated storage engine
+2016-01-06 @ 14:01:11  Getting settings for get all
+2016-01-06 @ 14:01:11  Executing repository : GoogleDataStore
+2016-01-06 @ 14:01:11  Starting GET-ALL
+2016-01-06 @ 14:01:12  Executing repository : GoogleDataStore - Success
+2016-01-06 @ 14:01:28  Starting replicated storage engine
+2016-01-06 @ 14:01:28  Getting settings for get all
+2016-01-06 @ 14:01:28  Executing repository : GoogleDataStore
+2016-01-06 @ 14:01:28  Starting GET-ALL
+2016-01-06 @ 14:01:29  Executing repository : GoogleDataStore - Success
+2016-01-06 @ 14:01:37  Starting replicated storage engine
+2016-01-06 @ 14:01:37  Getting settings for get all
+2016-01-06 @ 14:01:37  Executing repository : GoogleDataStore
+2016-01-06 @ 14:01:37  Starting GET-ALL
+2016-01-06 @ 14:01:37  Executing repository : GoogleDataStore - Success

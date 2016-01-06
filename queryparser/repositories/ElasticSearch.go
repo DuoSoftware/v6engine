@@ -175,14 +175,19 @@ func (repository ElasticSearch) processNonComplexOperatorString(arr []string) (o
 		output += "NOT "
 		arr[1] = ":"
 		for x := 0; x < len(arr); x++ {
-			output += arr[x]
+			output += repository.getNonQuotedString(arr[x])
 		}
 	} else {
 		for x := 0; x < len(arr); x++ {
-			output += arr[x]
+			output += repository.getNonQuotedString(arr[x])
 		}
 	}
 	output += ")"
+	return output
+}
+
+func (repository ElasticSearch) getNonQuotedString(input string) (output string) {
+	output = strings.Replace(input, "'", "", -1)
 	return output
 }
 

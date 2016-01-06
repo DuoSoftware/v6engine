@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"duov6.com/objectstore/messaging"
+	"duov6.com/queryparser"
 	"duov6.com/term"
 	"encoding/json"
 	"fmt"
@@ -235,52 +236,59 @@ func (repository GoogleDataStoreRepository) GetQuery(request *messaging.ObjectRe
 	switch queryType {
 	case "Query":
 		if request.Body.Query.Parameters != "*" {
-			request.Log("GetQuery not implemented in Google DataStore repository")
-			return getDefaultNotImplemented()
+			ctx := context.Background()
+			client, err := repository.getConnection(request)
+			ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
 
-			// ctx := context.Background()
-			// client, err := repository.getConnection(request)
-			// ctx = datastore.WithNamespace(ctx, request.Controls.Namespace)
+			if err != nil {
+				response.Message = "Values Retrieved Successfully from Google DataStore!"
+				response.GetResponseWithBody(getEmptyByteObject())
+				return response
+			} else {
+				props := make([]datastore.PropertyList, 0)
+				var data []map[string]interface{}
 
-			// var bytesValue []byte
+				var query *datastore.Query
 
-			// if err != nil {
-			// 	bytesValue = getEmptyByteObject()
-			// } else {
-			// 	props := make([]datastore.PropertyList, 0)
-			// 	var data []map[string]interface{}
+				query, qErr := queryparser.GetDataStoreQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class)
+				if qErr != nil {
+					response.Message = "Values Retrieved Successfully from Google DataStore!"
+					response.GetResponseWithBody(getEmptyByteObject())
+					return response
+				}
 
-			// 	var query *datastore.Query
+				fmt.Print("Normalized Data Store Query : ")
+				fmt.Println(query)
 
-			// 	query := queryparser.GetQuery(request.Body.Query.Parameters)
+				_, err := client.GetAll(ctx, query, &props)
+				if err != nil {
+					term.Write(err.Error(), 1)
+					response.Message = "Values Retrieved Successfully from Google DataStore!"
+					response.GetResponseWithBody(getEmptyByteObject())
+					return response
+				} else {
+					//data recieved! :)
+					for index := 0; index < len(props); index++ {
+						var record map[string]interface{}
+						record = make(map[string]interface{})
+						for _, value := range props[index] {
+							if value.Name != "_os_id" && value.Name != "__osHeaders" {
+								record[value.Name] = repository.GQLToGolang(value.Value)
+							}
+						}
+						data = append(data, record)
+					}
+				}
 
-			// 	_, err := client.GetAll(ctx, query, &props)
-			// 	if err != nil {
-			// 		term.Write(err.Error(), 1)
-			// 		bytesValue = getEmptyByteObject()
-			// 	} else {
-			// 		//data recieved! :)
-			// 		for index := 0; index < len(props); index++ {
-			// 			var record map[string]interface{}
-			// 			record = make(map[string]interface{})
-			// 			for _, value := range props[index] {
-			// 				if value.Name != "_os_id" && value.Name != "__osHeaders" {
-			// 					record[value.Name] = repository.GQLToGolang(value.Value)
-			// 				}
-			// 			}
-			// 			data = append(data, record)
-			// 		}
-			// 	}
+				bytesValue, _ := json.Marshal(data)
+				if len(bytesValue) == 4 {
+					bytesValue = getEmptyByteObject()
+				}
 
-			// 	bytesValue, _ := json.Marshal(data)
-			// 	if len(bytesValue) == 4 {
-			// 		bytesValue = getEmptyByteObject()
-			// 	}
-
-			// 	response.IsSuccess = true
-			// 	response.Message = "Values Retrieved Successfully from Google DataStore!"
-			// 	response.GetResponseWithBody(bytesValue)
-			// }
+				response.IsSuccess = true
+				response.Message = "Values Retrieved Successfully from Google DataStore!"
+				response.GetResponseWithBody(bytesValue)
+			}
 		} else {
 			return repository.GetAll(request)
 		}
