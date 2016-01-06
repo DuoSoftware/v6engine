@@ -127,7 +127,7 @@ func (repository GoogleDataStoreRepository) GetAll(request *messaging.ObjectRequ
 		}
 
 		bytesValue, _ := json.Marshal(data)
-		if len(bytesValue) == 4 {
+		if len(bytesValue) == 4 || len(bytesValue) == 2 {
 			bytesValue = getEmptyByteObject()
 		}
 
@@ -217,7 +217,7 @@ func (repository GoogleDataStoreRepository) GetSearch(request *messaging.ObjectR
 		}
 
 		bytesValue, _ := json.Marshal(data)
-		if len(bytesValue) == 4 {
+		if len(bytesValue) == 4 || len(bytesValue) == 2 {
 			bytesValue = getEmptyByteObject()
 		}
 
@@ -281,7 +281,7 @@ func (repository GoogleDataStoreRepository) GetQuery(request *messaging.ObjectRe
 				}
 
 				bytesValue, _ := json.Marshal(data)
-				if len(bytesValue) == 4 {
+				if len(bytesValue) == 4 || len(bytesValue) == 2 {
 					bytesValue = getEmptyByteObject()
 				}
 
@@ -328,7 +328,7 @@ func (repository GoogleDataStoreRepository) GetByKey(request *messaging.ObjectRe
 		}
 
 		bytesValue, _ := json.Marshal(data)
-		if len(bytesValue) == 4 {
+		if len(bytesValue) == 4 || len(bytesValue) == 2 {
 			bytesValue = getEmptyByteObject()
 		}
 
@@ -831,7 +831,7 @@ func (repository GoogleDataStoreRepository) executeGetFields(request *messaging.
 		}
 
 		returnBytes, _ = json.Marshal(data)
-		if len(returnBytes) == 4 {
+		if len(returnBytes) == 4 || len(returnBytes) == 2 {
 			returnBytes = getEmptyByteObject()
 		}
 	}
@@ -860,7 +860,7 @@ func (repository GoogleDataStoreRepository) executeGetNamespaces(request *messag
 			}
 		}
 		returnBytes, _ = json.Marshal(data)
-		if len(returnBytes) == 4 {
+		if len(returnBytes) == 4 || len(returnBytes) == 2 {
 			returnBytes = getEmptyByteObject()
 		}
 	}
@@ -890,7 +890,7 @@ func (repository GoogleDataStoreRepository) executeGetClasses(request *messaging
 		}
 
 		returnBytes, _ = json.Marshal(data)
-		if len(returnBytes) == 4 {
+		if len(returnBytes) == 4 || len(returnBytes) == 2 {
 			returnBytes = getEmptyByteObject()
 		}
 	}
@@ -963,7 +963,7 @@ func (repository GoogleDataStoreRepository) executeGetSelected(request *messagin
 			}
 		}
 		returnBytes, _ = json.Marshal(data)
-		if len(returnBytes) == 4 {
+		if len(returnBytes) == 4 || len(returnBytes) == 2 {
 			returnBytes = getEmptyByteObject()
 		}
 	}

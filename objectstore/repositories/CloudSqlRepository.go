@@ -32,7 +32,7 @@ func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) Re
 	isOrderByDesc := false
 	orderbyfield := ""
 	skip := "0"
-	take := "100000"
+	take := "100"
 
 	if request.Extras["skip"] != nil {
 		skip = request.Extras["skip"].(string)
@@ -350,7 +350,7 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 
 		if err == nil {
 			bytes, _ := json.Marshal(obj)
-			if len(bytes) == 4 {
+			if len(bytes) == 4 || len(bytes) == 2 {
 				response.GetResponseWithBody(getEmptyByteObject())
 			} else {
 				response.GetResponseWithBody(bytes)
