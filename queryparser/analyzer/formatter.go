@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"duov6.com/queryparser/common"
+	"duov6.com/queryparser/structs"
 	"errors"
 	"google.golang.org/cloud/datastore"
 	"strings"
@@ -20,30 +21,47 @@ func GetOtherQuery(query string, repository string) (retQuery interface{}) {
 	return
 }
 
+func CheckQueryCompatibility(query string, repo string, queryObjectStruct structs.QueryObject) (err error) {
+	//Define repository specific rules for ignoring query here
+
+	switch repo {
+	case "CDS":
+		for _, arrayElement := range queryObjectStruct.Where {
+			if len(arrayElement) == 1 {
+				if strings.EqualFold(arrayElement[0], "OR") {
+					err = errors.New("OR conditions are not allowed in Google Data Store")
+					break
+				}
+			} else {
+				if strings.EqualFold(arrayElement[1], "IN") {
+					err = errors.New("IN conditions are not allowed in Google Data Store")
+					break
+				} else if strings.EqualFold(arrayElement[1], "LIKE") {
+					err = errors.New("LIKE conditions are not allowed in Google Data Store")
+					break
+				}
+			}
+		}
+
+		for _, arrayElement := range queryObjectStruct.Where {
+			for _, elementItem := range arrayElement {
+				if strings.Contains(elementItem, "(") || strings.Contains(elementItem, ")") {
+					err = errors.New("Complex queries are not allowed in Google Data Store")
+					break
+				}
+			}
+		}
+		break
+	default:
+		err = nil
+	}
+
+	return
+}
+
 func PrepareSQLStatement(input string, repo string, namespace string, class string) (query string, isValid error) {
 	query = ""
 	isValid = nil
-
-	//check for complex queries...
-	/*fromIndex := strings.Index(input, " FROM ") + 5
-	fromSlice := input[fromIndex:]
-	if strings.Contains(fromSlice, "(") && strings.Contains(fromSlice, ")") {
-		switch repo {
-		case "CDS":
-			query = ""
-			isValid = errors.New("Complex queries are not allowed in Cloud SQL Repository!")
-			return
-			break
-		case "ES":
-			query = ""
-			isValid = errors.New("Complex queries are not allowed in Elastic Repository!")
-			return
-			break
-		default:
-			query = ""
-			isValid = nil
-		}
-	}*/
 
 	trailerRemovedInput := strings.Replace(input, ";", "", -1)
 	queryTokens := strings.Split(trailerRemovedInput, " ")

@@ -84,6 +84,7 @@ func getQuery(queryString string, repository string, namespace string, class str
 		}
 
 		fmt.Println("Prepared Query : " + preparedQuery)
+
 		//Create Query map from the normalized query
 		queryStruct := analyzer.GetQueryMaps(preparedQuery)
 		//fmt.Println(queryStruct.Operation)
@@ -92,10 +93,15 @@ func getQuery(queryString string, repository string, namespace string, class str
 		//fmt.Println(queryStruct.Where)
 		//fmt.Println(queryStruct.Orderby)
 
+		//check for query Compatibility
+		compErr := analyzer.CheckQueryCompatibility(preparedQuery, repository, queryStruct)
+		if compErr != nil {
+			return "error", compErr
+		}
+
 		//Do secondary validation.. for sql keywords
 		err = analyzer.ValidateQuery(queryStruct)
 		if err != nil {
-			fmt.Println(err.Error())
 			return "error", err
 		}
 
