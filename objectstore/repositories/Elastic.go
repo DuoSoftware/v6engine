@@ -77,12 +77,7 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 
 			byteData, _ := hit.Source.MarshalJSON()
 			json.Unmarshal(byteData, &currentMap)
-
-			//Check if meta data is not needed
-			if request.Controls.SendMetaData == "false" {
-				delete(currentMap, "__osHeaders")
-			}
-
+			delete(currentMap, "__osHeaders")
 			allMaps[index] = currentMap
 		}
 
@@ -113,7 +108,7 @@ func (repository ElasticRepository) GetQuery(request *messaging.ObjectRequest) R
 				response.GetErrorResponse(errorMessage)
 			}
 		} else {
-			//Check if just STAR then execute GET-SEARCH method
+			//Check if just * then execute GET-SEARCH method
 			term.Write("Redirecting to GET-SEARCH!", 2)
 			return repository.search(request, request.Body.Query.Parameters)
 		}
@@ -141,13 +136,9 @@ func (repository ElasticRepository) GetByKey(request *messaging.ObjectRequest) R
 		var originalData map[string]interface{}
 		originalData = make(map[string]interface{})
 		json.Unmarshal(bytes, &originalData)
+		delete(originalData, "__osHeaders")
 
-		//Check if meta data is not needed
-		if request.Controls.SendMetaData == "false" {
-			delete(originalData, "__osHeaders")
-			bytes, _ = json.Marshal(originalData)
-		}
-
+		bytes, err = json.Marshal(originalData)
 		if err != nil {
 			errorMessage := "Elastic search JSON marshal error : " + err.Error()
 			term.Write(err.Error(), 1)
@@ -494,7 +485,7 @@ func (repository ElasticRepository) executeGetFields(request *messaging.ObjectRe
 
 	conn := repository.getConnection(request)
 
-	query := "{\"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
+	query := "{\"from\": 0, \"size\": 1,\"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
 
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
@@ -512,28 +503,13 @@ func (repository ElasticRepository) executeGetFields(request *messaging.ObjectRe
 			json.Unmarshal(byteData, &currentMap)
 			allMaps[index] = currentMap
 		}
-
-		//get Number of fields
-		noOfFields := 0
-		for _, value := range allMaps {
-			for key, _ := range value {
-				if key != "__osHeaders" {
-					noOfFields++
-				}
-			}
-		}
 		//create array to store
 		var fieldList []string
-		fieldList = make([]string, noOfFields)
 
 		//store fields in array
-		index := 0
-		for _, value := range allMaps {
-			for key, _ := range value {
-				if key != "__osHeaders" {
-					fieldList[index] = key
-					index++
-				}
+		for key, _ := range allMaps[0] {
+			if key != "__osHeaders" {
+				fieldList = append(fieldList, key)
 			}
 		}
 		returnByte, _ = json.Marshal(fieldList)
@@ -612,7 +588,6 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 
 	if err != nil {
 		term.Write(err.Error(), 1)
-		fmt.Println("ayyo")
 	} else {
 		var allMaps []map[string]interface{}
 		allMaps = make([]map[string]interface{}, data.Hits.Len())
@@ -698,7 +673,7 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 
 			if err != nil {
 				term.Write(err.Error(), 1)
-				return ""
+				return uuid.NewV1().String()
 			} else {
 				return "1"
 			}
@@ -709,7 +684,7 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 			byteData, err := data.Source.MarshalJSON()
 			if err != nil {
 				term.Write(err.Error(), 1)
-				return ""
+				return uuid.NewV1().String()
 			}
 			json.Unmarshal(byteData, &currentMap)
 			maxCount = currentMap["maxCount"].(string)
@@ -725,7 +700,7 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 			_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", request.Controls.Class, nil, newRecord)
 			if err != nil {
 				term.Write(err.Error(), 1)
-				return ""
+				return uuid.NewV1().String()
 			} else {
 				return maxCount
 			}
