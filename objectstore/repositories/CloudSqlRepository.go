@@ -379,47 +379,42 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 
 	conn, _ := repository.getConnection(request)
 
-	script, err := repository.getStoreScript(conn, request)
+	scripts, err := repository.getStoreScript(conn, request)
 
-	queryArray := strings.Split(script, "###")
+	for x := 0; x < len(scripts); x++ {
+		script := scripts[x]
+		queryArray := strings.Split(script, "###")
 
-	if len(queryArray) > 1 && err == nil {
-		//Multiple Updates
-		status := make([]bool, len(queryArray)-1)
-		for index := 0; index < (len(queryArray) - 1); index++ {
-			err := repository.executeNonQuery(conn, queryArray[index])
-			if err == nil {
-				status[index] = true
-			} else {
-				status[index] = false
+		if strings.Contains(script, "###") {
+			//Multiple Updates
+			for index := 0; index < (len(queryArray) - 1); index++ {
+				err := repository.executeNonQuery(conn, queryArray[index])
+				if err != nil {
+					response.IsSuccess = false
+					response.Message = "Error Inserting All Objects in CloudSQL. Check Data!"
+					return response
+				}
 			}
-		}
-		for _, stat := range status {
-			if stat == false {
+
+		} else {
+			if err == nil {
+				err := repository.executeNonQuery(conn, script)
+				if err != nil {
+					response.IsSuccess = false
+					response.Message = "Error Inserting All Objects in CloudSQL. Check Data!"
+					return response
+				}
+			} else {
 				response.IsSuccess = false
-				response.Message = "Error Updating All Objects in CloudSQL. Check Data!"
+				response.Message = "Error generating CloudSQL query : " + err.Error()
 				return response
 			}
 		}
-
-		response.IsSuccess = true
-		response.Message = "Successfully stored object(s) in CloudSQL"
-
-	} else {
-		if err == nil {
-			err := repository.executeNonQuery(conn, script)
-			if err == nil {
-				response.IsSuccess = true
-				response.Message = "Successfully stored object(s) in CloudSQL"
-			} else {
-				response.IsSuccess = false
-				response.Message = "Error storing data in CloudSQL : " + err.Error()
-			}
-		} else {
-			response.IsSuccess = false
-			response.Message = "Error generating CloudSQL query : " + err.Error()
-		}
 	}
+
+	response.IsSuccess = true
+	response.Message = "Successfully stored object(s) in CloudSQL"
+
 	repository.closeConnection(conn)
 	return response
 }
@@ -430,7 +425,7 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 	return
 }
 
-func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messaging.ObjectRequest) (query string, err error) {
+func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messaging.ObjectRequest) (query []string, err error) {
 	namespace := request.Controls.Namespace
 	class := request.Controls.Class
 	var schemaObj map[string]interface{}
@@ -456,103 +451,7 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 
 	repository.checkSchema(conn, namespace, class, schemaObj)
 
-	query = ""
-
-	isFirstRow := true
-	var keyArray []string
-
-	for _, obj := range allObjects {
-		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj))
-
-		if currentObject == nil {
-			if isFirstRow {
-				query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
-			}
-
-			id := ""
-
-			if obj["OriginalIndex"] == nil {
-				id = getNoSqlKeyById(request, obj)
-			} else {
-				id = obj["OriginalIndex"].(string)
-			}
-
-			delete(obj, "OriginalIndex")
-
-			keyList := ""
-			valueList := ""
-
-			if isFirstRow {
-				for k, _ := range obj {
-					keyList += ("," + k)
-					keyArray = append(keyArray, k)
-				}
-			}
-			//fmt.Println(keyArray)
-			for _, k := range keyArray {
-				v := obj[k]
-				valueList += ("," + repository.getSqlFieldValue(v))
-			}
-
-			if isFirstRow {
-				query += "(__os_id" + keyList + ") VALUES "
-			} else {
-				query += ","
-			}
-
-			//query += ("(\"" + getNoSqlKeyById(request, obj) + "\"" + valueList + ")")
-			query += ("(\"" + id + "\"" + valueList + ")")
-
-		} else {
-			updateValues := ""
-			isFirst := true
-			for k, v := range obj {
-				if isFirst {
-					isFirst = false
-				} else {
-					updateValues += ","
-				}
-
-				updateValues += (k + "=" + repository.getSqlFieldValue(v))
-			}
-			query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";###")
-		}
-
-		if isFirstRow {
-			isFirstRow = false
-		}
-	}
-
-	return
-}
-
-/*func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messaging.ObjectRequest) (query []string, err error) {
-	namespace := request.Controls.Namespace
-	class := request.Controls.Class
-	var schemaObj map[string]interface{}
-	var allObjects []map[string]interface{}
-	if request.Body.Object != nil {
-		schemaObj = request.Body.Object
-		allObjects = make([]map[string]interface{}, 1)
-		allObjects[0] = schemaObj
-	} else {
-		if request.Body.Objects != nil {
-			if len(request.Body.Objects) != 0 {
-				schemaObj = request.Body.Objects[0]
-				allObjects = request.Body.Objects
-			} else {
-				err = errors.New("No objects available to store")
-				return
-			}
-		} else {
-			err = errors.New("No objects available to store")
-			return
-		}
-	}
-
-	repository.checkSchema(conn, namespace, class, schemaObj)
-
-	noOfElementsPerSet := 100
+	noOfElementsPerSet := 1000
 	noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
 	remainderFromSets := 0
 	remainderFromSets = (len(request.Body.Objects) - (noOfSets * noOfElementsPerSet))
@@ -560,17 +459,26 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 	startIndex := 0
 	stopIndex := noOfElementsPerSet
 
-	query = ""
+	for x := 0; x < noOfSets; x++ {
+		queryOutput := repository.getSingleQuery(request, namespace, class, request.Body.Objects[startIndex:stopIndex], conn)
+		query = append(query, queryOutput)
+		startIndex += noOfElementsPerSet
+		stopIndex += noOfElementsPerSet
+	}
 
-	isFirstRow := true
-	var keyArray []string
-
+	if remainderFromSets > 0 {
+		start := len(request.Body.Objects) - remainderFromSets
+		queryOutput := repository.getSingleQuery(request, namespace, class, request.Body.Objects[start:len(request.Body.Objects)], conn)
+		query = append(query, queryOutput)
+	}
 	return
 }
 
-func (repository CloudSqlRepository) getSingleQuery(records []map[string]interface{}) (query string) {
+func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
 
-	for _, obj := range allObjects {
+	isFirstRow := true
+	var keyArray []string
+	for _, obj := range records {
 		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj))
 
 		if currentObject == nil {
@@ -631,8 +539,8 @@ func (repository CloudSqlRepository) getSingleQuery(records []map[string]interfa
 			isFirstRow = false
 		}
 	}
-
-}*/
+	return
+}
 
 func (repository CloudSqlRepository) getDeleteScript(namespace string, class string, id string) string {
 	return "DELETE FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = \"" + id + "\""
@@ -1202,3 +1110,152 @@ func (repository CloudSqlRepository) closeConnection(conn *sql.DB) {
 		term.Write("Connection Closed!", 2)
 	}
 }
+
+// ----------  LEGACY CODE ARCHIVE ---------------------
+// Don't delete these codes under any circumstances.
+
+/*func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messaging.ObjectRequest) (query string, err error) {
+	namespace := request.Controls.Namespace
+	class := request.Controls.Class
+	var schemaObj map[string]interface{}
+	var allObjects []map[string]interface{}
+	if request.Body.Object != nil {
+		schemaObj = request.Body.Object
+		allObjects = make([]map[string]interface{}, 1)
+		allObjects[0] = schemaObj
+	} else {
+		if request.Body.Objects != nil {
+			if len(request.Body.Objects) != 0 {
+				schemaObj = request.Body.Objects[0]
+				allObjects = request.Body.Objects
+			} else {
+				err = errors.New("No objects available to store")
+				return
+			}
+		} else {
+			err = errors.New("No objects available to store")
+			return
+		}
+	}
+
+	repository.checkSchema(conn, namespace, class, schemaObj)
+
+	query = ""
+
+	isFirstRow := true
+	var keyArray []string
+
+	for _, obj := range allObjects {
+		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj))
+
+		if currentObject == nil {
+			if isFirstRow {
+				query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
+			}
+
+			id := ""
+
+			if obj["OriginalIndex"] == nil {
+				id = getNoSqlKeyById(request, obj)
+			} else {
+				id = obj["OriginalIndex"].(string)
+			}
+
+			delete(obj, "OriginalIndex")
+
+			keyList := ""
+			valueList := ""
+
+			if isFirstRow {
+				for k, _ := range obj {
+					keyList += ("," + k)
+					keyArray = append(keyArray, k)
+				}
+			}
+			//fmt.Println(keyArray)
+			for _, k := range keyArray {
+				v := obj[k]
+				valueList += ("," + repository.getSqlFieldValue(v))
+			}
+
+			if isFirstRow {
+				query += "(__os_id" + keyList + ") VALUES "
+			} else {
+				query += ","
+			}
+
+			//query += ("(\"" + getNoSqlKeyById(request, obj) + "\"" + valueList + ")")
+			query += ("(\"" + id + "\"" + valueList + ")")
+
+		} else {
+			updateValues := ""
+			isFirst := true
+			for k, v := range obj {
+				if isFirst {
+					isFirst = false
+				} else {
+					updateValues += ","
+				}
+
+				updateValues += (k + "=" + repository.getSqlFieldValue(v))
+			}
+			query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";###")
+		}
+
+		if isFirstRow {
+			isFirstRow = false
+		}
+	}
+
+	return
+}*/
+
+/*func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+
+	conn, _ := repository.getConnection(request)
+
+	script, err := repository.getStoreScript(conn, request)
+
+	queryArray := strings.Split(script, "###")
+
+	if len(queryArray) > 1 && err == nil {
+		//Multiple Updates
+		status := make([]bool, len(queryArray)-1)
+		for index := 0; index < (len(queryArray) - 1); index++ {
+			err := repository.executeNonQuery(conn, queryArray[index])
+			if err == nil {
+				status[index] = true
+			} else {
+				status[index] = false
+			}
+		}
+		for _, stat := range status {
+			if stat == false {
+				response.IsSuccess = false
+				response.Message = "Error Updating All Objects in CloudSQL. Check Data!"
+				return response
+			}
+		}
+
+		response.IsSuccess = true
+		response.Message = "Successfully stored object(s) in CloudSQL"
+
+	} else {
+		if err == nil {
+			err := repository.executeNonQuery(conn, script)
+			if err == nil {
+				response.IsSuccess = true
+				response.Message = "Successfully stored object(s) in CloudSQL"
+			} else {
+				response.IsSuccess = false
+				response.Message = "Error storing data in CloudSQL : " + err.Error()
+			}
+		} else {
+			response.IsSuccess = false
+			response.Message = "Error generating CloudSQL query : " + err.Error()
+		}
+	}
+	repository.closeConnection(conn)
+	return response
+}*/

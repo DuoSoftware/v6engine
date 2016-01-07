@@ -181,3 +181,19 @@
 2016-01-07 @ 11:48:13  Starting INSERT-MULTIPLE
 2016-01-07 @ 11:48:13  Establishing new connection for Elastic Search 127.0.0.1:9200
 2016-01-07 @ 11:51:51  Executing repository : Elastic Search - Success
+2016-01-07 @ 12:53:32  Starting replicated storage engine
+2016-01-07 @ 12:53:32  Getting settings for multiple insert
+2016-01-07 @ 12:53:32  Executing repository : CloudSQL
+2016-01-07 @ 12:55:03  Starting replicated storage engine
+2016-01-07 @ 12:55:03  Getting settings for multiple insert
+2016-01-07 @ 12:55:03  Executing repository : CloudSQL
+2016-01-07 @ 12:55:04  Executing repository : CloudSQL - Failed
+2016-01-07 @ 12:55:04  Transaction failed Rollbacking!!!
+2016-01-07 @ 13:11:30  Starting replicated storage engine
+2016-01-07 @ 13:11:30  Getting settings for multiple insert
+2016-01-07 @ 13:11:30  Executing repository : CloudSQL
+2016-01-07 @ 13:11:33  Executing repository : CloudSQL - Success
+2016-01-07 @ 13:25:59  Starting replicated storage engine
+2016-01-07 @ 13:25:59  Getting settings for multiple insert
+2016-01-07 @ 13:25:59  Executing repository : CloudSQL
+2016-01-07 @ 13:26:02  Executing repository : CloudSQL - Success
