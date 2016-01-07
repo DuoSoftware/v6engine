@@ -452,7 +452,6 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 			err = errors.New("No objects available to store")
 			return
 		}
-
 	}
 
 	repository.checkSchema(conn, namespace, class, schemaObj)
@@ -463,7 +462,6 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 	var keyArray []string
 
 	for _, obj := range allObjects {
-
 		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj))
 
 		if currentObject == nil {
@@ -527,6 +525,114 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 
 	return
 }
+
+/*func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messaging.ObjectRequest) (query []string, err error) {
+	namespace := request.Controls.Namespace
+	class := request.Controls.Class
+	var schemaObj map[string]interface{}
+	var allObjects []map[string]interface{}
+	if request.Body.Object != nil {
+		schemaObj = request.Body.Object
+		allObjects = make([]map[string]interface{}, 1)
+		allObjects[0] = schemaObj
+	} else {
+		if request.Body.Objects != nil {
+			if len(request.Body.Objects) != 0 {
+				schemaObj = request.Body.Objects[0]
+				allObjects = request.Body.Objects
+			} else {
+				err = errors.New("No objects available to store")
+				return
+			}
+		} else {
+			err = errors.New("No objects available to store")
+			return
+		}
+	}
+
+	repository.checkSchema(conn, namespace, class, schemaObj)
+
+	noOfElementsPerSet := 100
+	noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
+	remainderFromSets := 0
+	remainderFromSets = (len(request.Body.Objects) - (noOfSets * noOfElementsPerSet))
+
+	startIndex := 0
+	stopIndex := noOfElementsPerSet
+
+	query = ""
+
+	isFirstRow := true
+	var keyArray []string
+
+	return
+}
+
+func (repository CloudSqlRepository) getSingleQuery(records []map[string]interface{}) (query string) {
+
+	for _, obj := range allObjects {
+		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj))
+
+		if currentObject == nil {
+			if isFirstRow {
+				query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
+			}
+
+			id := ""
+
+			if obj["OriginalIndex"] == nil {
+				id = getNoSqlKeyById(request, obj)
+			} else {
+				id = obj["OriginalIndex"].(string)
+			}
+
+			delete(obj, "OriginalIndex")
+
+			keyList := ""
+			valueList := ""
+
+			if isFirstRow {
+				for k, _ := range obj {
+					keyList += ("," + k)
+					keyArray = append(keyArray, k)
+				}
+			}
+			//fmt.Println(keyArray)
+			for _, k := range keyArray {
+				v := obj[k]
+				valueList += ("," + repository.getSqlFieldValue(v))
+			}
+
+			if isFirstRow {
+				query += "(__os_id" + keyList + ") VALUES "
+			} else {
+				query += ","
+			}
+
+			//query += ("(\"" + getNoSqlKeyById(request, obj) + "\"" + valueList + ")")
+			query += ("(\"" + id + "\"" + valueList + ")")
+
+		} else {
+			updateValues := ""
+			isFirst := true
+			for k, v := range obj {
+				if isFirst {
+					isFirst = false
+				} else {
+					updateValues += ","
+				}
+
+				updateValues += (k + "=" + repository.getSqlFieldValue(v))
+			}
+			query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";###")
+		}
+
+		if isFirstRow {
+			isFirstRow = false
+		}
+	}
+
+}*/
 
 func (repository CloudSqlRepository) getDeleteScript(namespace string, class string, id string) string {
 	return "DELETE FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = \"" + id + "\""

@@ -11,9 +11,9 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"time"
+	//"time"
 	//"path/filepath"
-	"strconv"
+	//"strconv"
 	"strings"
 )
 
@@ -217,8 +217,71 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 	return fileResponse
 }
 
-//Original - working huge overhead
+//huehuehue
 func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
+	fmt.Println("Inserting Records to Database....")
+	rowcount := 0
+	colunmcount := 0
+	var exceldata []map[string]interface{}
+	var colunName []string
+
+	//file read
+	xlFile, error := xlsx.OpenFile(excelFileName)
+	if error == nil {
+		for _, sheet := range xlFile.Sheets {
+			rowcount = (sheet.MaxRow - 1)
+			colunmcount = sheet.MaxCol
+			colunName = make([]string, colunmcount)
+			for _, row := range sheet.Rows {
+				for j, cel := range row.Cells {
+					colunName[j] = cel.String()
+				}
+				break
+			}
+			exceldata = make(([]map[string]interface{}), rowcount)
+			if error == nil {
+				for _, sheet := range xlFile.Sheets {
+					for rownumber, row := range sheet.Rows {
+						currentRow := make(map[string]interface{})
+						if rownumber != 0 {
+							exceldata[rownumber-1] = currentRow
+							for cellnumber, cell := range row.Cells {
+								if cellnumber == 0 {
+									exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+								} else if cell.Type() == 0 {
+									exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+								} else if cell.Type() == 2 {
+									dd, _ := cell.Float()
+									exceldata[rownumber-1][colunName[cellnumber]] = float64(dd)
+								} else if cell.Type() == 3 {
+									exceldata[rownumber-1][colunName[cellnumber]] = cell.Bool()
+								} else {
+									exceldata[rownumber-1][colunName[cellnumber]] = cell.String()
+								}
+							}
+						}
+					}
+				}
+			}
+
+			Id := colunName[0]
+			var extraMap map[string]interface{}
+			extraMap = make(map[string]interface{})
+			extraMap["File"] = "exceldata"
+			fmt.Println("Namespace : " + request.Parameters["namespace"])
+			fmt.Println("Keyfield : " + Id)
+			fmt.Println("filename : " + getExcelFileName(excelFileName))
+
+			client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
+			return true
+		}
+
+	}
+	return false
+}
+
+//Original - working huge overhead
+/*func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {
 	fmt.Println("Inserting Records to Database....")
 	rowcount := 0
 	colunmcount := 0
@@ -304,7 +367,7 @@ func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool
 
 	}
 	return false
-}
+}*/
 
 //working new
 /*func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool {

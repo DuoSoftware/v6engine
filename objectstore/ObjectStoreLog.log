@@ -57,3 +57,127 @@
 2016-01-06 @ 14:01:37  Executing repository : GoogleDataStore
 2016-01-06 @ 14:01:37  Starting GET-ALL
 2016-01-06 @ 14:01:37  Executing repository : GoogleDataStore - Success
+2016-01-07 @ 11:30:18  Starting replicated storage engine
+2016-01-07 @ 11:30:18  Getting settings for multiple insert
+2016-01-07 @ 11:30:18  Executing repository : Elastic Search
+2016-01-07 @ 11:30:18  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:30:18  Establishing new connection for Elastic Search 127.0.0.1:9200
+2016-01-07 @ 11:30:19  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:30:21  Starting replicated storage engine
+2016-01-07 @ 11:30:21  Getting settings for multiple insert
+2016-01-07 @ 11:30:21  Executing repository : Elastic Search
+2016-01-07 @ 11:30:21  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:30:22  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:30:24  Starting replicated storage engine
+2016-01-07 @ 11:30:24  Getting settings for multiple insert
+2016-01-07 @ 11:30:24  Executing repository : Elastic Search
+2016-01-07 @ 11:30:24  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:30:25  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:30:27  Starting replicated storage engine
+2016-01-07 @ 11:30:27  Getting settings for multiple insert
+2016-01-07 @ 11:30:27  Executing repository : Elastic Search
+2016-01-07 @ 11:30:27  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:30:28  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:30:30  Starting replicated storage engine
+2016-01-07 @ 11:30:30  Getting settings for multiple insert
+2016-01-07 @ 11:30:30  Executing repository : Elastic Search
+2016-01-07 @ 11:30:30  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:30:32  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:30:34  Starting replicated storage engine
+2016-01-07 @ 11:30:34  Getting settings for multiple insert
+2016-01-07 @ 11:30:34  Executing repository : Elastic Search
+2016-01-07 @ 11:30:34  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:30:35  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:30:37  Starting replicated storage engine
+2016-01-07 @ 11:30:37  Getting settings for multiple insert
+2016-01-07 @ 11:30:37  Executing repository : Elastic Search
+2016-01-07 @ 11:30:37  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:30:38  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:30:40  Starting replicated storage engine
+2016-01-07 @ 11:30:40  Getting settings for multiple insert
+2016-01-07 @ 11:30:40  Executing repository : Elastic Search
+2016-01-07 @ 11:30:40  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:30:41  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:30:43  Starting replicated storage engine
+2016-01-07 @ 11:30:43  Getting settings for multiple insert
+2016-01-07 @ 11:30:43  Executing repository : Elastic Search
+2016-01-07 @ 11:30:43  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:30:45  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:30:47  Starting replicated storage engine
+2016-01-07 @ 11:30:47  Getting settings for multiple insert
+2016-01-07 @ 11:30:47  Executing repository : Elastic Search
+2016-01-07 @ 11:30:47  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:30:48  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:30:50  Starting replicated storage engine
+2016-01-07 @ 11:30:50  Getting settings for multiple insert
+2016-01-07 @ 11:30:50  Executing repository : Elastic Search
+2016-01-07 @ 11:30:50  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:30:50  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:33:34  Starting replicated storage engine
+2016-01-07 @ 11:33:34  Getting settings for multiple insert
+2016-01-07 @ 11:33:34  Executing repository : Elastic Search
+2016-01-07 @ 11:33:34  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:33:34  Establishing new connection for Elastic Search 127.0.0.1:9200
+2016-01-07 @ 11:33:36  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:33:38  Starting replicated storage engine
+2016-01-07 @ 11:33:38  Getting settings for multiple insert
+2016-01-07 @ 11:33:38  Executing repository : Elastic Search
+2016-01-07 @ 11:33:38  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:33:39  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:33:41  Starting replicated storage engine
+2016-01-07 @ 11:33:41  Getting settings for multiple insert
+2016-01-07 @ 11:33:41  Executing repository : Elastic Search
+2016-01-07 @ 11:33:41  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:33:42  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:33:44  Starting replicated storage engine
+2016-01-07 @ 11:33:44  Getting settings for multiple insert
+2016-01-07 @ 11:33:44  Executing repository : Elastic Search
+2016-01-07 @ 11:33:44  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:33:45  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:33:47  Starting replicated storage engine
+2016-01-07 @ 11:33:47  Getting settings for multiple insert
+2016-01-07 @ 11:33:47  Executing repository : Elastic Search
+2016-01-07 @ 11:33:47  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:33:48  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:33:50  Starting replicated storage engine
+2016-01-07 @ 11:33:50  Getting settings for multiple insert
+2016-01-07 @ 11:33:50  Executing repository : Elastic Search
+2016-01-07 @ 11:33:50  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:33:52  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:33:54  Starting replicated storage engine
+2016-01-07 @ 11:33:54  Getting settings for multiple insert
+2016-01-07 @ 11:33:54  Executing repository : Elastic Search
+2016-01-07 @ 11:33:54  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:33:55  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:33:57  Starting replicated storage engine
+2016-01-07 @ 11:33:57  Getting settings for multiple insert
+2016-01-07 @ 11:33:57  Executing repository : Elastic Search
+2016-01-07 @ 11:33:57  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:33:58  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:34:00  Starting replicated storage engine
+2016-01-07 @ 11:34:00  Getting settings for multiple insert
+2016-01-07 @ 11:34:00  Executing repository : Elastic Search
+2016-01-07 @ 11:34:00  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:34:01  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:34:03  Starting replicated storage engine
+2016-01-07 @ 11:34:03  Getting settings for multiple insert
+2016-01-07 @ 11:34:03  Executing repository : Elastic Search
+2016-01-07 @ 11:34:03  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:34:04  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:34:06  Starting replicated storage engine
+2016-01-07 @ 11:34:06  Getting settings for multiple insert
+2016-01-07 @ 11:34:06  Executing repository : Elastic Search
+2016-01-07 @ 11:34:06  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:34:06  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:43:02  Starting replicated storage engine
+2016-01-07 @ 11:43:02  Getting settings for multiple insert
+2016-01-07 @ 11:43:02  Executing repository : Elastic Search
+2016-01-07 @ 11:43:02  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:43:02  Establishing new connection for Elastic Search 127.0.0.1:9200
+2016-01-07 @ 11:43:14  Executing repository : Elastic Search - Success
+2016-01-07 @ 11:48:13  Starting replicated storage engine
+2016-01-07 @ 11:48:13  Getting settings for multiple insert
+2016-01-07 @ 11:48:13  Executing repository : Elastic Search
+2016-01-07 @ 11:48:13  Starting INSERT-MULTIPLE
+2016-01-07 @ 11:48:13  Establishing new connection for Elastic Search 127.0.0.1:9200
+2016-01-07 @ 11:51:51  Executing repository : Elastic Search - Success

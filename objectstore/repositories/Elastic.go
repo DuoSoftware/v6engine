@@ -198,7 +198,7 @@ func (repository ElasticRepository) setOneElastic(request *messaging.ObjectReque
 	return response
 }
 
-func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequest) RepositoryResponse {
+/*func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
 
 	conn := repository.getConnection(request)
@@ -315,6 +315,134 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 	DataMap[0] = actualInput
 	response.Data = DataMap
 	return response
+}*/
+
+func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+
+	conn := repository.getConnection(request)
+
+	CountIndex := 0
+	var Data map[string]interface{}
+	Data = make(map[string]interface{})
+
+	noOfElementsPerSet := 100
+	noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
+	remainderFromSets := 0
+	remainderFromSets = (len(request.Body.Objects) - (noOfSets * noOfElementsPerSet))
+
+	startIndex := 0
+	stopIndex := noOfElementsPerSet
+
+	var status []bool
+
+	if remainderFromSets == 0 {
+		status = make([]bool, noOfSets)
+	} else {
+		status = make([]bool, (noOfSets + 1))
+	}
+
+	statusIndex := 0
+
+	for x := 0; x < noOfSets; x++ {
+		tempStatus, newCountIndex, keyDataMap := repository.insertRecordStub(request, CountIndex, request.Body.Objects[startIndex:stopIndex], conn)
+		status[statusIndex] = tempStatus
+		CountIndex = newCountIndex
+
+		for key, value := range keyDataMap {
+			Data[key] = value
+		}
+
+		if tempStatus {
+			fmt.Println("Inserted Stub : " + strconv.Itoa(statusIndex))
+		} else {
+			fmt.Println("Inserting Failed Stub : " + strconv.Itoa(statusIndex))
+		}
+
+		statusIndex += 1
+		startIndex += noOfElementsPerSet
+		stopIndex += noOfElementsPerSet
+
+		time.Sleep(1200 * time.Millisecond)
+
+	}
+
+	if remainderFromSets > 0 {
+		start := len(request.Body.Objects) - remainderFromSets
+
+		tempStatus, newCountIndex, keyDataMap := repository.insertRecordStub(request, CountIndex, request.Body.Objects[start:len(request.Body.Objects)], conn)
+		status[statusIndex] = tempStatus
+		CountIndex = newCountIndex
+
+		for key, value := range keyDataMap {
+			Data[key] = value
+		}
+
+		if tempStatus {
+			fmt.Println("Inserted Stub : " + strconv.Itoa(statusIndex))
+		} else {
+			fmt.Println("Inserting Failed Stub : " + strconv.Itoa(statusIndex))
+		}
+
+		statusIndex += 1
+	}
+
+	isAllCompleted := true
+
+	for _, val := range status {
+		if !val {
+			isAllCompleted = false
+			break
+		}
+	}
+
+	if isAllCompleted {
+		response.IsSuccess = true
+		response.Message = "Successfully inserted bulk to Elastic Search"
+	} else {
+		response.IsSuccess = false
+		response.Message = "Error Inserting Some Objects"
+	}
+
+	//Update Response
+	var DataMap []map[string]interface{}
+	DataMap = make([]map[string]interface{}, 1)
+	var actualInput map[string]interface{}
+	actualInput = make(map[string]interface{})
+	actualInput["ID"] = Data
+	DataMap[0] = actualInput
+	response.Data = DataMap
+	return response
+}
+
+func (repository ElasticRepository) insertRecordStub(request *messaging.ObjectRequest, CountIndex int, records []map[string]interface{}, conn *elastigo.Conn) (status bool, newCountIndex int, keyDataMap map[string]interface{}) {
+	status = true
+
+	indexer := conn.NewBulkIndexer(200)
+	nowTime := time.Now()
+
+	keyDataMap = make(map[string]interface{})
+
+	for _, obj := range records {
+		nosqlid := ""
+		if obj["OriginalIndex"] != nil {
+			nosqlid = obj["OriginalIndex"].(string)
+			keyDataMap[strconv.Itoa(CountIndex)] = nosqlid
+		} else {
+			id := repository.getRecordID(request, obj)
+			nosqlid = request.Controls.Namespace + "." + request.Controls.Class + "." + id
+			keyDataMap[strconv.Itoa(CountIndex)] = id
+		}
+		CountIndex++
+		indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
+	}
+	indexer.Start()
+	numerrors := indexer.NumErrors()
+
+	if numerrors != 0 {
+		status = false
+	}
+	return
 }
 
 func (repository ElasticRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
