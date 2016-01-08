@@ -197,3 +197,308 @@
 2016-01-07 @ 13:25:59  Getting settings for multiple insert
 2016-01-07 @ 13:25:59  Executing repository : CloudSQL
 2016-01-07 @ 13:26:02  Executing repository : CloudSQL - Success
+2016-01-08 @ 09:20:26  Starting replicated storage engine
+2016-01-08 @ 09:20:26  Getting settings for get all
+2016-01-08 @ 09:20:26  Executing repository : Mssql DB
+2016-01-08 @ 09:20:26  Starting GET-ALL
+2016-01-08 @ 09:20:29  Database Already Available! Nothing to do....
+2016-01-08 @ 09:20:29  Reusing existing MsSql connection
+2016-01-08 @ 09:20:29  Getting Primary Key
+2016-01-08 @ 09:20:30  Successfully returned primary Key for table
+2016-01-08 @ 09:20:30  Primary Key Field : SegHeaderID
+2016-01-08 @ 09:20:30  select top 10000 * from (select *, ROW_NUMBER() over (order by SegHeaderID) as r_n_n from [MDN].[dbo].[ACAM_DataSegregationDetails]) xx where r_n_n >=0;
+2016-01-08 @ 09:20:30  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 09:20:36  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 09:20:36  Executing repository : Mssql DB - Success
+2016-01-08 @ 09:20:51  Starting replicated storage engine
+2016-01-08 @ 09:20:51  Getting settings for get all
+2016-01-08 @ 09:20:51  Executing repository : Mssql DB
+2016-01-08 @ 09:20:51  Starting GET-ALL
+2016-01-08 @ 09:20:51  Database Already Available! Nothing to do....
+2016-01-08 @ 09:20:51  Reusing existing MsSql connection
+2016-01-08 @ 09:20:51  Getting Primary Key
+2016-01-08 @ 09:20:51  Successfully returned primary Key for table
+2016-01-08 @ 09:20:51  Primary Key Field : SegHeaderID
+2016-01-08 @ 09:20:51  select top 10000 * from (select *, ROW_NUMBER() over (order by SegHeaderID) as r_n_n from [MDN].[dbo].[ACAM_DataSegregationDetails]) xx where r_n_n >=0;
+2016-01-08 @ 09:20:52  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 09:21:00  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 09:21:00  Executing repository : Mssql DB - Success
+2016-01-08 @ 09:21:17  Starting replicated storage engine
+2016-01-08 @ 09:21:17  Getting settings for get all
+2016-01-08 @ 09:21:17  Executing repository : Mssql DB
+2016-01-08 @ 09:21:17  Starting GET-ALL
+2016-01-08 @ 09:21:17  Database Already Available! Nothing to do....
+2016-01-08 @ 09:21:17  Reusing existing MsSql connection
+2016-01-08 @ 09:21:17  Getting Primary Key
+2016-01-08 @ 09:21:17  Successfully returned primary Key for table
+2016-01-08 @ 09:21:17  Primary Key Field : SegHeaderID
+2016-01-08 @ 09:21:17  select top 1 * from (select *, ROW_NUMBER() over (order by SegHeaderID) as r_n_n from [MDN].[dbo].[ACAM_DataSegregationDetails]) xx where r_n_n >=0;
+2016-01-08 @ 09:21:17  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 09:21:17  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 09:21:17  Executing repository : Mssql DB - Success
+2016-01-08 @ 09:25:40  Starting replicated storage engine
+2016-01-08 @ 09:25:40  Getting settings for get all
+2016-01-08 @ 09:25:40  Executing repository : Mssql DB
+2016-01-08 @ 09:25:40  Starting GET-ALL
+2016-01-08 @ 09:25:43  Database Already Available! Nothing to do....
+2016-01-08 @ 09:25:43  Reusing existing MsSql connection
+2016-01-08 @ 09:25:43  Getting Primary Key
+2016-01-08 @ 09:25:44  Successfully returned primary Key for table
+2016-01-08 @ 09:25:44  Primary Key Field : aa
+2016-01-08 @ 09:25:44  select top 10000 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 09:25:44  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 09:25:44  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 09:25:44  Executing repository : Mssql DB - Success
+2016-01-08 @ 10:25:01  Starting replicated storage engine
+2016-01-08 @ 10:25:01  Getting settings for get all
+2016-01-08 @ 10:25:01  Executing repository : Mssql DB
+2016-01-08 @ 10:25:01  Starting GET-ALL
+2016-01-08 @ 10:25:01  Database Already Available! Nothing to do....
+2016-01-08 @ 10:25:01  Reusing existing MsSql connection
+2016-01-08 @ 10:25:01  Getting Primary Key
+2016-01-08 @ 10:25:01  Successfully returned primary Key for table
+2016-01-08 @ 10:25:01  Primary Key Field : aa
+2016-01-08 @ 10:25:01  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 10:25:01  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:25:01  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:25:01  Executing repository : Mssql DB - Success
+2016-01-08 @ 10:26:25  Starting replicated storage engine
+2016-01-08 @ 10:26:25  Getting settings for get all
+2016-01-08 @ 10:26:25  Executing repository : Mssql DB
+2016-01-08 @ 10:26:25  Starting GET-ALL
+2016-01-08 @ 10:26:25  Database Already Available! Nothing to do....
+2016-01-08 @ 10:26:25  Reusing existing MsSql connection
+2016-01-08 @ 10:26:25  Getting Primary Key
+2016-01-08 @ 10:26:25  Successfully returned primary Key for table
+2016-01-08 @ 10:26:25  Executing repository : Mssql DB - Success
+2016-01-08 @ 10:26:28  Starting replicated storage engine
+2016-01-08 @ 10:26:28  Getting settings for get all
+2016-01-08 @ 10:26:28  Executing repository : Mssql DB
+2016-01-08 @ 10:26:28  Starting GET-ALL
+2016-01-08 @ 10:26:28  Database Already Available! Nothing to do....
+2016-01-08 @ 10:26:28  Reusing existing MsSql connection
+2016-01-08 @ 10:26:28  Getting Primary Key
+2016-01-08 @ 10:26:28  Successfully returned primary Key for table
+2016-01-08 @ 10:26:28  Executing repository : Mssql DB - Success
+2016-01-08 @ 10:26:46  Starting replicated storage engine
+2016-01-08 @ 10:26:46  Getting settings for get all
+2016-01-08 @ 10:26:46  Executing repository : Mssql DB
+2016-01-08 @ 10:26:46  Starting GET-ALL
+2016-01-08 @ 10:26:46  Database Already Available! Nothing to do....
+2016-01-08 @ 10:26:46  Reusing existing MsSql connection
+2016-01-08 @ 10:26:46  Getting Primary Key
+2016-01-08 @ 10:26:46  Successfully returned primary Key for table
+2016-01-08 @ 10:26:46  Primary Key Field : aa
+2016-01-08 @ 10:26:46  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 10:26:46  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:26:46  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:26:46  Executing repository : Mssql DB - Success
+2016-01-08 @ 10:27:49  Starting replicated storage engine
+2016-01-08 @ 10:27:49  Getting settings for get all
+2016-01-08 @ 10:27:49  Executing repository : Mssql DB
+2016-01-08 @ 10:27:49  Starting GET-ALL
+2016-01-08 @ 10:27:49  Database Already Available! Nothing to do....
+2016-01-08 @ 10:27:49  Reusing existing MsSql connection
+2016-01-08 @ 10:27:49  Getting Primary Key
+2016-01-08 @ 10:27:49  Successfully returned primary Key for table
+2016-01-08 @ 10:27:49  Primary Key Field : aa
+2016-01-08 @ 10:27:49  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 10:27:49  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:27:49  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:27:49  Executing repository : Mssql DB - Success
+2016-01-08 @ 10:35:14  Starting replicated storage engine
+2016-01-08 @ 10:35:14  Getting settings for get all
+2016-01-08 @ 10:35:14  Executing repository : Mssql DB
+2016-01-08 @ 10:35:14  Starting GET-ALL
+2016-01-08 @ 10:35:15  Database Already Available! Nothing to do....
+2016-01-08 @ 10:35:15  Reusing existing MsSql connection
+2016-01-08 @ 10:35:15  Getting Primary Key
+2016-01-08 @ 10:35:15  Successfully returned primary Key for table
+2016-01-08 @ 10:35:15  Primary Key Field : aa
+2016-01-08 @ 10:35:15  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 10:35:15  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:37:11  Starting replicated storage engine
+2016-01-08 @ 10:37:11  Getting settings for get all
+2016-01-08 @ 10:37:11  Executing repository : Mssql DB
+2016-01-08 @ 10:37:11  Starting GET-ALL
+2016-01-08 @ 10:37:11  Database Already Available! Nothing to do....
+2016-01-08 @ 10:37:11  Reusing existing MsSql connection
+2016-01-08 @ 10:37:11  Getting Primary Key
+2016-01-08 @ 10:37:11  Successfully returned primary Key for table
+2016-01-08 @ 10:37:11  Primary Key Field : aa
+2016-01-08 @ 10:37:11  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 10:37:12  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:43:46  Starting replicated storage engine
+2016-01-08 @ 10:43:46  Getting settings for get all
+2016-01-08 @ 10:43:46  Executing repository : Mssql DB
+2016-01-08 @ 10:43:46  Starting GET-ALL
+2016-01-08 @ 10:43:46  Database Already Available! Nothing to do....
+2016-01-08 @ 10:43:46  Reusing existing MsSql connection
+2016-01-08 @ 10:43:46  Getting Primary Key
+2016-01-08 @ 10:43:46  Successfully returned primary Key for table
+2016-01-08 @ 10:43:46  Primary Key Field : aa
+2016-01-08 @ 10:43:46  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 10:43:46  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:43:48  Starting replicated storage engine
+2016-01-08 @ 10:43:48  Getting settings for get all
+2016-01-08 @ 10:43:48  Executing repository : Mssql DB
+2016-01-08 @ 10:43:48  Starting GET-ALL
+2016-01-08 @ 10:43:48  Database Already Available! Nothing to do....
+2016-01-08 @ 10:43:48  Reusing existing MsSql connection
+2016-01-08 @ 10:43:48  Getting Primary Key
+2016-01-08 @ 10:43:48  Successfully returned primary Key for table
+2016-01-08 @ 10:43:48  Primary Key Field : aa
+2016-01-08 @ 10:43:48  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 10:43:48  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:50:03  Starting replicated storage engine
+2016-01-08 @ 10:50:03  Getting settings for get all
+2016-01-08 @ 10:50:03  Executing repository : Mssql DB
+2016-01-08 @ 10:50:03  Starting GET-ALL
+2016-01-08 @ 10:50:03  Database Already Available! Nothing to do....
+2016-01-08 @ 10:50:03  Reusing existing MsSql connection
+2016-01-08 @ 10:50:03  Getting Primary Key
+2016-01-08 @ 10:50:03  Successfully returned primary Key for table
+2016-01-08 @ 10:50:03  Primary Key Field : aa
+2016-01-08 @ 10:50:03  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 10:50:03  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:50:03  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:50:03  Executing repository : Mssql DB - Success
+2016-01-08 @ 10:56:15  Starting replicated storage engine
+2016-01-08 @ 10:56:15  Getting settings for get all
+2016-01-08 @ 10:56:15  Executing repository : Mssql DB
+2016-01-08 @ 10:56:15  Starting GET-ALL
+2016-01-08 @ 10:56:15  Database Already Available! Nothing to do....
+2016-01-08 @ 10:56:15  Reusing existing MsSql connection
+2016-01-08 @ 10:56:15  Getting Primary Key
+2016-01-08 @ 10:56:15  Successfully returned primary Key for table
+2016-01-08 @ 10:56:15  Primary Key Field : aa
+2016-01-08 @ 10:56:15  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 10:56:15  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:56:15  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:56:15  Executing repository : Mssql DB - Success
+2016-01-08 @ 10:57:37  Starting replicated storage engine
+2016-01-08 @ 10:57:37  Getting settings for get all
+2016-01-08 @ 10:57:37  Executing repository : Mssql DB
+2016-01-08 @ 10:57:37  Starting GET-ALL
+2016-01-08 @ 10:57:37  Database Already Available! Nothing to do....
+2016-01-08 @ 10:57:37  Reusing existing MsSql connection
+2016-01-08 @ 10:57:37  Getting Primary Key
+2016-01-08 @ 10:57:37  Successfully returned primary Key for table
+2016-01-08 @ 10:57:37  Primary Key Field : aa
+2016-01-08 @ 10:57:37  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 10:57:37  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:58:40  Starting replicated storage engine
+2016-01-08 @ 10:58:40  Getting settings for get all
+2016-01-08 @ 10:58:40  Executing repository : Mssql DB
+2016-01-08 @ 10:58:40  Starting GET-ALL
+2016-01-08 @ 10:58:40  Database Already Available! Nothing to do....
+2016-01-08 @ 10:58:40  Reusing existing MsSql connection
+2016-01-08 @ 10:58:40  Getting Primary Key
+2016-01-08 @ 10:58:40  Successfully returned primary Key for table
+2016-01-08 @ 10:58:40  Primary Key Field : aa
+2016-01-08 @ 10:58:40  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 10:58:40  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:58:40  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 10:58:40  Executing repository : Mssql DB - Success
+2016-01-08 @ 11:00:06  Starting replicated storage engine
+2016-01-08 @ 11:00:06  Getting settings for get all
+2016-01-08 @ 11:00:06  Executing repository : Mssql DB
+2016-01-08 @ 11:00:06  Starting GET-ALL
+2016-01-08 @ 11:00:06  Database Already Available! Nothing to do....
+2016-01-08 @ 11:00:06  Reusing existing MsSql connection
+2016-01-08 @ 11:00:06  Getting Primary Key
+2016-01-08 @ 11:00:06  Successfully returned primary Key for table
+2016-01-08 @ 11:00:06  Primary Key Field : aa
+2016-01-08 @ 11:00:06  select top 100 * from (select *, ROW_NUMBER() over (order by aa) as r_n_n from [HNBDB].[dbo].[tbl]) xx where r_n_n >=0;
+2016-01-08 @ 11:00:06  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:00:06  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:00:06  Executing repository : Mssql DB - Success
+2016-01-08 @ 11:00:15  Starting replicated storage engine
+2016-01-08 @ 11:00:15  Getting settings for get all
+2016-01-08 @ 11:00:15  Executing repository : Mssql DB
+2016-01-08 @ 11:00:15  Starting GET-ALL
+2016-01-08 @ 11:00:15  Database Already Available! Nothing to do....
+2016-01-08 @ 11:00:15  Reusing existing MsSql connection
+2016-01-08 @ 11:00:15  Getting Primary Key
+2016-01-08 @ 11:00:15  Successfully returned primary Key for table
+2016-01-08 @ 11:00:15  Primary Key Field : SegHeaderID
+2016-01-08 @ 11:00:15  select top 100 * from (select *, ROW_NUMBER() over (order by SegHeaderID) as r_n_n from [MDN].[dbo].[ACAM_DataSegregationDetails]) xx where r_n_n >=0;
+2016-01-08 @ 11:00:15  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:00:15  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:00:15  Executing repository : Mssql DB - Success
+2016-01-08 @ 11:01:56  Starting replicated storage engine
+2016-01-08 @ 11:01:56  Getting settings for get all
+2016-01-08 @ 11:01:56  Executing repository : Mssql DB
+2016-01-08 @ 11:01:56  Starting GET-ALL
+2016-01-08 @ 11:01:56  Database Already Available! Nothing to do....
+2016-01-08 @ 11:01:56  Reusing existing MsSql connection
+2016-01-08 @ 11:01:56  Getting Primary Key
+2016-01-08 @ 11:01:56  Successfully returned primary Key for table
+2016-01-08 @ 11:01:56  Primary Key Field : SegHeaderID
+2016-01-08 @ 11:01:56  select top 1 * from (select *, ROW_NUMBER() over (order by SegHeaderID) as r_n_n from [MDN].[dbo].[ACAM_DataSegregationDetails]) xx where r_n_n >=0;
+2016-01-08 @ 11:01:56  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:01:56  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:01:56  Executing repository : Mssql DB - Success
+2016-01-08 @ 11:04:48  Starting replicated storage engine
+2016-01-08 @ 11:04:48  Getting settings for get all
+2016-01-08 @ 11:04:48  Executing repository : Mssql DB
+2016-01-08 @ 11:04:48  Starting GET-ALL
+2016-01-08 @ 11:04:48  Database Already Available! Nothing to do....
+2016-01-08 @ 11:04:48  Reusing existing MsSql connection
+2016-01-08 @ 11:04:48  Getting Primary Key
+2016-01-08 @ 11:04:48  Successfully returned primary Key for table
+2016-01-08 @ 11:04:48  Primary Key Field : SegHeaderID
+2016-01-08 @ 11:04:48  select top 1 * from (select *, ROW_NUMBER() over (order by SegHeaderID) as r_n_n from [MDN].[dbo].[ACAM_DataSegregationDetails]) xx where r_n_n >=0;
+2016-01-08 @ 11:04:48  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:04:48  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:04:48  Executing repository : Mssql DB - Success
+2016-01-08 @ 11:12:12  Starting replicated storage engine
+2016-01-08 @ 11:12:12  Getting settings for get all
+2016-01-08 @ 11:12:12  Executing repository : Mssql DB
+2016-01-08 @ 11:12:12  Starting GET-ALL
+2016-01-08 @ 11:12:12  Database Already Available! Nothing to do....
+2016-01-08 @ 11:12:12  Reusing existing MsSql connection
+2016-01-08 @ 11:12:12  Getting Primary Key
+2016-01-08 @ 11:12:12  Successfully returned primary Key for table
+2016-01-08 @ 11:12:12  Primary Key Field : SegHeaderID
+2016-01-08 @ 11:12:12  select top 1 * from (select *, ROW_NUMBER() over (order by SegHeaderID) as r_n_n from [MDN].[dbo].[ACAM_DataSegregationDetails]) xx where r_n_n >=0;
+2016-01-08 @ 11:12:12  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:12:12  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:12:12  Executing repository : Mssql DB - Success
+2016-01-08 @ 11:16:50  Starting replicated storage engine
+2016-01-08 @ 11:16:50  Getting settings for get all
+2016-01-08 @ 11:16:50  Executing repository : Mssql DB
+2016-01-08 @ 11:16:50  Starting GET-ALL
+2016-01-08 @ 11:16:51  Database Already Available! Nothing to do....
+2016-01-08 @ 11:16:51  Reusing existing MsSql connection
+2016-01-08 @ 11:16:51  Getting Primary Key
+2016-01-08 @ 11:16:51  Successfully returned primary Key for table
+2016-01-08 @ 11:16:51  Primary Key Field : SegHeaderID
+2016-01-08 @ 11:16:51  select top 1 * from (select *, ROW_NUMBER() over (order by SegHeaderID) as r_n_n from [MDN].[dbo].[ACAM_DataSegregationDetails]) xx where r_n_n >=0;
+2016-01-08 @ 11:16:51  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:16:51  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:16:51  Executing repository : Mssql DB - Success
+2016-01-08 @ 11:46:33  Starting replicated storage engine
+2016-01-08 @ 11:46:33  Getting settings for get all
+2016-01-08 @ 11:46:33  Executing repository : Mssql DB
+2016-01-08 @ 11:46:33  Starting GET-ALL
+2016-01-08 @ 11:46:33  Database Already Available! Nothing to do....
+2016-01-08 @ 11:46:33  Reusing existing MsSql connection
+2016-01-08 @ 11:46:33  Getting Primary Key
+2016-01-08 @ 11:46:33  Successfully returned primary Key for table
+2016-01-08 @ 11:46:33  Primary Key Field : SegHeaderID
+2016-01-08 @ 11:46:33  select top 1 * from (select *, ROW_NUMBER() over (order by SegHeaderID) as r_n_n from [MDN].[dbo].[ACAM_DataSegregationDetails]) xx where r_n_n >=0;
+2016-01-08 @ 11:46:33  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:46:33  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 11:46:33  Executing repository : Mssql DB - Success
+2016-01-08 @ 11:49:37  Starting replicated storage engine
+2016-01-08 @ 11:49:37  Getting settings for special operation
+2016-01-08 @ 11:49:37  Executing repository : Mssql DB
+2016-01-08 @ 11:49:37  Starting SPECIAL!
+2016-01-08 @ 11:49:37  Starting GET-SELECTED sub routine
+2016-01-08 @ 11:49:37  Database Already Available! Nothing to do....
+2016-01-08 @ 11:49:37  Reusing existing MsSql connection
+2016-01-08 @ 11:49:37  Requested Field List : CommitStatus RecordType
+2016-01-08 @ 11:49:37  SELECT CommitStatus,RecordType FROM ACAM_DataSegregationDetails
+2016-01-08 @ 11:49:37  Successfully fetched data from MsSql
+2016-01-08 @ 11:49:37  Executing repository : Mssql DB - Success

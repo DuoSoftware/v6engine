@@ -1,12 +1,15 @@
 package repositories
 
 import (
+	//"bytes"
 	"database/sql"
 	"duov6.com/objectstore/messaging"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/twinj/uuid"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -117,6 +120,12 @@ func verifyMsSqlDatabase(session *sql.DB, request *messaging.ObjectRequest) bool
 	return true
 }
 
+func Float64frombytes(bytes []byte) float64 {
+	bits := binary.LittleEndian.Uint64(bytes)
+	float := math.Float64frombits(bits)
+	return float
+}
+
 func (repository MssqlRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting GET-ALL")
 	response := RepositoryResponse{}
@@ -130,7 +139,7 @@ func (repository MssqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 			skip = request.Extras["skip"].(string)
 		}
 
-		take := "10000"
+		take := "100"
 		if request.Extras["take"] != nil {
 			take = request.Extras["take"].(string)
 		}
@@ -168,13 +177,13 @@ func (repository MssqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 
 					val := values[i]
 
-					b, ok := val.([]byte)
+					//b, ok := val.([]byte)
 
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
+					//if ok {
+					//	v = string(b)
+					//} else {
+					v = val
+					//}
 
 					keyMap[col] = v
 
@@ -232,14 +241,13 @@ func (repository MssqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 
 					val := values[i]
 
-					b, ok := val.([]byte)
-
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
-
+					//b, ok := val.([]byte)
+					// if ok {
+					// 	v = string(b)
+					// } else {
+					// 	//v = val
+					// }
+					v = repository.sqlToGolang(val)
 					tempMap[col] = v
 				}
 
@@ -282,6 +290,40 @@ func (repository MssqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 	return response
 }
 
+func (repository MssqlRepository) sqlToGolang(input interface{}) (output interface{}) {
+	dataType := reflect.TypeOf(input).String()
+
+	switch dataType {
+	case "string":
+		output = strings.TrimSpace(input.(string))
+		break
+	case "[]byte":
+		b, ok := input.([]byte)
+		if ok {
+			output = string(b)
+		}
+		break
+	case "[]uint8":
+		if f64, err2 := strconv.ParseFloat(string(input.([]byte)), 64); err2 == nil {
+			output = f64
+		} else if f32, err2 := strconv.ParseFloat(string(input.([]byte)), 32); err2 == nil {
+			output = f32
+		} else if i64, err2 := strconv.ParseInt(string(input.([]byte)), 10, 64); err2 == nil {
+			output = i64
+		} else if i32, err2 := strconv.ParseInt(string(input.([]byte)), 10, 32); err2 == nil {
+			output = i32
+		} else {
+			output = string(input.([]byte))
+		}
+		break
+	default:
+		output = input
+		break
+	}
+
+	return
+}
+
 func (repository MssqlRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Get Search not implemented in Mssql Db repository")
 	return getDefaultNotImplemented()
@@ -295,7 +337,7 @@ func (repository MssqlRepository) GetQuery(request *messaging.ObjectRequest) Rep
 	switch queryType {
 	case "Query":
 		if request.Body.Query.Parameters != "*" {
-			fieldsInByte := executeMssqlQuery(request)
+			fieldsInByte := repository.executeMssqlQuery(request)
 			if fieldsInByte != nil {
 				response.IsSuccess = true
 				response.Message = "Successfully Retrieved Data For Custom Query"
@@ -318,7 +360,7 @@ func (repository MssqlRepository) GetQuery(request *messaging.ObjectRequest) Rep
 	return response
 }
 
-func executeMssqlQuery(request *messaging.ObjectRequest) (returnByte []byte) {
+func (repository MssqlRepository) executeMssqlQuery(request *messaging.ObjectRequest) (returnByte []byte) {
 	session, isError, _ := getMssqlConnection(request)
 	if isError == true {
 		returnByte = nil
@@ -357,13 +399,13 @@ func executeMssqlQuery(request *messaging.ObjectRequest) (returnByte []byte) {
 
 					val := values[i]
 
-					b, ok := val.([]byte)
+					//b, ok := val.([]byte)
 
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
+					//if ok {
+					//	v = string(b)
+					//} else {
+					v = repository.sqlToGolang(val)
+					//}
 
 					tempMap[col] = v
 
@@ -442,13 +484,13 @@ func (repository MssqlRepository) GetByKey(request *messaging.ObjectRequest) Rep
 
 						val := values[i]
 
-						b, ok := val.([]byte)
+						//b, ok := val.([]byte)
 
-						if ok {
-							v = string(b)
-						} else {
-							v = val
-						}
+						//if ok {
+						//	v = string(b)
+						//} else {
+						v = val
+						//}
 
 						keyMap[col] = v
 
@@ -497,13 +539,13 @@ func (repository MssqlRepository) GetByKey(request *messaging.ObjectRequest) Rep
 
 					val := values[i]
 
-					b, ok := val.([]byte)
+					//b, ok := val.([]byte)
 
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
+					//if ok {
+					//	v = string(b)
+					//} else {
+					v = repository.sqlToGolang(val)
+					//}
 
 					myMap[col] = v
 
@@ -1354,7 +1396,7 @@ func (repository MssqlRepository) Special(request *messaging.ObjectRequest) Repo
 		}
 	case "getSelected":
 		request.Log("Starting GET-SELECTED sub routine")
-		fieldsInByte := executeMssqlGetSelected(request)
+		fieldsInByte := repository.executeMssqlGetSelected(request)
 		if fieldsInByte != nil {
 			response.IsSuccess = true
 			response.Message = "Successfully Retrieved All Namespaces"
@@ -1419,13 +1461,13 @@ func executeMssqlGetFields(request *messaging.ObjectRequest) (returnByte []byte)
 
 					val := values[i]
 
-					b, ok := val.([]byte)
+					//b, ok := val.([]byte)
 
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
+					//if ok {
+					//	v = string(b)
+					//} else {
+					v = val
+					//}
 
 					tempMap[col] = v
 
@@ -1498,13 +1540,13 @@ func executeMssqlGetClasses(request *messaging.ObjectRequest) (returnByte []byte
 
 					val := values[i]
 
-					b, ok := val.([]byte)
+					//b, ok := val.([]byte)
 
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
+					//if ok {
+					//	v = string(b)
+					//} else {
+					v = val
+					//}
 
 					tempMap[col] = v
 
@@ -1578,13 +1620,13 @@ func executeMssqlGetNamespaces(request *messaging.ObjectRequest) (returnByte []b
 
 					val := values[i]
 
-					b, ok := val.([]byte)
+					//b, ok := val.([]byte)
 
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
+					//if ok {
+					//	v = string(b)
+					//} else {
+					v = val
+					//}
 
 					tempMap[col] = v
 
@@ -1619,14 +1661,13 @@ func executeMssqlGetNamespaces(request *messaging.ObjectRequest) (returnByte []b
 	return returnByte
 }
 
-func executeMssqlGetSelected(request *messaging.ObjectRequest) (returnByte []byte) {
+func (repository MssqlRepository) executeMssqlGetSelected(request *messaging.ObjectRequest) (returnByte []byte) {
 
 	session, isError, _ := getMssqlConnection(request)
 	if isError == true {
 		request.Log("Error Connecting to MsSql")
 	} else {
-		var returnMap map[string]interface{}
-		returnMap = make(map[string]interface{})
+		var data []interface{}
 
 		var selectedItemsQuery string
 
@@ -1678,21 +1719,20 @@ func executeMssqlGetSelected(request *messaging.ObjectRequest) (returnByte []byt
 
 					val := values[i]
 
-					b, ok := val.([]byte)
+					//b, ok := val.([]byte)
 
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
+					//if ok {
+					//	v = string(b)
+					//} else {
+					v = repository.sqlToGolang(val)
+					//}
 					tempMap[col] = v
 				}
-
-				returnMap[strconv.Itoa(index)] = tempMap
+				data = append(data, tempMap)
 				index++
 			}
 
-			byteValue, _ := json.Marshal(returnMap)
+			byteValue, _ := json.Marshal(data)
 			returnByte = byteValue
 		}
 

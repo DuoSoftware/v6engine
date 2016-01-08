@@ -322,9 +322,14 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 
 	conn := repository.getConnection(request)
 
-	CountIndex := 0
 	var Data map[string]interface{}
 	Data = make(map[string]interface{})
+
+	for index, obj := range request.Body.Objects {
+		id := repository.getRecordID(request, obj)
+		Data[strconv.Itoa(index)] = id
+		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
+	}
 
 	noOfElementsPerSet := 100
 	noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
@@ -345,13 +350,8 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 	statusIndex := 0
 
 	for x := 0; x < noOfSets; x++ {
-		tempStatus, newCountIndex, keyDataMap := repository.insertRecordStub(request, CountIndex, request.Body.Objects[startIndex:stopIndex], conn)
+		tempStatus := repository.insertRecordStub(request, request.Body.Objects[startIndex:stopIndex], conn)
 		status[statusIndex] = tempStatus
-		CountIndex = newCountIndex
-
-		for key, value := range keyDataMap {
-			Data[key] = value
-		}
 
 		if tempStatus {
 			fmt.Println("Inserted Stub : " + strconv.Itoa(statusIndex))
@@ -370,13 +370,8 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 	if remainderFromSets > 0 {
 		start := len(request.Body.Objects) - remainderFromSets
 
-		tempStatus, newCountIndex, keyDataMap := repository.insertRecordStub(request, CountIndex, request.Body.Objects[start:len(request.Body.Objects)], conn)
+		tempStatus := repository.insertRecordStub(request, request.Body.Objects[start:len(request.Body.Objects)], conn)
 		status[statusIndex] = tempStatus
-		CountIndex = newCountIndex
-
-		for key, value := range keyDataMap {
-			Data[key] = value
-		}
 
 		if tempStatus {
 			fmt.Println("Inserted Stub : " + strconv.Itoa(statusIndex))
@@ -415,25 +410,19 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 	return response
 }
 
-func (repository ElasticRepository) insertRecordStub(request *messaging.ObjectRequest, CountIndex int, records []map[string]interface{}, conn *elastigo.Conn) (status bool, newCountIndex int, keyDataMap map[string]interface{}) {
+func (repository ElasticRepository) insertRecordStub(request *messaging.ObjectRequest, records []map[string]interface{}, conn *elastigo.Conn) (status bool) {
 	status = true
 
 	indexer := conn.NewBulkIndexer(200)
 	nowTime := time.Now()
 
-	keyDataMap = make(map[string]interface{})
-
 	for _, obj := range records {
 		nosqlid := ""
 		if obj["OriginalIndex"] != nil {
 			nosqlid = obj["OriginalIndex"].(string)
-			keyDataMap[strconv.Itoa(CountIndex)] = nosqlid
 		} else {
-			id := repository.getRecordID(request, obj)
-			nosqlid = request.Controls.Namespace + "." + request.Controls.Class + "." + id
-			keyDataMap[strconv.Itoa(CountIndex)] = id
+			nosqlid = getNoSqlKeyById(request, obj)
 		}
-		CountIndex++
 		indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
 	}
 	indexer.Start()
