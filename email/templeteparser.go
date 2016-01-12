@@ -89,10 +89,10 @@ func getParameterMap(paratermeters string) (returnMap map[int]string) {
 }
 
 func sendmail(receiver string, subj string, body string) {
-	EmailAddress = "no-reply@epayments.lk"
+	EmailAddress = "saffronslk@gmail.com"
 	Name = "epayments.lk"
-	SMTPServer = "smtp.gmail.com:465"
-	Password = "1Qaz2Wsx3Edc4Rfv"
+	SMTPServer = "smtp.mandrillapp.com:587"
+	Password = "saffronslk@123"
 	term.Write("email :"+EmailAddress, term.Debug)
 	term.Write("name :"+Name, term.Debug)
 	term.Write("smtp :"+SMTPServer, term.Debug)

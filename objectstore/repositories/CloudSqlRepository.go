@@ -380,7 +380,6 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 	conn, _ := repository.getConnection(request)
 
 	scripts, err := repository.getStoreScript(conn, request)
-
 	for x := 0; x < len(scripts); x++ {
 		script := scripts[x]
 		queryArray := strings.Split(script, "###")
@@ -451,25 +450,34 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 
 	repository.checkSchema(conn, namespace, class, schemaObj)
 
-	noOfElementsPerSet := 1000
-	noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
-	remainderFromSets := 0
-	remainderFromSets = (len(request.Body.Objects) - (noOfSets * noOfElementsPerSet))
-
-	startIndex := 0
-	stopIndex := noOfElementsPerSet
-
-	for x := 0; x < noOfSets; x++ {
-		queryOutput := repository.getSingleQuery(request, namespace, class, request.Body.Objects[startIndex:stopIndex], conn)
+	if request.Body.Object != nil {
+		arr := make([]map[string]interface{}, 1)
+		arr[0] = request.Body.Object
+		queryOutput := repository.getSingleQuery(request, namespace, class, arr, conn)
 		query = append(query, queryOutput)
-		startIndex += noOfElementsPerSet
-		stopIndex += noOfElementsPerSet
-	}
+	} else {
 
-	if remainderFromSets > 0 {
-		start := len(request.Body.Objects) - remainderFromSets
-		queryOutput := repository.getSingleQuery(request, namespace, class, request.Body.Objects[start:len(request.Body.Objects)], conn)
-		query = append(query, queryOutput)
+		noOfElementsPerSet := 1000
+		noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
+		remainderFromSets := 0
+		remainderFromSets = (len(request.Body.Objects) - (noOfSets * noOfElementsPerSet))
+
+		startIndex := 0
+		stopIndex := noOfElementsPerSet
+
+		for x := 0; x < noOfSets; x++ {
+			queryOutput := repository.getSingleQuery(request, namespace, class, request.Body.Objects[startIndex:stopIndex], conn)
+			query = append(query, queryOutput)
+			startIndex += noOfElementsPerSet
+			stopIndex += noOfElementsPerSet
+		}
+
+		if remainderFromSets > 0 {
+			start := len(request.Body.Objects) - remainderFromSets
+			queryOutput := repository.getSingleQuery(request, namespace, class, request.Body.Objects[start:len(request.Body.Objects)], conn)
+			query = append(query, queryOutput)
+		}
+
 	}
 	return
 }
@@ -996,7 +1004,10 @@ func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string,
 }
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
-	//fmt.Println(query)
+	fmt.Println()
+	fmt.Print("Query String : ")
+	fmt.Println(query)
+	fmt.Println()
 	//common.PublishLog("ObjectStoreLog.log", query)
 	var stmt *sql.Stmt
 	stmt, err = conn.Prepare(query)

@@ -502,3 +502,116 @@
 2016-01-08 @ 11:49:37  SELECT CommitStatus,RecordType FROM ACAM_DataSegregationDetails
 2016-01-08 @ 11:49:37  Successfully fetched data from MsSql
 2016-01-08 @ 11:49:37  Executing repository : Mssql DB - Success
+2016-01-08 @ 15:56:06  Starting replicated storage engine
+2016-01-08 @ 15:56:06  Getting settings for get all
+2016-01-08 @ 15:56:06  Executing repository : Mssql DB
+2016-01-08 @ 15:56:06  Starting GET-ALL
+2016-01-08 @ 15:56:06  Database Already Available! Nothing to do....
+2016-01-08 @ 15:56:06  Reusing existing MsSql connection
+2016-01-08 @ 15:56:06  Getting Primary Key
+2016-01-08 @ 15:56:06  Successfully returned primary Key for table
+2016-01-08 @ 15:56:06  Primary Key Field : SegHeaderID
+2016-01-08 @ 15:56:06  select top 1 * from (select *, ROW_NUMBER() over (order by SegHeaderID) as r_n_n from [MDN].[dbo].[ACAM_DataSegregationDetails]) xx where r_n_n >=0;
+2016-01-08 @ 15:56:06  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 15:56:06  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 15:56:06  Executing repository : Mssql DB - Success
+2016-01-08 @ 15:56:18  Starting replicated storage engine
+2016-01-08 @ 15:56:18  Getting settings for get all
+2016-01-08 @ 15:56:18  Executing repository : Mssql DB
+2016-01-08 @ 15:56:18  Starting GET-ALL
+2016-01-08 @ 15:56:18  Database Already Available! Nothing to do....
+2016-01-08 @ 15:56:18  Reusing existing MsSql connection
+2016-01-08 @ 15:56:18  Getting Primary Key
+2016-01-08 @ 15:56:18  Successfully returned primary Key for table
+2016-01-08 @ 15:56:18  Primary Key Field : PID
+2016-01-08 @ 15:56:18  select top 1 * from (select *, ROW_NUMBER() over (order by PID) as r_n_n from [denambey].[dbo].[I_SerialNumber_Details]) xx where r_n_n >=0;
+2016-01-08 @ 15:56:19  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 15:57:59  Starting replicated storage engine
+2016-01-08 @ 15:57:59  Getting settings for get all
+2016-01-08 @ 15:57:59  Executing repository : Mssql DB
+2016-01-08 @ 15:57:59  Starting GET-ALL
+2016-01-08 @ 15:57:59  Database Already Available! Nothing to do....
+2016-01-08 @ 15:57:59  Reusing existing MsSql connection
+2016-01-08 @ 15:57:59  Getting Primary Key
+2016-01-08 @ 15:57:59  Successfully returned primary Key for table
+2016-01-08 @ 15:57:59  Primary Key Field : PID
+2016-01-08 @ 15:57:59  select top 1 * from (select *, ROW_NUMBER() over (order by PID) as r_n_n from [denambey].[dbo].[AODPrintTempTable]) xx where r_n_n >=0;
+2016-01-08 @ 15:57:59  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 15:57:59  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 15:57:59  Executing repository : Mssql DB - Success
+2016-01-08 @ 15:58:22  Starting replicated storage engine
+2016-01-08 @ 15:58:22  Getting settings for get all
+2016-01-08 @ 15:58:22  Executing repository : Mssql DB
+2016-01-08 @ 15:58:22  Starting GET-ALL
+2016-01-08 @ 15:58:22  Database Already Available! Nothing to do....
+2016-01-08 @ 15:58:22  Reusing existing MsSql connection
+2016-01-08 @ 15:58:22  Getting Primary Key
+2016-01-08 @ 15:58:22  Successfully returned primary Key for table
+2016-01-08 @ 15:58:22  Primary Key Field : PID
+2016-01-08 @ 15:58:22  select top 1 * from (select *, ROW_NUMBER() over (order by PID) as r_n_n from [denambey].[dbo].[Awaitcaflist28122010]) xx where r_n_n >=0;
+2016-01-08 @ 15:58:22  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 15:58:22  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 15:58:22  Executing repository : Mssql DB - Success
+2016-01-08 @ 15:59:10  Starting replicated storage engine
+2016-01-08 @ 15:59:10  Getting settings for get all
+2016-01-08 @ 15:59:10  Executing repository : Mssql DB
+2016-01-08 @ 15:59:10  Starting GET-ALL
+2016-01-08 @ 15:59:10  Database Already Available! Nothing to do....
+2016-01-08 @ 15:59:10  Reusing existing MsSql connection
+2016-01-08 @ 15:59:10  Getting Primary Key
+2016-01-08 @ 15:59:10  Successfully returned primary Key for table
+2016-01-08 @ 15:59:10  Primary Key Field : SerialNumber
+2016-01-08 @ 15:59:10  select top 1 * from (select *, ROW_NUMBER() over (order by SerialNumber) as r_n_n from [denambey].[dbo].[I_SerialNumber_Header]) xx where r_n_n >=0;
+2016-01-08 @ 15:59:10  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 16:05:24  Starting replicated storage engine
+2016-01-08 @ 16:05:24  Getting settings for get all
+2016-01-08 @ 16:05:24  Executing repository : Mssql DB
+2016-01-08 @ 16:05:24  Starting GET-ALL
+2016-01-08 @ 16:05:24  Database Already Available! Nothing to do....
+2016-01-08 @ 16:05:24  Reusing existing MsSql connection
+2016-01-08 @ 16:05:24  Getting Primary Key
+2016-01-08 @ 16:05:24  Successfully returned primary Key for table
+2016-01-08 @ 16:05:24  Primary Key Field : SerialNumber
+2016-01-08 @ 16:05:24  select top 1 * from (select *, ROW_NUMBER() over (order by SerialNumber) as r_n_n from [denambey].[dbo].[I_SerialNumber_Header]) xx where r_n_n >=0;
+2016-01-08 @ 16:05:24  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 16:05:24  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 16:05:24  Executing repository : Mssql DB - Success
+2016-01-08 @ 16:06:17  Starting replicated storage engine
+2016-01-08 @ 16:06:17  Getting settings for get all
+2016-01-08 @ 16:06:17  Executing repository : Mssql DB
+2016-01-08 @ 16:06:17  Starting GET-ALL
+2016-01-08 @ 16:06:17  Database Already Available! Nothing to do....
+2016-01-08 @ 16:06:17  Reusing existing MsSql connection
+2016-01-08 @ 16:06:17  Getting Primary Key
+2016-01-08 @ 16:06:17  Successfully returned primary Key for table
+2016-01-08 @ 16:06:17  Primary Key Field : SerialNumber
+2016-01-08 @ 16:06:17  select top 1000 * from (select *, ROW_NUMBER() over (order by SerialNumber) as r_n_n from [denambey].[dbo].[I_SerialNumber_Header]) xx where r_n_n >=0;
+2016-01-08 @ 16:06:17  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 16:06:17  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 16:06:17  Executing repository : Mssql DB - Success
+2016-01-08 @ 16:06:27  Starting replicated storage engine
+2016-01-08 @ 16:06:27  Getting settings for get all
+2016-01-08 @ 16:06:27  Executing repository : Mssql DB
+2016-01-08 @ 16:06:27  Starting GET-ALL
+2016-01-08 @ 16:06:27  Database Already Available! Nothing to do....
+2016-01-08 @ 16:06:27  Reusing existing MsSql connection
+2016-01-08 @ 16:06:27  Getting Primary Key
+2016-01-08 @ 16:06:27  Successfully returned primary Key for table
+2016-01-08 @ 16:06:27  Primary Key Field : SerialNumber
+2016-01-08 @ 16:06:27  select top 10000 * from (select *, ROW_NUMBER() over (order by SerialNumber) as r_n_n from [denambey].[dbo].[I_SerialNumber_Header]) xx where r_n_n >=0;
+2016-01-08 @ 16:06:27  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 16:06:31  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 16:06:31  Executing repository : Mssql DB - Success
+2016-01-08 @ 16:06:43  Starting replicated storage engine
+2016-01-08 @ 16:06:43  Getting settings for get all
+2016-01-08 @ 16:06:43  Executing repository : Mssql DB
+2016-01-08 @ 16:06:43  Starting GET-ALL
+2016-01-08 @ 16:06:44  Database Already Available! Nothing to do....
+2016-01-08 @ 16:06:44  Reusing existing MsSql connection
+2016-01-08 @ 16:06:44  Getting Primary Key
+2016-01-08 @ 16:06:44  Successfully returned primary Key for table
+2016-01-08 @ 16:06:44  Primary Key Field : SerialNumber
+2016-01-08 @ 16:06:44  select top 100000 * from (select *, ROW_NUMBER() over (order by SerialNumber) as r_n_n from [denambey].[dbo].[I_SerialNumber_Header]) xx where r_n_n >=0;
+2016-01-08 @ 16:06:44  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 16:07:23  Successfully retrieved values for all objects in MsSql
+2016-01-08 @ 16:07:23  Executing repository : Mssql DB - Success

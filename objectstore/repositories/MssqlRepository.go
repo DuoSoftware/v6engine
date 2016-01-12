@@ -236,42 +236,27 @@ func (repository MssqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 				rowss.Scan(valuePtrs...)
 
 				for i, col := range columns {
+					if col == "osheaders" || col == "r_n_n" {
+						//Do Nothing :D
+					} else {
 
-					var v interface{}
+						var v interface{}
 
-					val := values[i]
+						val := values[i]
 
-					//b, ok := val.([]byte)
-					// if ok {
-					// 	v = string(b)
-					// } else {
-					// 	//v = val
-					// }
-					v = repository.sqlToGolang(val)
-					tempMap[col] = v
+						//b, ok := val.([]byte)
+						//if ok {
+						//	v = string(b)
+						//} else {
+						//v = val
+						//}
+						v = repository.sqlToGolang(val)
+						tempMap[col] = v
+					}
 				}
 
 				returnMap = append(returnMap, tempMap)
 
-			}
-
-			if request.Controls.SendMetaData == "false" {
-
-				for index, arrVal := range returnMap {
-					for key, _ := range arrVal {
-						if key == "osheaders" {
-							delete(returnMap[index], key)
-						}
-					}
-				}
-			}
-
-			for index, arrVal := range returnMap {
-				for key, _ := range arrVal {
-					if key == "r_n_n" {
-						delete(returnMap[index], key)
-					}
-				}
 			}
 
 			byteValue, errMarshal := json.Marshal(returnMap)
@@ -291,36 +276,39 @@ func (repository MssqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 }
 
 func (repository MssqlRepository) sqlToGolang(input interface{}) (output interface{}) {
-	dataType := reflect.TypeOf(input).String()
-
-	switch dataType {
-	case "string":
-		output = strings.TrimSpace(input.(string))
-		break
-	case "[]byte":
-		b, ok := input.([]byte)
-		if ok {
-			output = string(b)
-		}
-		break
-	case "[]uint8":
-		if f64, err2 := strconv.ParseFloat(string(input.([]byte)), 64); err2 == nil {
-			output = f64
-		} else if f32, err2 := strconv.ParseFloat(string(input.([]byte)), 32); err2 == nil {
-			output = f32
-		} else if i64, err2 := strconv.ParseInt(string(input.([]byte)), 10, 64); err2 == nil {
-			output = i64
-		} else if i32, err2 := strconv.ParseInt(string(input.([]byte)), 10, 32); err2 == nil {
-			output = i32
-		} else {
-			output = string(input.([]byte))
-		}
-		break
-	default:
+	if input == nil {
 		output = input
-		break
-	}
+	} else {
+		dataType := reflect.TypeOf(input).String()
 
+		switch dataType {
+		case "string":
+			output = strings.TrimSpace(input.(string))
+			break
+		case "[]byte":
+			b, ok := input.([]byte)
+			if ok {
+				output = string(b)
+			}
+			break
+		case "[]uint8":
+			if f64, err2 := strconv.ParseFloat(string(input.([]byte)), 64); err2 == nil {
+				output = f64
+			} else if f32, err2 := strconv.ParseFloat(string(input.([]byte)), 32); err2 == nil {
+				output = f32
+			} else if i64, err2 := strconv.ParseInt(string(input.([]byte)), 10, 64); err2 == nil {
+				output = i64
+			} else if i32, err2 := strconv.ParseInt(string(input.([]byte)), 10, 32); err2 == nil {
+				output = i32
+			} else {
+				output = string(input.([]byte))
+			}
+			break
+		default:
+			output = input
+			break
+		}
+	}
 	return
 }
 
