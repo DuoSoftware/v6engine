@@ -3,9 +3,13 @@ package endpoints
 import (
 	//"duov6.com/duonotifier/messaging"
 	//"duov6.com/duonotifier/repositories"
+	"duov6.com/duonotifier/client"
+	"duov6.com/duonotifier/messaging"
+	"encoding/json"
 	"fmt"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/cors"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -17,17 +21,53 @@ func (h *HTTPService) Start() {
 	m := martini.Classic()
 	m.Use(cors.Allow(&cors.Options{
 		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowMethods:     []string{"GET", "POST"},
 		AllowHeaders:     []string{"securityToken", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
 
 	m.Post("/:namespace", handleRequest)
-	fmt.Println("huehuehue")
-	m.Run()
+	m.RunOnAddr(":7000")
 }
 
 func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	fmt.Println("FUCKERS")
+	namespace := params["namespace"]
+	requestBody, _ := ioutil.ReadAll(r.Body)
+
+	switch namespace {
+	case "GetTemplate":
+		request := getTemplateRequest(requestBody)
+		response := client.GetTemplate(request)
+		temp, _ := json.Marshal(response)
+		fmt.Fprintf(w, "%s", string(temp))
+		break
+	default:
+		request := getServiceRequest(requestBody)
+		response := client.Send(request.SecurityToken, request.NotifyMethod, request.Parameters)
+		temp, _ := json.Marshal(response)
+		fmt.Fprintf(w, "%s", string(temp))
+		break
+	}
+
+}
+
+func getServiceRequest(body []byte) messaging.ServiceRequest {
+	var serviceRequest messaging.ServiceRequest
+
+	err := json.Unmarshal(body, &serviceRequest)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return serviceRequest
+}
+
+func getTemplateRequest(body []byte) messaging.TemplateRequest {
+	var templateRequest messaging.TemplateRequest
+
+	err := json.Unmarshal(body, &templateRequest)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return templateRequest
 }
