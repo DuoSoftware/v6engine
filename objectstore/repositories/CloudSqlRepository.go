@@ -5,7 +5,8 @@ import (
 	//"duov6.com/common"
 	//"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
-	"duov6.com/objectstore/queryparser"
+	//"duov6.com/objectstore/queryparser"
+	"duov6.com/queryparser"
 	"duov6.com/term"
 	"encoding/base64"
 	"encoding/json"
@@ -74,7 +75,14 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 	term.Write("Executing Get-Query!", 2)
 	response := RepositoryResponse{}
 	if request.Body.Query.Parameters != "*" {
-		formattedQuery := queryparser.GetFormattedQuerywithDB(request.Body.Query.Parameters, repository.getDatabaseName(request.Controls.Namespace))
+		formattedQuery, err := queryparser.GetCloudSQLQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class)
+		if err != nil {
+			fmt.Println(err.Error())
+			response.IsSuccess = false
+			response.Message = err.Error()
+			return response
+		}
+		//formattedQuery := queryparser.GetFormattedQuerywithDB(request.Body.Query.Parameters, repository.getDatabaseName(request.Controls.Namespace))
 		term.Write(("Formatted Query : " + formattedQuery), 2)
 		query := formattedQuery
 		response = repository.queryCommonMany(query, request)
