@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+	splash()
 	initializeCEBConfig()
 	httpServer := endpoints.HTTPService{}
 	httpServer.Start()
@@ -14,7 +15,7 @@ func main() {
 
 func initializeCEBConfig() {
 	inititalizeObjectStoreConfig()
-	initializeDuoNotifierConfig()
+	//initializeDuoNotifierConfig()
 }
 
 func initializeDuoNotifierConfig() {
@@ -61,4 +62,17 @@ func inititalizeObjectStoreConfig() {
 
 	<-forever
 	return
+}
+
+func splash() {
+
+	fmt.Println()
+	fmt.Println("______             _   _       _   _  __ _          ")
+	fmt.Println("|  _  \\           | \\ | |     | | (_)/ _(_)          ")
+	fmt.Println("| | | |_   _  ___ |  \\| | ___ | |_ _| |_ _  ___ _ __ ")
+	fmt.Println("| | | | | | |/ _ \\| . ` |/ _ \\| __| |  _| |/ _ \\ '__|")
+	fmt.Println("| |/ /| |_| | (_) | |\\  | (_) | |_| | | | |  __/ |   ")
+	fmt.Println("|___/  \\__,_|\\___/\\_| \\_/\\___/ \\__|_|_| |_|\\___|_|   ")
+	fmt.Println()
+
 }
