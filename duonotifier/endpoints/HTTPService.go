@@ -1,8 +1,6 @@
 package endpoints
 
 import (
-	//"duov6.com/duonotifier/messaging"
-	//"duov6.com/duonotifier/repositories"
 	"duov6.com/duonotifier/client"
 	"duov6.com/duonotifier/messaging"
 	"encoding/json"
@@ -43,23 +41,10 @@ func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request
 		fmt.Fprintf(w, "%s", string(temp))
 		break
 	default:
-		request := getServiceRequest(requestBody)
-		response := client.Send(request.SecurityToken, request.NotifyMethod, request.Parameters)
-		temp, _ := json.Marshal(response)
-		fmt.Fprintf(w, "%s", string(temp))
+		fmt.Fprintf(w, "%s", "Method Not Found!")
 		break
 	}
 
-}
-
-func getServiceRequest(body []byte) messaging.ServiceRequest {
-	var serviceRequest messaging.ServiceRequest
-
-	err := json.Unmarshal(body, &serviceRequest)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	return serviceRequest
 }
 
 func getTemplateRequest(body []byte) messaging.TemplateRequest {

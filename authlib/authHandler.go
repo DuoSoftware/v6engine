@@ -3,7 +3,8 @@ package authlib
 import (
 	"duov6.com/applib"
 	"duov6.com/common"
-	"duov6.com/email"
+	//"duov6.com/email"
+	email "duov6.com/duonotifier/client"
 	"duov6.com/session"
 	//"duov6.com/config"
 	"duov6.com/objectstore/client"
@@ -12,6 +13,7 @@ import (
 	"fmt"
 	"strings"
 )
+
 // A AuthHandler represents a Method collection for Auth
 type AuthHandler struct {
 	//Config AuthConfig
@@ -23,6 +25,7 @@ func newAuthHandler() *AuthHandler {
 	//authhld.Config = GetConfig()
 	return authhld // Return new Object
 }
+
 // A ActivationEmail represents Access tokens for Email activations
 type ActivationEmail struct {
 	GUUserID string // GUUserID
@@ -148,7 +151,7 @@ func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 		inputParams["email"] = u.EmailAddress
 		inputParams["name"] = u.Name
 		inputParams["password"] = passowrd
-		email.Send("ignore", "com.duosoftware.auth", "email", "user_resetpassword", inputParams, u.EmailAddress)
+		email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "user_resetpassword", inputParams, nil, u.EmailAddress)
 		term.Write("E Mail Sent", term.Debug)
 		return true
 	}
@@ -195,7 +198,7 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 			inputParams["name"] = u.Name
 			inputParams["token"] = Activ.Token
 			inputParams["password"] = password
-			email.Send("ignore", "com.duosoftware.auth", "email", "user_activate", inputParams, u.EmailAddress)
+			email.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "user_activate", inputParams, nil, u.EmailAddress)
 			term.Write("E Mail Sent", term.Debug)
 			client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
 			term.Write("Activation stored", term.Debug)
@@ -237,7 +240,7 @@ func (h *AuthHandler) UserActivation(token string) bool {
 				inputParams["name"] = u.Name
 				//Change activation status to true and save
 				term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-				email.Send("ignore", "com.duosoftware.auth", "email", "user_activated", inputParams, u.EmailAddress)
+				email.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
 				return true
 			}
 		}
@@ -256,7 +259,7 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 	term.Write(Config.UserName, term.Debug)
 
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(email).Ok()
-	fmt.Println(string(bytes));
+	fmt.Println(string(bytes))
 	var user User
 	if err == "" {
 		if bytes != nil {
