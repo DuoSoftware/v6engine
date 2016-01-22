@@ -3,8 +3,10 @@ package authlib
 import (
 	"duov6.com/common"
 	"duov6.com/gorest"
+	"duov6.com/objectstore/client"
 	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 type AuthCertificate struct {
@@ -12,13 +14,19 @@ type AuthCertificate struct {
 	Otherdata                                                                map[string]string
 }
 
+type AuthorizeAppData struct {
+	Object map[string]interface{}
+}
+
 type Auth struct {
 	gorest.RestService
-	login              gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
-	authorize          gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
-	getSession         gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
-	getAuthCode        gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
-	autherizeApp       gorest.EndPoint `method:"GET" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" output:"bool"`
+	login       gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
+	authorize   gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
+	getSession  gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
+	getAuthCode gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
+	//Lasith's method - Don't Delete
+	//autherizeApp       gorest.EndPoint `method:"GET" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" output:"bool"`
+	autherizeApp       gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
 	addUser            gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
 	registerTenantUser gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
 	userActivation     gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
@@ -63,11 +71,11 @@ func (A Auth) ForgotPassword(EmailAddress, RequestCode string) bool {
 func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
 	h := newAuthHandler()
 	user, error := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
-	x:=1
-	if(x!=1){
-	    x=2
-	}else{
-	    x=3
+	x := 1
+	if x != 1 {
+		x = 2
+	} else {
+		x = 3
 	}
 	if error == "" {
 		_, err := h.Login(user.Email, OldPassword)
@@ -175,19 +183,47 @@ func (A Auth) GetAuthCode(SecurityToken, ApplicationID, URI string) (authCode st
 	return
 }
 
-func (A Auth) AutherizeApp(SecurityToken, Code, ApplicationID, AppSecret string) bool {
+// ----  FUNCTION BY LASITHA --- DONT DELETE ------------
+
+// func (A Auth) AutherizeApp(SecurityToken, Code, ApplicationID, AppSecret string) bool {
+// 	h := newAuthHandler()
+// 	c, err := h.GetSession(SecurityToken, "Nil")
+// 	if err == "" {
+// 		out, err := h.AutherizeApp(Code, ApplicationID, AppSecret, c.UserID)
+// 		if err != "" {
+// 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
+
+// 		}
+// 		return out
+// 	}
+// 	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application Not exist."))
+// 	return false
+// }
+
+func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, ApplicationID, AppSecret string) {
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
+
+		//Insert Object To Objectore
+		id := common.GetHash(SecurityToken + c.UserID)
+		data := make(map[string]interface{})
+		data["id"] = id
+		for key, value := range object.Object {
+			data[key] = value
+		}
+		client.Go("ignore", "com.duosoftware.auth", "scope").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
+		//insert to Objectstore ends here
+
 		out, err := h.AutherizeApp(Code, ApplicationID, AppSecret, c.UserID)
 		if err != "" {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
-
+			return
 		}
-		return out
+		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(strconv.FormatBool(out)))
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application Not exist."))
 	}
-	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application Not exist."))
-	return false
 }
 
 func (A Auth) GetGUID() string {
