@@ -93,7 +93,9 @@ func PrepareSQLStatement(input string, repo string, namespace string, class stri
 		} else if strings.EqualFold(queryTokens[index], "group") && strings.EqualFold(queryTokens[index+1], "by") {
 			queryTokens[index] = "GROUP"
 			queryTokens[index+1] = "BY"
-			isValid = errors.New("GROUP BY queries are not allowed!")
+			if repo == "ES" {
+				isValid = errors.New("GROUP BY queries are not allowed!")
+			}
 		} else if strings.EqualFold(queryTokens[index], "asc") {
 			queryTokens[index] = "ASC"
 		} else if strings.EqualFold(queryTokens[index], "desc") {
