@@ -81,12 +81,12 @@ func (h *TenantHandler) CreateTenant(t Tenant, user session.AuthCertificate, upd
 			term.Write("Save Tenant saving Tenant  "+t.Name+" New Tenant "+t.Name, term.Debug)
 			var inputParams map[string]string
 			inputParams = make(map[string]string)
-			inputParams["email"] = user.Email
-			inputParams["name"] = user.Name
-			inputParams["tenantID"] = t.TenantID
-			inputParams["tenantName"] = t.Name
+			inputParams["@@email@@"] = user.Email
+			inputParams["@@name@@"] = user.Name
+			inputParams["@@tenantID@@"] = t.TenantID
+			inputParams["@@tenantName@@"] = t.Name
 			h.AddUsersToTenant(t.TenantID, t.Name, user.UserID, "admin")
-			go email.Send("ignore", "Tenent Creation Notification!", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, nil, user.Email)
+			email.Send("ignore", "Tenent Creation Notification!", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, nil, user.Email)
 			//email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, user.Email)
 			client.Go("ignore", "com.duosoftware.tenant", "tenants").StoreObject().WithKeyField("TenantID").AndStoreOne(t).Ok()
 		} else {
@@ -191,13 +191,13 @@ func (h *TenantHandler) AddUserToTenant(u session.AuthCertificate, users []Invit
 	for _, user := range users {
 		var inputParams map[string]string
 		inputParams = make(map[string]string)
-		inputParams["email"] = user.Email
-		inputParams["name"] = user.Name
-		inputParams["userID"] = user.UserID
-		inputParams["tenantID"] = u.Domain
-		inputParams["FromName"] = u.Username
-		inputParams["FromID"] = u.UserID
-		inputParams["FromEmail"] = u.Email
+		inputParams["@@email@@"] = user.Email
+		inputParams["@@name@@"] = user.Name
+		inputParams["@@userID@@"] = user.UserID
+		inputParams["@@tenantID@@"] = u.Domain
+		inputParams["@@FromName@@"] = u.Username
+		inputParams["@@FromID@@"] = u.UserID
+		inputParams["@@FromEmail@@"] = u.Email
 		req := InviteUserRequest{}
 		req.UserID = user.UserID
 		req.TenantID = u.Domain
@@ -212,7 +212,7 @@ func (h *TenantHandler) AddUserToTenant(u session.AuthCertificate, users []Invit
 		//h.AddUsersToTenant(t.TenantID, user.UserID, "admin")
 		client.Go("ignore", "com.duosoftware.tenant", "userrequest").StoreObject().WithKeyField("RequestToken").AndStoreOne(req).Ok()
 		//email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, user.Email)
-		go email.Send("ignore", "Tenent User Allocation Notification!", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, nil, user.Email)
+		email.Send("ignore", "Tenent User Allocation Notification!", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, nil, user.Email)
 
 	}
 }
