@@ -299,7 +299,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 						message = "JSON Parse error in Request : " + err.Error()
 						isSuccess = false
 					} else {
-
+						isLoggable = true //Print All Everytime. Testing for DuoAuth. Remove this after testing done.
 						if isLoggable {
 							fmt.Println("-----------------------------------------------------------------------------")
 							fmt.Print(string(rb))
