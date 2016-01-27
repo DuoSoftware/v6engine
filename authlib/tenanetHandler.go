@@ -2,7 +2,8 @@ package authlib
 
 import (
 	"duov6.com/common"
-	"duov6.com/email"
+	//"duov6.com/email"
+	email "duov6.com/duonotifier/client"
 	"duov6.com/objectstore/client"
 	"duov6.com/session"
 	"duov6.com/term"
@@ -72,7 +73,7 @@ func (h *TenantHandler) CreateTenant(t Tenant, user session.AuthCertificate, upd
 	if err == "" {
 		var uList Tenant
 		err := json.Unmarshal(bytes, &uList)
-		if err != nil || uList.TenantID=="" {
+		if err != nil || uList.TenantID == "" {
 			if t.TenantID == "" {
 				t.TenantID = common.GetGUID()
 				term.Write("Auto Gen TID  "+t.TenantID+" New Tenant "+t.Name, term.Debug)
@@ -85,8 +86,8 @@ func (h *TenantHandler) CreateTenant(t Tenant, user session.AuthCertificate, upd
 			inputParams["tenantID"] = t.TenantID
 			inputParams["tenantName"] = t.Name
 			h.AddUsersToTenant(t.TenantID, t.Name, user.UserID, "admin")
-
-			email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, user.Email)
+			go email.Send("ignore", "Tenent Creation Notification!", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, nil, user.Email)
+			//email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, user.Email)
 			client.Go("ignore", "com.duosoftware.tenant", "tenants").StoreObject().WithKeyField("TenantID").AndStoreOne(t).Ok()
 		} else {
 			if update {
@@ -136,7 +137,7 @@ func (h *TenantHandler) AddTenantForUsers(Tenant TenantMinimum, UserID string) U
 	//t.UserID
 	if err == "" {
 		err := json.Unmarshal(bytes, &t)
-		if err != nil || t.UserID==""  {
+		if err != nil || t.UserID == "" {
 			term.Write("No Users yet assigied "+UserID, term.Debug)
 			t = UserTenants{UserID, []TenantMinimum{}}
 			t.UserID = UserID
@@ -210,7 +211,9 @@ func (h *TenantHandler) AddUserToTenant(u session.AuthCertificate, users []Invit
 
 		//h.AddUsersToTenant(t.TenantID, user.UserID, "admin")
 		client.Go("ignore", "com.duosoftware.tenant", "userrequest").StoreObject().WithKeyField("RequestToken").AndStoreOne(req).Ok()
-		email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, user.Email)
+		//email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, user.Email)
+		go email.Send("ignore", "Tenent User Allocation Notification!", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, nil, user.Email)
+
 	}
 }
 
@@ -249,7 +252,7 @@ func (h *TenantHandler) AcceptRequest(u session.AuthCertificate, securityLevel, 
 	var t InviteUserRequest
 	if err == "" {
 		err := json.Unmarshal(bytes, &t)
-		if err != nil || t.SecurityLevel==""{
+		if err != nil || t.SecurityLevel == "" {
 			if securityLevel == "" {
 				securityLevel = t.SecurityLevel
 			}
@@ -272,7 +275,7 @@ func (h *TenantHandler) AddUsersToTenant(TenantID, Name string, users, SecurityL
 	var t TenantUsers
 	if err == "" {
 		err := json.Unmarshal(bytes, &t)
-		if err != nil || t.TenantID==""{
+		if err != nil || t.TenantID == "" {
 			term.Write("No Users yet assigied "+t.TenantID, term.Debug)
 			//t=TenantUsers{}
 			t = TenantUsers{TenantID, []string{}}

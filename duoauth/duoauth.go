@@ -6,7 +6,7 @@ import (
 	"duov6.com/authlib"
 	"duov6.com/cebadapter"
 	"duov6.com/config"
-	"duov6.com/email"
+	//"duov6.com/email"
 	"duov6.com/gorest"
 	"duov6.com/pog"
 	"duov6.com/stat"
@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"net/http"
 )
+
 // A ServiceConfig represents a configuration for galang
 type ServiceConfig struct {
 	AuthService    bool
@@ -25,8 +26,6 @@ type ServiceConfig struct {
 }
 
 var Config ServiceConfig
-
-
 
 func GetConfig() ServiceConfig {
 	b, err := config.Get("Service")
@@ -98,9 +97,9 @@ func runRestFul() {
 	gorest.RegisterService(new(apisvc.ApiSvc))
 
 	c := authlib.GetConfig()
-	email.EmailAddress = c.Smtpusername
-	email.Password = c.Smtppassword
-	email.SMTPServer = c.Smtpserver
+	//email.EmailAddress = c.Smtpusername
+	//email.Password = c.Smtppassword
+	//email.SMTPServer = c.Smtpserver
 
 	if c.Https_Enabled {
 		err := http.ListenAndServeTLS(":3048", c.Cirtifcate, c.PrivateKey, gorest.Handle())
