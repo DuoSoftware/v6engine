@@ -735,7 +735,7 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 	//connmanager.Set("MYSQL", request.Controls.Namespace, c)
 	conn = c
 	//}
-	fmt.Println("Created Connection!")
+	//fmt.Println("Created Connection!")
 	return conn, err
 }
 
@@ -1012,10 +1012,10 @@ func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string,
 }
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
-	fmt.Println()
-	fmt.Print("Query String : ")
-	fmt.Println(query)
-	fmt.Println()
+	//fmt.Println()
+	//fmt.Print("Query String : ")
+	//fmt.Println(query)
+	//fmt.Println()
 	//common.PublishLog("ObjectStoreLog.log", query)
 	var stmt *sql.Stmt
 	stmt, err = conn.Prepare(query)

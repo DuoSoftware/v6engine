@@ -66,7 +66,7 @@ func (h *HTTPService) Start(isLogEnabled bool, isJsonStackEnabled bool) {
 }
 
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	versionData := "{\"name\": \"Objectstore\",\"version\": \"1.0.8-a\",\"Change Log\":\"Added batch insert for large datasets to CloudSQL repository.\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	versionData := "{\"name\": \"Objectstore\",\"version\": \"1.0.9-a\",\"Change Log\":\"Removed/Commented all Debug lines for load testing!\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
 	fmt.Fprintf(w, versionData)
 }
 
@@ -299,10 +299,8 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 						message = "JSON Parse error in Request : " + err.Error()
 						isSuccess = false
 					} else {
-						isLoggable = true //Print All Everytime. Testing for DuoAuth. Remove this after testing done.
+						//Print All Everytime. Testing for DuoAuth. Remove this after testing done.
 						if isLoggable {
-							fmt.Println("-----------------------------------------------------------------------------")
-							fmt.Print(string(rb))
 							fmt.Println("-----------------------------------------------------------------------------")
 							fmt.Println("Primary Key : " + requestBody.Parameters.KeyProperty)
 							fmt.Print("Query : ")
@@ -403,8 +401,6 @@ func validateSecurityToken(token string, domain string) (isValidated bool, cert 
 	if len(error) != 0 {
 		isValidated = false
 	}
-
-	//isValidated = true
 
 	return
 }

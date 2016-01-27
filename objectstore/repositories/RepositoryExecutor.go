@@ -2,16 +2,16 @@ package repositories
 
 import (
 	"duov6.com/objectstore/messaging"
-	"fmt"
+	//"fmt"
 )
 
 func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (response RepositoryResponse) {
 
 	switch request.Controls.Operation { //CREATE, READ, UPDATE, DELETE, SPECIAL
 	case "insert":
-		fmt.Println("Insert")
+		//fmt.Println("Insert")
 		if request.Controls.Multiplicity == "single" {
-			fmt.Println("Single")
+			//fmt.Println("Single")
 			response = repository.InsertSingle(request)
 		} else {
 			response = repository.InsertMultiple(request)

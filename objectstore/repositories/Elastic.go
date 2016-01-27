@@ -572,8 +572,8 @@ func (repository ElasticRepository) executeQuery(request *messaging.ObjectReques
 		return
 	}
 
-	fmt.Print("Elastic JSON Query : ")
-	fmt.Println(query)
+	//fmt.Print("Elastic JSON Query : ")
+	//fmt.Println(query)
 
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
@@ -699,7 +699,7 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 
 	query := "{\"_source\":[" + fieldString + "],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
 
-	fmt.Println(query)
+	//fmt.Println(query)
 
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
@@ -717,7 +717,7 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 			allMaps[index] = currentMap
 		}
 
-		fmt.Println(allMaps)
+		//fmt.Println(allMaps)
 
 		returnByte, _ = json.Marshal(allMaps)
 
