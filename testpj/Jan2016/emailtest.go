@@ -2,7 +2,7 @@ package main
 
 import (
 	email "duov6.com/duonotifier/client"
-	"fmt"
+	//"fmt"
 )
 
 func main() {
@@ -15,5 +15,5 @@ func main() {
 	obj["@@APPLICATION@@"] = "E-banks.lk"
 	obj["@@FOOTER@@"] = "Copyright 2015"
 	obj["@@LOGO@@"] = ""
-	fmt.Println(email.Send("ignore", "huehuehue", "com.SLT.space.cargills.com", "email", "T_Email_GENERAL", obj, nil, "prasad@duosoftware.com"))
+	email.Send("ignore", "huehuehue", "com.SLT.space.cargills.com", "email", "T_Email_GENERAL", obj, nil, "prasad@duosoftware.com")
 }

@@ -148,10 +148,10 @@ func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 		h.SaveUser(u, true)
 		var inputParams map[string]string
 		inputParams = make(map[string]string)
-		inputParams["email"] = u.EmailAddress
-		inputParams["name"] = u.Name
-		inputParams["password"] = passowrd
-		go email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "user_resetpassword", inputParams, nil, u.EmailAddress)
+		inputParams["@@email@@"] = u.EmailAddress
+		inputParams["@@name@@"] = u.Name
+		inputParams["@@password@@"] = passowrd
+		email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "user_resetpassword", inputParams, nil, u.EmailAddress)
 		term.Write("E Mail Sent", term.Debug)
 		return true
 	}
@@ -194,11 +194,11 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 			Activ.Token = common.RandText(10)
 			var inputParams map[string]string
 			inputParams = make(map[string]string)
-			inputParams["email"] = u.EmailAddress
-			inputParams["name"] = u.Name
-			inputParams["token"] = Activ.Token
-			inputParams["password"] = password
-			go email.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "user_activate", inputParams, nil, u.EmailAddress)
+			inputParams["@@email@@"] = u.EmailAddress
+			inputParams["@@name@@"] = u.Name
+			inputParams["@@token@@"] = Activ.Token
+			inputParams["@@password@@"] = password
+			email.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "user_activate", inputParams, nil, u.EmailAddress)
 			term.Write("E Mail Sent", term.Debug)
 			client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
 			term.Write("Activation stored", term.Debug)
@@ -236,11 +236,11 @@ func (h *AuthHandler) UserActivation(token string) bool {
 				var u User
 				var inputParams map[string]string
 				inputParams = make(map[string]string)
-				inputParams["email"] = u.EmailAddress
-				inputParams["name"] = u.Name
+				inputParams["@@email@@"] = u.EmailAddress
+				inputParams["@@name@@"] = u.Name
 				//Change activation status to true and save
 				term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-				go email.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
+				email.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
 				return true
 			}
 		}
