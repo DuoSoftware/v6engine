@@ -18,16 +18,16 @@ func main() {
 
 func insert() {
 	securityToken := "123"
-	domain := "loadtest.jay.com"
+	domain := "loadtest2.jay.com"
 	class := "test2"
 
 	data := make(map[string]interface{})
 	data["GUAccountID"] = "-888"
-	data["accountNo"] = "-888"
+	data["accountNo"] = "1243789076432144231"
 
 	JSON_Document := CreateJSON(data, "GUAccountID")
 
-	url := "http://" + "duoworld.duoweb.info:3000" + "/" + domain + "/" + class
+	url := "http://" + "192.168.1.194:3000" + "/" + domain + "/" + class
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(JSON_Document)))
 	req.Header.Set("securityToken", securityToken)
 	client := &http.Client{}
