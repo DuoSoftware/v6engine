@@ -1,7 +1,7 @@
 package messaging
 
 import (
-	"duov6.com/common"
+	//"duov6.com/common"
 	"duov6.com/objectstore/configuration"
 	//"fmt"
 )
@@ -19,6 +19,6 @@ type ObjectRequest struct {
 func (o *ObjectRequest) Log(message string) {
 	if o.IsLogEnabled {
 		o.MessageStack = append(o.MessageStack, message)
-		common.PublishLog("ObjectStoreLog.log", message)
+		//common.PublishLog("ObjectStoreLog.log", message)
 	}
 }

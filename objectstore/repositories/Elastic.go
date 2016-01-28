@@ -1,10 +1,10 @@
 package repositories
 
 import (
+	//"duov6.com/term"
 	"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
-	"duov6.com/term"
 	"encoding/json"
 	"fmt"
 	"github.com/mattbaird/elastigo/lib"
@@ -109,7 +109,7 @@ func (repository ElasticRepository) GetQuery(request *messaging.ObjectRequest) R
 			}
 		} else {
 			//Check if just * then execute GET-SEARCH method
-			term.Write("Redirecting to GET-SEARCH!", 2)
+			//term.Write("Redirecting to GET-SEARCH!", 2)
 			return repository.search(request, request.Body.Query.Parameters)
 		}
 	default:
@@ -141,7 +141,7 @@ func (repository ElasticRepository) GetByKey(request *messaging.ObjectRequest) R
 		bytes, err = json.Marshal(originalData)
 		if err != nil {
 			errorMessage := "Elastic search JSON marshal error : " + err.Error()
-			term.Write(err.Error(), 1)
+			//term.Write(err.Error(), 1)
 			response.GetErrorResponse(errorMessage)
 
 		} else {
@@ -178,7 +178,7 @@ func (repository ElasticRepository) setOneElastic(request *messaging.ObjectReque
 	}
 	_, err := conn.Index(request.Controls.Namespace, request.Controls.Class, key, nil, request.Body.Object)
 	if err != nil {
-		term.Write(err.Error(), 1)
+		//term.Write(err.Error(), 1)
 		errorMessage := "Elastic Search Single Insert Error : " + err.Error()
 		response.GetErrorResponse(errorMessage)
 		return response
@@ -455,7 +455,7 @@ func (repository ElasticRepository) DeleteMultiple(request *messaging.ObjectRequ
 		_, err := conn.Delete(request.Controls.Namespace, request.Controls.Class, key, nil)
 		if err != nil {
 			errorMessage := "Elastic Search single delete error : " + err.Error()
-			term.Write(err.Error(), 1)
+			//term.Write(err.Error(), 1)
 			response.GetErrorResponse(errorMessage)
 		} else {
 			response.IsSuccess = true
@@ -476,7 +476,7 @@ func (repository ElasticRepository) DeleteSingle(request *messaging.ObjectReques
 	if err != nil {
 		errorMessage := "Elastic Search single delete error : " + err.Error()
 		request.Log(errorMessage)
-		term.Write(err.Error(), 1)
+		//term.Write(err.Error(), 1)
 		response.GetErrorResponse(errorMessage)
 	} else {
 		response.IsSuccess = true
@@ -607,7 +607,7 @@ func (repository ElasticRepository) executeGetFields(request *messaging.ObjectRe
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
 	if err != nil {
-		term.Write(err.Error(), 1)
+		//term.Write(err.Error(), 1)
 		returnByte = getEmptyByteObject()
 	} else {
 		var allMaps []map[string]interface{}
@@ -704,7 +704,7 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
 	if err != nil {
-		term.Write(err.Error(), 1)
+		//term.Write(err.Error(), 1)
 	} else {
 		var allMaps []map[string]interface{}
 		allMaps = make([]map[string]interface{}, data.Hits.Len())
@@ -734,7 +734,7 @@ func (repository ElasticRepository) getByCURL(host string, port string, path str
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		term.Write(err.Error(), 1)
+		//term.Write(err.Error(), 1)
 	} else {
 		body, _ := ioutil.ReadAll(resp.Body)
 		returnByte = body
@@ -789,7 +789,7 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 			_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", key, nil, newRecord)
 
 			if err != nil {
-				term.Write(err.Error(), 1)
+				//term.Write(err.Error(), 1)
 				return uuid.NewV1().String()
 			} else {
 				return "1"
@@ -800,7 +800,7 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 			currentMap = make(map[string]interface{})
 			byteData, err := data.Source.MarshalJSON()
 			if err != nil {
-				term.Write(err.Error(), 1)
+				//term.Write(err.Error(), 1)
 				return uuid.NewV1().String()
 			}
 			json.Unmarshal(byteData, &currentMap)
@@ -816,7 +816,7 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 			newRecord["version"] = uuid.NewV1().String()
 			_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", request.Controls.Class, nil, newRecord)
 			if err != nil {
-				term.Write(err.Error(), 1)
+				//term.Write(err.Error(), 1)
 				return uuid.NewV1().String()
 			} else {
 				return maxCount
