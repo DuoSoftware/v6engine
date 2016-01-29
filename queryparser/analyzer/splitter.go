@@ -90,8 +90,19 @@ func appendWhere(query string, object structs.QueryObject) (qObject structs.Quer
 	}
 
 	whereSet = strings.TrimSpace(whereSet)
+
+	fmt.Println("*************")
+	fmt.Println(whereSet)
+
 	whereSet = prepareWhereClause(whereSet)
+
+	fmt.Println("*************")
+	fmt.Println(whereSet)
+
 	stringSet := getWhereSets(whereSet)
+
+	fmt.Println("*************")
+	fmt.Println(stringSet)
 	whereClauses := make(map[int][]string)
 
 	for x := 0; x < len(stringSet); x++ {
@@ -212,8 +223,26 @@ func getWhereSets(whereClause string) (set map[int]string) {
 			set[index-1] = indexValue
 			x += len(tokens[x:endIndex]) - 1
 		} else {
-			set[index] = tokens[x]
-			index += 1
+			fmt.Println("jiejieji")
+			if strings.Contains(tokens[x], "'") {
+				attachString := ""
+				attachString += tokens[x]
+				for i := x; i < len(tokens); i++ {
+					if strings.Contains(tokens[i], "'") {
+						attachString += tokens[i]
+						index += 1
+						x += 1
+						break
+					} else {
+						attachString += tokens[i]
+						index += 1
+						x += 1
+					}
+				}
+			} else {
+				set[index] = tokens[x]
+				index += 1
+			}
 		}
 	}
 	return
