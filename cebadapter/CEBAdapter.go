@@ -1,5 +1,6 @@
 package cebadapter
 //test commit!!!!
+
 import (
 	"duov6.com/agentCore"
 	"duov6.com/agentCore/core"
@@ -29,4 +30,8 @@ func Attach(serverClass string, callback func(s bool)) {
 
 func GetAgent() (agent *core.Agent){
 	return agentCore.GetInstance()
+}
+
+func agentTestForEra(){
+	return 1
 }
