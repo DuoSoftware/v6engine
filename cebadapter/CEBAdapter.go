@@ -1,6 +1,5 @@
 package cebadapter
-//I don't  want to be a lazy coder :`(
-//Finally I am not lazy :)
+//test commit!!!!
 import (
 	"duov6.com/agentCore"
 	"duov6.com/agentCore/core"
