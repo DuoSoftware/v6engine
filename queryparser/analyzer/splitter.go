@@ -103,6 +103,11 @@ func appendWhere(query string, object structs.QueryObject) (qObject structs.Quer
 
 	fmt.Println("*************")
 	fmt.Println(stringSet)
+	fmt.Println(len(stringSet))
+	for key, val := range stringSet {
+		fmt.Println(key)
+		fmt.Println(val)
+	}
 	whereClauses := make(map[int][]string)
 
 	for x := 0; x < len(stringSet); x++ {
@@ -198,6 +203,7 @@ func getWhereSets(whereClause string) (set map[int]string) {
 	set = make(map[int]string)
 	tokens := strings.Split(whereClause, " ")
 	for x := 0; x < len(tokens); x++ {
+		fmt.Println(tokens[x])
 		if strings.EqualFold(tokens[x], "between") && strings.EqualFold(tokens[x+2], "and") {
 			set[index-1] = (tokens[x-1] + " " + tokens[x] + " " + tokens[x+1] + " " + tokens[x+2] + " " + tokens[x+3])
 			x += 3
@@ -226,19 +232,18 @@ func getWhereSets(whereClause string) (set map[int]string) {
 			fmt.Println("jiejieji")
 			if strings.Contains(tokens[x], "'") {
 				attachString := ""
-				attachString += tokens[x]
+				//attachString += tokens[x]
 				for i := x; i < len(tokens); i++ {
 					if strings.Contains(tokens[i], "'") {
 						attachString += tokens[i]
-						index += 1
 						x += 1
 						break
 					} else {
 						attachString += tokens[i]
-						index += 1
 						x += 1
 					}
 				}
+				set[index] = attachString
 			} else {
 				set[index] = tokens[x]
 				index += 1
@@ -250,7 +255,10 @@ func getWhereSets(whereClause string) (set map[int]string) {
 
 func createArrayFromWhereString(input string) (output []string) {
 	tokens := strings.Split(input, " ")
-
+	fmt.Println("111111111111111111111111111")
+	fmt.Println(input)
+	fmt.Println(tokens)
+	fmt.Println(len(tokens))
 	if len(tokens) > 1 {
 		if tokens[1] == "BETWEEN" && tokens[3] == "AND" {
 			output = tokens

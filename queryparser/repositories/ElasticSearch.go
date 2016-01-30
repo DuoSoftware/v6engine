@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"duov6.com/queryparser/structs"
+	"fmt"
 	"strings"
 )
 
@@ -34,6 +35,10 @@ func (repository ElasticSearch) GetQuery(request structs.RepoRequest) structs.Re
 
 	queryString += "}}"
 	response.Query = queryString
+
+	fmt.Println("###########################################################")
+	fmt.Println(queryString)
+	fmt.Println("###########################################################")
 	return response
 }
 

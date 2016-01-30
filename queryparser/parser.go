@@ -87,12 +87,13 @@ func getQuery(queryString string, repository string, namespace string, class str
 
 		//Create Query map from the normalized query
 		queryStruct := analyzer.GetQueryMaps(preparedQuery)
+		fmt.Println("------------------")
 		fmt.Println(queryStruct.Operation)
 		fmt.Println(queryStruct.SelectedFields)
 		fmt.Println(queryStruct.Table)
 		fmt.Println(queryStruct.Where)
 		fmt.Println(queryStruct.Orderby)
-
+		fmt.Println("------------------")
 		//check for query Compatibility
 		compErr := analyzer.CheckQueryCompatibility(preparedQuery, repository, queryStruct)
 		if compErr != nil {
