@@ -36,9 +36,8 @@ func (repository ElasticSearch) GetQuery(request structs.RepoRequest) structs.Re
 	queryString += "}}"
 	response.Query = queryString
 
-	fmt.Println("###########################################################")
+	fmt.Print("Query : ")
 	fmt.Println(queryString)
-	fmt.Println("###########################################################")
 	return response
 }
 

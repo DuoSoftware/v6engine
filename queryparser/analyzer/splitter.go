@@ -90,30 +90,13 @@ func appendWhere(query string, object structs.QueryObject) (qObject structs.Quer
 	}
 
 	whereSet = strings.TrimSpace(whereSet)
-
-	fmt.Println("*************")
-	fmt.Println(whereSet)
-
 	whereSet = prepareWhereClause(whereSet)
-
-	fmt.Println("*************")
-	fmt.Println(whereSet)
-
 	stringSet := getWhereSets(whereSet)
-
-	fmt.Println("*************")
-	fmt.Println(stringSet)
-	fmt.Println(len(stringSet))
-	for key, val := range stringSet {
-		fmt.Println(key)
-		fmt.Println(val)
-	}
 	whereClauses := make(map[int][]string)
 
 	for x := 0; x < len(stringSet); x++ {
 		whereClauses[x] = createArrayFromWhereString(stringSet[x])
 	}
-
 	qObject.Where = whereClauses
 
 	return
@@ -203,7 +186,6 @@ func getWhereSets(whereClause string) (set map[int]string) {
 	set = make(map[int]string)
 	tokens := strings.Split(whereClause, " ")
 	for x := 0; x < len(tokens); x++ {
-		fmt.Println(tokens[x])
 		if strings.EqualFold(tokens[x], "between") && strings.EqualFold(tokens[x+2], "and") {
 			set[index-1] = (tokens[x-1] + " " + tokens[x] + " " + tokens[x+1] + " " + tokens[x+2] + " " + tokens[x+3])
 			x += 3
@@ -229,37 +211,33 @@ func getWhereSets(whereClause string) (set map[int]string) {
 			set[index-1] = indexValue
 			x += len(tokens[x:endIndex]) - 1
 		} else {
-			fmt.Println("jiejieji")
-			if strings.Contains(tokens[x], "'") {
-				attachString := ""
-				//attachString += tokens[x]
-				for i := x; i < len(tokens); i++ {
-					if strings.Contains(tokens[i], "'") {
-						attachString += tokens[i]
+			if strings.Contains(tokens[x], "'") && (strings.Count(tokens[x], "'") == 1) {
+				attachString := tokens[x] + " "
+				for y := x; y < len(tokens); y++ {
+					if strings.Contains(tokens[y+1], "'") {
+						attachString += tokens[y+1] + " "
 						x += 1
 						break
 					} else {
-						attachString += tokens[i]
+						attachString += tokens[y+1] + " "
 						x += 1
 					}
 				}
-				set[index] = attachString
+				set[index] = strings.TrimSpace(attachString)
+				index += 1
 			} else {
 				set[index] = tokens[x]
 				index += 1
 			}
+
 		}
 	}
 	return
 }
 
 func createArrayFromWhereString(input string) (output []string) {
-	tokens := strings.Split(input, " ")
-	fmt.Println("111111111111111111111111111")
-	fmt.Println(input)
-	fmt.Println(tokens)
-	fmt.Println(len(tokens))
-	if len(tokens) > 1 {
+	if strings.Contains(input, "BETWEEN") || strings.Contains(input, "NOTBETWEEN") || strings.Contains(input, "IN") || strings.Contains(input, "NOTIN") {
+		tokens := strings.Split(input, " ")
 		if tokens[1] == "BETWEEN" && tokens[3] == "AND" {
 			output = tokens
 		} else if tokens[1] == "NOTBETWEEN" && tokens[3] == "AND" {
@@ -315,6 +293,68 @@ func createArrayFromWhereString(input string) (output []string) {
 	return
 
 }
+
+// func createArrayFromWhereString(input string) (output []string) {
+// 	tokens := strings.Split(input, " ")
+// 	if len(tokens) > 1 {
+// 		fmt.Println("NOOOOOOOOOOOOOOOOOOOOOOOOOO")
+// 		if tokens[1] == "BETWEEN" && tokens[3] == "AND" {
+// 			output = tokens
+// 		} else if tokens[1] == "NOTBETWEEN" && tokens[3] == "AND" {
+// 			output = tokens
+// 		} else if strings.Contains(input, "IN(") || strings.Contains(input, "NOTIN(") {
+// 			tempMap := make(map[int]string)
+// 			tempMap[0] = tokens[0]
+// 			if strings.Contains(input, "NOTIN(") {
+// 				tempMap[1] = "NOTIN"
+// 			} else {
+// 				tempMap[1] = "IN"
+// 			}
+// 			inStartIndex := strings.Index(input, "(")
+// 			inStopIndex := strings.Index(input, ")")
+// 			parameters := strings.Split(input[(inStartIndex+1):inStopIndex], ",")
+
+// 			for x := 0; x < len(parameters); x++ {
+// 				tempMap[x+2] = strings.TrimSpace(parameters[x])
+// 			}
+// 			output = make([]string, len(tempMap))
+// 			for x := 0; x < len(tempMap); x++ {
+// 				output[x] = tempMap[x]
+// 			}
+// 		}
+// 	} else {
+// 		fmt.Println("Huehuehue")
+// 		if strings.Contains(input, "!=") {
+// 			words := strings.Split(input, "!=")
+// 			output = makeFinalwhereArray("!=", words)
+// 		} else if strings.Contains(input, ">=") {
+// 			words := strings.Split(input, ">=")
+// 			output = makeFinalwhereArray(">=", words)
+// 		} else if strings.Contains(input, ">") {
+// 			words := strings.Split(input, ">")
+// 			output = makeFinalwhereArray(">", words)
+// 		} else if strings.Contains(input, "<=") {
+// 			words := strings.Split(input, "<=")
+// 			output = makeFinalwhereArray("<=", words)
+// 		} else if strings.Contains(input, "<") {
+// 			words := strings.Split(input, "<")
+// 			output = makeFinalwhereArray("<", words)
+// 		} else if strings.Contains(input, "=") {
+// 			fmt.Print("come the fuck on")
+// 			words := strings.Split(input, "=")
+// 			output = makeFinalwhereArray("=", words)
+// 		} else if strings.Contains(input, "LIKE") {
+// 			words := strings.Split(input, "LIKE")
+// 			output = makeFinalwhereArray("LIKE", words)
+// 		} else {
+// 			output = make([]string, 1)
+// 			output[0] = input
+// 		}
+// 	}
+
+// 	return
+
+// }
 
 func makeFinalwhereArray(sign string, words []string) []string {
 	index := 0
