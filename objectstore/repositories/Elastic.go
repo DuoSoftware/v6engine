@@ -331,7 +331,7 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
 	}
 
-	noOfElementsPerSet := 100
+	noOfElementsPerSet := 500
 	noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
 	remainderFromSets := 0
 	remainderFromSets = (len(request.Body.Objects) - (noOfSets * noOfElementsPerSet))
@@ -363,7 +363,7 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 		startIndex += noOfElementsPerSet
 		stopIndex += noOfElementsPerSet
 
-		time.Sleep(1200 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 
 	}
 
@@ -412,10 +412,8 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 
 func (repository ElasticRepository) insertRecordStub(request *messaging.ObjectRequest, records []map[string]interface{}, conn *elastigo.Conn) (status bool) {
 	status = true
-
-	indexer := conn.NewBulkIndexer(200)
-	nowTime := time.Now()
-
+	indexer := conn.NewBulkIndexerErrors(1000, 60)
+	indexer.Start()
 	for _, obj := range records {
 		nosqlid := ""
 		if obj["OriginalIndex"] != nil {
@@ -423,16 +421,40 @@ func (repository ElasticRepository) insertRecordStub(request *messaging.ObjectRe
 		} else {
 			nosqlid = getNoSqlKeyById(request, obj)
 		}
-		indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
+		indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "", "", nil, obj)
 	}
-	indexer.Start()
-	numerrors := indexer.NumErrors()
+	indexer.Stop()
 
-	if numerrors != 0 {
-		status = false
-	}
 	return
+
 }
+
+// Elastic v1.7 code -- Don't Delete
+// func (repository ElasticRepository) insertRecordStub(request *messaging.ObjectRequest, records []map[string]interface{}, conn *elastigo.Conn) (status bool) {
+// 	status = true
+
+// 	indexer := conn.NewBulkIndexer(100)
+// 	nowTime := time.Now()
+
+// 	for _, obj := range records {
+// 		nosqlid := ""
+// 		if obj["OriginalIndex"] != nil {
+// 			nosqlid = obj["OriginalIndex"].(string)
+// 		} else {
+// 			nosqlid = getNoSqlKeyById(request, obj)
+// 		}
+// 		//indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
+// 		//func (b *BulkIndexer) Index(index string, _type string, id, parent, ttl string, date *time.Time, data interface{}) error
+// 		indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "", "10", &nowTime, obj)
+// 	}
+// 	indexer.Start()
+// 	numerrors := indexer.NumErrors()
+
+// 	if numerrors != 0 {
+// 		status = false
+// 	}
+// 	return
+// }
 
 func (repository ElasticRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting UPDATE-MULTIPLE")
