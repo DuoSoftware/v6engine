@@ -41,7 +41,7 @@ func gethost() (url string) {
 }
 
 func getJsonDoc(subject string, domain string, templateId string, defaultParams map[string]string, customParams map[string]string, recieverEmail string) (json string) {
-	json = "{\"type\":\"email\",\"to\":\"" + recieverEmail + "\",\"subject\":\"" + subject + "\",\"from\":\"DuoWorld <cebtestmail@gmail.com>\",\"Namespace\": \"" + domain + "\",\"TemplateID\": \"" + templateId + "\",\"DefaultParams\": {" + getStringByMap(defaultParams) + "},\"CustomParams\": {" + getStringByMap(customParams) + "}}"
+	json = "{\"type\":\"email\",\"to\":\"" + recieverEmail + "\",\"subject\":\"" + subject + "\",\"from\":\"DuoWorld.com <mail-noreply@duoworld.com>\",\"Namespace\": \"" + domain + "\",\"TemplateID\": \"" + templateId + "\",\"DefaultParams\": {" + getStringByMap(defaultParams) + "},\"CustomParams\": {" + getStringByMap(customParams) + "}}"
 	return
 }
 
