@@ -236,7 +236,7 @@ func getWhereSets(whereClause string) (set map[int]string) {
 }
 
 func createArrayFromWhereString(input string) (output []string) {
-	if strings.Contains(input, "BETWEEN") || strings.Contains(input, "NOTBETWEEN") || strings.Contains(input, "IN") || strings.Contains(input, "NOTIN") {
+	if strings.Contains(input, " BETWEEN ") || strings.Contains(input, " NOTBETWEEN ") || strings.Contains(input, " IN") || strings.Contains(input, " NOTIN") {
 		tokens := strings.Split(input, " ")
 		if tokens[1] == "BETWEEN" && tokens[3] == "AND" {
 			output = tokens
