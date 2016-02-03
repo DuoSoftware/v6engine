@@ -66,7 +66,7 @@ func (h *HTTPService) Start(isLogEnabled bool, isJsonStackEnabled bool) {
 }
 
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	versionData := "{\"name\": \"Objectstore\",\"version\": \"1.0.9-a\",\"Change Log\":\"Removed/Commented all Debug lines for load testing!\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	versionData := "{\"name\": \"Objectstore\",\"version\": \"1.0.10-a\",\"Change Log\":\"Added basic caching to Get/Insert/Update methods.\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
 	fmt.Fprintf(w, versionData)
 }
 
