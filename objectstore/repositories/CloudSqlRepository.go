@@ -6,6 +6,7 @@ import (
 	//"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
 	//"duov6.com/objectstore/queryparser"
+	"duov6.com/objectstore/cache"
 	"duov6.com/queryparser"
 	"duov6.com/term"
 	"encoding/base64"
@@ -421,6 +422,18 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 
 	response.IsSuccess = true
 	response.Message = "Successfully stored object(s) in CloudSQL"
+
+	//Store to Cache
+
+	if request.Body.Object != nil {
+		if errCache := cache.StoreOne(request, request.Body.Object); errCache != nil {
+			fmt.Println(errCache.Error())
+		}
+	} else {
+		if errCache := cache.StoreMany(request, request.Body.Objects); errCache != nil {
+			fmt.Println(errCache.Error())
+		}
+	}
 
 	repository.closeConnection(conn)
 	return response

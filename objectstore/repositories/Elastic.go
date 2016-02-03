@@ -2,6 +2,7 @@ package repositories
 
 import (
 	//"duov6.com/term"
+	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
@@ -185,6 +186,11 @@ func (repository ElasticRepository) setOneElastic(request *messaging.ObjectReque
 	} else {
 		response.IsSuccess = true
 		response.Message = "Successfully inserted one to elastic search"
+
+		if errCache := cache.StoreOne(request, request.Body.Object); errCache != nil {
+			fmt.Println(errCache.Error())
+		}
+
 	}
 
 	//Update Response
@@ -394,6 +400,11 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 	if isAllCompleted {
 		response.IsSuccess = true
 		response.Message = "Successfully inserted bulk to Elastic Search"
+
+		if errCache := cache.StoreMany(request, request.Body.Objects); errCache != nil {
+			fmt.Println(errCache.Error())
+		}
+
 	} else {
 		response.IsSuccess = false
 		response.Message = "Error Inserting Some Objects"

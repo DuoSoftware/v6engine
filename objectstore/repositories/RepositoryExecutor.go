@@ -1,8 +1,9 @@
 package repositories
 
 import (
+	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/messaging"
-	//"fmt"
+	"fmt"
 )
 
 func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (response RepositoryResponse) {
@@ -20,7 +21,16 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 	case "read-all":
 		response = repository.GetAll(request)
 	case "read-key":
-		response = repository.GetByKey(request)
+		//check cache
+		result := cache.GetByKey(request)
+		if len(result) == 2 || len(result) == 4 || len(result) < 2 {
+			fmt.Println("Not Available in Cache.. Reading from Repositories...")
+			response = repository.GetByKey(request)
+		} else {
+			response.IsSuccess = true
+			response.Body = result
+		}
+		//response = repository.GetByKey(request)
 	case "read-keyword":
 		response = repository.GetSearch(request)
 	case "read-filter":

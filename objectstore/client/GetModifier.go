@@ -60,7 +60,7 @@ func (m *GetModifier) Ok() (output []byte, err string) {
 		dispatcher := processors.Dispatcher{}
 		var repResponse repositories.RepositoryResponse = dispatcher.Dispatch(m.Request)
 		output = repResponse.Body
-	
+
 	} else {
 		//using Cache
 		//first read from cache
@@ -84,12 +84,12 @@ func (m *GetModifier) Ok() (output []byte, err string) {
 			_ = documentcache.Store(key, ttl, object)
 		}
 	}
-	
-	if(len(output) == 2){
-	//	err = "ERROR"
+
+	if len(output) == 2 {
+		//	err = "ERROR"
 		output = nil
 	}
-	
+
 	return
 }
 
