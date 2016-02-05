@@ -102,20 +102,16 @@ func getRepositories(engineMappings map[string]string) []repositories.AbstractRe
 func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []repositories.AbstractRepository, successAction int, failAction int) (response repositories.RepositoryResponse) {
 
 	canRollback := false
-	if repositoryList == nil {
-		term.Write("Nil Repositories Found!", 2)
-	} else {
-		term.Write("Repositories Found!", 2)
-	}
+
 	for _, repository := range repositoryList {
 		if repository != nil {
-			request.Log("Executing repository : " + repository.GetRepositoryName())
+			term.Write("Executing repository : "+repository.GetRepositoryName(), 2)
 
 			tmpResponse := repositories.Execute(request, repository)
 			canBreak := false
 
 			if tmpResponse.IsSuccess {
-				request.Log("Executing repository : " + repository.GetRepositoryName() + " - Success")
+				term.Write("Executing repository : "+repository.GetRepositoryName()+" - Success", 2)
 				switch successAction {
 				case 1:
 					response = tmpResponse
@@ -125,7 +121,7 @@ func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []rep
 					canBreak = true
 				}
 			} else {
-				request.Log("Executing repository : " + repository.GetRepositoryName() + " - Failed")
+				term.Write("Executing repository : "+repository.GetRepositoryName()+" - Failed", 1)
 				switch failAction {
 				case 1:
 					continue
@@ -145,7 +141,6 @@ func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []rep
 
 			}
 		} else {
-			term.Write("Nil Repository Found!", 2)
 			continue
 		}
 

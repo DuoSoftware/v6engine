@@ -13,10 +13,7 @@ func Delete(request *messaging.ObjectRequest) {
 func GetByKey(request *messaging.ObjectRequest) (body []byte) {
 	if CheckCacheAvailability(request) {
 		body = repositories.GetByKey(request)
-	} else {
-		fmt.Println("Redis not available to host Cache!")
 	}
-
 	return
 }
 
@@ -26,8 +23,6 @@ func StoreOne(request *messaging.ObjectRequest, data map[string]interface{}) (er
 		if err != nil {
 			fmt.Println("Error storing to Cache : " + err.Error())
 		}
-	} else {
-		fmt.Println("Redis not available to host Cache!")
 	}
 	return
 }
@@ -38,8 +33,6 @@ func StoreMany(request *messaging.ObjectRequest, data []map[string]interface{}) 
 		if err != nil {
 			fmt.Println("Error storing to Cache : " + err.Error())
 		}
-	} else {
-		fmt.Println("Redis not available to host Cache!")
 	}
 	return
 }
@@ -47,7 +40,7 @@ func StoreMany(request *messaging.ObjectRequest, data []map[string]interface{}) 
 func CheckCacheAvailability(request *messaging.ObjectRequest) (status bool) {
 	status = true
 	if request.Configuration.ServerConfiguration["REDIS"] == nil {
-		fmt.Println("No Config Found")
+		fmt.Println("Cache Config/Server Not Found!")
 		status = false
 	}
 	return

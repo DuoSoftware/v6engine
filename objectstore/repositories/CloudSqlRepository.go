@@ -2,11 +2,8 @@ package repositories
 
 import (
 	"database/sql"
-	//"duov6.com/common"
-	//"duov6.com/objectstore/connmanager"
-	"duov6.com/objectstore/messaging"
-	//"duov6.com/objectstore/queryparser"
 	"duov6.com/objectstore/cache"
+	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
 	"duov6.com/term"
 	"encoding/base64"
@@ -83,8 +80,8 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 			response.Message = err.Error()
 			return response
 		}
-		//formattedQuery := queryparser.GetFormattedQuerywithDB(request.Body.Query.Parameters, repository.getDatabaseName(request.Controls.Namespace))
-		term.Write(("Formatted Query : " + formattedQuery), 2)
+
+		fmt.Println("Query : " + formattedQuery)
 		query := formattedQuery
 		response = repository.queryCommonMany(query, request)
 	} else {
@@ -101,19 +98,71 @@ func (repository CloudSqlRepository) GetByKey(request *messaging.ObjectRequest) 
 
 func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Get-Search!", 2)
+
+	isSkippable := false
+	isTakable := false
+	isOrderByAsc := false
+	isOrderByDesc := false
+	orderbyfield := ""
+	skip := "0"
+	take := "100"
+
+	if request.Extras["skip"] != nil {
+		skip = request.Extras["skip"].(string)
+		isSkippable = true
+	}
+
+	if request.Extras["take"] != nil {
+		take = request.Extras["take"].(string)
+		isTakable = true
+	}
+
+	if request.Extras["orderby"] != nil {
+		orderbyfield = request.Extras["orderby"].(string)
+		isOrderByAsc = true
+	} else if request.Extras["orderbydsc"] != nil {
+		orderbyfield = request.Extras["orderbydsc"].(string)
+		isOrderByDesc = true
+	}
+
 	response := RepositoryResponse{}
 	query := ""
 	if strings.Contains(request.Body.Query.Parameters, ":") {
 		tokens := strings.Split(request.Body.Query.Parameters, ":")
 		fieldName := tokens[0]
 		fieldValue := tokens[1]
+
+		if len(tokens) > 2 {
+			fieldValue = ""
+			for x := 1; x < len(tokens); x++ {
+				fieldValue += tokens[x] + " "
+			}
+		}
+
 		fieldName = strings.TrimSpace(fieldName)
 		fieldValue = strings.TrimSpace(fieldValue)
-		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "';"
+
+		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "'"
 	} else {
-		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + ";"
+		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
 	}
-	request.Log(query)
+
+	if isOrderByAsc {
+		query += " order by " + orderbyfield + " asc "
+	} else if isOrderByDesc {
+		query += " order by " + orderbyfield + " desc "
+	}
+
+	if isTakable {
+		query += " limit " + take
+	}
+	if isSkippable {
+		query += " offset " + skip
+	}
+
+	query += ";"
+
+	fmt.Println(query)
 	response = repository.queryCommonMany(query, request)
 	return response
 }
@@ -147,7 +196,6 @@ func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectReque
 	request.Controls.Id = id
 	request.Body.Object[request.Body.Parameters.KeyProperty] = id
 
-	//Add IDs to return Data
 	var Data []map[string]interface{}
 	Data = make([]map[string]interface{}, 1)
 	var idData map[string]interface{}
@@ -359,7 +407,7 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 
 		if err == nil {
 			bytes, _ := json.Marshal(obj)
-			if len(bytes) == 4 || len(bytes) == 2 {
+			if checkEmptyByteArray(bytes) {
 				response.GetResponseWithBody(getEmptyByteObject())
 			} else {
 				response.GetResponseWithBody(bytes)
@@ -424,7 +472,6 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 	response.Message = "Successfully stored object(s) in CloudSQL"
 
 	//Store to Cache
-
 	if request.Body.Object != nil {
 		if errCache := cache.StoreOne(request, request.Body.Object); errCache != nil {
 			fmt.Println(errCache.Error())
@@ -1026,7 +1073,7 @@ func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string,
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
 	//fmt.Println()
-	//fmt.Print("Query String : ")
+	//fmt.Print("Query : ")
 	//fmt.Println(query)
 	//fmt.Println()
 	//common.PublishLog("ObjectStoreLog.log", query)
@@ -1037,11 +1084,10 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string)
 		return err
 	}
 	_, err = stmt.Exec()
+
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
-	} else {
-		fmt.Println("Successfully Executed Query!")
 	}
 	return
 }

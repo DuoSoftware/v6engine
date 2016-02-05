@@ -32,6 +32,9 @@ func GetByKey(request *messaging.ObjectRequest) (output []byte) {
 		if err != nil {
 			fmt.Println("ERROR : " + err.Error())
 		} else {
+			if len(result) == 2 || len(result) == 4 || len(result) < 2 {
+				result = nil
+			}
 			output = result
 		}
 	}

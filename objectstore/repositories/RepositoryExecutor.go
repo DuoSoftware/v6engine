@@ -10,9 +10,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 
 	switch request.Controls.Operation { //CREATE, READ, UPDATE, DELETE, SPECIAL
 	case "insert":
-		//fmt.Println("Insert")
 		if request.Controls.Multiplicity == "single" {
-			//fmt.Println("Single")
 			response = repository.InsertSingle(request)
 		} else {
 			response = repository.InsertMultiple(request)
@@ -23,7 +21,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 	case "read-key":
 		//check cache
 		result := cache.GetByKey(request)
-		if len(result) == 2 || len(result) == 4 || len(result) < 2 {
+		if result == nil {
 			fmt.Println("Not Available in Cache.. Reading from Repositories...")
 			response = repository.GetByKey(request)
 		} else {

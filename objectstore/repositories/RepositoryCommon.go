@@ -114,3 +114,11 @@ func getEmptyByteObject() (returnByte []byte) {
 	returnByte, _ = json.Marshal(empty)
 	return
 }
+
+func checkEmptyByteArray(input []byte) (status bool) {
+	status = false
+	if len(input) == 4 || len(input) == 2 || len(input) < 2 {
+		status = true
+	}
+	return
+}
