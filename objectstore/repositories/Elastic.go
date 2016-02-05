@@ -179,7 +179,6 @@ func (repository ElasticRepository) setOneElastic(request *messaging.ObjectReque
 	}
 	_, err := conn.Index(request.Controls.Namespace, request.Controls.Class, key, nil, request.Body.Object)
 	if err != nil {
-		//term.Write(err.Error(), 1)
 		errorMessage := "Elastic Search Single Insert Error : " + err.Error()
 		response.GetErrorResponse(errorMessage)
 		return response
@@ -203,125 +202,6 @@ func (repository ElasticRepository) setOneElastic(request *messaging.ObjectReque
 	response.Data = Data
 	return response
 }
-
-/*func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequest) RepositoryResponse {
-	response := RepositoryResponse{}
-
-	conn := repository.getConnection(request)
-
-	indexer := conn.NewBulkIndexer(200)
-	nowTime := time.Now()
-
-	CountIndex := 0
-	var Data map[string]interface{}
-	Data = make(map[string]interface{})
-
-	noOfElementsPerSet := 100
-	noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
-	remainderFromSets := 0
-	remainderFromSets = (len(request.Body.Objects) - (noOfSets * noOfElementsPerSet))
-
-	startIndex := 0
-	stopIndex := noOfElementsPerSet
-
-	var status []bool
-
-	if remainderFromSets == 0 {
-		status = make([]bool, noOfSets)
-	} else {
-		status = make([]bool, (noOfSets + 1))
-	}
-
-	statusIndex := 0
-
-	for x := 0; x < noOfSets; x++ {
-		for index, obj := range request.Body.Objects[startIndex:stopIndex] {
-			nosqlid := ""
-			if obj["OriginalIndex"] != nil {
-				nosqlid = obj["OriginalIndex"].(string)
-				Data[strconv.Itoa(CountIndex)] = nosqlid
-			} else {
-				id := repository.getRecordID(request, obj)
-				nosqlid = request.Controls.Namespace + "." + request.Controls.Class + "." + id
-				request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
-				Data[strconv.Itoa(CountIndex)] = id
-			}
-			CountIndex++
-			indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
-		}
-		indexer.Start()
-		numerrors := indexer.NumErrors()
-
-		if numerrors != 0 {
-			status[statusIndex] = false
-		} else {
-			status[statusIndex] = true
-			fmt.Println("Inserted Stub : " + strconv.Itoa(statusIndex))
-		}
-		statusIndex++
-		startIndex += noOfElementsPerSet
-		stopIndex += noOfElementsPerSet
-
-		time.Sleep(1200 * time.Millisecond)
-
-	}
-
-	if remainderFromSets > 0 {
-		start := len(request.Body.Objects) - remainderFromSets
-
-		for index, obj := range request.Body.Objects[start:len(request.Body.Objects)] {
-			nosqlid := ""
-			if obj["OriginalIndex"] != nil {
-				nosqlid = obj["OriginalIndex"].(string)
-				Data[strconv.Itoa(CountIndex)] = nosqlid
-			} else {
-				id := repository.getRecordID(request, obj)
-				nosqlid = request.Controls.Namespace + "." + request.Controls.Class + "." + id
-				request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
-				Data[strconv.Itoa(CountIndex)] = id
-			}
-			CountIndex++
-			indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
-		}
-		indexer.Start()
-		numerrors := indexer.NumErrors()
-
-		if numerrors != 0 {
-			status[statusIndex] = false
-		} else {
-			status[statusIndex] = true
-			fmt.Println("Inserted Last Stub!")
-		}
-		statusIndex++
-	}
-
-	isAllCompleted := true
-
-	for _, val := range status {
-		if !val {
-			isAllCompleted = false
-			break
-		}
-	}
-
-	if isAllCompleted {
-		response.IsSuccess = true
-		response.Message = "Successfully inserted bulk to Elastic Search"
-	} else {
-		response.IsSuccess = false
-		response.Message = "Error Inserting Some Objects"
-	}
-
-	//Update Response
-	var DataMap []map[string]interface{}
-	DataMap = make([]map[string]interface{}, 1)
-	var actualInput map[string]interface{}
-	actualInput = make(map[string]interface{})
-	actualInput["ID"] = Data
-	DataMap[0] = actualInput
-	response.Data = DataMap
-	return response
-}*/
 
 func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
@@ -440,33 +320,6 @@ func (repository ElasticRepository) insertRecordStub(request *messaging.ObjectRe
 
 }
 
-// Elastic v1.7 code -- Don't Delete
-// func (repository ElasticRepository) insertRecordStub(request *messaging.ObjectRequest, records []map[string]interface{}, conn *elastigo.Conn) (status bool) {
-// 	status = true
-
-// 	indexer := conn.NewBulkIndexer(100)
-// 	nowTime := time.Now()
-
-// 	for _, obj := range records {
-// 		nosqlid := ""
-// 		if obj["OriginalIndex"] != nil {
-// 			nosqlid = obj["OriginalIndex"].(string)
-// 		} else {
-// 			nosqlid = getNoSqlKeyById(request, obj)
-// 		}
-// 		//indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
-// 		//func (b *BulkIndexer) Index(index string, _type string, id, parent, ttl string, date *time.Time, data interface{}) error
-// 		indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "", "10", &nowTime, obj)
-// 	}
-// 	indexer.Start()
-// 	numerrors := indexer.NumErrors()
-
-// 	if numerrors != 0 {
-// 		status = false
-// 	}
-// 	return
-// }
-
 func (repository ElasticRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting UPDATE-MULTIPLE")
 	return repository.setManyElastic(request)
@@ -488,7 +341,6 @@ func (repository ElasticRepository) DeleteMultiple(request *messaging.ObjectRequ
 		_, err := conn.Delete(request.Controls.Namespace, request.Controls.Class, key, nil)
 		if err != nil {
 			errorMessage := "Elastic Search single delete error : " + err.Error()
-			//term.Write(err.Error(), 1)
 			response.GetErrorResponse(errorMessage)
 		} else {
 			response.IsSuccess = true
@@ -509,7 +361,6 @@ func (repository ElasticRepository) DeleteSingle(request *messaging.ObjectReques
 	if err != nil {
 		errorMessage := "Elastic Search single delete error : " + err.Error()
 		request.Log(errorMessage)
-		//term.Write(err.Error(), 1)
 		response.GetErrorResponse(errorMessage)
 	} else {
 		response.IsSuccess = true
@@ -577,6 +428,26 @@ func (repository ElasticRepository) Special(request *messaging.ObjectRequest) Re
 			errorMessage := response.Message
 			response.GetErrorResponse(errorMessage)
 		}
+	case "DropClass":
+		request.Log("Starting Drop-Class sub routine")
+		err := repository.executeDropClass(request)
+		if err != nil {
+			response.IsSuccess = false
+			response.Message = "Aborted! Unsuccessful deleting Class!"
+		} else {
+			response.IsSuccess = true
+			response.Message = "Aborted! Successful deleting Class!"
+		}
+	case "DropNamespace":
+		request.Log("Starting Drop-Namespace sub routine")
+		err := repository.executeDropNamespace(request)
+		if err != nil {
+			response.IsSuccess = false
+			response.Message = "Aborted! Unsuccessful deleting Namespace!"
+		} else {
+			response.IsSuccess = true
+			response.Message = "Successfully deleted Namespace!"
+		}
 	default:
 		return repository.search(request, request.Body.Special.Parameters)
 
@@ -604,9 +475,6 @@ func (repository ElasticRepository) executeQuery(request *messaging.ObjectReques
 		returnByte = getEmptyByteObject()
 		return
 	}
-
-	//fmt.Print("Elastic JSON Query : ")
-	//fmt.Println(query)
 
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
@@ -640,7 +508,6 @@ func (repository ElasticRepository) executeGetFields(request *messaging.ObjectRe
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
 	if err != nil {
-		//term.Write(err.Error(), 1)
 		returnByte = getEmptyByteObject()
 	} else {
 		var allMaps []map[string]interface{}
@@ -655,7 +522,6 @@ func (repository ElasticRepository) executeGetFields(request *messaging.ObjectRe
 		}
 		//create array to store
 		var fieldList []string
-
 		//store fields in array
 		for key, _ := range allMaps[0] {
 			if key != "__osHeaders" {
@@ -737,7 +603,6 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
 	if err != nil {
-		//term.Write(err.Error(), 1)
 	} else {
 		var allMaps []map[string]interface{}
 		allMaps = make([]map[string]interface{}, data.Hits.Len())
@@ -750,12 +615,30 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 			allMaps[index] = currentMap
 		}
 
-		//fmt.Println(allMaps)
-
 		returnByte, _ = json.Marshal(allMaps)
 
 	}
 
+	return
+}
+
+func (repository ElasticRepository) executeDropClass(request *messaging.ObjectRequest) (err error) {
+	host := request.Configuration.ServerConfiguration["ELASTIC"]["Host"]
+	port := request.Configuration.ServerConfiguration["ELASTIC"]["Port"]
+	url := "http://" + host + ":" + port + "/" + request.Controls.Namespace + "/" + request.Controls.Class
+	req, err := http.NewRequest("DELETE", url, nil)
+	client := &http.Client{}
+	_, err = client.Do(req)
+	return
+}
+
+func (repository ElasticRepository) executeDropNamespace(request *messaging.ObjectRequest) (err error) {
+	host := request.Configuration.ServerConfiguration["ELASTIC"]["Host"]
+	port := request.Configuration.ServerConfiguration["ELASTIC"]["Port"]
+	url := "http://" + host + ":" + port + "/" + request.Controls.Namespace
+	req, err := http.NewRequest("DELETE", url, nil)
+	client := &http.Client{}
+	_, err = client.Do(req)
 	return
 }
 
@@ -822,7 +705,6 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 			_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", key, nil, newRecord)
 
 			if err != nil {
-				//term.Write(err.Error(), 1)
 				return uuid.NewV1().String()
 			} else {
 				return "1"
@@ -833,7 +715,6 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 			currentMap = make(map[string]interface{})
 			byteData, err := data.Source.MarshalJSON()
 			if err != nil {
-				//term.Write(err.Error(), 1)
 				return uuid.NewV1().String()
 			}
 			json.Unmarshal(byteData, &currentMap)
@@ -849,7 +730,6 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 			newRecord["version"] = uuid.NewV1().String()
 			_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", request.Controls.Class, nil, newRecord)
 			if err != nil {
-				//term.Write(err.Error(), 1)
 				return uuid.NewV1().String()
 			} else {
 				return maxCount
