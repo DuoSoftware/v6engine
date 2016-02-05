@@ -16,6 +16,7 @@ func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis
 		isError = true
 		errorMessage = err.Error()
 		request.Log("Error! Can't connect to server!")
+		return nil, isError, errorMessage
 
 	}
 	if client == nil {
