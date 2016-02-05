@@ -11,12 +11,15 @@ import (
 func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, isError bool, errorMessage string) {
 
 	isError = false
-	client, err := goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=10s&maxidle=1")
+	client, err := goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
 	if err != nil {
 		isError = true
 		errorMessage = err.Error()
 		request.Log("Error! Can't connect to server!")
 
+	}
+	if client == nil {
+		return nil, true, "No REDIS Host Found!"
 	}
 	return
 }
@@ -32,13 +35,14 @@ func GetByKey(request *messaging.ObjectRequest) (output []byte) {
 		if err != nil {
 			fmt.Println("ERROR : " + err.Error())
 		} else {
-			if len(result) == 2 || len(result) == 4 || len(result) < 2 {
+			if checkEmptyByteArray(result) {
 				result = nil
 			}
 			output = result
 		}
+		client.ClosePool()
 	}
-	client.ClosePool()
+
 	return
 }
 
@@ -53,8 +57,9 @@ func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) 
 		value := getStringByObject(data)
 		fmt.Println(ttl)
 		err = client.Set(key, value, ttl, 0, false, false)
+		client.ClosePool()
 	}
-	client.ClosePool()
+
 	return
 }
 
@@ -74,8 +79,9 @@ func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{
 				return
 			}
 		}
+		client.ClosePool()
 	}
-	client.ClosePool()
+
 	return
 }
 
@@ -96,4 +102,12 @@ func getStringByObject(obj interface{}) string {
 	} else {
 		return "{}"
 	}
+}
+
+func checkEmptyByteArray(input []byte) (status bool) {
+	status = false
+	if len(input) == 4 || len(input) == 2 || len(input) < 2 {
+		status = true
+	}
+	return
 }
