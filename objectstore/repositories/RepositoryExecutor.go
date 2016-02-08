@@ -23,9 +23,6 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		if result == nil {
 			fmt.Println("Not Available in Cache.. Reading from Repositories...")
 			response = repository.GetAll(request)
-		} else {
-			response.IsSuccess = true
-			response.Body = result
 
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
 				var data interface{}
@@ -34,6 +31,9 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 					fmt.Println(errCache.Error())
 				}
 			}
+		} else {
+			response.IsSuccess = true
+			response.Body = result
 
 		}
 		//response = repository.GetAll(request)
@@ -43,9 +43,6 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		if result == nil {
 			fmt.Println("Not Available in Cache.. Reading from Repositories...")
 			response = repository.GetByKey(request)
-		} else {
-			response.IsSuccess = true
-			response.Body = result
 
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
 				var data map[string]interface{}
@@ -56,6 +53,9 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 					fmt.Println(errCache.Error())
 				}
 			}
+		} else {
+			response.IsSuccess = true
+			response.Body = result
 		}
 		//response = repository.GetByKey(request)
 	case "read-keyword":
@@ -64,10 +64,6 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		if result == nil {
 			fmt.Println("Not Available in Cache.. Reading from Repositories...")
 			response = repository.GetSearch(request)
-		} else {
-			response.IsSuccess = true
-			response.Body = result
-
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
 				var data interface{}
 				_ = json.Unmarshal(response.Body, &data)
@@ -75,6 +71,10 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 					fmt.Println(errCache.Error())
 				}
 			}
+		} else {
+			response.IsSuccess = true
+			response.Body = result
+
 		}
 		//response = repository.GetSearch(request)
 	case "read-filter":

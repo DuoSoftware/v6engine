@@ -26,7 +26,7 @@ func getStringByObject(obj interface{}) string {
 
 func checkEmptyByteArray(input []byte) (status bool) {
 	status = false
-	if len(input) == 4 || len(input) == 2 || len(input) < 2 {
+	if len(input) == 4 || len(input) == 2 || len(input) < 2 || input == nil {
 		status = true
 	}
 	return

@@ -39,6 +39,7 @@ func GetByKey(request *messaging.ObjectRequest) (output []byte) {
 				result = nil
 			}
 			output = result
+			fmt.Println("Retrieved from Cache!")
 		}
 		client.ClosePool()
 	}
@@ -61,6 +62,7 @@ func GetSearch(request *messaging.ObjectRequest) (output []byte) {
 				result = nil
 			}
 			output = result
+			fmt.Println("Retrieved from Cache!")
 		}
 		client.ClosePool()
 	}
@@ -69,6 +71,7 @@ func GetSearch(request *messaging.ObjectRequest) (output []byte) {
 }
 
 func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) (err error) {
+
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
 		fmt.Println(errorMessage)
