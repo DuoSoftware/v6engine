@@ -83,6 +83,13 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 		}
 
 		finalBytes, _ := json.Marshal(allMaps)
+
+		if len(allMaps) > 0 {
+			if errCache := cache.StoreResult(request, allMaps); errCache != nil {
+				fmt.Println(errCache.Error())
+			}
+		}
+
 		response.GetResponseWithBody(finalBytes)
 	}
 

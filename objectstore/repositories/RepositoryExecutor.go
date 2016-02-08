@@ -17,7 +17,16 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		}
 
 	case "read-all":
-		response = repository.GetAll(request)
+		//check cache
+		result := cache.Search(request)
+		if result == nil {
+			fmt.Println("Not Available in Cache.. Reading from Repositories...")
+			response = repository.GetAll(request)
+		} else {
+			response.IsSuccess = true
+			response.Body = result
+		}
+		//response = repository.GetAll(request)
 	case "read-key":
 		//check cache
 		result := cache.GetByKey(request)
@@ -30,10 +39,18 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		}
 		//response = repository.GetByKey(request)
 	case "read-keyword":
-		response = repository.GetSearch(request)
+		//check cache
+		result := cache.Search(request)
+		if result == nil {
+			fmt.Println("Not Available in Cache.. Reading from Repositories...")
+			response = repository.GetSearch(request)
+		} else {
+			response.IsSuccess = true
+			response.Body = result
+		}
+		//response = repository.GetSearch(request)
 	case "read-filter":
 		response = repository.GetQuery(request)
-
 	case "update":
 		if request.Controls.Multiplicity == "single" {
 			response = repository.UpdateSingle(request)

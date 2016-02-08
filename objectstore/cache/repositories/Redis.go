@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"duov6.com/objectstore/messaging"
-	"encoding/json"
 	"fmt"
 	"github.com/xuyu/goredis"
 	"strconv"
@@ -47,6 +46,28 @@ func GetByKey(request *messaging.ObjectRequest) (output []byte) {
 	return
 }
 
+func GetSearch(request *messaging.ObjectRequest) (output []byte) {
+	client, isError, errorMessage := getRedisConnection(request)
+
+	if isError == true {
+		fmt.Println(errorMessage)
+	} else {
+		key := getSearchResultKey(request)
+		result, err := client.Get(key)
+		if err != nil {
+			fmt.Println("ERROR : " + err.Error())
+		} else {
+			if checkEmptyByteArray(result) {
+				result = nil
+			}
+			output = result
+		}
+		client.ClosePool()
+	}
+
+	return
+}
+
 func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) (err error) {
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
@@ -56,7 +77,24 @@ func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) 
 		ttl, _ = strconv.Atoi(request.Configuration.ServerConfiguration["REDIS"]["TTL"])
 		key := getNoSqlKeyById(request, data)
 		value := getStringByObject(data)
-		fmt.Println(ttl)
+		err = client.Set(key, value, ttl, 0, false, false)
+		client.ClosePool()
+	}
+
+	_ = ResetSearchResultCache(request)
+
+	return
+}
+
+func SetResultRedis(request *messaging.ObjectRequest, data interface{}) (err error) {
+	client, isError, errorMessage := getRedisConnection(request)
+	if isError == true {
+		fmt.Println(errorMessage)
+	} else {
+		var ttl int
+		ttl, _ = strconv.Atoi(request.Configuration.ServerConfiguration["REDIS"]["TTL"])
+		key := getSearchResultKey(request)
+		value := getStringByObject(data)
 		err = client.Set(key, value, ttl, 0, false, false)
 		client.ClosePool()
 	}
@@ -71,44 +109,84 @@ func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{
 	} else {
 		var ttl int
 		ttl, _ = strconv.Atoi(request.Configuration.ServerConfiguration["REDIS"]["TTL"])
-		fmt.Println(ttl)
 		for _, obj := range data {
 			key := getNoSqlKeyById(request, obj)
 			value := getStringByObject(obj)
 			err = client.Set(key, value, ttl, 0, false, false)
 			if err != nil {
+				client.ClosePool()
 				return
 			}
 		}
 		client.ClosePool()
 	}
 
+	_ = ResetSearchResultCache(request)
+
 	return
 }
 
-func getNoSqlKeyById(request *messaging.ObjectRequest, obj map[string]interface{}) string {
-	key := request.Controls.Namespace + "." + request.Controls.Class + "." + obj[request.Body.Parameters.KeyProperty].(string)
-	return key
-}
+func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) (err error) {
 
-func getNoSqlKey(request *messaging.ObjectRequest) string {
-	key := request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
-	return key
-}
-
-func getStringByObject(obj interface{}) string {
-	result, err := json.Marshal(obj)
-	if err == nil {
-		return string(result)
+	client, isError, errorMessage := getRedisConnection(request)
+	if isError == true {
+		fmt.Println(errorMessage)
 	} else {
-		return "{}"
+		key := getNoSqlKeyById(request, data)
+		reply, err2 := client.ExecuteCommand("DEL", key)
+		err2 = reply.OKValue()
+		err = err2
+		client.ClosePool()
 	}
+
+	_ = ResetSearchResultCache(request)
+
+	return
 }
 
-func checkEmptyByteArray(input []byte) (status bool) {
-	status = false
-	if len(input) == 4 || len(input) == 2 || len(input) < 2 {
-		status = true
+func RemoveManyRedis(request *messaging.ObjectRequest, data []map[string]interface{}) (err error) {
+	client, isError, errorMessage := getRedisConnection(request)
+	if isError == true {
+		fmt.Println(errorMessage)
+	} else {
+		for _, obj := range data {
+			key := getNoSqlKeyById(request, obj)
+			reply, err := client.ExecuteCommand("DEL", key)
+			err = reply.OKValue()
+			if err != nil {
+				client.ClosePool()
+				return err
+			}
+		}
+		client.ClosePool()
 	}
+
+	_ = ResetSearchResultCache(request)
+
 	return
+}
+
+func ResetSearchResultCache(request *messaging.ObjectRequest) (err error) {
+	client, isError, errorMessage := getRedisConnection(request)
+	if isError == true {
+		fmt.Println(errorMessage)
+	} else {
+		namespace := request.Controls.Namespace
+		class := request.Controls.Class
+		pattern := namespace + ":" + class + ":" + "keyword=*"
+
+		if keySet, err := client.Keys(pattern); err == nil {
+			for _, keyValue := range keySet {
+				reply, err := client.ExecuteCommand("DEL", keyValue)
+				err = reply.OKValue()
+				if err != nil {
+					client.ClosePool()
+					return err
+				}
+			}
+		}
+		client.ClosePool()
+	}
+
+	return err
 }

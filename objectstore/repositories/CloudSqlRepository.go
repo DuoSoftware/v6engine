@@ -66,7 +66,17 @@ func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) Re
 		query += " offset " + skip
 	}
 
-	return repository.queryCommonMany(query, request)
+	response := repository.queryCommonMany(query, request)
+
+	if response.IsSuccess && !checkEmptyByteArray(response.Body) {
+		var data interface{}
+		_ = json.Unmarshal(response.Body, &data)
+		if errCache := cache.StoreResult(request, data); errCache != nil {
+			fmt.Println(errCache.Error())
+		}
+	}
+
+	return response
 }
 
 func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
@@ -164,6 +174,15 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 
 	fmt.Println(query)
 	response = repository.queryCommonMany(query, request)
+
+	if response.IsSuccess && !checkEmptyByteArray(response.Body) {
+		var data interface{}
+		_ = json.Unmarshal(response.Body, &data)
+		if errCache := cache.StoreResult(request, data); errCache != nil {
+			fmt.Println(errCache.Error())
+		}
+	}
+
 	return response
 }
 
