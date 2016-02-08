@@ -78,7 +78,13 @@ func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) 
 	} else {
 		var ttl int
 		ttl, _ = strconv.Atoi(request.Configuration.ServerConfiguration["REDIS"]["TTL"])
-		key := getNoSqlKeyById(request, data)
+		key := ""
+		if request.Body.Parameters.KeyProperty == "" {
+			key = getNoSqlKey(request)
+		} else {
+			key = getNoSqlKeyById(request, data)
+		}
+
 		value := getStringByObject(data)
 		err = client.Set(key, value, ttl, 0, false, false)
 
@@ -118,7 +124,7 @@ func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
 		fmt.Println(errorMessage)
-	} else {
+	} else if request.Body.Parameters.KeyProperty != "" {
 		var ttl int
 		ttl, _ = strconv.Atoi(request.Configuration.ServerConfiguration["REDIS"]["TTL"])
 		for _, obj := range data {
@@ -148,7 +154,12 @@ func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{
 	if isError == true {
 		fmt.Println(errorMessage)
 	} else {
-		key := getNoSqlKeyById(request, data)
+		key := ""
+		if request.Body.Parameters.KeyProperty == "" {
+			key = getNoSqlKey(request)
+		} else {
+			key = getNoSqlKeyById(request, data)
+		}
 		reply, err2 := client.ExecuteCommand("DEL", key)
 		err2 = reply.OKValue()
 		err = err2
@@ -169,7 +180,7 @@ func RemoveManyRedis(request *messaging.ObjectRequest, data []map[string]interfa
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
 		fmt.Println(errorMessage)
-	} else {
+	} else if request.Body.Parameters.KeyProperty != "" {
 		for _, obj := range data {
 			key := getNoSqlKeyById(request, obj)
 			reply, err := client.ExecuteCommand("DEL", key)
