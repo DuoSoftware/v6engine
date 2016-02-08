@@ -78,6 +78,11 @@ func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) 
 		key := getNoSqlKeyById(request, data)
 		value := getStringByObject(data)
 		err = client.Set(key, value, ttl, 0, false, false)
+
+		if err != nil {
+			fmt.Println("Inserted One Record to Cache!")
+		}
+
 		client.ClosePool()
 	}
 
@@ -96,6 +101,10 @@ func SetResultRedis(request *messaging.ObjectRequest, data interface{}) (err err
 		key := getSearchResultKey(request)
 		value := getStringByObject(data)
 		err = client.Set(key, value, ttl, 0, false, false)
+
+		if err != nil {
+			fmt.Println("Inserted Search Result Set to Cache!")
+		}
 		client.ClosePool()
 	}
 
@@ -118,6 +127,10 @@ func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{
 				return
 			}
 		}
+		if err != nil {
+			fmt.Println("Inserted Many Records to Cache!")
+		}
+
 		client.ClosePool()
 	}
 
@@ -136,6 +149,11 @@ func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{
 		reply, err2 := client.ExecuteCommand("DEL", key)
 		err2 = reply.OKValue()
 		err = err2
+
+		if err != nil {
+			fmt.Println("Removed One Record from Cache!")
+		}
+
 		client.ClosePool()
 	}
 
@@ -158,6 +176,11 @@ func RemoveManyRedis(request *messaging.ObjectRequest, data []map[string]interfa
 				return err
 			}
 		}
+
+		if err != nil {
+			fmt.Println("Removed Many Records from Cache!")
+		}
+
 		client.ClosePool()
 	}
 
@@ -185,6 +208,11 @@ func ResetSearchResultCache(request *messaging.ObjectRequest) (err error) {
 				}
 			}
 		}
+
+		if err != nil {
+			fmt.Println("Resetted the pattern Key Set in Cache!")
+		}
+
 		client.ClosePool()
 	}
 

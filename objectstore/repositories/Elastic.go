@@ -355,6 +355,10 @@ func (repository ElasticRepository) DeleteMultiple(request *messaging.ObjectRequ
 		}
 	}
 
+	if errCache := cache.DeleteMany(request, request.Body.Objects); errCache != nil {
+		fmt.Println(errCache.Error())
+	}
+
 	return response
 
 }
@@ -372,6 +376,10 @@ func (repository ElasticRepository) DeleteSingle(request *messaging.ObjectReques
 	} else {
 		response.IsSuccess = true
 		response.Message = "Successfully deleted one in elastic search"
+
+		if errCache := cache.DeleteOne(request, request.Body.Object); errCache != nil {
+			fmt.Println(errCache.Error())
+		}
 	}
 
 	return response

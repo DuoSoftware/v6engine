@@ -3,6 +3,7 @@ package repositories
 import (
 	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/messaging"
+	"encoding/json"
 	"fmt"
 )
 
@@ -25,6 +26,15 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		} else {
 			response.IsSuccess = true
 			response.Body = result
+
+			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
+				var data interface{}
+				_ = json.Unmarshal(response.Body, &data)
+				if errCache := cache.StoreResult(request, data); errCache != nil {
+					fmt.Println(errCache.Error())
+				}
+			}
+
 		}
 		//response = repository.GetAll(request)
 	case "read-key":
@@ -36,6 +46,16 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		} else {
 			response.IsSuccess = true
 			response.Body = result
+
+			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
+				var data map[string]interface{}
+				data = make(map[string]interface{})
+				_ = json.Unmarshal(response.Body, &data)
+
+				if errCache := cache.StoreOne(request, data); errCache != nil {
+					fmt.Println(errCache.Error())
+				}
+			}
 		}
 		//response = repository.GetByKey(request)
 	case "read-keyword":
@@ -47,6 +67,14 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		} else {
 			response.IsSuccess = true
 			response.Body = result
+
+			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
+				var data interface{}
+				_ = json.Unmarshal(response.Body, &data)
+				if errCache := cache.StoreResult(request, data); errCache != nil {
+					fmt.Println(errCache.Error())
+				}
+			}
 		}
 		//response = repository.GetSearch(request)
 	case "read-filter":

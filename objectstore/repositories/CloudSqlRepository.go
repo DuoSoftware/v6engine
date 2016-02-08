@@ -256,6 +256,10 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 		} else {
 			response.IsSuccess = true
 			response.Message = "Successfully Deleted all objects from CloudSQL repository!"
+
+			if errCache := cache.DeleteMany(request, request.Body.Objects); errCache != nil {
+				fmt.Println(errCache.Error())
+			}
 		}
 	} else {
 		response.IsSuccess = false
@@ -278,6 +282,11 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 		} else {
 			response.IsSuccess = true
 			response.Message = "Successfully Deleted from CloudSQL repository!"
+
+			if errCache := cache.DeleteOne(request, request.Body.Object); errCache != nil {
+				fmt.Println(errCache.Error())
+			}
+
 		}
 	} else {
 		response.IsSuccess = false
