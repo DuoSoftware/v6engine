@@ -70,6 +70,29 @@ func GetSearch(request *messaging.ObjectRequest) (output []byte) {
 	return
 }
 
+func GetQuery(request *messaging.ObjectRequest) (output []byte) {
+	client, isError, errorMessage := getRedisConnection(request)
+
+	if isError == true {
+		fmt.Println(errorMessage)
+	} else {
+		key := getQueryResultKey(request)
+		result, err := client.Get(key)
+		if err != nil {
+			fmt.Println("ERROR : " + err.Error())
+		} else {
+			if checkEmptyByteArray(result) {
+				result = nil
+			}
+			output = result
+			fmt.Println("Retrieved from Cache!")
+		}
+		client.ClosePool()
+	}
+
+	return
+}
+
 func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) (err error) {
 
 	client, isError, errorMessage := getRedisConnection(request)
@@ -113,6 +136,26 @@ func SetResultRedis(request *messaging.ObjectRequest, data interface{}) (err err
 
 		if err != nil {
 			fmt.Println("Inserted Search Result Set to Cache!")
+		}
+		client.ClosePool()
+	}
+
+	return
+}
+
+func SetQueryRedis(request *messaging.ObjectRequest, data interface{}) (err error) {
+	client, isError, errorMessage := getRedisConnection(request)
+	if isError == true {
+		fmt.Println(errorMessage)
+	} else {
+		var ttl int
+		ttl, _ = strconv.Atoi(request.Configuration.ServerConfiguration["REDIS"]["TTL"])
+		key := getQueryResultKey(request)
+		value := getStringByObject(data)
+		err = client.Set(key, value, ttl, 0, false, false)
+
+		if err != nil {
+			fmt.Println("Inserted Query Result Set to Cache!")
 		}
 		client.ClosePool()
 	}
@@ -210,9 +253,23 @@ func ResetSearchResultCache(request *messaging.ObjectRequest) (err error) {
 	} else {
 		namespace := request.Controls.Namespace
 		class := request.Controls.Class
+
 		pattern := namespace + ":" + class + ":" + "keyword=*"
 
 		if keySet, err := client.Keys(pattern); err == nil {
+			for _, keyValue := range keySet {
+				reply, err := client.ExecuteCommand("DEL", keyValue)
+				err = reply.OKValue()
+				if err != nil {
+					client.ClosePool()
+					return err
+				}
+			}
+		}
+
+		queryPattern := namespace + ":" + class + ":Query:*"
+
+		if keySet, err := client.Keys(queryPattern); err == nil {
 			for _, keyValue := range keySet {
 				reply, err := client.ExecuteCommand("DEL", keyValue)
 				err = reply.OKValue()

@@ -33,6 +33,13 @@ func Search(request *messaging.ObjectRequest) (body []byte) {
 	return
 }
 
+func Query(request *messaging.ObjectRequest) (body []byte) {
+	if CheckCacheAvailability(request) {
+		body = repositories.GetQuery(request)
+	}
+	return
+}
+
 func GetByKey(request *messaging.ObjectRequest) (body []byte) {
 	if CheckCacheAvailability(request) {
 		body = repositories.GetByKey(request)
@@ -63,6 +70,16 @@ func StoreMany(request *messaging.ObjectRequest, data []map[string]interface{}) 
 func StoreResult(request *messaging.ObjectRequest, data interface{}) (err error) {
 	if CheckCacheAvailability(request) {
 		err = repositories.SetResultRedis(request, data)
+		if err != nil {
+			fmt.Println("Error storing to Cache : " + err.Error())
+		}
+	}
+	return
+}
+
+func StoreQuery(request *messaging.ObjectRequest, data interface{}) (err error) {
+	if CheckCacheAvailability(request) {
+		err = repositories.SetQueryRedis(request, data)
 		if err != nil {
 			fmt.Println("Error storing to Cache : " + err.Error())
 		}

@@ -3,6 +3,7 @@ package repositories
 import (
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
+	"strings"
 )
 
 func getNoSqlKeyById(request *messaging.ObjectRequest, obj map[string]interface{}) string {
@@ -59,5 +60,13 @@ func getSearchResultKey(request *messaging.ObjectRequest) string {
 
 	url := namespace + ":" + class + ":" + keyword + ":" + skip + ":" + take + ":" + orderBy + ":" + orderByDsc
 
+	return url
+}
+
+func getQueryResultKey(request *messaging.ObjectRequest) string {
+	query := strings.Replace(request.Body.Query.Parameters, " ", "", -1)
+	namespace := request.Controls.Namespace
+	class := request.Controls.Class
+	url := namespace + ":" + class + ":Query:" + query
 	return url
 }
