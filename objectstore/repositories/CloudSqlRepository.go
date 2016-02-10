@@ -849,6 +849,7 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 }
 
 func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{} {
+
 	if b == nil {
 		return nil
 	}

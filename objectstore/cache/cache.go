@@ -101,17 +101,24 @@ func CheckCacheAvailability(request *messaging.ObjectRequest) (status bool) {
 }
 
 func checkValidTenentClass(request *messaging.ObjectRequest) (status bool) {
-	namespaces := ""
-	classes := "domainclassattributes"
+	namespaces := [...]string{}
+	classes := [...]string{"domainclassattributes"}
 
 	status = true
 
-	if strings.Contains(classes, strings.ToLower(request.Controls.Class)) {
-		fmt.Println("Invalid Class. Wouldn't be saved on Cache!")
-		status = false
-	} else if strings.Contains(namespaces, strings.ToLower(request.Controls.Namespace)) {
-		fmt.Println("Invalid Namespace. Wouldn't be saved on Cache")
-		status = false
+	for _, namespace := range namespaces {
+		if strings.ToLower(request.Controls.Namespace) == strings.ToLower(namespace) {
+			fmt.Println("Invalid Namespace. Wouldn't be saved on Cache")
+			status = false
+			return
+		}
+	}
+	for _, class := range classes {
+		if strings.ToLower(request.Controls.Class) == strings.ToLower(class) {
+			fmt.Println("Invalid Class. Wouldn't be saved on Cache!")
+			status = false
+			return
+		}
 	}
 
 	return

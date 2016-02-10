@@ -35,7 +35,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 			response = repository.GetAll(request)
 
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
-				var data interface{}
+				var data []map[string]interface{}
 				_ = json.Unmarshal(response.Body, &data)
 				if errCache := cache.StoreResult(request, data); errCache != nil {
 					fmt.Println(errCache.Error())
@@ -75,7 +75,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 			fmt.Println("Not Available in Cache.. Reading from Repositories...")
 			response = repository.GetSearch(request)
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
-				var data interface{}
+				var data []map[string]interface{}
 				_ = json.Unmarshal(response.Body, &data)
 				if errCache := cache.StoreResult(request, data); errCache != nil {
 					fmt.Println(errCache.Error())
@@ -94,7 +94,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 			fmt.Println("Not Available in Cache.. Reading from Repositories...")
 			response = repository.GetQuery(request)
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
-				var data interface{}
+				var data []map[string]interface{}
 				_ = json.Unmarshal(response.Body, &data)
 				if errCache := cache.StoreQuery(request, data); errCache != nil {
 					fmt.Println(errCache.Error())
