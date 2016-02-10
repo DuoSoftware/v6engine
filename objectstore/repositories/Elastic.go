@@ -1,8 +1,6 @@
 package repositories
 
 import (
-	//"duov6.com/term"
-	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
@@ -83,13 +81,6 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 		}
 
 		finalBytes, _ := json.Marshal(allMaps)
-
-		if len(allMaps) > 0 {
-			if errCache := cache.StoreResult(request, allMaps); errCache != nil {
-				fmt.Println(errCache.Error())
-			}
-		}
-
 		response.GetResponseWithBody(finalBytes)
 	}
 
@@ -116,8 +107,6 @@ func (repository ElasticRepository) GetQuery(request *messaging.ObjectRequest) R
 				response.GetErrorResponse(errorMessage)
 			}
 		} else {
-			//Check if just * then execute GET-SEARCH method
-			//term.Write("Redirecting to GET-SEARCH!", 2)
 			return repository.search(request, request.Body.Query.Parameters)
 		}
 	default:
@@ -149,7 +138,6 @@ func (repository ElasticRepository) GetByKey(request *messaging.ObjectRequest) R
 		bytes, err = json.Marshal(originalData)
 		if err != nil {
 			errorMessage := "Elastic search JSON marshal error : " + err.Error()
-			//term.Write(err.Error(), 1)
 			response.GetErrorResponse(errorMessage)
 
 		} else {
@@ -192,11 +180,6 @@ func (repository ElasticRepository) setOneElastic(request *messaging.ObjectReque
 	} else {
 		response.IsSuccess = true
 		response.Message = "Successfully inserted one to elastic search"
-
-		if errCache := cache.StoreOne(request, request.Body.Object); errCache != nil {
-			fmt.Println(errCache.Error())
-		}
-
 	}
 
 	//Update Response
@@ -287,11 +270,6 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 	if isAllCompleted {
 		response.IsSuccess = true
 		response.Message = "Successfully inserted bulk to Elastic Search"
-
-		if errCache := cache.StoreMany(request, request.Body.Objects); errCache != nil {
-			fmt.Println(errCache.Error())
-		}
-
 	} else {
 		response.IsSuccess = false
 		response.Message = "Error Inserting Some Objects"
@@ -354,11 +332,6 @@ func (repository ElasticRepository) DeleteMultiple(request *messaging.ObjectRequ
 			response.Message = "Successfully deleted one in elastic search"
 		}
 	}
-
-	if errCache := cache.DeleteMany(request, request.Body.Objects); errCache != nil {
-		fmt.Println(errCache.Error())
-	}
-
 	return response
 
 }
@@ -376,10 +349,6 @@ func (repository ElasticRepository) DeleteSingle(request *messaging.ObjectReques
 	} else {
 		response.IsSuccess = true
 		response.Message = "Successfully deleted one in elastic search"
-
-		if errCache := cache.DeleteOne(request, request.Body.Object); errCache != nil {
-			fmt.Println(errCache.Error())
-		}
 	}
 
 	return response

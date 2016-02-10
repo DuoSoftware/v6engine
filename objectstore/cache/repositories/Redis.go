@@ -39,7 +39,9 @@ func GetByKey(request *messaging.ObjectRequest) (output []byte) {
 				result = nil
 			}
 			output = result
-			fmt.Println("Retrieved from Cache!")
+			if !checkEmptyByteArray(result) {
+				fmt.Println("Retrieved from Cache!")
+			}
 		}
 		client.ClosePool()
 	}
@@ -62,7 +64,9 @@ func GetSearch(request *messaging.ObjectRequest) (output []byte) {
 				result = nil
 			}
 			output = result
-			fmt.Println("Retrieved from Cache!")
+			if !checkEmptyByteArray(result) {
+				fmt.Println("Retrieved from Cache!")
+			}
 		}
 		client.ClosePool()
 	}
@@ -85,7 +89,9 @@ func GetQuery(request *messaging.ObjectRequest) (output []byte) {
 				result = nil
 			}
 			output = result
-			fmt.Println("Retrieved from Cache!")
+			if !checkEmptyByteArray(result) {
+				fmt.Println("Retrieved from Cache!")
+			}
 		}
 		client.ClosePool()
 	}

@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"database/sql"
-	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
 	"duov6.com/term"
@@ -25,8 +24,6 @@ func (repository CloudSqlRepository) GetRepositoryName() string {
 
 func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Get-All!", 2)
-	isSkippable := false
-	isTakable := false
 	isOrderByAsc := false
 	isOrderByDesc := false
 	orderbyfield := ""
@@ -35,12 +32,10 @@ func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) Re
 
 	if request.Extras["skip"] != nil {
 		skip = request.Extras["skip"].(string)
-		isSkippable = true
 	}
 
 	if request.Extras["take"] != nil {
 		take = request.Extras["take"].(string)
-		isTakable = true
 	}
 
 	if request.Extras["orderby"] != nil {
@@ -59,23 +54,10 @@ func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) Re
 		query += " order by " + orderbyfield + " desc "
 	}
 
-	if isTakable {
-		query += " limit " + take
-	}
-	if isSkippable {
-		query += " offset " + skip
-	}
+	query += " limit " + take
+	query += " offset " + skip
 
 	response := repository.queryCommonMany(query, request)
-
-	if response.IsSuccess && !checkEmptyByteArray(response.Body) {
-		var data interface{}
-		_ = json.Unmarshal(response.Body, &data)
-		if errCache := cache.StoreResult(request, data); errCache != nil {
-			fmt.Println(errCache.Error())
-		}
-	}
-
 	return response
 }
 
@@ -108,9 +90,6 @@ func (repository CloudSqlRepository) GetByKey(request *messaging.ObjectRequest) 
 
 func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Get-Search!", 2)
-
-	isSkippable := false
-	isTakable := false
 	isOrderByAsc := false
 	isOrderByDesc := false
 	orderbyfield := ""
@@ -119,12 +98,10 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 
 	if request.Extras["skip"] != nil {
 		skip = request.Extras["skip"].(string)
-		isSkippable = true
 	}
 
 	if request.Extras["take"] != nil {
 		take = request.Extras["take"].(string)
-		isTakable = true
 	}
 
 	if request.Extras["orderby"] != nil {
@@ -163,26 +140,13 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 		query += " order by " + orderbyfield + " desc "
 	}
 
-	if isTakable {
-		query += " limit " + take
-	}
-	if isSkippable {
-		query += " offset " + skip
-	}
+	query += " limit " + take
+	query += " offset " + skip
 
 	query += ";"
 
 	fmt.Println(query)
 	response = repository.queryCommonMany(query, request)
-
-	if response.IsSuccess && !checkEmptyByteArray(response.Body) {
-		var data interface{}
-		_ = json.Unmarshal(response.Body, &data)
-		if errCache := cache.StoreResult(request, data); errCache != nil {
-			fmt.Println(errCache.Error())
-		}
-	}
-
 	return response
 }
 
@@ -256,10 +220,6 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 		} else {
 			response.IsSuccess = true
 			response.Message = "Successfully Deleted all objects from CloudSQL repository!"
-
-			if errCache := cache.DeleteMany(request, request.Body.Objects); errCache != nil {
-				fmt.Println(errCache.Error())
-			}
 		}
 	} else {
 		response.IsSuccess = false
@@ -282,11 +242,6 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 		} else {
 			response.IsSuccess = true
 			response.Message = "Successfully Deleted from CloudSQL repository!"
-
-			if errCache := cache.DeleteOne(request, request.Body.Object); errCache != nil {
-				fmt.Println(errCache.Error())
-			}
-
 		}
 	} else {
 		response.IsSuccess = false
@@ -498,17 +453,6 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 
 	response.IsSuccess = true
 	response.Message = "Successfully stored object(s) in CloudSQL"
-
-	//Store to Cache
-	if request.Body.Object != nil {
-		if errCache := cache.StoreOne(request, request.Body.Object); errCache != nil {
-			fmt.Println(errCache.Error())
-		}
-	} else {
-		if errCache := cache.StoreMany(request, request.Body.Objects); errCache != nil {
-			fmt.Println(errCache.Error())
-		}
-	}
 
 	repository.closeConnection(conn)
 	return response

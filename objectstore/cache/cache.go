@@ -4,6 +4,7 @@ import (
 	"duov6.com/objectstore/cache/repositories"
 	"duov6.com/objectstore/messaging"
 	"fmt"
+	"strings"
 )
 
 func DeleteOne(request *messaging.ObjectRequest, data map[string]interface{}) (err error) {
@@ -92,6 +93,26 @@ func CheckCacheAvailability(request *messaging.ObjectRequest) (status bool) {
 	if request.Configuration.ServerConfiguration["REDIS"] == nil {
 		fmt.Println("Cache Config/Server Not Found!")
 		status = false
+	} else if !checkValidTenentClass(request) {
+		status = false
 	}
+
+	return
+}
+
+func checkValidTenentClass(request *messaging.ObjectRequest) (status bool) {
+	namespaces := ""
+	classes := "domainclassattributes"
+
+	status = true
+
+	if strings.Contains(classes, strings.ToLower(request.Controls.Class)) {
+		fmt.Println("Invalid Class. Wouldn't be saved on Cache!")
+		status = false
+	} else if strings.Contains(namespaces, strings.ToLower(request.Controls.Namespace)) {
+		fmt.Println("Invalid Namespace. Wouldn't be saved on Cache")
+		status = false
+	}
+
 	return
 }
