@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/twinj/uuid"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -23,15 +24,18 @@ func RandText(n int) string {
 }
 
 func GetGUID() string {
-
-	//h.Write()
-	out, err := exec.Command("uuidgen").Output()
-	h := md5.New()
-	h.Write(out)
-	if err == nil {
-		return hex.EncodeToString(h.Sum(nil))
+	if runtime.GOOS == "linux" {
+		//h.Write()
+		out, err := exec.Command("uuidgen").Output()
+		h := md5.New()
+		h.Write(out)
+		if err == nil {
+			return hex.EncodeToString(h.Sum(nil))
+		} else {
+			return uuid.NewV1().String()
+		}
 	} else {
-		return ""
+		return uuid.NewV1().String()
 	}
 }
 
