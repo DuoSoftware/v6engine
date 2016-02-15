@@ -6,10 +6,13 @@ import (
 	"duov6.com/objectstore/unittesting"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 )
 
 func main() {
+
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	arguments := os.Args[1:]
 	var IsLoggable bool

@@ -14,6 +14,7 @@ import (
 	"duov6.com/term"
 	"encoding/json"
 	"net/http"
+	"runtime"
 )
 
 // A ServiceConfig represents a configuration for galang
@@ -40,7 +41,7 @@ func GetConfig() ServiceConfig {
 }
 
 func main() {
-
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	cebadapter.Attach("DuoAuth", func(s bool) {
 		cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
 			term.Write("Store Configuration Successfully Loaded...", term.Information)

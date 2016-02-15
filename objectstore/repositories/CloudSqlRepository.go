@@ -738,6 +738,8 @@ func (repository CloudSqlRepository) checkSchema(conn *sql.DB, namespace string,
 ///////////////////////////////////////Helper functions/////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+//var connection *sql.DB
+
 func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
 	//connInt := connmanager.Get("MYSQL", request.Controls.Namespace)
 	// if connInt != nil {
@@ -760,12 +762,34 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 
 	// } else {
 	//term.Write("!No Connection Found! Creating Brand New Connection!", 2)
-	term.Write("Creating MySQL Connection!", 2)
+	//connection.SetMaxIdleConns(1000)
+	//connection.SetMaxOpenConns(1000)
+
+	// if connection == nil {
+	// 	fmt.Println("CONN NILED!")
+	//term.Write("Creating MySQL Connection!", 2)
 	var c *sql.DB
 	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 	c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
 	//connmanager.Set("MYSQL", request.Controls.Namespace, c)
 	conn = c
+	// 	connection = c
+	// } else {
+	// 	if connection.Ping(); err != nil {
+	// 		fmt.Println("PING FEKD!")
+	// 		//term.Write("Creating MySQL Connection!", 2)
+	// 		var c *sql.DB
+	// 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+	// 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
+	// 		//connmanager.Set("MYSQL", request.Controls.Namespace, c)
+	// 		conn = c
+	// 		connection = c
+	// 	} else {
+	// 		fmt.Println("Using Cached Connection!")
+	// 		conn = connection
+	// 	}
+	// }
+
 	//}
 	//fmt.Println("Created Connection!")
 	return conn, err
@@ -1154,6 +1178,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 }
 
 func (repository CloudSqlRepository) closeConnection(conn *sql.DB) {
+	//fmt.Println("Connection Close Disabled!")
 	err := conn.Close()
 	if err != nil {
 		term.Write(err.Error(), 1)
