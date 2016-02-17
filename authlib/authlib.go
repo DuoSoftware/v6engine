@@ -20,6 +20,7 @@ type AuthorizeAppData struct {
 
 type Auth struct {
 	gorest.RestService
+	verify      gorest.EndPoint `method:"GET" path:"/" output:"string"`
 	login       gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
 	authorize   gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
 	getSession  gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
@@ -87,6 +88,11 @@ func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
 	} else {
 		return false
 	}
+}
+
+func (A Auth) Verify() (output string) {
+	output = "{\"name\": \"DuoAuth\",\"version\": \"1.0.12-a\",\"Change Log\":\"Added Verify!\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	return
 }
 
 func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) {

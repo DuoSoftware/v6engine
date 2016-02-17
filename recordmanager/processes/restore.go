@@ -142,7 +142,7 @@ func setManyElastic(url string, request *messaging.ObjectRequest) {
 	for x := 0; x < noOfSets; x++ {
 		fmt.Println("Inserting data stub : " + strconv.Itoa(x))
 		indexer := conn.NewBulkIndexer(stub)
-		nowTime := time.Now()
+		//nowTime := time.Now()
 
 		if isAutoIncrementKey {
 			//Read maxCount from domainClassAttributes table
@@ -217,7 +217,7 @@ func setManyElastic(url string, request *messaging.ObjectRequest) {
 			}
 			CountIndex++
 			delete(obj, "OriginalIndex")
-			indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
+			//indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "10", &nowTime, obj, false)
 		}
 		indexer.Start()
 		numerrors := indexer.NumErrors()
@@ -238,7 +238,7 @@ func setManyElastic(url string, request *messaging.ObjectRequest) {
 		fmt.Println("Inserting Last Stub of record Set!")
 		start := len(request.Body.Objects) - remainderFromSets
 		indexer := conn.NewBulkIndexer(stub)
-		nowTime := time.Now()
+		//nowTime := time.Now()
 
 		if isAutoIncrementKey {
 			//Read maxCount from domainClassAttributes table
@@ -312,7 +312,7 @@ func setManyElastic(url string, request *messaging.ObjectRequest) {
 			}
 			CountIndex++
 			delete(obj, "OriginalIndex")
-			indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "1000", &nowTime, obj, false)
+			//indexer.Index(request.Controls.Namespace, request.Controls.Class, nosqlid, "1000", &nowTime, obj, false)
 		}
 
 		fmt.Println("-----------------")
