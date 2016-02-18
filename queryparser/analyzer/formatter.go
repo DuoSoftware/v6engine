@@ -108,6 +108,8 @@ func PrepareSQLStatement(input string, repo string, namespace string, class stri
 			queryTokens[index] = ",ASC"
 		} else if strings.EqualFold(queryTokens[index], ",desc") {
 			queryTokens[index] = ",DESC"
+		} else if strings.EqualFold(queryTokens[index], "like") {
+			queryTokens[index] = "LIKE"
 		}
 	}
 

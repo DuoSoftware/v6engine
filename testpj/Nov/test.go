@@ -12,6 +12,9 @@ func main() {
 	//fmt.Println(queryparser.GetDataStoreQuery("SELECT tttt, Id, age from Student s1, game g2 order by age desc, name ;", "com.duoworld.com", "test"))
 	//fmt.Println(queryparser.GetElasticQuery("select * from chatmessages where (too='usr1' AND frm='usr2') OR (too= 'usr2' AND frm='usr1');", "com.duoworld.com", "test"))
 
-	fmt.Println(queryparser.GetDataStoreQuery("SELECT tttt, Id, age from Student s1, game g2 where value = '50 0' AND kappa not between 50 AND 100 AND kat not in ('asdf', 'wert') order by ppds, ggg desc;", "com.duoworld.com", "test"))
+	//fmt.Println(queryparser.GetDataStoreQuery("SELECT tttt, Id, age from Student s1, game g2 where value = '50 0' AND kappa not between 50 AND 100 AND kat not in ('asdf', 'wert') order by ppds, ggg desc;", "com.duoworld.com", "test"))
+	fmt.Println(queryparser.GetElasticQuery("select * from product12thdoor where ProductCode like '%MAG%';", "com.duoworld.com", "test"))
+
+	//fmt.Println(queryparser.GetElasticQuery("SELECT tttt, Id, age from Student s1, game g2 where Country LIKE '%land%' ;", "com.duoworld.com", "test"))
 
 }
