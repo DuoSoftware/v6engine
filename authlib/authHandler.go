@@ -186,7 +186,7 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 			u.Active = false
 			u.UserID = common.GetGUID()
 			term.Write("SaveUser saving user  "+u.Name+" New User "+u.UserID, term.Debug)
-			password := u.Password
+			//password := u.Password
 			u.Password = common.GetHash(u.Password)
 			u.ConfirmPassword = common.GetHash(u.ConfirmPassword)
 			var Activ ActivationEmail
@@ -194,11 +194,13 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 			Activ.Token = common.RandText(10)
 			var inputParams map[string]string
 			inputParams = make(map[string]string)
-			inputParams["@@email@@"] = u.EmailAddress
-			inputParams["@@name@@"] = u.Name
-			inputParams["@@token@@"] = Activ.Token
-			inputParams["@@password@@"] = password
-			email.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "user_activate", inputParams, nil, u.EmailAddress)
+			// inputParams["@@email@@"] = u.EmailAddress
+			// inputParams["@@name@@"] = u.Name
+			// inputParams["@@token@@"] = Activ.Token
+			// inputParams["@@password@@"] = password
+			inputParams["@@CNAME@@"] = u.Name
+			inputParams["@@LINK@@"] = "http://duoworld.com/fakeverify/" + Activ.Token
+			email.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "T_Email_Verification", inputParams, nil, u.EmailAddress)
 			term.Write("E Mail Sent", term.Debug)
 			client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
 			term.Write("Activation stored", term.Debug)
