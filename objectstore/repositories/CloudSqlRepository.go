@@ -595,8 +595,8 @@ func (repository CloudSqlRepository) getDeleteScript(namespace string, class str
 }
 
 func (repository CloudSqlRepository) getCreateScript(namespace string, class string, obj map[string]interface{}) string {
-	//query := "CREATE TABLE IF NOT EXISTS " + repository.getDatabaseName(namespace) + "." + class + "(__os_id varchar(255) primary key"
-	query := "CREATE TABLE IF NOT EXISTS " + repository.getDatabaseName(namespace) + "." + class + "(__os_id text"
+	query := "CREATE TABLE IF NOT EXISTS " + repository.getDatabaseName(namespace) + "." + class + "(__os_id varchar(255) primary key"
+	//query := "CREATE TABLE IF NOT EXISTS " + repository.getDatabaseName(namespace) + "." + class + "(__os_id text"
 	for k, v := range obj {
 		if k != "OriginalIndex" {
 			query += (", " + k + " " + repository.golangToSql(v))
@@ -738,60 +738,34 @@ func (repository CloudSqlRepository) checkSchema(conn *sql.DB, namespace string,
 ///////////////////////////////////////Helper functions/////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-//var connection *sql.DB
+var connection *sql.DB
 
 func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
-	//connInt := connmanager.Get("MYSQL", request.Controls.Namespace)
-	// if connInt != nil {
-	// 	term.Write("Connection Already Available.. Pinging Now....", 2)
-	// 	temp := connInt.(*sql.DB)
-	// 	err2 := temp.Ping()
-	// 	if err2 != nil {
-	// 		term.Write(err2.Error(), 1)
-	// 		term.Write("Ping Failed! Creating a new Connection!", 2)
-	// 		var c *sql.DB
-	// 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-	// 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-	// 		connmanager.Set("MYSQL", request.Controls.Namespace, c)
-	// 		conn = c
-	// 		return
-	// 	}
-	// 	term.Write("Ping Successful! Reusing Same Connection!", 2)
-	// 	conn = temp
-	// 	//conn = connInt.(*sql.DB)
 
-	// } else {
-	//term.Write("!No Connection Found! Creating Brand New Connection!", 2)
-	//connection.SetMaxIdleConns(1000)
-	//connection.SetMaxOpenConns(1000)
-
-	//if connection == nil {
-	fmt.Println("CONN NILED!")
-	term.Write("Creating MySQL Connection!", 2)
-	var c *sql.DB
-	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-	c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-	//connmanager.Set("MYSQL", request.Controls.Namespace, c)
-	conn = c
-	//connection = c
-	// } else {
-	// 	if connection.Ping(); err != nil {
-	// 		fmt.Println("PING FEKD!")
-	// 		//term.Write("Creating MySQL Connection!", 2)
-	// 		var c *sql.DB
-	// 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-	// 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-	// 		//connmanager.Set("MYSQL", request.Controls.Namespace, c)
-	// 		conn = c
-	// 		connection = c
-	// 	} else {
-	// 		fmt.Println("Using Cached Connection!")
-	// 		conn = connection
-	// 	}
-	// }
-
-	//}
-	//fmt.Println("Created Connection!")
+	if connection == nil {
+		fmt.Println("Nil Connection! Creating MySQL Connection!")
+		var c *sql.DB
+		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
+		c.SetMaxIdleConns(1000)
+		c.SetMaxOpenConns(0)
+		conn = c
+		connection = c
+	} else {
+		if connection.Ping(); err != nil {
+			fmt.Println("Cached Connection Timed Out! Creating new Connection!")
+			var c *sql.DB
+			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
+			c.SetMaxIdleConns(1000)
+			c.SetMaxOpenConns(0)
+			conn = c
+			connection = c
+		} else {
+			fmt.Println("Using Cached Connection!")
+			conn = connection
+		}
+	}
 	return conn, err
 }
 
@@ -1178,13 +1152,12 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 }
 
 func (repository CloudSqlRepository) closeConnection(conn *sql.DB) {
-	//	fmt.Println("Connection Close Disabled!")
-	err := conn.Close()
-	if err != nil {
-		term.Write(err.Error(), 1)
-	} else {
-		term.Write("Connection Closed!", 2)
-	}
+	// err := conn.Close()
+	// if err != nil {
+	// 	term.Write(err.Error(), 1)
+	// } else {
+	// 	term.Write("Connection Closed!", 2)
+	// }
 }
 
 // ----------  LEGACY CODE ARCHIVE ---------------------
