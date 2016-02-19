@@ -17,7 +17,7 @@ func (repository ElasticSearch) GetQuery(request structs.RepoRequest) structs.Re
 	response := structs.RepoResponse{}
 	response.Query = request.Query
 
-	queryString := "{"
+	queryString := "{\"size\": 100000,"
 	queryString += repository.GetFieldsJson(request)
 	queryString += repository.GetOrderByJson(request)
 

@@ -59,8 +59,6 @@ func (repository PostgresRepository) getConnection(request *messaging.ObjectRequ
 		if err != nil {
 			term.Write(err.Error(), 1)
 		} else {
-			term.Write("Successfully retrieved values for all objects in PostGres", 2)
-
 			columns, _ := rows.Columns()
 			count := len(columns)
 			values := make([]interface{}, count)
@@ -87,9 +85,8 @@ func (repository PostgresRepository) getConnection(request *messaging.ObjectRequ
 					} else {
 						v = val
 					}
-					term.Write("Check domain : "+repository.getDatabaseName(request.Controls.Namespace)+" : available schema : "+v.(string), 2)
+					//term.Write("Check domain : "+repository.getDatabaseName(request.Controls.Namespace)+" : available schema : "+v.(string), 2)
 					if v.(string) == repository.getDatabaseName(request.Controls.Namespace) {
-						//Database available
 						isDatabaseAvailbale = true
 						break
 					}
@@ -116,7 +113,7 @@ func (repository PostgresRepository) getConnection(request *messaging.ObjectRequ
 				term.Write(err.Error(), 1)
 				isError = true
 			} else {
-				term.Write("Creation of domain matched Schema Successful", 2)
+				term.Write("Database Created Successfully!", 2)
 				session.Close()
 				session, err = sql.Open("postgres", "host="+dbUrl+" port="+dbPort+" user="+username+" password="+password+" dbname="+(repository.getDatabaseName(request.Controls.Namespace))+" sslmode=disable")
 				if err != nil {
@@ -132,7 +129,6 @@ func (repository PostgresRepository) getConnection(request *messaging.ObjectRequ
 
 		return session, isError, errorMessage
 	}
-	term.Write("Reusing existing Postgres connection", 2)
 	return
 }
 
