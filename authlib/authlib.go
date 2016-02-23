@@ -96,7 +96,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		//fmt.Println("login succeful")
 		//securityToken := common.GetGUID()
 		outCrt.ClientIP = A.Context.Request().RemoteAddr
-		a.Otherdata["UserAgent"] = A.Context.Request().UserAgent
+		outCrt.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
 		outCrt.DataCaps = GetDataCaps(domain, u.UserID)
 		outCrt.Email = u.EmailAddress
 		outCrt.UserID = u.UserID
@@ -161,21 +161,14 @@ func (A Auth) Authorize(SecurityToken string, ApplicationID string) (a AuthCerti
 			a.ClientIP = A.Context.Request().RemoteAddr
 
 			a.SecurityToken = common.GetGUID()
-			data := make(map[string]interface{})
+			//data := make(map[string]interface{})
 			id := common.GetHash(ApplicationID + c.UserID)
-			bytes, err := client.Go("ignore", "com.duosoftware.auth", "scope").GetOne().ByUniqueKey(id).Ok() // fetech user autherized
-			term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
-			if err == "" {
-				if bytes != nil {
-					err := json.Unmarshal(bytes, &data)
-					if err == nil {
-						data := make(map[string]interface{})
-					}
-				}
-			}
-			a.Otherdata["scope"] = data
+			bytes, _ := client.Go("ignore", "com.duosoftware.auth", "scope").GetOne().ByUniqueKey(id).Ok() // fetech user autherized
+			//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
+
+			a.Otherdata["scope"] = string(bytes[:])
 			a.Otherdata["ApplicationID"] = ApplicationID
-			a.Otherdata["UserAgent"] = A.Context.Request().UserAgent
+			a.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
 			h.AddSession(a)
 			return a
 		} else {

@@ -56,6 +56,12 @@ func SetupConfig() {
 
 }
 
+type AppScope struct{
+	ScopID string
+	ApplicationID string
+	UserID string
+	Scopes map[string]string
+}
 
 type AppAutherize struct {
 	Name          string
@@ -87,9 +93,9 @@ type AuthConfig struct { // Auth Config
 	Cirtifcate    string // ssl cirtificate
 	PrivateKey    string // Private Key
 	Https_Enabled bool // Https enabled or not
-	StoreID       string // Store ID 
+	StoreID       string // Store ID
 	Smtpserver    string // Smptp Server Address
-	Smtpusername  string // SMTP Username 
+	Smtpusername  string // SMTP Username
 	Smtppassword  string // SMTP password
 	UserName      string // UserName login to advanced service potal
 	Password      string // Password
@@ -97,7 +103,7 @@ type AuthConfig struct { // Auth Config
 
 // A AuthCode represents a authcode cirtificate to Application auth.
 type AuthCode struct {// Clas starts here
-	ApplicationID string // Application ID 
+	ApplicationID string // Application ID
 	Code          string // Code for authendication
 	UserID        string // User ID of the person who is getting activated
 	URI           string // Auth URI
