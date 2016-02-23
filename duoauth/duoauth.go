@@ -41,6 +41,7 @@ func GetConfig() ServiceConfig {
 }
 
 func main() {
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	cebadapter.Attach("DuoAuth", func(s bool) {
 		cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {

@@ -212,7 +212,7 @@ func (A Auth) GetAuthCode(SecurityToken, ApplicationID, URI string) (authCode st
 // 	return false
 // }
 
-func (A AuthHandler) UpdateScope(object AuthorizeAppData, SecurityToken, UserID, ApplicationID string) {
+func (A Auth) UpdateScope(object AuthorizeAppData, SecurityToken, UserID, ApplicationID string) {
 	//(, AppSecret string) {
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
