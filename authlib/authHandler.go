@@ -103,6 +103,7 @@ func (h *AuthHandler) AddSession(a AuthCertificate) {
 	c.SecurityToken = a.SecurityToken
 	c.UserID = a.UserID
 	c.Username = a.Username
+	c.Otherdata = make(map[string]string)
 	c.Otherdata = a.Otherdata
 	session.AddSession(c)
 }
@@ -262,7 +263,7 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 	term.Write("Login  user  email"+email, term.Debug)
 	term.Write(Config.UserName, term.Debug)
 	email = strings.ToLower(email)
-	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(strings.ToLower(email)).Ok()
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(email).Ok()
 	fmt.Println(string(bytes))
 	var user User
 	if err == "" {
