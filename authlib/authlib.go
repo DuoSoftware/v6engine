@@ -98,7 +98,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		//fmt.Println("login succeful")
 		//securityToken := common.GetGUID()
 		outCrt.ClientIP = A.Context.Request().RemoteAddr
-		outCrt.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
+
 		outCrt.DataCaps = GetDataCaps(domain, u.UserID)
 		outCrt.Email = u.EmailAddress
 		outCrt.UserID = u.UserID
@@ -107,6 +107,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		outCrt.Domain = domain
 		outCrt.Username = u.EmailAddress
 		outCrt.Otherdata = make(map[string]string)
+		outCrt.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
 		//outCrt.Otherdata["Tempkey"] = "No"
 		th := TenantHandler{}
 		tlist := th.GetTenantsForUser(u.UserID)
