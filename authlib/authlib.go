@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	///"strings"
 )
 
 type AuthCertificate struct {
@@ -28,6 +29,7 @@ type Auth struct {
 	//Lasith's method - Don't Delete
 	//autherizeApp       gorest.EndPoint `method:"GET" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" output:"bool"`
 	autherizeApp       gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
+	updateScope        gorest.EndPoint `method:"POST" path:"/UpdateScope/{SecurityToken:string}/{UserID:string}/{ApplicationID:string}" postdata:"AuthorizeAppData"`
 	addUser            gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
 	registerTenantUser gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
 	userActivation     gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
@@ -163,9 +165,9 @@ func (A Auth) Authorize(SecurityToken string, ApplicationID string) (a AuthCerti
 			a.SecurityToken = common.GetGUID()
 			//data := make(map[string]interface{})
 			id := common.GetHash(ApplicationID + c.UserID)
-			bytes, _ := client.Go("ignore", "com.duosoftware.auth", "scope").GetOne().ByUniqueKey(id).Ok() // fetech user autherized
+			bytes, _ := client.Go("ignore", a.Domain, "scope").GetOne().ByUniqueKey(id).Ok() // fetech user autherized
 			//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
-
+			a.DataCaps = string(bytes[:])
 			a.Otherdata["scope"] = string(bytes[:])
 			a.Otherdata["ApplicationID"] = ApplicationID
 			a.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
@@ -210,6 +212,27 @@ func (A Auth) GetAuthCode(SecurityToken, ApplicationID, URI string) (authCode st
 // 	return false
 // }
 
+func (A AuthHandler) UpdateScope(object AuthorizeAppData, SecurityToken, UserID, ApplicationID string) {
+	//(, AppSecret string) {
+	h := newAuthHandler()
+	c, err := h.GetSession(SecurityToken, "Nil")
+	if err == "" {
+
+		//Insert Object To Objectore
+		id := common.GetHash(ApplicationID + UserID)
+		data := make(map[string]interface{})
+		data["id"] = id
+		data["userid"] = UserID
+		data["ApplicationID"] = ApplicationID
+		//data["email"] = c.UserID
+		for key, value := range object.Object {
+			data[key] = value
+		}
+		client.Go("ignore", c.Domain, "scope").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
+
+		//insert to Objectstore ends here
+	}
+}
 func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, ApplicationID, AppSecret string) {
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
@@ -219,10 +242,13 @@ func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, Applica
 		id := common.GetHash(ApplicationID + c.UserID)
 		data := make(map[string]interface{})
 		data["id"] = id
+		data["userid"] = c.UserID
+		data["ApplicationID"] = ApplicationID
+		//data["email"] = c.UserID
 		for key, value := range object.Object {
 			data[key] = value
 		}
-		client.Go("ignore", "com.duosoftware.auth", "scope").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
+		client.Go("ignore", c.Domain, "scope").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
 		//insert to Objectstore ends here
 
 		out, err := h.AutherizeApp(Code, ApplicationID, AppSecret, c.UserID)
@@ -255,6 +281,8 @@ func (A Auth) RegisterTenantUser(u User) {
 	//c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
 		t := TenantHandler{}
+		//u.EmailAddress=strings.ToLower(u.EmailAddress
+
 		u = h.SaveUser(u, false)
 		b, _ := json.Marshal(u)
 		x := t.GetTenant(c.Domain)

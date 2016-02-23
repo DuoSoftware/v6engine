@@ -103,6 +103,7 @@ func (h *AuthHandler) AddSession(a AuthCertificate) {
 	c.SecurityToken = a.SecurityToken
 	c.UserID = a.UserID
 	c.Username = a.Username
+	c.Otherdata = a.Otherdata
 	session.AddSession(c)
 }
 
@@ -174,6 +175,7 @@ func (h *AuthHandler) ChangePassword(a AuthCertificate, newPassword string) bool
 // SaveUser helps to save the users
 func (h *AuthHandler) SaveUser(u User, update bool) User {
 	term.Write("SaveUser saving user  "+u.Name, term.Debug)
+	u.EmailAddress = strings.ToLower(u.EmailAddress)
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(u.EmailAddress).Ok()
 	if err == "" {
 		var uList User
@@ -199,7 +201,7 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 			// inputParams["@@token@@"] = Activ.Token
 			// inputParams["@@password@@"] = password
 			inputParams["@@CNAME@@"] = u.Name
-			inputParams["@@LINK@@"] = "http://duoworld.com/fakeverify/" + Activ.Token
+			inputParams["@@LINK@@"] = "http://duoworld.com/active/?token=" + Activ.Token
 			email.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "T_Email_Verification", inputParams, nil, u.EmailAddress)
 			term.Write("E Mail Sent", term.Debug)
 			client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
@@ -259,8 +261,8 @@ func (h *AuthHandler) UserActivation(token string) bool {
 func (h *AuthHandler) Login(email, password string) (User, string) {
 	term.Write("Login  user  email"+email, term.Debug)
 	term.Write(Config.UserName, term.Debug)
-
-	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(email).Ok()
+	email = strings.ToLower(email)
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(strings.ToLower(email)).Ok()
 	fmt.Println(string(bytes))
 	var user User
 	if err == "" {
@@ -290,7 +292,7 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 func (h *AuthHandler) GetUser(email string) (User, string) {
 	term.Write("Login  user  email"+email, term.Debug)
 	term.Write(Config.UserName, term.Debug)
-
+	email = strings.ToLower(email)
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(email).Ok()
 	var user User
 	if err == "" {
