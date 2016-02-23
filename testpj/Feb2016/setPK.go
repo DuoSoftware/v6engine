@@ -29,7 +29,7 @@ func main() {
 			if err == nil {
 				err = addPKConstraint(conn, table, db)
 				if err == nil {
-					fmt.Println("alter Success : " + db + "." + table)
+					fmt.Println("Alter Success : " + db + "." + table)
 				} else {
 					fmt.Println("Alter Failed " + db + "." + table + " : " + err.Error())
 				}
