@@ -206,7 +206,7 @@ func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, Applica
 	if err == "" {
 
 		//Insert Object To Objectore
-		id := common.GetHash(SecurityToken + c.UserID)
+		id := common.GetHash(ApplicationID + c.UserID)
 		data := make(map[string]interface{})
 		data["id"] = id
 		for key, value := range object.Object {
