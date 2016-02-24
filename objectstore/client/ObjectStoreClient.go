@@ -32,6 +32,29 @@ func (o *ObjectStoreClient) StoreObjectWithOperation(operation string) *StoreMod
 	return NewStoreModifierWithOperation(o.Request, operation)
 }
 
+func GoSmoothFlow(securityToken string, namespace string, class string, parameters map[string]interface{}) *ObjectStoreClient {
+	client := ObjectStoreClient{}
+	requestObject := getSmoothFlowObjectRequest(securityToken, namespace, class, parameters)
+	client.Request = &requestObject
+	return &client
+}
+
+func getSmoothFlowObjectRequest(headerToken string, headerNamespace string, headerClass string, parameters map[string]interface{}) (objectRequest messaging.ObjectRequest) {
+	objectRequest.Controls = messaging.RequestControls{SecurityToken: headerToken, Namespace: headerNamespace, Class: headerClass}
+	configObject := configuration.SmoothFlowConfigDownloader{}.DownloadConfiguration(headerToken, headerNamespace, headerClass, parameters)
+	objectRequest.Configuration = configObject
+
+	objectRequest.IsLogEnabled = true
+	var initialSlice []string
+	initialSlice = make([]string, 0)
+	objectRequest.MessageStack = initialSlice
+
+	var extraMap map[string]interface{}
+	extraMap = make(map[string]interface{})
+	objectRequest.Extras = extraMap
+	return
+}
+
 func Go(securityToken string, namespace string, class string) *ObjectStoreClient {
 	client := ObjectStoreClient{}
 	requestObject := getObjectRequest(securityToken, namespace, class)
