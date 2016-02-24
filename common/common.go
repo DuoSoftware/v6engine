@@ -1,9 +1,12 @@
 package common
 
 import (
+	"crypto/hmac"
 	"crypto/md5"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/twinj/uuid"
 	"math/rand"
@@ -32,10 +35,10 @@ func GetGUID() string {
 		if err == nil {
 			return hex.EncodeToString(h.Sum(nil))
 		} else {
-			return uuid.NewV1().String()
+			return GetHash(uuid.NewV1().String())
 		}
 	} else {
-		return uuid.NewV1().String()
+		return GetHash(uuid.NewV1().String())
 	}
 }
 
@@ -125,4 +128,34 @@ func PublishLog(fileName string, Body string) {
 		ff.Close()
 	}
 
+}
+
+func JWTPayload(issu, securitytoken, userid, email, domain string, b []byte) map[string]interface{} {
+	payload := make(map[string]interface{})
+	scope := make(map[string]interface{})
+	json.Unmarshal(b, &scope)
+	payload["iss"] = issu
+	payload["st"] = securitytoken
+	payload["usr"] = userid
+	payload["eml"] = email
+	payload["dmn"] = domain
+	payload["scope"] = scope
+	return payload
+}
+
+func Jwt(secret string, payload map[string]interface{}) string {
+	header := make(map[string]string)
+	header["alg"] = "HS256"
+	header["typ"] = "JWT"
+	b, _ := json.Marshal(header)
+	b2, _ := json.Marshal(payload)
+	other := base64.StdEncoding.EncodeToString(b) + "." + base64.StdEncoding.EncodeToString(b2)
+	return other + "." + ComputeHmac256(other, secret)
+}
+
+func ComputeHmac256(message string, secret string) string {
+	key := []byte(secret)
+	h := hmac.New(sha256.New, key)
+	h.Write([]byte(message))
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }

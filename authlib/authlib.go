@@ -1,11 +1,14 @@
 package authlib
 
 import (
+	"duov6.com/applib"
 	"duov6.com/common"
 	"duov6.com/gorest"
 	"duov6.com/objectstore/client"
 	"encoding/json"
 	"fmt"
+	//"golang.org/x/oauth2"
+	//"crypto/hmac"
 	"strconv"
 	///"strings"
 )
@@ -41,6 +44,7 @@ type Auth struct {
 }
 
 func GetClientIP() string {
+	//hmac.New(hash.)
 	return "hope"
 }
 
@@ -118,6 +122,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		return
 	} else {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Invalid user name password"))
+		//A.Context.Request().
 		return
 	}
 }
@@ -159,21 +164,34 @@ func (A Auth) Authorize(SecurityToken string, ApplicationID string) (a AuthCerti
 	//var a AuthCertificate
 	c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
+		if c.Otherdata["ApplicationID"] == ApplicationID {
+			return c
+		}
 		if h.AppAutherize(ApplicationID, c.UserID) == true {
-			a = c
-			a.ClientIP = A.Context.Request().RemoteAddr
+			var appH applib.Apphanler
+			application, err := appH.Get(ApplicationID, SecurityToken)
+			if err != "" {
+				a = c
+				a.ClientIP = A.Context.Request().RemoteAddr
 
-			a.SecurityToken = common.GetGUID()
-			//data := make(map[string]interface{})
-			id := common.GetHash(ApplicationID + c.UserID)
-			bytes, _ := client.Go("ignore", a.Domain, "scope").GetOne().ByUniqueKey(id).Ok() // fetech user autherized
-			//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
-			a.DataCaps = string(bytes[:])
-			a.Otherdata["scope"] = string(bytes[:])
-			a.Otherdata["ApplicationID"] = ApplicationID
-			a.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
-			h.AddSession(a)
-			return a
+				a.SecurityToken = common.GetGUID()
+				//data := make(map[string]interface{})
+				id := common.GetHash(ApplicationID + c.UserID)
+				bytes, _ := client.Go("ignore", a.Domain, "scope").GetOne().ByUniqueKey(id).Ok() // fetech user autherized
+				//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
+				a.DataCaps = string(bytes[:])
+				a.Otherdata["scope"] = string(bytes[:])
+				a.Otherdata["ApplicationID"] = ApplicationID
+				a.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
+				payload := common.JWTPayload(ApplicationID, a.SecurityToken, a.UserID, a.Email, a.Domain, bytes)
+				a.Otherdata["JWT"] = common.Jwt(application.SecretKey, payload)
+				h.AddSession(a)
+				return a
+			} else {
+				return
+				A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application ID " + ApplicationID + " not Atherized"))
+
+			}
 		} else {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application ID " + ApplicationID + " not Atherized"))
 			return
@@ -213,6 +231,17 @@ func (A Auth) GetAuthCode(SecurityToken, ApplicationID, URI string) (authCode st
 // 	return false
 // }
 
+func (A Auth) GetScope(SecurityToken, Key, Value string) map[string]interface{} {
+	h := newAuthHandler()
+	_, err := h.GetSession(SecurityToken, "Nil")
+	data := make(map[string]interface{})
+	if err == "" {
+		return data
+	}
+	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Session or Application not exist"))
+	return data
+}
+
 func (A Auth) UpdateScope(object AuthorizeAppData, SecurityToken, UserID, ApplicationID string) {
 	//(, AppSecret string) {
 	h := newAuthHandler()
@@ -230,10 +259,15 @@ func (A Auth) UpdateScope(object AuthorizeAppData, SecurityToken, UserID, Applic
 			data[key] = value
 		}
 		client.Go("ignore", c.Domain, "scope").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
-
+		b, _ := json.Marshal(data)
+		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 		//insert to Objectstore ends here
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Not Incorrect"))
+		//return
 	}
 }
+
 func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, ApplicationID, AppSecret string) {
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
@@ -252,7 +286,7 @@ func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, Applica
 		client.Go("ignore", c.Domain, "scope").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
 		//insert to Objectstore ends here
 
-		out, err := h.AutherizeApp(Code, ApplicationID, AppSecret, c.UserID)
+		out, err := h.AutherizeApp(Code, ApplicationID, AppSecret, c.UserID, SecurityToken)
 		if err != "" {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
 			return

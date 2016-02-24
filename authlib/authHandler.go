@@ -63,7 +63,7 @@ func (h *AuthHandler) GetAuthCode(ApplicationID, UserID, URI string) string {
 }
 
 // AutherizeApp autherize apps using the secret key that the application provided
-func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID string) (bool, string) {
+func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID, SecurityToken string) (bool, string) {
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "authcode").GetOne().ByUniqueKey(Code).Ok()
 	term.Write("AutherizeApp For ApplicationID "+ApplicationID+" Code "+Code+" Secret "+AppSecret+" Err "+err, term.Debug)
 	var uList AuthCode
@@ -72,7 +72,7 @@ func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID string
 	if err1 != nil {
 
 		var appH applib.Apphanler
-		application, err := appH.Get(ApplicationID, "ignorelib")
+		application, err := appH.Get(ApplicationID, SecurityToken)
 		if err == "" {
 			if application.SecretKey == AppSecret && uList.UserID == UserID && Code == uList.Code {
 				var appAth AppAutherize
