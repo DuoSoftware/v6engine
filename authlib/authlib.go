@@ -112,6 +112,12 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		outCrt.Username = u.EmailAddress
 		outCrt.Otherdata = make(map[string]string)
 		outCrt.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
+		bytes, _ := client.Go("ignore", domain, "scope").GetOne().ByUniqueKey(domain).Ok() // fetech user autherized
+		//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
+		outCrt.DataCaps = string(bytes[:])
+		payload := common.JWTPayload(domain, outCrt.SecurityToken, outCrt.UserID, outCrt.Email, outCrt.Domain, bytes)
+		outCrt.Otherdata["JWT"] = common.Jwt(domain, payload)
+		outCrt.Otherdata["scope"] = string(bytes[:])
 		//outCrt.Otherdata["Tempkey"] = "No"
 		th := TenantHandler{}
 		tlist := th.GetTenantsForUser(u.UserID)

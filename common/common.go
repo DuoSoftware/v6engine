@@ -136,7 +136,7 @@ func JWTPayload(issu, securitytoken, userid, email, domain string, b []byte) map
 	json.Unmarshal(b, &scope)
 	payload["iss"] = issu
 	payload["st"] = securitytoken
-	payload["usr"] = userid
+	payload["uid"] = userid
 	payload["eml"] = email
 	payload["dmn"] = domain
 	payload["scope"] = scope

@@ -4,6 +4,7 @@ import (
 	//"duov6.com/queryparser"
 	"crypto/hmac"
 	"crypto/sha256"
+	"duov6.com/common"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -20,7 +21,13 @@ func main() {
 	//fmt.Println(queryparser.GetElasticQuery("select * from product12thdoor where ProductCode like '%MAG%';", "com.duoworld.com", "test"))
 
 	//fmt.Println(queryparser.GetElasticQuery("SELECT tttt, Id, age from Student s1, game g2 where Country LIKE '%land%' ;", "com.duoworld.com", "test"))
-	fmt.Println(jwt())
+	//fmt.Println(jwt())
+	secret := "Lasitha"
+	scope := make(map[string]interface{})
+	//scope["obj"]=
+	b2, _ := json.Marshal(scope)
+	payload := common.JWTPayload("App!", "securitytoken", "userid", "email", "domain", b2)
+	fmt.Println(common.Jwt(secret, payload))
 }
 
 func jwt() string {
