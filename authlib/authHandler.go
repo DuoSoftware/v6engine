@@ -131,6 +131,12 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 		c.SecurityToken = a.SecurityToken
 		c.UserID = a.UserID
 		c.Username = a.Username
+		bytes, _ := client.Go("ignore", a.Domain, "scope").GetOne().ByUniqueKey(a.Domain).Ok() // fetech user autherized
+		//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
+		c.DataCaps = string(bytes[:])
+		payload := common.JWTPayload(a.Domain, c.SecurityToken, c.UserID, c.Email, c.Domain, bytes)
+		c.Otherdata["JWT"] = common.Jwt(a.Domain, payload)
+		c.Otherdata["Scope"] = string(bytes[:])
 		return c, ""
 	} else {
 		term.Write("GetSession Error "+err, term.Error)
