@@ -1059,6 +1059,8 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string)
 		fmt.Println(err.Error())
 		return err
 	}
+
+	_ = stmt.Close()
 	return
 }
 
