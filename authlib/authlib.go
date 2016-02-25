@@ -28,6 +28,7 @@ type Auth struct {
 	login       gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
 	authorize   gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
 	getSession  gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
+	getSecret   gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
 	getAuthCode gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
 	//Lasith's method - Don't Delete
 	//autherizeApp       gorest.EndPoint `method:"GET" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" output:"bool"`
@@ -116,7 +117,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
 		outCrt.DataCaps = string(bytes[:])
 		payload := common.JWTPayload(domain, outCrt.SecurityToken, outCrt.UserID, outCrt.Email, outCrt.Domain, bytes)
-		outCrt.Otherdata["JWT"] = common.Jwt(domain, payload)
+		outCrt.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(domain), payload)
 		outCrt.Otherdata["Scope"] = string(bytes[:])
 		//outCrt.Otherdata["Tempkey"] = "No"
 		th := TenantHandler{}
@@ -142,6 +143,11 @@ func (A Auth) GetUser(Email string) (outCrt User) {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("User Dose not exist"))
 		return
 	}
+}
+
+func (A Auth) GetSecret(Key string) string {
+	h := newAuthHandler()
+	return h.GetSecretKey(Key)
 }
 
 func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {

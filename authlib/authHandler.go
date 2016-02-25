@@ -135,7 +135,7 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 		//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
 		c.DataCaps = string(bytes[:])
 		payload := common.JWTPayload(a.Domain, c.SecurityToken, c.UserID, c.Email, c.Domain, bytes)
-		c.Otherdata["JWT"] = common.Jwt(a.Domain, payload)
+		c.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(a.Domain), payload)
 		c.Otherdata["Scope"] = string(bytes[:])
 		return c, ""
 	} else {
@@ -143,6 +143,22 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 	}
 	term.Write("GetSession No Session for SecurityToken "+key, term.Debug)
 	return c, "Error Session Not Found"
+}
+
+func (h *AuthHandler) GetSecretKey(key string) string {
+	keyfile := make(map[string]string)
+	bytes, _ := client.Go("ignore", "com.duosoftware.auth", "keysecrets").GetOne().ByUniqueKey(key).Ok()
+	if bytes != nil {
+		err := json.Unmarshal(bytes, &keyfile)
+		if err == nil {
+			return keyfile["secret"]
+		}
+	}
+
+	keyfile["key"] = key
+	keyfile["secret"] = common.GetGUID()
+	client.Go("ignore", "com.duosoftware.auth", "keysecrets").StoreObject().WithKeyField("key").AndStoreOne(keyfile).Ok()
+	return keyfile["secret"]
 }
 
 // ForgetPassword to help the user to reset password
