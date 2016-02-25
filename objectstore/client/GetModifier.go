@@ -7,7 +7,6 @@ import (
 	"duov6.com/objectstore/repositories"
 	"encoding/json"
 	//"fmt"
-	"strconv"
 )
 
 type GetModifier struct {
@@ -80,7 +79,7 @@ func (m *GetModifier) Ok() (output []byte, err string) {
 			//write to cache and return
 			var object interface{}
 			_ = json.Unmarshal(repResponse.Body, &object)
-			ttl, _ := strconv.Atoi(m.Request.Body.Object["ttl"].(string))
+			ttl := m.Request.Body.Object["ttl"].(int)
 			_ = documentcache.Store(key, ttl, object)
 		}
 	}
