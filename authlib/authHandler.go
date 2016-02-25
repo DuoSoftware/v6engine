@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	//"time"
 )
 
 // A AuthHandler represents a Method collection for Auth
@@ -115,6 +116,46 @@ func (h *AuthHandler) LogOut(a AuthCertificate) {
 	term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
 	//return true
 }
+
+/*
+func SetIlligalAttemts(clientIP, UserAgent, key string) {
+	keyfile := make(map[string]interface{})
+	keyfile["key"] = key
+	keyfile["clientip"] = clientIP
+	keyfile["secret"] = UserAgent
+	keyfile["attemts"] = 0
+	bytes, _ := client.Go("ignore", "com.duosoftware.auth", "attemts").GetOne().ByUniqueKey(key).Ok()
+	if bytes != nil {
+		err := json.Unmarshal(bytes, &keyfile)
+	}
+	t1, e := time.Parse(
+		time.RFC3339,
+		keyfile["lastattemt"])
+
+	t := time.Now()
+
+	keyfile["lastattemt"] = t.Format(time.RFC3339)
+	keyfile["attemts"] = keyfile["attemts"] + 1
+	client.Go("ignore", "com.duosoftware.auth", "keysecrets").StoreObject().WithKeyField("key").AndStoreOne(keyfile).Ok()
+	//return keyfile["secret"]
+}
+
+func IsIlligale(clientIP, key string) bool {
+	keyfile := make(map[string]string)
+	keyfile["key"] = key
+	//keyfile["clientip"] = clientIP
+	//keyfile["secret"] = UserAgent
+	keyfile["attemts"] = 0
+	keyfile["lastattemt"] = t.Format(time.RFC3339)
+	bytes, _ := client.Go("ignore", "com.duosoftware.auth", "attemts").GetOne().ByUniqueKey(key).Ok()
+	if bytes != nil {
+		err := json.Unmarshal(bytes, &keyfile)
+	}
+	t1, e := time.Parse(
+		time.RFC3339,
+		keyfile["lastattemt"])
+
+}*/
 
 // GetSession helps to get the session
 func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
