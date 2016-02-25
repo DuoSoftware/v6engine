@@ -30,7 +30,8 @@ func RemoveSession(SecurityToken string) {
 }
 
 func GetSession(key, Domain string) (AuthCertificate, string) {
-	bytes, err := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKeyCache(key, 3600).Ok()
+	bytes, err := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKey(key).Ok()
+	//bytes, err := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKeyCache(key, 3600).Ok()
 	term.Write("GetSession For SecurityToken "+key, term.Debug)
 	//term.Write("GetSession For SecurityToken "+string(bytes), term.Debug)
 
