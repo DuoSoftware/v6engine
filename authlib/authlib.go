@@ -180,30 +180,30 @@ func (A Auth) Authorize(SecurityToken string, ApplicationID string) (a AuthCerti
 			return c
 		}
 		if h.AppAutherize(ApplicationID, c.UserID) == true {
-			var appH applib.Apphanler
-			application, err := appH.Get(ApplicationID, SecurityToken)
-			if err != "" {
-				a = c
-				a.ClientIP = A.Context.Request().RemoteAddr
+			//var appH applib.Apphanler
+			//application, err := appH.Get(ApplicationID, SecurityToken)
+			//if err != "" {
+			a = c
+			a.ClientIP = A.Context.Request().RemoteAddr
 
-				a.SecurityToken = common.GetGUID()
-				//data := make(map[string]interface{})
-				id := common.GetHash(ApplicationID + c.UserID)
-				bytes, _ := client.Go("ignore", a.Domain, "scope").GetOne().ByUniqueKey(id).Ok() // fetech user autherized
-				//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
-				a.DataCaps = string(bytes[:])
-				a.Otherdata["Scope"] = string(bytes[:])
-				a.Otherdata["ApplicationID"] = ApplicationID
-				a.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
-				payload := common.JWTPayload(ApplicationID, a.SecurityToken, a.UserID, a.Email, a.Domain, bytes)
-				a.Otherdata["JWT"] = common.Jwt(application.SecretKey, payload)
-				h.AddSession(a)
-				return a
-			} else {
-				return
-				A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application ID " + ApplicationID + " not Atherized"))
+			a.SecurityToken = common.GetGUID()
+			//data := make(map[string]interface{})
+			id := common.GetHash(ApplicationID + c.UserID)
+			bytes, _ := client.Go("ignore", a.Domain, "scope").GetOne().ByUniqueKey(id).Ok() // fetech user autherized
+			//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
+			a.DataCaps = string(bytes[:])
+			a.Otherdata["Scope"] = string(bytes[:])
+			a.Otherdata["ApplicationID"] = ApplicationID
+			a.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
+			payload := common.JWTPayload(ApplicationID, a.SecurityToken, a.UserID, a.Email, a.Domain, bytes)
+			a.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(ApplicationID), payload)
+			h.AddSession(a)
+			return a
+			//} else {
+			//return
+			//A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application ID " + ApplicationID + " not Atherized"))
 
-			}
+			//}
 		} else {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application ID " + ApplicationID + " not Atherized"))
 			return
