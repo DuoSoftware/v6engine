@@ -16,6 +16,7 @@ import (
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
+	//"os"
 	//	"runtime"
 	"strings"
 )
@@ -62,6 +63,9 @@ func (h *HTTPService) Start(isLogEnabled bool, isJsonStackEnabled bool) {
 	//DELETE
 	m.Delete("/:namespace/:class", handleRequest)
 
+	//5.1 silverlight access
+	// m.Get("/crossdomain.xml", Crossdomain)
+	// m.Get("/clientaccesspolicy.xml", Clientaccesspolicy)
 	m.Run()
 }
 
@@ -69,6 +73,38 @@ func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Reques
 	versionData := "{\"name\": \"Objectstore\",\"version\": \"1.0.13-a\",\"Change Log\":\"Added SmoothFlow Client Support with unique configs!\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
 	fmt.Fprintf(w, versionData)
 }
+
+// func Crossdomain(params martini.Params, w http.ResponseWriter, r *http.Request) {
+
+// 	file, err := os.Open("crossdomain.xml")
+// 	if err != nil {
+// 		fmt.Println(err.Error())
+// 	} else {
+// 		data, err := ioutil.ReadAll(file)
+// 		if err != nil {
+// 			fmt.Println(err.Error())
+// 		} else {
+// 			w.Write(data)
+// 		}
+// 	}
+// 	defer file.Close()
+// }
+
+// func Clientaccesspolicy(params martini.Params, w http.ResponseWriter, r *http.Request) {
+
+// 	file, err := os.Open("clientaccesspolicy.xml")
+// 	if err != nil {
+// 		fmt.Println(err.Error())
+// 	} else {
+// 		data, err := ioutil.ReadAll(file)
+// 		if err != nil {
+// 			fmt.Println(err.Error())
+// 		} else {
+// 			w.Write(data)
+// 		}
+// 	}
+// 	defer file.Close()
+// }
 
 func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	// This will upload the file as a raw file and data as record wise.
