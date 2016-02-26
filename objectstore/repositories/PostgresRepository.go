@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"database/sql"
-	"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/term"
 	"encoding/base64"
@@ -26,109 +25,128 @@ func (repository PostgresRepository) getDatabaseName(namespace string) string {
 	return ("_" + strings.Replace(namespace, ".", "", -1))
 }
 
+var pg_connection map[string]*sql.DB
+
 func (repository PostgresRepository) getConnection(request *messaging.ObjectRequest) (session *sql.DB, isError bool, errorMessage string) {
-	connInt := connmanager.Get("POSTGRES", request.Controls.Namespace)
+	if pg_connection == nil {
+		pg_connection = make(map[string]*sql.DB)
+	}
 
-	if connInt != nil {
-		term.Write("Connection Found!", 2)
-		session = connInt.(*sql.DB)
-		isError = false
-	} else {
-		term.Write("Connection Not Found! Creating New Postgres Connection!", 2)
-		isError = false
-		username := request.Configuration.ServerConfiguration["POSTGRES"]["Username"]
-		password := request.Configuration.ServerConfiguration["POSTGRES"]["Password"]
-		dbUrl := request.Configuration.ServerConfiguration["POSTGRES"]["Url"]
-		dbPort := request.Configuration.ServerConfiguration["POSTGRES"]["Port"]
-
-		session, err := sql.Open("postgres", "host="+dbUrl+" port="+dbPort+" user="+username+" password="+password+" dbname="+"postgres"+" sslmode=disable")
-
+	if pg_connection[request.Controls.Namespace] == nil {
+		fmt.Println("Connection Not Available in Cache!")
+		session, err := repository.createConnection(request)
 		if err != nil {
-			isError = true
-			term.Write(err.Error(), 1)
-			errorMessage = err.Error()
-		}
-
-		//Create schema if not available.
-		term.Write("Checking if Database "+repository.getDatabaseName(request.Controls.Namespace)+" is available.", 2)
-
-		isDatabaseAvailbale := false
-
-		rows, err := session.Query("SELECT datname FROM pg_database WHERE datistemplate = false;")
-
-		if err != nil {
-			term.Write(err.Error(), 1)
+			fmt.Println(err.Error())
+			return nil, true, err.Error()
 		} else {
-			columns, _ := rows.Columns()
-			count := len(columns)
-			values := make([]interface{}, count)
-			valuePtrs := make([]interface{}, count)
-
-			for rows.Next() {
-
-				for i, _ := range columns {
-					valuePtrs[i] = &values[i]
-				}
-
-				rows.Scan(valuePtrs...)
-
-				for i, _ := range columns {
-
-					var v interface{}
-
-					val := values[i]
-
-					b, ok := val.([]byte)
-
-					if ok {
-						v = string(b)
-					} else {
-						v = val
-					}
-					//term.Write("Check domain : "+repository.getDatabaseName(request.Controls.Namespace)+" : available schema : "+v.(string), 2)
-					if v.(string) == repository.getDatabaseName(request.Controls.Namespace) {
-						isDatabaseAvailbale = true
-						break
-					}
-				}
-			}
+			return session, false, ""
 		}
+	} else {
+		if err := pg_connection[request.Controls.Namespace].Ping(); err != nil {
+			fmt.Println("Cached Connection Timed Out! Creating new Connection!")
+			session, err := repository.createConnection(request)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil, true, err.Error()
+			} else {
+				return session, false, ""
+			}
+		} else {
+			fmt.Println("Using Cached Connection!")
+			session = pg_connection[request.Controls.Namespace]
+		}
+	}
+	return
+}
 
-		if isDatabaseAvailbale {
-			term.Write("Database already available. Nothing to do. Proceed!", 2)
-			session.Close()
+func (repository PostgresRepository) createConnection(request *messaging.ObjectRequest) (session *sql.DB, err error) {
+	fmt.Println("Creating New Connection!")
+	username := request.Configuration.ServerConfiguration["POSTGRES"]["Username"]
+	password := request.Configuration.ServerConfiguration["POSTGRES"]["Password"]
+	dbUrl := request.Configuration.ServerConfiguration["POSTGRES"]["Url"]
+	dbPort := request.Configuration.ServerConfiguration["POSTGRES"]["Port"]
+
+	session, err = sql.Open("postgres", "host="+dbUrl+" port="+dbPort+" user="+username+" password="+password+" dbname="+"postgres"+" sslmode=disable")
+	if err != nil {
+		term.Write(err.Error(), 1)
+		return nil, err
+	} else {
+		dbStatus := repository.checkDBAvailability(session, repository.getDatabaseName(request.Controls.Namespace))
+		if dbStatus {
+			_ = session.Close()
 			session, err = sql.Open("postgres", "host="+dbUrl+" port="+dbPort+" user="+username+" password="+password+" dbname="+(repository.getDatabaseName(request.Controls.Namespace))+" sslmode=disable")
 			if err != nil {
 				term.Write(err.Error(), 1)
-				isError = true
+				return nil, err
 			} else {
-				isError = false
-				errorMessage = ""
-				term.Write("Already Relogin successful!", 2)
+				pg_connection[request.Controls.Namespace] = session
+				session.SetMaxIdleConns(1000)
+				session.SetMaxOpenConns(0)
+				return session, nil
 			}
-
 		} else {
-			_, err = session.Query("CREATE DATABASE " + repository.getDatabaseName(request.Controls.Namespace) + ";")
+			err = repository.executeNonQuery(session, ("CREATE DATABASE " + repository.getDatabaseName(request.Controls.Namespace) + ";"))
 			if err != nil {
 				term.Write(err.Error(), 1)
-				isError = true
+				return nil, err
 			} else {
-				term.Write("Database Created Successfully!", 2)
-				session.Close()
+				_ = session.Close()
 				session, err = sql.Open("postgres", "host="+dbUrl+" port="+dbPort+" user="+username+" password="+password+" dbname="+(repository.getDatabaseName(request.Controls.Namespace))+" sslmode=disable")
 				if err != nil {
 					term.Write(err.Error(), 1)
-					isError = true
+					return nil, err
 				} else {
-					term.Write("Relogin successful!", 2)
-					isError = false
+					pg_connection[request.Controls.Namespace] = session
+					session.SetMaxIdleConns(1000)
+					session.SetMaxOpenConns(0)
+					return session, nil
 				}
-
 			}
 		}
-
-		return session, isError, errorMessage
 	}
+	return
+}
+
+func (repository PostgresRepository) checkDBAvailability(session *sql.DB, db string) (status bool) {
+	status = false
+
+	rows, err := session.Query("SELECT datname FROM pg_database WHERE datistemplate = false;")
+
+	if err == nil {
+		columns, _ := rows.Columns()
+		count := len(columns)
+		values := make([]interface{}, count)
+		valuePtrs := make([]interface{}, count)
+
+		for rows.Next() {
+
+			for i, _ := range columns {
+				valuePtrs[i] = &values[i]
+			}
+
+			rows.Scan(valuePtrs...)
+
+			for i, _ := range columns {
+
+				var v interface{}
+
+				val := values[i]
+
+				b, ok := val.([]byte)
+
+				if ok {
+					v = string(b)
+				} else {
+					v = val
+				}
+				if v.(string) == db {
+					status = true
+					break
+				}
+			}
+		}
+	}
+
 	return
 }
 
@@ -276,7 +294,6 @@ func (repository PostgresRepository) DeleteSingle(request *messaging.ObjectReque
 	conn, err, _ := repository.getConnection(request)
 	if !err {
 		query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKey(request))
-		fmt.Println(query)
 		err := repository.executeNonQuery(conn, query)
 		if err != nil {
 			response.IsSuccess = false
@@ -488,7 +505,7 @@ func (repository PostgresRepository) getRecordID(request *messaging.ObjectReques
 				}
 			}
 		}
-		session.Close()
+		//session.Close()
 	} else {
 		request.Log("Manual Key requested!")
 		if obj == nil {
@@ -595,7 +612,6 @@ func (repository PostgresRepository) executeQueryOne(conn *sql.DB, query string,
 }
 
 func (repository PostgresRepository) executeQueryMany(conn *sql.DB, query string, tableName interface{}) (result []map[string]interface{}, err error) {
-	fmt.Println(query)
 	rows, err := conn.Query(query)
 
 	if err == nil {
@@ -807,7 +823,6 @@ func (repository PostgresRepository) queryStore(request *messaging.ObjectRequest
 
 func (repository PostgresRepository) getByKey(conn *sql.DB, namespace string, class string, id string) (obj map[string]interface{}) {
 	query := "SELECT * FROM " + strings.ToLower(class) + " WHERE __os_id = '" + id + "'"
-	fmt.Println(query)
 	obj, _ = repository.executeQueryOne(conn, query, nil)
 	return
 }
@@ -870,7 +885,6 @@ func (repository PostgresRepository) getStoreScript(conn *sql.DB, request *messa
 					keyArray = append(keyArray, k)
 				}
 			}
-			fmt.Println(keyArray)
 			for _, k := range keyArray {
 				v := obj[k]
 				valueList += ("," + repository.getSqlFieldValue(v))
@@ -913,7 +927,7 @@ func (repository PostgresRepository) getDeleteScript(namespace string, class str
 }
 
 func (repository PostgresRepository) getCreateScript(namespace string, class string, obj map[string]interface{}) string {
-	query := "CREATE TABLE IF NOT EXISTS " + class + "(__os_id TEXT"
+	query := "CREATE TABLE IF NOT EXISTS " + class + "(__os_id varchar(255) primary key"
 	for k, v := range obj {
 		//query += (", " + k + " " + repository.golangToSql(v))
 		if k != "OriginalIndex" {
@@ -957,7 +971,6 @@ func (repository PostgresRepository) checkAvailabilityTable(conn *sql.DB, dbName
 	if availableTables[dbName+"."+class] == nil {
 		var tableResult map[string]interface{}
 		tableResult, err = repository.executeQueryOne(conn, "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name like '"+strings.ToLower(class)+"';", nil)
-		fmt.Println(tableResult)
 		if err == nil {
 			if tableResult["table_name"] == nil {
 				script := repository.getCreateScript(namespace, class, obj)
@@ -976,15 +989,12 @@ func (repository PostgresRepository) checkAvailabilityTable(conn *sql.DB, dbName
 			return
 		}
 	}
-	fmt.Println(1)
 	err = repository.buildTableCache(conn, dbName, class)
-	fmt.Println(2)
 	alterColumns := ""
 	cacheItem := tableCache[dbName+"."+class]
-	fmt.Println(cacheItem)
+
 	isFirst := true
 	for k, v := range obj {
-		fmt.Println(k)
 		_, ok := cacheItem[strings.ToLower(k)]
 		if !ok {
 			if isFirst {
@@ -1117,12 +1127,16 @@ func (repository PostgresRepository) getInterfaceValue(tmp string) (outData inte
 
 func (repository PostgresRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
 	var stmt *sql.Stmt
-	fmt.Println(query)
 	stmt, err = conn.Prepare(query)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
 	_, err = stmt.Exec()
 	if err != nil {
 		fmt.Println(err.Error())
 		term.Write(err.Error(), 1)
 	}
+	_ = stmt.Close()
 	return
 }

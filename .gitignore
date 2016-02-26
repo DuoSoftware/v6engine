@@ -6,3 +6,4 @@ duoauth/
 objectstore/ObjectStoreLog.log
 objectstore/ObjectStoreLog.log
 testpj/Jan2016/load.exe
+objectstore/globalConfig.StoreConfig.config
