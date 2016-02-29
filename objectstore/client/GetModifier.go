@@ -39,14 +39,14 @@ func (m *GetModifier) BySearching(keyword string) *GetModifier {
 }
 
 func (m *GetModifier) ByQuerying(query string) *GetModifier {
-	m.Request.Controls.Operation = "read-keyword"
+	m.Request.Controls.Operation = "read-filter"
 	m.Request.Body = messaging.RequestBody{}
 	m.Request.Body.Query = messaging.Query{}
 	m.Request.Body.Query.Parameters = query
 	return m
 }
 
-func (m *GetModifier) All(key string) *GetModifier {
+func (m *GetModifier) All() *GetModifier {
 	return m
 }
 

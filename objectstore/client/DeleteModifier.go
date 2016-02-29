@@ -6,8 +6,8 @@ import (
 	//"duov6.com/objectstore/repositories"
 	"github.com/fatih/structs"
 	//"strconv"
+	"reflect"
 )
-
 
 type DeleteModifier struct {
 	Request *messaging.ObjectRequest
@@ -26,6 +26,41 @@ func (m *DeleteModifier) AndDeleteObject(obj interface{}) *DeleteModifier {
 	bodyMap := structs.Map(obj)
 	key := bodyMap[m.Request.Body.Parameters.KeyProperty].(string)
 	m.Request.Controls.Id = key
+	return m
+}
+
+func (m *DeleteModifier) AndDeleteOne(obj interface{}) *DeleteModifier {
+	m.Request.Controls.Operation = "delete"
+	m.Request.Controls.Multiplicity = "single"
+	bodyMap := structs.Map(obj)
+	key := bodyMap[m.Request.Body.Parameters.KeyProperty].(string)
+	m.Request.Controls.Id = key
+	return m
+}
+
+func (m *DeleteModifier) AndDeleteMany(objs []interface{}) *DeleteModifier {
+	m.Request.Controls.Operation = "delete"
+	m.Request.Controls.Multiplicity = "single"
+
+	s := reflect.ValueOf(objs)
+	var interfaceList []map[string]interface{}
+	interfaceList = make([]map[string]interface{}, s.Len())
+
+	for i := 0; i < s.Len(); i++ {
+		obj := s.Index(i).Interface()
+		v := reflect.ValueOf(obj)
+		k := v.Kind()
+		var newMap map[string]interface{}
+
+		if k != reflect.Map {
+			newMap = structs.Map(obj)
+		} else {
+			newMap = obj.(map[string]interface{})
+		}
+
+		interfaceList[i] = newMap
+	}
+	m.Request.Body.Objects = interfaceList
 	return m
 }
 

@@ -72,7 +72,6 @@ func (m *StoreModifier) AndStoreMany(objs []interface{}) *StoreModifier {
 	interfaceList = make([]map[string]interface{}, s.Len())
 
 	for i := 0; i < s.Len(); i++ {
-		//newMap := structs.Map(s.Index(i).Interface())
 		obj := s.Index(i).Interface()
 		v := reflect.ValueOf(obj)
 		k := v.Kind()
@@ -87,11 +86,6 @@ func (m *StoreModifier) AndStoreMany(objs []interface{}) *StoreModifier {
 
 		interfaceList[i] = newMap
 	}
-
-	//for index, element := range objs {
-	//	interfaceList[index] = structs.Map(element)
-	//}
-
 	m.Request.Body.Objects = interfaceList
 	return m
 }
