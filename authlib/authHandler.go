@@ -176,6 +176,7 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 		//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
 		c.DataCaps = string(bytes[:])
 		payload := common.JWTPayload(a.Domain, c.SecurityToken, c.UserID, c.Email, c.Domain, bytes)
+		c.Otherdata = make(map[string]string)
 		c.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(a.Domain), payload)
 		c.Otherdata["Scope"] = string(bytes[:])
 		return c, ""

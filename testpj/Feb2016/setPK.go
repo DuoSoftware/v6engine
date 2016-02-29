@@ -21,6 +21,7 @@ func main() {
 	}
 
 	dbs := getDBs(conn)
+	fmt.Println(dbs)
 
 	for _, db := range dbs {
 		tables := getTables(conn, db)
@@ -82,7 +83,7 @@ func getConnection() (conn *sql.DB, err error) {
 	fmt.Println("Creating Connection to MySQL!")
 	var c *sql.DB
 	//c, err = sql.Open("mysql", "duoFWuser"+":"+"duoFWpass"+"@tcp("+"173.194.237.13"+":"+"3306"+")/")
-	c, err = sql.Open("mysql", "root"+":"+"1234"+"@tcp("+"localhost"+":"+"3306"+")/")
+	c, err = sql.Open("mysql", "duoDevUser"+":"+"duoDevPass"+"@tcp("+"173.194.238.163"+":"+"3306"+")/")
 	conn = c
 	if err == nil {
 		fmt.Println("Connection Created!")
