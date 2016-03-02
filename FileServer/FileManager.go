@@ -26,6 +26,8 @@ type FileData struct {
 	Body     string
 }
 
+var uploadFileName string
+
 func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileResponse { // store disk on database
 
 	fileResponse := messaging.FileResponse{}
@@ -40,7 +42,18 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 			fileResponse.Message = err.Error()
 		}
 
-		out, err := os.Create(header.Filename)
+		if header == nil {
+			fmt.Println("No Header Found!")
+			uploadFileName = request.Parameters["id"]
+		} else {
+			uploadFileName = header.Filename
+		}
+
+		if request.WebRequest.Header.Get("Application") == "service-console-uploader" {
+			uploadFileName = request.Parameters["id"]
+		}
+
+		out, err := os.Create(uploadFileName)
 		if err != nil {
 			fileResponse.IsSuccess = false
 			fileResponse.Message = err.Error()
@@ -53,7 +66,7 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 			fileResponse.Message = err.Error()
 		}
 
-		file2, err2 := ioutil.ReadFile(header.Filename)
+		file2, err2 := ioutil.ReadFile(uploadFileName)
 
 		if err2 != nil {
 			fileResponse.IsSuccess = false
@@ -66,7 +79,7 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		//Create a instance of file struct
 		obj := FileData{}
 		obj.Id = request.Parameters["id"]
-		obj.FileName = header.Filename
+		obj.FileName = uploadFileName
 		obj.Body = base64Body
 
 		var extraMap map[string]interface{}
@@ -90,9 +103,9 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 
 		if isIndividualData {
 			fmt.Println("Saving INDIVIDUAL DATA inside file.......... ")
-			if checkIfFile(header.Filename) == "xlsx" {
+			if checkIfFile(uploadFileName) == "xlsx" {
 				isRawFile = false
-				status := SaveExcelEntries(header.Filename, request)
+				status := SaveExcelEntries(uploadFileName, request)
 				if status == true {
 					fmt.Println("Individual Records Saved Successfully!")
 				} else {
@@ -112,7 +125,7 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 				fmt.Fprintf(request.WebResponse, "FAILED!")
 			}
 		} else {
-			fmt.Fprintf(request.WebResponse, header.Filename)
+			fmt.Fprintf(request.WebResponse, uploadFileName)
 		}
 
 		//close the files
@@ -125,7 +138,7 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		}
 
 		//remove the temporary stored file from the disk
-		err2 = os.Remove(header.Filename)
+		err2 = os.Remove(uploadFileName)
 
 		if err2 != nil {
 			fileResponse.IsSuccess = false
@@ -271,7 +284,6 @@ func SaveExcelEntries(excelFileName string, request *messaging.FileRequest) bool
 			fmt.Println("Namespace : " + request.Parameters["namespace"])
 			fmt.Println("Keyfield : " + Id)
 			fmt.Println("filename : " + getExcelFileName(excelFileName))
-
 			client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], getExcelFileName(excelFileName), extraMap).StoreObject().WithKeyField(Id).AndStoreMapInterface(exceldata).Ok()
 			return true
 		}
