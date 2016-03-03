@@ -523,13 +523,16 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 }
 
 func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
-
+	runtime := 0
+	lastOperation := 1
 	isFirstRow := true
 	var keyArray []string
 	for _, obj := range records {
 		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj))
 
 		if currentObject == nil {
+			lastOperation = 1
+			runtime += 1
 			if isFirstRow {
 				query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
 			}
@@ -569,6 +572,8 @@ func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectReq
 			query += ("(\"" + id + "\"" + valueList + ")")
 
 		} else {
+			runtime += 1
+			lastOperation = 0
 			updateValues := ""
 			isFirst := true
 			for k, v := range obj {
@@ -580,12 +585,25 @@ func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectReq
 
 				updateValues += (k + "=" + repository.getSqlFieldValue(v))
 			}
-			query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";###")
+			Updatequery := ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";###")
+
+			//query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";###")
+			_ = repository.executeNonQuery(conn, Updatequery)
 		}
 
 		if isFirstRow {
 			isFirstRow = false
 		}
+
+		if runtime == 1 && lastOperation == 0 {
+			isFirstRow = true
+		} else {
+			isFirstRow = false
+		}
+
+		// if isFirstRow {
+		// 	isFirstRow = false
+		// }
 	}
 	return
 }
@@ -1065,6 +1083,7 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string)
 }
 
 func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
+
 	isGUIDKey := false
 	isAutoIncrementId := false //else MANUAL key from the user
 
@@ -1086,6 +1105,9 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 			repository.closeConnection(session)
 			return
 		} else {
+
+			_ = repository.checkAvailabilityDb(session, repository.getDatabaseName(request.Controls.Namespace))
+
 			//Reading maxCount from DB
 			checkTableQuery := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME='domainClassAttributes';"
 			tableResultMap, _ := repository.executeQueryOne(session, checkTableQuery, request.Controls.Class)
