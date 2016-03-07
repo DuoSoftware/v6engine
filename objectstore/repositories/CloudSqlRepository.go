@@ -425,18 +425,17 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 
 	//execute insert queries
 	scripts, err := repository.getStoreScript(conn, request)
-
-	if len(scripts) > 0 {
-		for x := 0; x < len(scripts); x++ {
-			script := scripts[x]
-			if err == nil {
+	for x := 0; x < len(scripts); x++ {
+		script := scripts[x]
+		if err == nil {
+			if script != "" {
 				err := repository.executeNonQuery(conn, script)
 				if err != nil {
 					isOkay = false
 				}
-			} else {
-				isOkay = false
 			}
+		} else {
+			isOkay = false
 		}
 	}
 
@@ -446,6 +445,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 			updateQuery := updateQueryCloudSql[x]
 			err := repository.executeNonQuery(conn, updateQuery)
 			if err != nil {
+				fmt.Println("ammooooooooo")
 				isOkay = false
 			}
 		}
