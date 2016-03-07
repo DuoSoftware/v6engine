@@ -425,15 +425,18 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 
 	//execute insert queries
 	scripts, err := repository.getStoreScript(conn, request)
-	for x := 0; x < len(scripts); x++ {
-		script := scripts[x]
-		if err == nil {
-			err := repository.executeNonQuery(conn, script)
-			if err != nil {
+
+	if len(scripts) > 0 {
+		for x := 0; x < len(scripts); x++ {
+			script := scripts[x]
+			if err == nil {
+				err := repository.executeNonQuery(conn, script)
+				if err != nil {
+					isOkay = false
+				}
+			} else {
 				isOkay = false
 			}
-		} else {
-			isOkay = false
 		}
 	}
 
