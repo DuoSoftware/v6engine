@@ -336,7 +336,9 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 						isSuccess = false
 					} else {
 						//Print All Everytime. Testing for DuoAuth. Remove this after testing done.
+						isLoggable = true
 						if isLoggable {
+							fmt.Println(string(rb))
 							fmt.Println("-----------------------------------------------------------------------------")
 							fmt.Println("Primary Key : " + requestBody.Parameters.KeyProperty)
 							fmt.Print("Query : ")

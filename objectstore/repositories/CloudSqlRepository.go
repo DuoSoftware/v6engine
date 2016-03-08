@@ -1080,6 +1080,8 @@ func (repository CloudSqlRepository) rowsToMap(rows *sql.Rows, tableName interfa
 
 func (repository CloudSqlRepository) executeQueryMany(conn *sql.DB, query string, tableName interface{}) (result []map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
+	fmt.Print("Query Many : ")
+	fmt.Println(query)
 
 	if err == nil {
 		result, err = repository.rowsToMap(rows, tableName)
@@ -1095,6 +1097,8 @@ func (repository CloudSqlRepository) executeQueryMany(conn *sql.DB, query string
 
 func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string, tableName interface{}) (result map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
+	fmt.Print("Query One : ")
+	fmt.Println(query)
 
 	if err == nil {
 		var resultSet []map[string]interface{}
@@ -1115,7 +1119,7 @@ func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string,
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
 	fmt.Println()
-	fmt.Print("Executing Query : ")
+	fmt.Print("Executing Non-Query : ")
 	fmt.Println(query)
 	fmt.Println()
 	var stmt *sql.Stmt
