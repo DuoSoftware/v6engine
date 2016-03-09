@@ -389,6 +389,10 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 			obj, err = repository.executeQueryMany(conn, query, tableName)
 		}
 
+		fmt.Println("---------------------------------")
+		fmt.Println(obj)
+		fmt.Println("---------------------------------")
+
 		if err == nil {
 			bytes, _ := json.Marshal(obj)
 			if checkEmptyByteArray(bytes) {
@@ -516,6 +520,9 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 	query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = '" + id + "';"
 	//query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = \"" + id + "\""
 	obj, _ = repository.executeQueryOne(conn, query, nil)
+	fmt.Println("**************************")
+	fmt.Println(obj)
+	fmt.Println("**************************")
 	return
 }
 
