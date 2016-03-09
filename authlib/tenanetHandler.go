@@ -117,7 +117,7 @@ func (h *TenantHandler) Autherized(TenantID string, user session.AuthCertificate
 }
 
 func (h *TenantHandler) AuthorizedGlobalTenants(TenantID string) (bool, TenantAutherized) {
-	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKeyCache(common.GetHash(TenantID)).Ok()
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKey(common.GetHash(TenantID)).Ok()
 	if err == "" {
 		var uList TenantAutherized
 		err := json.Unmarshal(bytes, &uList)

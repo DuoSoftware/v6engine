@@ -152,16 +152,18 @@ func (A Auth) GetSecret(Key string) string {
 
 func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 	h := newAuthHandler()
-	t := TenantHandler()
-	//var a AuthCertificate
-	//h.GetSession(key, Domain)
-	if Domain != "nil" {
-		a, cirt = t.Autherized(Domain)
-		if !a {
-			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(Domain + "Not Authorized"))
-			return
-		}
-	}
+	/*
+		t := new(TenantHandler)
+		//var a AuthCertificate
+		//h.GetSession(key, Domain)
+		if Domain != "nil" {
+			user, _ := h.GetSession(SecurityToken, "nil")
+			x, _ := t.Autherized(Domain, user)
+			if !x {
+				A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(Domain + "Not Authorized"))
+				return
+			}
+		}*/
 	c, err := h.GetSession(SecurityToken, Domain)
 	fmt.Println(c)
 	if err == "" {

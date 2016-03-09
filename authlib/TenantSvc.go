@@ -107,13 +107,13 @@ func (T TenantSvc) AddUser(email, level string) bool {
 		if err == "" {
 
 			th := TenantHandler{}
-			_, p := th.Autherized(user.Domain, user)
+			//_, p := th.Autherized(user.Domain, user)
 			//if p.SecurityLevel == "admin" {
 			t := th.GetTenant(user.Domain)
 			th.AddUsersToTenant(user.Domain, t.Name, a.UserID, level)
 			return true
 			//} else {
-			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Need to have Admin access to tenant to add user"))
+			//T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Need to have Admin access to tenant to add user"))
 			//return false
 			//}
 
