@@ -77,6 +77,10 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 			byteData, _ := hit.Source.MarshalJSON()
 			json.Unmarshal(byteData, &currentMap)
 			delete(currentMap, "__osHeaders")
+
+			// if currentMap["workActionID"] != nil {
+			// 	currentMap["workActionID"] = hit.Id
+			// }
 			allMaps[index] = currentMap
 		}
 
