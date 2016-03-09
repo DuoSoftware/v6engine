@@ -84,7 +84,8 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 
 func (repository CloudSqlRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Get-By-Key!", 2)
-	query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE __os_id = \"" + getNoSqlKey(request) + "\""
+	query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE __os_id = '" + getNoSqlKey(request) + "';"
+	//query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE __os_id = \"" + getNoSqlKey(request) + "\""
 	return repository.queryCommonOne(query, request)
 }
 
@@ -512,7 +513,8 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 // }
 
 func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, class string, id string) (obj map[string]interface{}) {
-	query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = \"" + id + "\""
+	query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = '" + id + "';"
+	//query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = \"" + id + "\""
 	obj, _ = repository.executeQueryOne(conn, query, nil)
 	return
 }
