@@ -108,6 +108,7 @@ func (T TenantSvc) AddUser(email, level string) bool {
 
 			th := TenantHandler{}
 			//_, p := th.Autherized(user.Domain, user)
+			///<<<<<<< HEAD
 			//if p.SecurityLevel == "admin" {
 			t := th.GetTenant(user.Domain)
 			th.AddUsersToTenant(user.Domain, t.Name, a.UserID, level)
@@ -115,6 +116,15 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			//} else {
 			//T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Need to have Admin access to tenant to add user"))
 			//return false
+			//=======
+			//	if p.SecurityLevel == "admin" {
+			//t := th.GetTenant(user.Domain)
+			//th.AddUsersToTenant(user.Domain, t.Name, a.UserID, level)
+			//return true
+			//	} else {
+			//		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Need to have Admin access to tenant to add user"))
+			//	return false
+			//>>>>>>> 8640744d9bbc878ab906dfd110cdaa51d5a6a325
 			//}
 
 		} else {

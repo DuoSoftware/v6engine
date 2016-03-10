@@ -77,6 +77,11 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 			byteData, _ := hit.Source.MarshalJSON()
 			json.Unmarshal(byteData, &currentMap)
 			delete(currentMap, "__osHeaders")
+
+			// if currentMap["workActionID"] != nil {
+			// 	currentMap["workActionID"] = hit.Id
+			// }
+
 			allMaps[index] = currentMap
 		}
 
@@ -474,6 +479,9 @@ func (repository ElasticRepository) executeQuery(request *messaging.ObjectReques
 			byteData, _ := hit.Source.MarshalJSON()
 			json.Unmarshal(byteData, &currentMap)
 			delete(currentMap, "__osHeaders")
+			// if currentMap["workActionID"] != nil {
+			// 	currentMap["workActionID"] = hit.Id
+			// }
 			allMaps[index] = currentMap
 		}
 
@@ -596,6 +604,9 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 			currentMap = make(map[string]interface{})
 			byteData, _ := hit.Source.MarshalJSON()
 			json.Unmarshal(byteData, &currentMap)
+			// if currentMap["workActionID"] != nil {
+			// 	currentMap["workActionID"] = hit.Id
+			// }
 			allMaps[index] = currentMap
 		}
 

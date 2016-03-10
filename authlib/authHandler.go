@@ -197,9 +197,9 @@ func (h *AuthHandler) GetSecretKey(key string) string {
 		}
 	}
 
-	keyfile["key"] = key
+	keyfile["key1"] = key
 	keyfile["secret"] = common.GetGUID()
-	client.Go("ignore", "com.duosoftware.auth", "keysecrets").StoreObject().WithKeyField("key").AndStoreOne(keyfile).Ok()
+	client.Go("ignore", "com.duosoftware.auth", "keysecrets").StoreObject().WithKeyField("key1").AndStoreOne(keyfile).Ok()
 	return keyfile["secret"].(string)
 }
 

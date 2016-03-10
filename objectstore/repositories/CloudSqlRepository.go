@@ -450,7 +450,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 			updateQuery := updateQueryCloudSql[x]
 			err := repository.executeNonQuery(conn, updateQuery)
 			if err != nil {
-				fmt.Println("ammooooooooo")
+				fmt.Println("Error! " + err.Error())
 				isOkay = false
 			}
 		}
