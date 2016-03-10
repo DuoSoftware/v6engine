@@ -10,6 +10,7 @@ import (
 	//"golang.org/x/oauth2"
 	//"crypto/hmac"
 	"strconv"
+	"strings"
 	///"strings"
 )
 
@@ -118,12 +119,12 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		outCrt.DataCaps = string(bytes[:])
 		payload := common.JWTPayload(domain, outCrt.SecurityToken, outCrt.UserID, outCrt.Email, outCrt.Domain, bytes)
 		outCrt.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(domain), payload)
-		outCrt.Otherdata["Scope"] = string(bytes[:])
+		outCrt.Otherdata["Scope"] = strings.Replace(string(bytes[:]), "\"", "'", -1)
 		//outCrt.Otherdata["Tempkey"] = "No"
 		th := TenantHandler{}
 		tlist := th.GetTenantsForUser(u.UserID)
 		b, _ := json.Marshal(tlist)
-		outCrt.Otherdata["TenentsAccessible"] = string(b[:])
+		outCrt.Otherdata["TenentsAccessible"] = strings.Replace(string(b[:]), "\"", "'", -1)
 		//outCrt = AuthCertificate{u.UserID, u.EmailAddress, u.Name, u.EmailAddress, securityToken, "http://192.168.0.58:9000/instaltionpath", "#0so0936#sdasd", "IPhere"}
 		h.AddSession(outCrt)
 		return
@@ -170,7 +171,7 @@ func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 		a = c
 		return a
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Not Incorrect"))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token  Incorrect"))
 		return
 	}
 
