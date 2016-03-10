@@ -394,11 +394,19 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 		fmt.Println("---------------------------------")
 
 		if err == nil {
-			bytes, _ := json.Marshal(obj)
+			var bytes []byte
+			if isOne {
+				bytes, _ = json.Marshal(obj.(map[string]interface{}))
+			} else {
+				bytes, _ = json.Marshal(obj.([]map[string]interface{}))
+			}
+
+			//bytes, _ := json.Marshal(obj)
 			if checkEmptyByteArray(bytes) {
 				response.GetResponseWithBody(getEmptyByteObject())
 			} else {
 				response.GetResponseWithBody(bytes)
+				//response.GetSuccessResByObject(obj)
 			}
 		} else {
 			response.GetResponseWithBody(getEmptyByteObject())
