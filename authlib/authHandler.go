@@ -188,19 +188,19 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 }
 
 func (h *AuthHandler) GetSecretKey(key string) string {
-	keyfile := make(map[string]interface{})
+	keyfile := make(map[string]string)
 	bytes, _ := client.Go("ignore", "com.duosoftware.auth", "keysecrets").GetOne().ByUniqueKey(key).Ok()
 	if bytes != nil {
 		err := json.Unmarshal(bytes, &keyfile)
 		if err == nil {
-			return keyfile["secret"].(string)
+			return keyfile["secret"]
 		}
 	}
 
 	keyfile["key1"] = key
 	keyfile["secret"] = common.GetGUID()
 	client.Go("ignore", "com.duosoftware.auth", "keysecrets").StoreObject().WithKeyField("key1").AndStoreOne(keyfile).Ok()
-	return keyfile["secret"].(string)
+	return keyfile["secret"]
 }
 
 // ForgetPassword to help the user to reset password
