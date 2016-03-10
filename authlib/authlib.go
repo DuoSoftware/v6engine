@@ -119,12 +119,12 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		outCrt.DataCaps = string(bytes[:])
 		payload := common.JWTPayload(domain, outCrt.SecurityToken, outCrt.UserID, outCrt.Email, outCrt.Domain, bytes)
 		outCrt.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(domain), payload)
-		outCrt.Otherdata["Scope"] = strings.Replace(string(bytes[:]), "\"", "'", -1)
+		outCrt.Otherdata["Scope"] = strings.Replace(string(bytes[:]), "\"", "`", -1)
 		//outCrt.Otherdata["Tempkey"] = "No"
 		th := TenantHandler{}
 		tlist := th.GetTenantsForUser(u.UserID)
 		b, _ := json.Marshal(tlist)
-		outCrt.Otherdata["TenentsAccessible"] = strings.Replace(string(b[:]), "\"", "'", -1)
+		outCrt.Otherdata["TenentsAccessible"] = strings.Replace(string(b[:]), "\"", "`", -1)
 		//outCrt = AuthCertificate{u.UserID, u.EmailAddress, u.Name, u.EmailAddress, securityToken, "http://192.168.0.58:9000/instaltionpath", "#0so0936#sdasd", "IPhere"}
 		h.AddSession(outCrt)
 		return
