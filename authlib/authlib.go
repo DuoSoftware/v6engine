@@ -38,7 +38,8 @@ type Auth struct {
 	addUser            gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
 	registerTenantUser gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
 	userActivation     gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
-	logOut             gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
+	logOut             gorest.EndPoint `method:"GET" path:"/LogOut/{password:string}" output:"bool"`
+	checkPassword      gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
 	getUser            gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
 	getGUID            gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
 	forgotPassword     gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
@@ -286,7 +287,7 @@ func (A Auth) UpdateScope(object AuthorizeAppData, SecurityToken, UserID, Applic
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 		//insert to Objectstore ends here
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Not Incorrect"))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token  Incorrect"))
 		//return
 	}
 }
@@ -347,8 +348,29 @@ func (A Auth) RegisterTenantUser(u User) {
 		t.AddUsersToTenant(x.TenantID, x.Name, u.UserID, "User")
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Not Incorrect"))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Incorrect"))
 		//return
+	}
+
+}
+
+func (A Auth) CheckPassword(password string) bool {
+	h := newAuthHandler()
+	c, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	//c, err := h.GetSession(SecurityToken, "Nil")
+	if err == "" {
+		//t := TenantHandler{}
+		//u.EmailAddress=strings.ToLower(u.EmailAddress
+
+		_, err = h.Login(c.Email, password)
+		if err == "" {
+			return true
+		} else {
+			return false
+		}
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Incorrect"))
+		return false
 	}
 
 }
