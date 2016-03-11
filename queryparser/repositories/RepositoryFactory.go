@@ -6,11 +6,11 @@ func Create(code string) AbstractRepository {
 	case "ES":
 		repository = ElasticSearch{}
 	case "MYSQL":
-		repository = CommonSQL{}
+		repository = CloudSQL{}
 	case "MSSQL":
 		repository = CommonSQL{}
 	case "CSQL":
-		repository = CommonSQL{}
+		repository = CloudSQL{}
 	case "PSQL":
 		repository = CommonSQL{}
 	case "POSTGRES":

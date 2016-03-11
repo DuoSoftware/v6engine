@@ -10,8 +10,8 @@ import (
 
 //This is the main entry point to the query parser
 
-func GetElasticQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, er := getQuery(queryString, "ES", namespace, class); er == nil {
+func GetElasticQuery(queryString string, namespace string, class string, parameters map[string]interface{}) (query string, err error) {
+	if queryResult, er := getQuery(queryString, "ES", namespace, class, parameters); er == nil {
 		query = queryResult.(string)
 	} else {
 		err = er
@@ -19,8 +19,8 @@ func GetElasticQuery(queryString string, namespace string, class string) (query 
 	return
 }
 
-func GetDataStoreQuery(queryString string, namespace string, class string) (query *datastore.Query, err error) {
-	if queryResult, er := getQuery(queryString, "CDS", namespace, class); er == nil {
+func GetDataStoreQuery(queryString string, namespace string, class string, parameters map[string]interface{}) (query *datastore.Query, err error) {
+	if queryResult, er := getQuery(queryString, "CDS", namespace, class, parameters); er == nil {
 		query = queryResult.(*datastore.Query)
 	} else {
 		err = er
@@ -28,8 +28,8 @@ func GetDataStoreQuery(queryString string, namespace string, class string) (quer
 	return
 }
 
-func GetMsSQLQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, er := getQuery(queryString, "MSSQL", namespace, class); er == nil {
+func GetMsSQLQuery(queryString string, namespace string, class string, parameters map[string]interface{}) (query string, err error) {
+	if queryResult, er := getQuery(queryString, "MSSQL", namespace, class, parameters); er == nil {
 		query = queryResult.(string)
 	} else {
 		err = er
@@ -37,8 +37,8 @@ func GetMsSQLQuery(queryString string, namespace string, class string) (query st
 	return
 }
 
-func GetCloudSQLQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, er := getQuery(queryString, "CSQL", namespace, class); er == nil {
+func GetCloudSQLQuery(queryString string, namespace string, class string, parameters map[string]interface{}) (query string, err error) {
+	if queryResult, er := getQuery(queryString, "CSQL", namespace, class, parameters); er == nil {
 		query = queryResult.(string)
 	} else {
 		err = er
@@ -46,8 +46,8 @@ func GetCloudSQLQuery(queryString string, namespace string, class string) (query
 	return
 }
 
-func GetPostgresQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, er := getQuery(queryString, "PSQL", namespace, class); er == nil {
+func GetPostgresQuery(queryString string, namespace string, class string, parameters map[string]interface{}) (query string, err error) {
+	if queryResult, er := getQuery(queryString, "PSQL", namespace, class, parameters); er == nil {
 		query = queryResult.(string)
 	} else {
 		err = er
@@ -55,8 +55,8 @@ func GetPostgresQuery(queryString string, namespace string, class string) (query
 	return
 }
 
-func GetMySQLQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, er := getQuery(queryString, "MYSQL", namespace, class); er == nil {
+func GetMySQLQuery(queryString string, namespace string, class string, parameters map[string]interface{}) (query string, err error) {
+	if queryResult, er := getQuery(queryString, "MYSQL", namespace, class, parameters); er == nil {
 		query = queryResult.(string)
 	} else {
 		err = er
@@ -64,8 +64,8 @@ func GetMySQLQuery(queryString string, namespace string, class string) (query st
 	return
 }
 
-func GetHiveQuery(queryString string, namespace string, class string) (query string, err error) {
-	if queryResult, er := getQuery(queryString, "HSQL", namespace, class); er == nil {
+func GetHiveQuery(queryString string, namespace string, class string, parameters map[string]interface{}) (query string, err error) {
+	if queryResult, er := getQuery(queryString, "HSQL", namespace, class, parameters); er == nil {
 		query = queryResult.(string)
 	} else {
 		err = er
@@ -73,7 +73,7 @@ func GetHiveQuery(queryString string, namespace string, class string) (query str
 	return
 }
 
-func getQuery(queryString string, repository string, namespace string, class string) (queryResult interface{}, err error) {
+func getQuery(queryString string, repository string, namespace string, class string, parameters map[string]interface{}) (queryResult interface{}, err error) {
 	//get type of query
 	if queryType := analyzer.GetQueryType(queryString); queryType == "SQL" {
 		fmt.Println("SQL Query Identified!")
@@ -110,6 +110,8 @@ func getQuery(queryString string, repository string, namespace string, class str
 		queryRequest.Repository = repository
 		queryRequest.Query = preparedQuery
 		queryRequest.Queryobject = queryStruct
+		queryRequest.Parameters = make(map[string]interface{})
+		queryRequest.Parameters = parameters
 
 		response := repositories.Execute(queryRequest)
 		if response.Err != nil {

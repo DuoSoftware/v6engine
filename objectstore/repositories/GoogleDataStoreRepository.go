@@ -250,7 +250,21 @@ func (repository GoogleDataStoreRepository) GetQuery(request *messaging.ObjectRe
 
 				var query *datastore.Query
 
-				query, qErr := queryparser.GetDataStoreQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class)
+				parameters := make(map[string]interface{})
+
+				if request.Extras["skip"] != nil {
+					parameters["skip"] = request.Extras["skip"].(string)
+				} else {
+					parameters["skip"] = ""
+				}
+
+				if request.Extras["take"] != nil {
+					parameters["take"] = request.Extras["take"].(string)
+				} else {
+					parameters["take"] = ""
+				}
+
+				query, qErr := queryparser.GetDataStoreQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class, parameters)
 				if qErr != nil {
 					response.Message = "Values Retrieved Successfully from Google DataStore!"
 					response.GetResponseWithBody(getEmptyByteObject())

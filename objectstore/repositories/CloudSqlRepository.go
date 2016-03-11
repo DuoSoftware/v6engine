@@ -65,7 +65,22 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 	term.Write("Executing Get-Query!", 2)
 	response := RepositoryResponse{}
 	if request.Body.Query.Parameters != "*" {
-		formattedQuery, err := queryparser.GetCloudSQLQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class)
+
+		parameters := make(map[string]interface{})
+
+		if request.Extras["skip"] != nil {
+			parameters["skip"] = request.Extras["skip"].(string)
+		} else {
+			parameters["skip"] = ""
+		}
+
+		if request.Extras["take"] != nil {
+			parameters["take"] = request.Extras["take"].(string)
+		} else {
+			parameters["take"] = ""
+		}
+
+		formattedQuery, err := queryparser.GetCloudSQLQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class, parameters)
 		if err != nil {
 			fmt.Println(err.Error())
 			response.IsSuccess = false

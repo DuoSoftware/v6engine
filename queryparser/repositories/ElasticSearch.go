@@ -17,7 +17,19 @@ func (repository ElasticSearch) GetQuery(request structs.RepoRequest) structs.Re
 	response := structs.RepoResponse{}
 	response.Query = request.Query
 
-	queryString := "{\"size\": 100000,"
+	skip := "0"
+	take := "100000"
+
+	if request.Parameters["skip"].(string) != "" {
+		skip = request.Parameters["skip"].(string)
+	}
+
+	if request.Parameters["take"].(string) != "" {
+		take = request.Parameters["take"].(string)
+	}
+
+	queryString := "{\"from\": " + skip + ", \"size\": " + take + ","
+
 	queryString += repository.GetFieldsJson(request)
 	queryString += repository.GetOrderByJson(request)
 

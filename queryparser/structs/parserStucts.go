@@ -12,6 +12,7 @@ type RepoRequest struct {
 	Repository  string
 	Query       string
 	Queryobject QueryObject
+	Parameters  map[string]interface{}
 }
 
 type RepoResponse struct {
