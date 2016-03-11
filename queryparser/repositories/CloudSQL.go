@@ -25,8 +25,7 @@ func (repository CloudSQL) GetQuery(request structs.RepoRequest) structs.RepoRes
 		take = request.Parameters["take"].(string)
 	}
 
-	queryPart := " WHERE "
-	queryPart += " limit " + take
+	queryPart := " limit " + take
 	queryPart += " offset " + skip + " "
 
 	query := request.Query
