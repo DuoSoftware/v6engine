@@ -245,6 +245,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 
 	headerToken := r.Header.Get("securityToken")
 	sendMetaData := r.Header.Get("sendMetaData")
+
 	headerLog := r.Header.Get("log")
 
 	var headerOperation string
@@ -258,6 +259,10 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 
 	//check if <Skip> and <Take> are specified
 	//If so store them in ObjectRequest <Extras>
+
+	if r.Header.Get("searchGlobalNamespace") != "" {
+		objectRequest.Extras["searchGlobalNamespace"] = r.Header.Get("searchGlobalNamespace")
+	}
 
 	if r.URL.Query().Get("skip") != "" {
 		objectRequest.Extras["skip"] = r.URL.Query().Get("skip")

@@ -63,7 +63,21 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 		query = "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
 	}
 
-	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
+	isSearchGlobalNamespace := false
+	if request.Extras["searchGlobalNamespace"] != nil {
+		if strings.EqualFold(request.Extras["searchGlobalNamespace"].(string), "TRUE") {
+			isSearchGlobalNamespace = true
+		}
+	}
+
+	var err error
+	var data elastigo.SearchResult
+
+	if isSearchGlobalNamespace {
+		data, err = conn.Search(request.Controls.Namespace, "", nil, query)
+	} else {
+		data, err = conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
+	}
 
 	if err != nil {
 		response.GetResponseWithBody(getEmptyByteObject())

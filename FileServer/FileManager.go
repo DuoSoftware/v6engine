@@ -49,10 +49,6 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 			uploadFileName = header.Filename
 		}
 
-		if request.WebRequest.Header.Get("Application") == "service-console-uploader" {
-			uploadFileName = request.Parameters["id"]
-		}
-
 		out, err := os.Create(uploadFileName)
 		if err != nil {
 			fileResponse.IsSuccess = false
