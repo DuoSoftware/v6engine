@@ -66,12 +66,17 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 	isSearchGlobalNamespace := false
 	if request.Extras["searchGlobalNamespace"] != nil {
 		if strings.EqualFold(request.Extras["searchGlobalNamespace"].(string), "TRUE") {
+			fmt.Println("Global Search Enabled!")
 			isSearchGlobalNamespace = true
 		}
 	}
 
 	var err error
 	var data elastigo.SearchResult
+
+	fmt.Println("--------------------------------")
+	fmt.Println(query)
+	fmt.Println("--------------------------------")
 
 	if isSearchGlobalNamespace {
 		data, err = conn.Search(request.Controls.Namespace, "", nil, query)
