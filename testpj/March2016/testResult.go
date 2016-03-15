@@ -41,6 +41,8 @@ func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request
 
 	if r.Method != "GET" {
 		rb, rerr := ioutil.ReadAll(r.Body)
+		fmt.Println("Request in String : ")
+		fmt.Println(string(rb))
 		if rerr != nil {
 			fmt.Println(rerr.Error())
 		} else {

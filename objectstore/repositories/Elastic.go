@@ -54,13 +54,13 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 	if request.Extras["orderby"] != nil {
 		orderbyfield = request.Extras["orderby"].(string)
 		operator := "asc"
-		query = "{\"sort\" : [{\"" + orderbyfield + "\" : {\"order\" : \"" + operator + "\"}}],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+		query = "{\"sort\" : [{\"" + orderbyfield + "\" : {\"order\" : \"" + operator + "\"}}],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"analyze_wildcard\": true, \"query\" : \"" + searchStr + "\"}}}"
 	} else if request.Extras["orderbydsc"] != nil {
 		orderbyfield = request.Extras["orderbydsc"].(string)
 		operator := "desc"
-		query = "{\"sort\" : [{\"" + orderbyfield + "\" : {\"order\" : \"" + operator + "\"}}],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+		query = "{\"sort\" : [{\"" + orderbyfield + "\" : {\"order\" : \"" + operator + "\"}}],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"analyze_wildcard\": true, \"query\" : \"" + searchStr + "\"}}}"
 	} else {
-		query = "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + searchStr + "\"}}}"
+		query = "{\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"analyze_wildcard\": true, \"query\" : \"" + searchStr + "\"}}}"
 	}
 
 	isSearchGlobalNamespace := false
