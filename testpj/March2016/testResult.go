@@ -26,7 +26,7 @@ func Start() {
 	m.Get("/", statusHandlder)
 
 	m.Post("/:namespace/:class", handleRequest)
-	m.Run()
+	m.RunOnAddr(":6000")
 }
 
 func statusHandlder(params martini.Params, w http.ResponseWriter, r *http.Request) {
@@ -41,15 +41,17 @@ func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request
 
 	if r.Method != "GET" {
 		rb, rerr := ioutil.ReadAll(r.Body)
-		fmt.Println("Request in String : ")
-		fmt.Println(string(rb))
 		if rerr != nil {
 			fmt.Println(rerr.Error())
 		} else {
 			err := json.Unmarshal(rb, &requestBody)
 			if err != nil {
 				fmt.Println(err.Error())
+				fmt.Println("Request in String : ")
+				fmt.Println(string(rb))
 			} else {
+				fmt.Println("Request in String : ")
+				fmt.Println(string(rb))
 				fmt.Println("Request Unmarshalled : ")
 				fmt.Println(requestBody)
 			}
