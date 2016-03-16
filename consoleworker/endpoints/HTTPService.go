@@ -36,29 +36,35 @@ func statusHandlder(params martini.Params, w http.ResponseWriter, r *http.Reques
 }
 
 func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Post Request!")
 
-	var requestBody structs.ServiceRequest
+	var request structs.ServiceRequest
+	err := getServiceRequest(r, &request, params)
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		response := repositories.Execute(request)
+		if response.Err != nil {
+			fmt.Println(response.Err.Error())
+		} else {
+			fmt.Println("Process Completed!")
+		}
+	}
+
+}
+
+func getServiceRequest(r *http.Request, request *structs.ServiceRequest, params martini.Params) (err error) {
 
 	if r.Method != "GET" {
-		rb, rerr := ioutil.ReadAll(r.Body)
-		if rerr != nil {
-			fmt.Println(rerr.Error())
+		rb, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			return err
 		} else {
-			err := json.Unmarshal(rb, &requestBody)
+			err = json.Unmarshal(rb, &request)
 			if err != nil {
-				fmt.Println(err.Error())
-				fmt.Println("Request in String : ")
-				fmt.Println(string(rb))
-			} else {
-				response := repositories.Execute(requestBody)
-				if response.Err != nil {
-					fmt.Println(response.Err.Error())
-				} else {
-					fmt.Println("Process Completed!")
-				}
+				return err
 			}
 		}
 	}
 
+	return
 }
