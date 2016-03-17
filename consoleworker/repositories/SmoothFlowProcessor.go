@@ -3,6 +3,7 @@ package repositories
 import (
 	"duov6.com/consoleworker/common"
 	"duov6.com/consoleworker/structs"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -16,23 +17,27 @@ func (repository SmoothFlowProcessor) GetWorkerName(request structs.ServiceReque
 
 func (repository SmoothFlowProcessor) ProcessWorker(request structs.ServiceRequest) structs.ServiceResponse {
 	response := structs.ServiceResponse{}
-	fmt.Println(request)
 
 	configs := common.GetConfigurations()
 
 	smoothFlowUrl := configs["SVC_SMOOTHFLOW_URL"].(string)
 
-	json := JsonBuilder(request.Parameters["JSONData"].(map[string]interface{}))
+	if request.Parameters["JSONData"] != nil {
 
-	object := request.Parameters
-	object["JSONData"] = json
+		json := JsonBuilder(request.Parameters["JSONData"].(map[string]interface{}))
 
-	err := common.PostHTTPRequest(smoothFlowUrl, request.Parameters)
-	if err != nil {
-		fmt.Println(err.Error())
-		response.Err = err
+		object := request.Parameters
+		object["JSONData"] = json
+
+		err := common.PostHTTPRequest(smoothFlowUrl, request.Parameters)
+		if err != nil {
+			fmt.Println(err.Error())
+			response.Err = err
+		} else {
+			response.Err = nil
+		}
 	} else {
-		response.Err = nil
+		response.Err = errors.New("Required Fields such as JSONData Not Found to Execute SmoothFlow Worker!")
 	}
 
 	return response
