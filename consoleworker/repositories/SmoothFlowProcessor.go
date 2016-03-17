@@ -4,6 +4,7 @@ import (
 	"duov6.com/consoleworker/common"
 	"duov6.com/consoleworker/structs"
 	"fmt"
+	"strings"
 )
 
 type SmoothFlowProcessor struct {
@@ -21,6 +22,11 @@ func (repository SmoothFlowProcessor) ProcessWorker(request structs.ServiceReque
 
 	smoothFlowUrl := configs["SVC_SMOOTHFLOW_URL"].(string)
 
+	json := JsonBuilder(request.Parameters["JSONData"].(map[string]interface{}))
+
+	object := request.Parameters
+	object["JSONData"] = json
+
 	err := common.PostHTTPRequest(smoothFlowUrl, request.Parameters)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -30,4 +36,16 @@ func (repository SmoothFlowProcessor) ProcessWorker(request structs.ServiceReque
 	}
 
 	return response
+}
+
+func JsonBuilder(data map[string]interface{}) (json string) {
+	json = ""
+
+	for key, value := range data {
+		json += "\"" + key + "\":\"" + value.(string) + "\", "
+	}
+
+	json = strings.TrimSuffix(json, ".")
+
+	return
 }
