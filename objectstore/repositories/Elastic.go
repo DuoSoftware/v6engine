@@ -74,9 +74,8 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 	var err error
 	var data elastigo.SearchResult
 
-	fmt.Println("--------------------------------")
+	fmt.Println("Elastic Query : ")
 	fmt.Println(query)
-	fmt.Println("--------------------------------")
 
 	if isSearchGlobalNamespace {
 		data, err = conn.Search(request.Controls.Namespace, "", nil, query)
