@@ -13,3 +13,5 @@ duoauth/ObjectStoreLog.log
 testpj/March2016/agent.config
 testpj/March2016/testResult.exe
 consoleworker/consoleworker.exe
+testpj/March2016/testObjSvc.exe
+recordmanager/recordmanager.exe

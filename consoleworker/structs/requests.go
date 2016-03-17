@@ -14,3 +14,7 @@ type ServiceRequest struct {
 type ServiceResponse struct {
 	Err error
 }
+
+type QueueDispatchRequest struct {
+	Objects []ServiceRequest
+}
