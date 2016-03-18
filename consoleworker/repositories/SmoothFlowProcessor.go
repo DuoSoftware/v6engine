@@ -47,10 +47,10 @@ func JsonBuilder(data map[string]interface{}) (json string) {
 	json = ""
 
 	for key, value := range data {
-		json += "\"" + key + "\":\"" + value.(string) + "\", "
+		json += "\"" + key + "\":\"" + value.(string) + "\","
 	}
 
-	json = strings.TrimSuffix(json, ".")
+	json = strings.TrimSuffix(json, ",")
 
 	return
 }
