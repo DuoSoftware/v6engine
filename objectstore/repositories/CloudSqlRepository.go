@@ -615,7 +615,7 @@ func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectReq
 	for _, obj := range records {
 		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj))
 
-		if currentObject == nil {
+		if currentObject == nil || len(currentObject) == 0 {
 			lastOperation = 1
 			runtime += 1
 			if isFirstRow {
