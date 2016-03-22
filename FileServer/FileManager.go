@@ -4,6 +4,8 @@ import (
 	"duov6.com/FileServer/messaging"
 	"duov6.com/common"
 	"duov6.com/objectstore/client"
+	goclient "duov6.com/objectstore/goclient"
+	"duov6.com/objectstore/repositories"
 	"encoding/json"
 	"fmt"
 	"github.com/tealeg/xlsx"
@@ -11,9 +13,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	//"time"
-	//"path/filepath"
-	//"strconv"
 	"strings"
 )
 
@@ -40,6 +39,7 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		if err != nil {
 			fileResponse.IsSuccess = false
 			fileResponse.Message = err.Error()
+			return fileResponse
 		}
 
 		if header == nil {
@@ -53,6 +53,7 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		if err != nil {
 			fileResponse.IsSuccess = false
 			fileResponse.Message = err.Error()
+			return fileResponse
 		}
 
 		// write the content from POST to the file
@@ -60,6 +61,7 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		if err != nil {
 			fileResponse.IsSuccess = false
 			fileResponse.Message = err.Error()
+			return fileResponse
 		}
 
 		file2, err2 := ioutil.ReadFile(uploadFileName)
@@ -67,6 +69,7 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		if err2 != nil {
 			fileResponse.IsSuccess = false
 			fileResponse.Message = err.Error()
+			return fileResponse
 		}
 
 		convertedBody := string(file2[:])
@@ -110,13 +113,12 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 			}
 		}
 
-		var returnParams []map[string]interface{}
-		returnParams = make([]map[string]interface{}, 1)
+		var returnParams repositories.RepositoryResponse
 		if isRawFile {
 			fmt.Println("Saving the RAW file.......... ")
 			returnParams = client.GoExtra(request.Parameters["securityToken"], request.Parameters["namespace"], request.Parameters["class"], extraMap).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
-			if len(returnParams) > 0 {
-				fmt.Fprintf(request.WebResponse, returnParams[0]["ID"].(string))
+			if len(returnParams.Data) > 0 {
+				fmt.Fprintf(request.WebResponse, returnParams.Data[0]["ID"].(string))
 			} else {
 				fmt.Fprintf(request.WebResponse, "FAILED!")
 			}
@@ -126,11 +128,19 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 
 		//close the files
 		err = out.Close()
+
+		if err != nil {
+			fileResponse.IsSuccess = false
+			fileResponse.Message = err.Error()
+			return fileResponse
+		}
+
 		err = file.Close()
 
 		if err != nil {
 			fileResponse.IsSuccess = false
 			fileResponse.Message = err.Error()
+			return fileResponse
 		}
 
 		//remove the temporary stored file from the disk
@@ -139,6 +149,7 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		if err2 != nil {
 			fileResponse.IsSuccess = false
 			fileResponse.Message = err2.Error()
+			return fileResponse
 		}
 
 		if err == nil && err2 == nil {
@@ -161,11 +172,9 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 		obj.FileName = request.FileName
 		obj.Body = base64Body
 
-		client.Go(request.Parameters["securityToken"], request.Parameters["namespace"], request.Parameters["class"]).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
-
-		fileResponse.IsSuccess = true
-		fileResponse.Message = "Storing file successfully completed"
-
+		response := client.Go(request.Parameters["securityToken"], request.Parameters["namespace"], request.Parameters["class"]).StoreObject().WithKeyField("Id").AndStoreOne(obj).FileOk()
+		fileResponse.IsSuccess = response.IsSuccess
+		fileResponse.Message = response.Message
 	}
 
 	return fileResponse
@@ -173,28 +182,33 @@ func (f *FileManager) Store(request *messaging.FileRequest) messaging.FileRespon
 
 func (f *FileManager) Remove(request *messaging.FileRequest) messaging.FileResponse { // remove file from disk and database
 	fileResponse := messaging.FileResponse{}
+
+	//Delete from Physical location
 	var saveServerPath string = request.RootSavePath
 	file, err := ioutil.ReadFile(saveServerPath + request.FilePath + request.FileName)
 
-	if len(file) > 0 {
-		err = os.Remove(saveServerPath + request.FilePath + request.FileName)
+	if err != nil {
+		if len(file) > 0 {
+			err = os.Remove(saveServerPath + request.FilePath + request.FileName)
+		}
+	} else {
+		fmt.Println("Physical file not available to Delete!")
 	}
+
+	//Delete from ObjectStore
+	obj := FileData{}
+	obj.Id = request.Parameters["id"]
+	obj.FileName = request.FileName
+
+	err = goclient.Go(request.Parameters["securityToken"], request.Parameters["namespace"], request.Parameters["class"]).StoreObjectWithOperation("delete").WithKeyField("Id").AndStoreOne(obj).Ok()
 
 	if err == nil {
 		fileResponse.IsSuccess = true
 		fileResponse.Message = "Deletion of file successfully completed"
 	} else {
 		fileResponse.IsSuccess = true
-		fileResponse.Message = "Deletion of file Aborted"
+		fileResponse.Message = err.Error()
 	}
-
-	obj := FileData{}
-	obj.Id = request.Parameters["id"]
-	obj.FileName = request.FileName
-
-	client.Go(request.Parameters["securityToken"], request.Parameters["namespace"], request.Parameters["class"]).StoreObjectWithOperation("delete").WithKeyField("Id").AndStoreOne(obj).Ok()
-	fileResponse.IsSuccess = true
-	fileResponse.Message = "Deletion of file successfully completed"
 
 	return fileResponse
 }
@@ -202,9 +216,7 @@ func (f *FileManager) Remove(request *messaging.FileRequest) messaging.FileRespo
 func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileResponse { // save the file to ftp and download via ftp on browser
 	fileResponse := messaging.FileResponse{}
 
-	if len(request.Body) == 0 {
-
-	} else {
+	if len(request.Body) != 0 {
 		var saveServerPath string = request.RootSavePath
 		var accessServerPath string = request.RootGetPath
 
@@ -216,11 +228,14 @@ func (f *FileManager) Download(request *messaging.FileRequest) messaging.FileRes
 		err := webbrowser.Open(accessServerPath + request.FilePath + file.FileName)
 		if err != nil {
 			fileResponse.IsSuccess = false
-			fileResponse.Message = "Downloading Failed!" + err.Error()
+			fileResponse.Message = err.Error()
 		} else {
 			fileResponse.IsSuccess = true
 			fileResponse.Message = "Downloading file successfully completed"
 		}
+	} else {
+		fileResponse.IsSuccess = false
+		fileResponse.Message = "No Request Body Found!"
 	}
 
 	return fileResponse

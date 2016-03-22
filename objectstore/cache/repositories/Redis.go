@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"duov6.com/objectstore/messaging"
+	"errors"
 	"fmt"
 	"github.com/xuyu/goredis"
 	"strconv"
@@ -103,7 +104,7 @@ func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) 
 
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
-		fmt.Println(errorMessage)
+		err = errors.New(errorMessage)
 	} else {
 		var ttl int
 		ttl, _ = strconv.Atoi(request.Configuration.ServerConfiguration["REDIS"]["TTL"])
@@ -132,7 +133,7 @@ func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) 
 func SetResultRedis(request *messaging.ObjectRequest, data interface{}) (err error) {
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
-		fmt.Println(errorMessage)
+		err = errors.New(errorMessage)
 	} else {
 		var ttl int
 		ttl, _ = strconv.Atoi(request.Configuration.ServerConfiguration["REDIS"]["TTL"])
@@ -152,7 +153,7 @@ func SetResultRedis(request *messaging.ObjectRequest, data interface{}) (err err
 func SetQueryRedis(request *messaging.ObjectRequest, data interface{}) (err error) {
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
-		fmt.Println(errorMessage)
+		err = errors.New(errorMessage)
 	} else {
 		var ttl int
 		ttl, _ = strconv.Atoi(request.Configuration.ServerConfiguration["REDIS"]["TTL"])
@@ -172,7 +173,7 @@ func SetQueryRedis(request *messaging.ObjectRequest, data interface{}) (err erro
 func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{}) (err error) {
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
-		fmt.Println(errorMessage)
+		err = errors.New(errorMessage)
 	} else if request.Body.Parameters.KeyProperty != "" {
 		var ttl int
 		ttl, _ = strconv.Atoi(request.Configuration.ServerConfiguration["REDIS"]["TTL"])
@@ -201,7 +202,7 @@ func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{
 
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
-		fmt.Println(errorMessage)
+		err = errors.New(errorMessage)
 	} else {
 		key := ""
 		if request.Body.Parameters.KeyProperty == "" {
@@ -209,13 +210,9 @@ func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{
 		} else {
 			key = getNoSqlKeyById(request, data)
 		}
-		reply, err2 := client.ExecuteCommand("DEL", key)
-		err2 = reply.OKValue()
-		err = err2
+		reply, _ := client.ExecuteCommand("DEL", key)
 
-		if err != nil {
-			fmt.Println("Removed One Record from Cache!")
-		}
+		_ = reply.OKValue()
 
 		client.ClosePool()
 	}
@@ -228,20 +225,12 @@ func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{
 func RemoveManyRedis(request *messaging.ObjectRequest, data []map[string]interface{}) (err error) {
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
-		fmt.Println(errorMessage)
+		err = errors.New(errorMessage)
 	} else if request.Body.Parameters.KeyProperty != "" {
 		for _, obj := range data {
 			key := getNoSqlKeyById(request, obj)
-			reply, err := client.ExecuteCommand("DEL", key)
-			err = reply.OKValue()
-			if err != nil {
-				client.ClosePool()
-				return err
-			}
-		}
-
-		if err != nil {
-			fmt.Println("Removed Many Records from Cache!")
+			reply, _ := client.ExecuteCommand("DEL", key)
+			_ = reply.OKValue()
 		}
 
 		client.ClosePool()
@@ -255,7 +244,7 @@ func RemoveManyRedis(request *messaging.ObjectRequest, data []map[string]interfa
 func ResetSearchResultCache(request *messaging.ObjectRequest) (err error) {
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
-		fmt.Println(errorMessage)
+		err = errors.New(errorMessage)
 	} else {
 		namespace := request.Controls.Namespace
 		class := request.Controls.Class

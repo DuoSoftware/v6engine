@@ -110,7 +110,7 @@ func (m *StoreModifier) Ok() {
 	fmt.Println(response.IsSuccess)
 }
 
-func (m *StoreModifier) FileOk() []map[string]interface{} {
+func (m *StoreModifier) FileOk() repositories.RepositoryResponse {
 	if m.Request.Controls.Multiplicity == "single" {
 		m.Request.Controls.Id = m.Request.Body.Object[m.Request.Body.Parameters.KeyProperty].(string)
 	}
@@ -119,8 +119,7 @@ func (m *StoreModifier) FileOk() []map[string]interface{} {
 
 	response := dispatcher.Dispatch(m.Request)
 
-	fmt.Println(response.IsSuccess)
-	return response.Data
+	return response
 }
 func NewStoreModifier(request *messaging.ObjectRequest) *StoreModifier {
 	modifier := StoreModifier{Request: request}

@@ -11,7 +11,7 @@ func DeleteOne(request *messaging.ObjectRequest, data map[string]interface{}) (e
 	if CheckCacheAvailability(request) {
 		err = repositories.RemoveOneRedis(request, data)
 		if err != nil {
-			fmt.Println("Error storing to Cache : " + err.Error())
+			fmt.Println("Error deleting one Object : " + err.Error())
 		}
 	}
 	return
@@ -21,7 +21,7 @@ func DeleteMany(request *messaging.ObjectRequest, data []map[string]interface{})
 	if CheckCacheAvailability(request) {
 		err = repositories.RemoveManyRedis(request, data)
 		if err != nil {
-			fmt.Println("Error storing to Cache : " + err.Error())
+			fmt.Println("Error deleting many Objects : " + err.Error())
 		}
 	}
 	return
@@ -52,7 +52,7 @@ func StoreOne(request *messaging.ObjectRequest, data map[string]interface{}) (er
 	if CheckCacheAvailability(request) {
 		err = repositories.SetOneRedis(request, data)
 		if err != nil {
-			fmt.Println("Error storing to Cache : " + err.Error())
+			fmt.Println("Error storing One Object to Cache : " + err.Error())
 		}
 	}
 	return
@@ -62,7 +62,7 @@ func StoreMany(request *messaging.ObjectRequest, data []map[string]interface{}) 
 	if CheckCacheAvailability(request) {
 		err = repositories.SetManyRedis(request, data)
 		if err != nil {
-			fmt.Println("Error storing to Cache : " + err.Error())
+			fmt.Println("Error storing Many Objects to Cache : " + err.Error())
 		}
 	}
 	return
@@ -72,7 +72,7 @@ func StoreResult(request *messaging.ObjectRequest, data interface{}) (err error)
 	if CheckCacheAvailability(request) {
 		err = repositories.SetResultRedis(request, data)
 		if err != nil {
-			fmt.Println("Error storing to Cache : " + err.Error())
+			fmt.Println("Error storing Get Result to Cache : " + err.Error())
 		}
 	}
 	return
@@ -82,7 +82,7 @@ func StoreQuery(request *messaging.ObjectRequest, data interface{}) (err error) 
 	if CheckCacheAvailability(request) {
 		err = repositories.SetQueryRedis(request, data)
 		if err != nil {
-			fmt.Println("Error storing to Cache : " + err.Error())
+			fmt.Println("Error storing Query Result to Cache : " + err.Error())
 		}
 	}
 	return

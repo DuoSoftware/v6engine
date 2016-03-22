@@ -15,3 +15,4 @@ testpj/March2016/testResult.exe
 consoleworker/consoleworker.exe
 testpj/March2016/testObjSvc.exe
 recordmanager/recordmanager.exe
+objectstore/requests.log

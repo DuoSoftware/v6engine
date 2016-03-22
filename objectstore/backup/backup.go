@@ -1,7 +1,6 @@
 package backup
 
 import (
-	//"encoding/json"
 	"fmt"
 	"github.com/twinj/uuid"
 	"io/ioutil"

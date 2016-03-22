@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"duov6.com/common"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
 	"duov6.com/term"
@@ -404,7 +405,16 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 			obj, err = repository.executeQueryMany(conn, query, tableName)
 		}
 
-		fmt.Println("---------------------------------")
+		fmt.Println("##############################################################")
+		fmt.Println("availableDbs : ")
+		fmt.Println(availableDbs)
+		fmt.Println("availableTables : ")
+		fmt.Println(availableTables)
+		fmt.Println("tableCache : ")
+		fmt.Println(tableCache)
+		fmt.Println("##############################################################")
+
+		fmt.Println("--------- Object Value ----------")
 		fmt.Println(obj)
 		fmt.Println("---------------------------------")
 
@@ -543,9 +553,9 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 	query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = '" + id + "';"
 	//query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = \"" + id + "\""
 	obj, _ = repository.executeQueryOne(conn, query, nil)
-	fmt.Println("**************************")
+	fmt.Println("------------  GetByKey Value ---------------")
 	fmt.Println(obj)
-	fmt.Println("**************************")
+	fmt.Println("--------------------------------------------")
 	return
 }
 
@@ -914,6 +924,7 @@ func (repository CloudSqlRepository) getSqlFieldValue(value interface{}) string 
 }
 
 func (repository CloudSqlRepository) golangToSql(value interface{}) string {
+
 	var strValue string
 
 	//fmt.Println(reflect.TypeOf(value))
@@ -1153,6 +1164,7 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string)
 	fmt.Println()
 	fmt.Print("Executing Non-Query : ")
 	fmt.Println(query)
+	common.PublishLog("requests.log", query)
 	fmt.Println()
 	var stmt *sql.Stmt
 	stmt, err = conn.Prepare(query)

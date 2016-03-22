@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"reflect"
 	"time"
 )
 
@@ -105,7 +106,20 @@ func Read(Lable string) string {
 	return S
 }
 
-func Write(Lable string, mType int) {
+func Write(data interface{}, mType int) {
+	Lable := ""
+
+	if reflect.TypeOf(data).String() == "string" {
+		Lable = data.(string)
+	} else {
+		byteArray, err := json.Marshal(data)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		Lable = string(byteArray)
+	}
+
 	//var S string
 	switch mType {
 	case Error:
@@ -133,6 +147,36 @@ func Write(Lable string, mType int) {
 		currentPlugin.Log(Lable, mType)
 	}
 }
+
+//ORIGINAL WRITE FUNCTION WITH NO SUPPORT FOR STDOUTing STRUCTURES OTHER THAN STRINGS. DONT DELETE!
+// func Write(Lable string, mType int) {
+// 	//var S string
+// 	switch mType {
+// 	case Error:
+// 		//log.Printf(format, ...)
+// 		if Config.ErrorLine {
+// 			fmt.Println(time.Now().String() + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
+// 		}
+// 	case Information:
+// 		if Config.InformationLine {
+// 			fmt.Println(FgGreen + time.Now().String() + " Information! " + Lable + Reset)
+// 		}
+// 	case Debug:
+// 		//if Config.DebugLine {
+// 		fmt.Println(FgBlue + time.Now().String() + " Debug! " + Lable + Reset)
+// 		//}
+// 	case Splash:
+// 		fmt.Println(FgBlack + BgWhite + Lable + Reset)
+// 	case Blank:
+// 		fmt.Println(Lable)
+// 	default:
+// 		fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
+// 	}
+
+// 	if currentPlugin != nil {
+// 		currentPlugin.Log(Lable, mType)
+// 	}
+// }
 
 func SplashScreen(fileName string) {
 
