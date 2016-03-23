@@ -405,14 +405,14 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 			obj, err = repository.executeQueryMany(conn, query, tableName)
 		}
 
-		fmt.Println("##############################################################")
-		fmt.Println("availableDbs : ")
-		fmt.Println(availableDbs)
-		fmt.Println("availableTables : ")
-		fmt.Println(availableTables)
-		fmt.Println("tableCache : ")
-		fmt.Println(tableCache)
-		fmt.Println("##############################################################")
+		// fmt.Println("##############################################################")
+		// fmt.Println("availableDbs : ")
+		// fmt.Println(availableDbs)
+		// fmt.Println("availableTables : ")
+		// fmt.Println(availableTables)
+		// fmt.Println("tableCache : ")
+		// fmt.Println(tableCache)
+		// fmt.Println("##############################################################")
 
 		fmt.Println("--------- Object Value ----------")
 		fmt.Println(obj)
@@ -960,6 +960,89 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 	return strValue
 }
 
+// func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{} {
+
+// 	if b == nil {
+// 		return nil
+// 	}
+
+// 	if len(b) == 0 {
+// 		return b
+// 	}
+
+// 	var outData interface{}
+// 	tmp := string(b)
+// 	switch t {
+// 	case "bit(1)":
+// 		if len(b) == 0 {
+// 			outData = false
+// 		} else {
+// 			if b[0] == 1 {
+// 				outData = true
+// 			} else {
+// 				outData = false
+// 			}
+// 		}
+
+// 		break
+// 	case "double":
+// 		fData, err := strconv.ParseFloat(tmp, 64)
+// 		if err != nil {
+// 			term.Write(err.Error(), 1)
+// 			outData = tmp
+// 		} else {
+// 			outData = fData
+// 		}
+// 		break
+// 	//case "text":
+// 	//case "blob":
+// 	default:
+// 		if len(tmp) == 4 {
+// 			if strings.ToLower(tmp) == "null" {
+// 				outData = nil
+// 				break
+// 			}
+// 		}
+
+// 		// var m map[string]interface{}
+// 		// var ml []map[string]interface{}
+
+// 		// if (string(tmp[0]) == "{"){
+// 		// 	err := json.Unmarshal([]byte(tmp), &m)
+// 		// 	if err == nil {
+// 		// 		outData = m
+// 		// 	}else{
+// 		// 		fmt.Println(err.Error())
+// 		// 		outData = tmp
+// 		// 	}
+// 		// }else if (string(tmp[0]) == "["){
+// 		// 	err := json.Unmarshal([]byte(tmp), &ml)
+// 		// 	if err == nil {
+// 		// 		outData = ml
+// 		// 	}else{
+// 		// 		fmt.Println(err.Error())
+// 		// 		outData = tmp
+// 		// 	}
+// 		// }else{
+// 		// 	outData = tmp
+// 		// }
+
+// 		if string(tmp[0]) == "^" {
+// 			byteData := []byte(tmp)
+// 			bdata := string(byteData[1:])
+// 			decData, _ := base64.StdEncoding.DecodeString(bdata)
+// 			outData = repository.getInterfaceValue(string(decData))
+
+// 		} else {
+// 			outData = repository.getInterfaceValue(tmp)
+// 		}
+
+// 		break
+// 	}
+
+// 	return outData
+// }
+
 func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{} {
 
 	if b == nil {
@@ -969,6 +1052,11 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 	if len(b) == 0 {
 		return b
 	}
+
+	// fmt.Println("--------------")
+	// fmt.Println(t)
+	// fmt.Println(string(b))
+	// fmt.Println("--------------")
 
 	var outData interface{}
 	tmp := string(b)
@@ -994,6 +1082,27 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 			outData = fData
 		}
 		break
+	case "BIT":
+		if len(b) == 0 {
+			outData = false
+		} else {
+			if b[0] == 1 {
+				outData = true
+			} else {
+				outData = false
+			}
+		}
+
+		break
+	case "DOUBLE":
+		fData, err := strconv.ParseFloat(tmp, 64)
+		if err != nil {
+			term.Write(err.Error(), 1)
+			outData = tmp
+		} else {
+			outData = fData
+		}
+		break
 	//case "text":
 	//case "blob":
 	default:
@@ -1004,31 +1113,29 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 			}
 		}
 
-		/*
-			var m map[string]interface{}
-			var ml []map[string]interface{}
+		// var m map[string]interface{}
+		// var ml []map[string]interface{}
 
+		// if (string(tmp[0]) == "{"){
+		// 	err := json.Unmarshal([]byte(tmp), &m)
+		// 	if err == nil {
+		// 		outData = m
+		// 	}else{
+		// 		fmt.Println(err.Error())
+		// 		outData = tmp
+		// 	}
+		// }else if (string(tmp[0]) == "["){
+		// 	err := json.Unmarshal([]byte(tmp), &ml)
+		// 	if err == nil {
+		// 		outData = ml
+		// 	}else{
+		// 		fmt.Println(err.Error())
+		// 		outData = tmp
+		// 	}
+		// }else{
+		// 	outData = tmp
+		// }
 
-			if (string(tmp[0]) == "{"){
-				err := json.Unmarshal([]byte(tmp), &m)
-				if err == nil {
-					outData = m
-				}else{
-					fmt.Println(err.Error())
-					outData = tmp
-				}
-			}else if (string(tmp[0]) == "["){
-				err := json.Unmarshal([]byte(tmp), &ml)
-				if err == nil {
-					outData = ml
-				}else{
-					fmt.Println(err.Error())
-					outData = tmp
-				}
-			}else{
-				outData = tmp
-			}
-		*/
 		if string(tmp[0]) == "^" {
 			byteData := []byte(tmp)
 			bdata := string(byteData[1:])
