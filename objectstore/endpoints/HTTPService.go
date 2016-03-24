@@ -68,7 +68,7 @@ func (h *HTTPService) Start(isLogEnabled bool, isJsonStackEnabled bool) {
 }
 
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	versionData := "{\"name\": \"Objectstore\",\"version\": \"1.0.14-a\",\"Change Log\":\"Latest!\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	versionData := "{\"name\": \"Objectstore\",\"version\": \"1.0.14-a\",\"Change Log\":\"Added LONGBLOB!\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
 	fmt.Fprintf(w, versionData)
 }
 
@@ -346,15 +346,21 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 						isLoggable = true
 						if isLoggable {
 							fmt.Println("---------------------------- REQUEST BODY -----------------------------------")
-							fmt.Println("Primary Key : " + requestBody.Parameters.KeyProperty)
-							fmt.Print("Query : ")
-							fmt.Println(requestBody.Query)
-							fmt.Print("Special : ")
-							fmt.Println(requestBody.Special)
-							fmt.Print("Single Object : ")
-							fmt.Println(requestBody.Object)
-							fmt.Print("Multiple Objects : ")
-							fmt.Println(requestBody.Objects)
+
+							if len(rb) > 2000 {
+								fmt.Println("Request Found but Too Long to STDOUT!")
+							} else {
+								fmt.Println("Primary Key : " + requestBody.Parameters.KeyProperty)
+								fmt.Print("Query : ")
+								fmt.Println(requestBody.Query)
+								fmt.Print("Special : ")
+								fmt.Println(requestBody.Special)
+								fmt.Print("Single Object : ")
+								fmt.Println(requestBody.Object)
+								fmt.Print("Multiple Objects : ")
+								fmt.Println(requestBody.Objects)
+							}
+
 							fmt.Println("-----------------------------------------------------------------------------")
 						}
 						objectRequest.Body = requestBody

@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"database/sql"
-	"duov6.com/common"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
 	"duov6.com/term"
@@ -414,10 +413,6 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 		// fmt.Println(tableCache)
 		// fmt.Println("##############################################################")
 
-		fmt.Println("--------- Object Value ----------")
-		fmt.Println(obj)
-		fmt.Println("---------------------------------")
-
 		if err == nil {
 			var bytes []byte
 			if isOne {
@@ -425,6 +420,14 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 			} else {
 				bytes, _ = json.Marshal(obj.([]map[string]interface{}))
 			}
+
+			fmt.Println("--------- Object Value ----------")
+			if len(bytes) > 1000 {
+				fmt.Println("Data Found but Too Long to STDOUT!")
+			} else {
+				fmt.Println(obj)
+			}
+			fmt.Println("---------------------------------")
 
 			//bytes, _ := json.Marshal(obj)
 			if checkEmptyByteArray(bytes) {
@@ -554,7 +557,12 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 	//query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = \"" + id + "\""
 	obj, _ = repository.executeQueryOne(conn, query, nil)
 	fmt.Println("------------  GetByKey Value ---------------")
-	fmt.Println(obj)
+	bytes, _ := json.Marshal(obj)
+	if len(bytes) > 1000 {
+		fmt.Println("Data Found but Too Long to STDOUT!")
+	} else {
+		fmt.Println(obj)
+	}
 	fmt.Println("--------------------------------------------")
 	return
 }
@@ -952,7 +960,7 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 		strValue = "DOUBLE"
 		break
 	default:
-		strValue = "BLOB"
+		strValue = "LONGBLOB"
 		break
 
 	}
@@ -1231,7 +1239,12 @@ func (repository CloudSqlRepository) rowsToMap(rows *sql.Rows, tableName interfa
 func (repository CloudSqlRepository) executeQueryMany(conn *sql.DB, query string, tableName interface{}) (result []map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
 	fmt.Print("Query Many : ")
-	fmt.Println(query)
+
+	if len(query) > 1000 {
+		fmt.Println("Query Found but Too Long to STDOUT!")
+	} else {
+		fmt.Println(query)
+	}
 
 	if err == nil {
 		result, err = repository.rowsToMap(rows, tableName)
@@ -1248,7 +1261,11 @@ func (repository CloudSqlRepository) executeQueryMany(conn *sql.DB, query string
 func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string, tableName interface{}) (result map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
 	fmt.Print("Query One : ")
-	fmt.Println(query)
+	if len(query) > 1000 {
+		fmt.Println("Query Found but Too Long to STDOUT!")
+	} else {
+		fmt.Println(query)
+	}
 
 	if err == nil {
 		var resultSet []map[string]interface{}
@@ -1270,8 +1287,12 @@ func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string,
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
 	fmt.Println()
 	fmt.Print("Executing Non-Query : ")
-	fmt.Println(query)
-	common.PublishLog("requests.log", query)
+	if len(query) > 1000 {
+		fmt.Println("Query Found but Too Long to STDOUT!")
+	} else {
+		fmt.Println(query)
+	}
+
 	fmt.Println()
 	var stmt *sql.Stmt
 	stmt, err = conn.Prepare(query)
