@@ -164,6 +164,7 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 	a, err := session.GetSession(key, Domain)
 	var c AuthCertificate
 	if err == "" {
+
 		c.ClientIP = a.ClientIP
 		c.DataCaps = a.DataCaps
 		c.Domain = a.Domain
