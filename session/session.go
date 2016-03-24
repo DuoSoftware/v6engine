@@ -17,6 +17,14 @@ type AuthCertificate struct {
 	Otherdata                                                                map[string]string
 }
 
+type TenantAutherized struct {
+	ID            string
+	UserID        string
+	TenantID      string
+	SecurityLevel string
+	Autherized    bool
+}
+
 func AddSession(a AuthCertificate) {
 	client.Go(a.SecurityToken, "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 	term.Write("AddSession for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
@@ -27,6 +35,34 @@ func RemoveSession(SecurityToken string) {
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 	term.Write("LogOut for SecurityToken :"+SecurityToken, term.Debug)
 	//return true
+}
+
+func AutherizedUser(TenantID, UserID string) (bool, TenantAutherized) {
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKey(common.GetHash(UserID + "-" + TenantID)).Ok()
+	if err == "" {
+		var uList TenantAutherized
+		err := json.Unmarshal(bytes, &uList)
+		if err == nil {
+			return uList.Autherized, uList
+		} else {
+			return false, TenantAutherized{}
+		}
+	} else {
+		return false, TenantAutherized{}
+	}
+
+	bytes1, err1 := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKey(TenantID).Ok()
+	if err1 == "" {
+		var uList TenantAutherized
+		err := json.Unmarshal(bytes1, &uList)
+		if err == nil {
+			return uList.Autherized, uList
+		} else {
+			return false, TenantAutherized{}
+		}
+	} else {
+		return false, TenantAutherized{}
+	}
 }
 
 func GetSession(key, Domain string) (AuthCertificate, string) {
@@ -44,13 +80,19 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 				if Domain == "Nil" {
 					return uList, ""
 				} else {
+
 					if strings.ToLower(uList.Domain) != strings.ToLower(Domain) {
-						uList.Domain = strings.ToLower(Domain)
-						uList.SecurityToken = common.GetGUID()
-						uList.Otherdata = make(map[string]string)
-						uList.Otherdata["unused"] = "sss"
-						AddSession(uList)
-						return uList, ""
+						x, _ := AutherizedUser(uList.UserID, Domain)
+						if x {
+							uList.Domain = strings.ToLower(Domain)
+							uList.SecurityToken = common.GetGUID()
+							uList.Otherdata = make(map[string]string)
+							uList.Otherdata["unused"] = "sss"
+							AddSession(uList)
+							return uList, ""
+						} else {
+							return c, Domain + " Session Cound not be Created "
+						}
 					} else {
 						return uList, ""
 					}

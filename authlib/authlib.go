@@ -101,9 +101,20 @@ func (A Auth) Verify() (output string) {
 func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) {
 	h := newAuthHandler()
 	u, err := h.Login(username, password)
+
+	//if()
 	if err == "" {
 		//fmt.Println("login succeful")
 		//securityToken := common.GetGUID()
+		th := TenantHandler{}
+		//th.Autherized(domain, user)
+		x, _ := th.AutherizedUser(domain, u.UserID)
+		if !x {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(domain + " Is not autherized for signin."))
+			//A.Context.Request().
+			return
+		}
+
 		outCrt.ClientIP = A.Context.Request().RemoteAddr
 
 		outCrt.DataCaps = GetDataCaps(domain, u.UserID)
@@ -122,7 +133,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		outCrt.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(domain), payload)
 		outCrt.Otherdata["Scope"] = strings.Replace(string(bytes[:]), "\"", "`", -1)
 		//outCrt.Otherdata["Tempkey"] = "No"
-		th := TenantHandler{}
+		//th := TenantHandler{}
 		tlist := th.GetTenantsForUser(u.UserID)
 		b, _ := json.Marshal(tlist)
 		outCrt.Otherdata["TenentsAccessible"] = strings.Replace(string(b[:]), "\"", "`", -1)
@@ -172,7 +183,7 @@ func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 		a = c
 		return a
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token  Incorrect"))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Not Autherized Err:" + err))
 		return
 	}
 

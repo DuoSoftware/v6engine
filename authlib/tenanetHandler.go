@@ -101,19 +101,44 @@ func (h *TenantHandler) CreateTenant(t Tenant, user session.AuthCertificate, upd
 	return t
 }
 
-func (h *TenantHandler) Autherized(TenantID string, user session.AuthCertificate) (bool, TenantAutherized) {
-	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKey(common.GetHash(user.UserID + "-" + TenantID)).Ok()
+func (h *TenantHandler) AutherizedUser(TenantID, UserID string) (bool, TenantAutherized) {
+	term.Write("Start Autherized Domain #"+TenantID, term.Debug)
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKey(common.GetHash(UserID + "-" + TenantID)).Ok()
+	term.Write("SaveUser saving Tenant fetech Error #", term.Debug)
 	if err == "" {
 		var uList TenantAutherized
 		err := json.Unmarshal(bytes, &uList)
 		if err == nil {
+			term.Write("Autherized #", term.Debug)
 			return uList.Autherized, uList
 		} else {
+			term.Write("Fail to deasseble Not Autherized #", term.Debug)
 			return false, TenantAutherized{}
 		}
 	} else {
+		term.Write("Not Autherized #", term.Debug)
 		return false, TenantAutherized{}
 	}
+	term.Write("Start Global Autherized Domain #"+TenantID, term.Debug)
+	bytes1, err1 := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKey(TenantID).Ok()
+	if err1 == "" {
+		var uList TenantAutherized
+		err := json.Unmarshal(bytes1, &uList)
+		if err == nil {
+			term.Write("Autherized #", term.Debug)
+			return uList.Autherized, uList
+		} else {
+			term.Write("Fail to deasseble Not Autherized #", term.Debug)
+			return false, TenantAutherized{}
+		}
+	} else {
+		term.Write("Not Autherized #", term.Debug)
+		return false, TenantAutherized{}
+	}
+}
+
+func (h *TenantHandler) Autherized(TenantID string, user session.AuthCertificate) (bool, TenantAutherized) {
+	return h.AutherizedUser(TenantID, user.UserID)
 }
 
 func (h *TenantHandler) AuthorizedGlobalTenants(TenantID string) (bool, TenantAutherized) {
@@ -149,6 +174,7 @@ func (h *TenantHandler) GetTenant(TenantID string) Tenant {
 func (h *TenantHandler) AddTenantForUsers(Tenant TenantMinimum, UserID string) UserTenants {
 	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").GetOne().ByUniqueKey(UserID).Ok()
 	var t UserTenants
+
 	//t.UserID
 	if err == "" {
 		err := json.Unmarshal(bytes, &t)
@@ -319,6 +345,60 @@ func (h *TenantHandler) AddUsersToTenant(TenantID, Name string, users, SecurityL
 	} else {
 		return t
 	}
+}
+
+func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
+	id := common.GetHash(UserID + "-" + TenantID)
+	var Activ TenantAutherized
+	Activ = TenantAutherized{}
+	Activ.ID = id
+	Activ.TenantID = TenantID
+
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "users").GetOne().ByUniqueKey(TenantID).Ok()
+	var t TenantUsers
+	if err == "" {
+		err := json.Unmarshal(bytes, &t)
+		if err == nil {
+			s := []string{}
+			for _, element := range t.Users {
+				if element != UserID {
+					s = append(s, element)
+				}
+
+			}
+			t.Users = s
+			client.Go("ignore", "com.duosoftware.tenant", "users").StoreObject().WithKeyField("TenantID").AndStoreOne(t).Ok()
+			client.Go("ignore", "com.duosoftware.tenant", "authorized").DeleteObject().AndDeleteObject(Activ).ByUniqueKey("ID").Ok()
+			//client.Go(securityToken, namespace, class)
+			//return t.Users
+		}
+	} else {
+		return false
+	}
+
+	var ut UserTenants
+	client.Go("ignore", "com.duosoftware.tenant", "authorized").DeleteObject().AndDeleteObject(Activ).ByUniqueKey("ID").Ok()
+	bytes1, err1 := client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").GetOne().ByUniqueKey(UserID).Ok()
+	//var t TenantUsers
+	if err1 == "" {
+		err := json.Unmarshal(bytes1, &ut)
+		if err == nil {
+			s := []TenantMinimum{}
+			//ut.UserID
+			for _, element := range ut.TenantIDs {
+				if element.TenantID != TenantID {
+					s = append(s, element)
+				}
+			}
+			ut.TenantIDs = s
+			client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").StoreObject().WithKeyField("UserID").AndStoreOne(ut).Ok()
+		} else {
+			return false
+		}
+	}
+
+	return true
+
 }
 
 func (h *TenantHandler) SearchTenants(Search string, since, pagesize int) []Tenant {
