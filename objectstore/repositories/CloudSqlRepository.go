@@ -208,7 +208,10 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 
 	fullTextArguments = fullTextArguments[:(len(fullTextArguments) - 5)]
 
-	query += fullTextArguments + ") LIKE '%" + request.Body.Query.Parameters + "%' "
+	queryParam := request.Body.Query.Parameters
+	queryParam = strings.TrimPrefix(queryParam, "*")
+	queryParam = strings.TrimSuffix(queryParam, "*")
+	query += fullTextArguments + ") LIKE '%" + queryParam + "%' "
 	return
 }
 
