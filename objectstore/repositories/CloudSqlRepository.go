@@ -859,11 +859,21 @@ func (repository CloudSqlRepository) checkSchema(conn *sql.DB, namespace string,
 ///////////////////////////////////////Helper functions/////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-var connection *sql.DB
+var connection map[string]*sql.DB
 
 func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
 
 	if connection == nil {
+		connection = make(map[string]*sql.DB)
+	}
+
+	fmt.Println()
+	fmt.Println("-------------------------------")
+	connParams := request.Configuration.ServerConfiguration["MYSQL"]
+	fmt.Println("Using Server : " + connParams["Url"])
+	fmt.Println("Connection : ")
+
+	if connection[request.Controls.Namespace] == nil {
 		fmt.Println("Nil Connection! Creating MySQL Connection!")
 		var c *sql.DB
 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
@@ -871,9 +881,9 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		c.SetMaxIdleConns(1000)
 		c.SetMaxOpenConns(0)
 		conn = c
-		connection = c
+		connection[request.Controls.Namespace] = c
 	} else {
-		if connection.Ping(); err != nil {
+		if connection[request.Controls.Namespace].Ping(); err != nil {
 			fmt.Println("Cached Connection Timed Out! Creating new Connection!")
 			var c *sql.DB
 			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
@@ -881,12 +891,19 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 			c.SetMaxIdleConns(1000)
 			c.SetMaxOpenConns(0)
 			conn = c
-			connection = c
+			connection[request.Controls.Namespace] = c
 		} else {
 			fmt.Println("Using Cached Connection!")
-			conn = connection
+			conn = connection[request.Controls.Namespace]
 		}
 	}
+	if conn == nil {
+		fmt.Println("NIL CONNECTION! SOMETHING TERRIBLY GONE WRONG!")
+	} else {
+		fmt.Println(conn)
+	}
+	fmt.Println("-------------------------------")
+	fmt.Println()
 	return conn, err
 }
 
