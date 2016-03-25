@@ -147,7 +147,13 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 
 		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "'"
 	} else {
-		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+		if request.Body.Query.Parameters == "" || request.Body.Query.Parameters == "*" {
+			//Get All Query
+			query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+		} else {
+			//Full Text Search Query
+			query = repository.getFullTextSearchQuery(request)
+		}
 	}
 
 	if isOrderByAsc {
@@ -161,9 +167,49 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 
 	query += ";"
 
-	fmt.Println(query)
 	response = repository.queryCommonMany(query, request)
 	return response
+}
+
+func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.ObjectRequest) (query string) {
+	var fieldNames []string
+
+	if tableCache[repository.getDatabaseName(request.Controls.Namespace)+"."+request.Controls.Class] != nil {
+		//Available in Table Cache
+		for name, _ := range tableCache[repository.getDatabaseName(request.Controls.Namespace)+"."+request.Controls.Class] {
+			if name != "__osHeaders" {
+				fieldNames = append(fieldNames, name)
+			}
+		}
+	} else {
+		//Get From Db
+		query := "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
+		repoResponse := repository.queryCommonMany(query, request)
+		var mapArray []map[string]interface{}
+		err := json.Unmarshal(repoResponse.Body, &mapArray)
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			for _, value := range mapArray {
+				if value["COLUMN_NAME"].(string) != "__osHeaders" {
+					fieldNames = append(fieldNames, value["COLUMN_NAME"].(string))
+				}
+			}
+		}
+	}
+
+	query = "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE Concat("
+
+	//Make Argument Array
+	fullTextArguments := ""
+	for _, field := range fieldNames {
+		fullTextArguments += "IFNULL(" + field + ",''), '',"
+	}
+
+	fullTextArguments = fullTextArguments[:(len(fullTextArguments) - 5)]
+
+	query += fullTextArguments + ") LIKE '%" + request.Body.Query.Parameters + "%' "
+	return
 }
 
 func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
