@@ -45,10 +45,10 @@ func AutherizedUser(TenantID, UserID string) (bool, TenantAutherized) {
 		if err == nil {
 			return uList.Autherized, uList
 		} else {
-			return false, TenantAutherized{}
+			//return false, TenantAutherized{}
 		}
 	} else {
-		return false, TenantAutherized{}
+		//return false, TenantAutherized{}
 	}
 
 	bytes1, err1 := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKey(TenantID).Ok()
