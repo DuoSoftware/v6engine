@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"database/sql"
-	"duov6.com/common"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
 	"duov6.com/term"
@@ -148,7 +147,13 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 
 		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "'"
 	} else {
-		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+		if request.Body.Query.Parameters == "" || request.Body.Query.Parameters == "*" {
+			//Get All Query
+			query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+		} else {
+			//Full Text Search Query
+			query = repository.getFullTextSearchQuery(request)
+		}
 	}
 
 	if isOrderByAsc {
@@ -162,9 +167,52 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 
 	query += ";"
 
-	fmt.Println(query)
 	response = repository.queryCommonMany(query, request)
 	return response
+}
+
+func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.ObjectRequest) (query string) {
+	var fieldNames []string
+
+	if tableCache[repository.getDatabaseName(request.Controls.Namespace)+"."+request.Controls.Class] != nil {
+		//Available in Table Cache
+		for name, _ := range tableCache[repository.getDatabaseName(request.Controls.Namespace)+"."+request.Controls.Class] {
+			if name != "__osHeaders" {
+				fieldNames = append(fieldNames, name)
+			}
+		}
+	} else {
+		//Get From Db
+		query := "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
+		repoResponse := repository.queryCommonMany(query, request)
+		var mapArray []map[string]interface{}
+		err := json.Unmarshal(repoResponse.Body, &mapArray)
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			for _, value := range mapArray {
+				if value["COLUMN_NAME"].(string) != "__osHeaders" {
+					fieldNames = append(fieldNames, value["COLUMN_NAME"].(string))
+				}
+			}
+		}
+	}
+
+	query = "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE Concat("
+
+	//Make Argument Array
+	fullTextArguments := ""
+	for _, field := range fieldNames {
+		fullTextArguments += "IFNULL(" + field + ",''), '',"
+	}
+
+	fullTextArguments = fullTextArguments[:(len(fullTextArguments) - 5)]
+
+	queryParam := request.Body.Query.Parameters
+	queryParam = strings.TrimPrefix(queryParam, "*")
+	queryParam = strings.TrimSuffix(queryParam, "*")
+	query += fullTextArguments + ") LIKE '%" + queryParam + "%' "
+	return
 }
 
 func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
@@ -414,10 +462,6 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 		// fmt.Println(tableCache)
 		// fmt.Println("##############################################################")
 
-		fmt.Println("--------- Object Value ----------")
-		fmt.Println(obj)
-		fmt.Println("---------------------------------")
-
 		if err == nil {
 			var bytes []byte
 			if isOne {
@@ -425,6 +469,14 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 			} else {
 				bytes, _ = json.Marshal(obj.([]map[string]interface{}))
 			}
+
+			fmt.Println("--------- Object Value ----------")
+			if len(bytes) > 1000 {
+				fmt.Println("Data Found but Too Long to STDOUT!")
+			} else {
+				fmt.Println(obj)
+			}
+			fmt.Println("---------------------------------")
 
 			//bytes, _ := json.Marshal(obj)
 			if checkEmptyByteArray(bytes) {
@@ -554,7 +606,12 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 	//query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = \"" + id + "\""
 	obj, _ = repository.executeQueryOne(conn, query, nil)
 	fmt.Println("------------  GetByKey Value ---------------")
-	fmt.Println(obj)
+	bytes, _ := json.Marshal(obj)
+	if len(bytes) > 1000 {
+		fmt.Println("Data Found but Too Long to STDOUT!")
+	} else {
+		fmt.Println(obj)
+	}
 	fmt.Println("--------------------------------------------")
 	return
 }
@@ -851,11 +908,21 @@ func (repository CloudSqlRepository) checkSchema(conn *sql.DB, namespace string,
 ///////////////////////////////////////Helper functions/////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-var connection *sql.DB
+var connection map[string]*sql.DB
 
 func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
 
 	if connection == nil {
+		connection = make(map[string]*sql.DB)
+	}
+
+	fmt.Println()
+	fmt.Println("-------------------------------")
+	connParams := request.Configuration.ServerConfiguration["MYSQL"]
+	fmt.Println("Using Server : " + connParams["Url"])
+	fmt.Println("Connection : ")
+
+	if connection[request.Controls.Namespace] == nil {
 		fmt.Println("Nil Connection! Creating MySQL Connection!")
 		var c *sql.DB
 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
@@ -863,9 +930,9 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		c.SetMaxIdleConns(1000)
 		c.SetMaxOpenConns(0)
 		conn = c
-		connection = c
+		connection[request.Controls.Namespace] = c
 	} else {
-		if connection.Ping(); err != nil {
+		if connection[request.Controls.Namespace].Ping(); err != nil {
 			fmt.Println("Cached Connection Timed Out! Creating new Connection!")
 			var c *sql.DB
 			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
@@ -873,12 +940,19 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 			c.SetMaxIdleConns(1000)
 			c.SetMaxOpenConns(0)
 			conn = c
-			connection = c
+			connection[request.Controls.Namespace] = c
 		} else {
 			fmt.Println("Using Cached Connection!")
-			conn = connection
+			conn = connection[request.Controls.Namespace]
 		}
 	}
+	if conn == nil {
+		fmt.Println("NIL CONNECTION! SOMETHING TERRIBLY GONE WRONG!")
+	} else {
+		fmt.Println(conn)
+	}
+	fmt.Println("-------------------------------")
+	fmt.Println()
 	return conn, err
 }
 
@@ -952,7 +1026,7 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 		strValue = "DOUBLE"
 		break
 	default:
-		strValue = "BLOB"
+		strValue = "LONGBLOB"
 		break
 
 	}
@@ -1231,7 +1305,12 @@ func (repository CloudSqlRepository) rowsToMap(rows *sql.Rows, tableName interfa
 func (repository CloudSqlRepository) executeQueryMany(conn *sql.DB, query string, tableName interface{}) (result []map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
 	fmt.Print("Query Many : ")
-	fmt.Println(query)
+
+	if len(query) > 1000 {
+		fmt.Println("Query Found but Too Long to STDOUT!")
+	} else {
+		fmt.Println(query)
+	}
 
 	if err == nil {
 		result, err = repository.rowsToMap(rows, tableName)
@@ -1248,7 +1327,11 @@ func (repository CloudSqlRepository) executeQueryMany(conn *sql.DB, query string
 func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string, tableName interface{}) (result map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
 	fmt.Print("Query One : ")
-	fmt.Println(query)
+	if len(query) > 1000 {
+		fmt.Println("Query Found but Too Long to STDOUT!")
+	} else {
+		fmt.Println(query)
+	}
 
 	if err == nil {
 		var resultSet []map[string]interface{}
@@ -1270,8 +1353,12 @@ func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string,
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
 	fmt.Println()
 	fmt.Print("Executing Non-Query : ")
-	fmt.Println(query)
-	common.PublishLog("requests.log", query)
+	if len(query) > 1000 {
+		fmt.Println("Query Found but Too Long to STDOUT!")
+	} else {
+		fmt.Println(query)
+	}
+
 	fmt.Println()
 	var stmt *sql.Stmt
 	stmt, err = conn.Prepare(query)

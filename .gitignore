@@ -16,3 +16,4 @@ consoleworker/consoleworker.exe
 testpj/March2016/testObjSvc.exe
 recordmanager/recordmanager.exe
 objectstore/requests.log
+duoauth/ObjectStoreLog.log
