@@ -48,7 +48,7 @@ func AutherizedUser(TenantID, UserID string) (bool, TenantAutherized) {
 			term.Write("Autherized #", term.Debug)
 			return uList.Autherized, uList
 		} else {
-			term.Write("Fail to deasseble Not Autherized #"+err.Error(), term.Error)
+			term.Write("Normal Fail to deasseble Not Autherized #"+err.Error(), term.Error)
 			//return false, TenantAutherized{}
 		}
 	} else {
@@ -64,7 +64,7 @@ func AutherizedUser(TenantID, UserID string) (bool, TenantAutherized) {
 			term.Write("Autherized #", term.Debug)
 			return uList.Autherized, uList
 		} else {
-			term.Write("Fail to deasseble Not Autherized #"+err.Error(), term.Error)
+			term.Write("Global Fail to deasseble Not Autherized #"+err.Error(), term.Error)
 			return false, TenantAutherized{}
 		}
 	} else {
@@ -90,7 +90,7 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 				} else {
 
 					if strings.ToLower(uList.Domain) != strings.ToLower(Domain) {
-						x, _ := AutherizedUser(uList.UserID, Domain)
+						x, _ := AutherizedUser(Domain, uList.UserID)
 						if x {
 							uList.Domain = strings.ToLower(Domain)
 							uList.SecurityToken = common.GetGUID()

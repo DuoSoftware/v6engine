@@ -3,7 +3,7 @@ package stat
 import (
 	"duov6.com/common"
 	"encoding/json"
-	"fmt"
+	//"fmt"
 	"time"
 )
 
@@ -93,8 +93,8 @@ func startProcess() {
 						Sucesslog += string(dataset) + "\n"
 					}
 				}
-				fmt.Println(errorlog)
-				fmt.Println(Sucesslog)
+				//fmt.Println(errorlog)
+				//fmt.Println(Sucesslog)
 				common.SaveFile(Errfilename, errorlog)
 				common.SaveFile(Succfilename, Sucesslog)
 			}
