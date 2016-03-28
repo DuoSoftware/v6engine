@@ -286,8 +286,9 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 			// inputParams["@@name@@"] = u.Name
 			// inputParams["@@token@@"] = Activ.Token
 			// inputParams["@@password@@"] = password
+			inputParams["@@CEMAIL@@"] = u.EmailAddress
 			inputParams["@@CNAME@@"] = u.Name
-			inputParams["@@LINK@@"] = "http://duoworld.com/active/?token=" + Activ.Token
+			inputParams["@@CODE@@"] = Activ.Token
 			email.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "T_Email_Verification", inputParams, nil, u.EmailAddress)
 			term.Write("E Mail Sent", term.Debug)
 			client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
