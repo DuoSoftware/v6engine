@@ -37,30 +37,38 @@ func RemoveSession(SecurityToken string) {
 	//return true
 }
 
-func AutherizedUser(TenantID, UserID string) (bool, TenantAutherized) {
+func (h *TenantHandler) AutherizedUser(TenantID, UserID string) (bool, TenantAutherized) {
+	term.Write("Start Autherized Domain #"+TenantID, term.Debug)
 	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKey(common.GetHash(UserID + "-" + TenantID)).Ok()
+	term.Write("SaveUser saving Tenant fetech Error #", term.Debug)
 	if err == "" {
 		var uList TenantAutherized
 		err := json.Unmarshal(bytes, &uList)
 		if err == nil {
+			term.Write("Autherized #", term.Debug)
 			return uList.Autherized, uList
 		} else {
+			term.Write("Fail to deasseble Not Autherized #"+err.Error(), term.Error)
 			//return false, TenantAutherized{}
 		}
 	} else {
+		term.Write("Not Autherized #", term.Debug)
 		//return false, TenantAutherized{}
 	}
-
+	term.Write("Start Global Autherized Domain #"+TenantID, term.Debug)
 	bytes1, err1 := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKey(TenantID).Ok()
 	if err1 == "" {
 		var uList TenantAutherized
 		err := json.Unmarshal(bytes1, &uList)
 		if err == nil {
+			term.Write("Autherized #", term.Debug)
 			return uList.Autherized, uList
 		} else {
+			term.Write("Fail to deasseble Not Autherized #"+err.Error(), term.Error)
 			return false, TenantAutherized{}
 		}
 	} else {
+		term.Write("Not Autherized #", term.Debug)
 		return false, TenantAutherized{}
 	}
 }
