@@ -37,7 +37,7 @@ func RemoveSession(SecurityToken string) {
 	//return true
 }
 
-func (h *TenantHandler) AutherizedUser(TenantID, UserID string) (bool, TenantAutherized) {
+func AutherizedUser(TenantID, UserID string) (bool, TenantAutherized) {
 	term.Write("Start Autherized Domain #"+TenantID, term.Debug)
 	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKey(common.GetHash(UserID + "-" + TenantID)).Ok()
 	term.Write("SaveUser saving Tenant fetech Error #", term.Debug)
