@@ -51,6 +51,25 @@ func (h *AuthHandler) AppAutherize(ApplicationID, UserID string) bool {
 	return false
 }
 
+/*
+func (h *AuthHandler) GetUserGroups(UserID, Domain string) []map[string]interface{} {
+	usergroups := []make(map[string]interface{})
+	bytes, err := client.Go("ignore", Domain, "UserGroup").GetMany().BySearching(UserID).Ok() // fetech user autherized
+	term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
+	if err == "" {
+		if bytes != nil {
+			var uList AppAutherize
+			err := json.Unmarshal(bytes, &usergroups)
+			if err == nil {
+				return usergroups
+			}
+		}
+	} else {
+		term.Write("AppAutherize Error "+err, term.Error)
+	}
+	return usergroups
+}*/
+
 // GetAuthCode helps to get the Code to authendicate and add wait for the authendications
 func (h *AuthHandler) GetAuthCode(ApplicationID, UserID, URI string) string {
 	var a AuthCode

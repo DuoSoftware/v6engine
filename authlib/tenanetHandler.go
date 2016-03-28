@@ -112,12 +112,12 @@ func (h *TenantHandler) AutherizedUser(TenantID, UserID string) (bool, TenantAut
 			term.Write("Autherized #", term.Debug)
 			return uList.Autherized, uList
 		} else {
-			term.Write("Fail to deasseble Not Autherized #", term.Debug)
-			return false, TenantAutherized{}
+			term.Write("Fail to deasseble Not Autherized #"+err.Error(), term.Error)
+			//return false, TenantAutherized{}
 		}
 	} else {
 		term.Write("Not Autherized #", term.Debug)
-		return false, TenantAutherized{}
+		//return false, TenantAutherized{}
 	}
 	term.Write("Start Global Autherized Domain #"+TenantID, term.Debug)
 	bytes1, err1 := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetOne().ByUniqueKey(TenantID).Ok()
@@ -128,7 +128,7 @@ func (h *TenantHandler) AutherizedUser(TenantID, UserID string) (bool, TenantAut
 			term.Write("Autherized #", term.Debug)
 			return uList.Autherized, uList
 		} else {
-			term.Write("Fail to deasseble Not Autherized #", term.Debug)
+			term.Write("Fail to deasseble Not Autherized #"+err.Error(), term.Error)
 			return false, TenantAutherized{}
 		}
 	} else {
