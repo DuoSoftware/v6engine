@@ -353,7 +353,7 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 	Activ = TenantAutherized{}
 	Activ.ID = id
 	Activ.TenantID = TenantID
-
+	term.Write("Remove User From Tenant"+TenantID, term.Debug)
 	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "users").GetOne().ByUniqueKey(TenantID).Ok()
 	var t TenantUsers
 	if err == "" {
@@ -367,12 +367,16 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 
 			}
 			t.Users = s
+
 			client.Go("ignore", "com.duosoftware.tenant", "users").StoreObject().WithKeyField("TenantID").AndStoreOne(t).Ok()
+			term.Write("Remove user from com.duosoftware.tenant.users is succefull#"+TenantID, term.Debug)
 			client.Go("ignore", "com.duosoftware.tenant", "authorized").DeleteObject().AndDeleteObject(Activ).ByUniqueKey("ID").Ok()
+			term.Write("Delete user from com.duosoftware.tenant.authorized is succefull#"+Activ.ID, term.Debug)
 			//client.Go(securityToken, namespace, class)
 			//return t.Users
 		}
 	} else {
+		term.Write("Error Deleting User "+err, term.Debug)
 		return false
 	}
 
@@ -392,7 +396,9 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 			}
 			ut.TenantIDs = s
 			client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").StoreObject().WithKeyField("UserID").AndStoreOne(ut).Ok()
+			term.Write("Remove user from com.duosoftware.tenant.userstenantmappings is succefull#"+TenantID, term.Debug)
 		} else {
+			term.Write("Error Deleting User "+err.Error(), term.Debug)
 			return false
 		}
 	}
