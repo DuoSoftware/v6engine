@@ -25,12 +25,12 @@ func (m *DeleteModifier) AndDeleteObject(obj interface{}) *DeleteModifier {
 	m.Request.Controls.Operation = "delete"
 	m.Request.Controls.Multiplicity = "single"
 	bodyMap := structs.Map(obj)
-	key := bodyMap[m.Request.Body.Parameters.KeyProperty].(string)
-
-	fmt.Println("#####################################")
-	fmt.Println(obj)
+	fmt.Println("##########################")
 	fmt.Println(bodyMap)
-	fmt.Println("#####################################")
+	fmt.Println(m.Request.Body.Parameters.KeyProperty)
+	fmt.Println(bodyMap[m.Request.Body.Parameters.KeyProperty].(string))
+	fmt.Println("##########################")
+	key := bodyMap[m.Request.Body.Parameters.KeyProperty].(string)
 	m.Request.Controls.Id = key
 	return m
 }
