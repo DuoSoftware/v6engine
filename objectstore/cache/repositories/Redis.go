@@ -211,7 +211,7 @@ func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{
 		fmt.Println("------------")
 
 		key := ""
-		if request.Body.Parameters.KeyProperty == "" {
+		if request.Body.Parameters.KeyProperty == "" || request.Controls.Id != "" {
 			key = getNoSqlKey(request)
 		} else {
 			key = getNoSqlKeyById(request, data)
