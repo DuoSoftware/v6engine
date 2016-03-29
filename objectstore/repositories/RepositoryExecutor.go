@@ -124,8 +124,6 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		}
 	case "delete":
 		if request.Controls.Multiplicity == "single" {
-			fmt.Println("8888888888888888888888888888888888888888")
-			fmt.Println(request)
 			response = repository.DeleteSingle(request)
 			if response.IsSuccess {
 				if errCache := cache.DeleteOne(request, request.Body.Object); errCache != nil {

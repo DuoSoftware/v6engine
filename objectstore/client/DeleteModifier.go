@@ -6,7 +6,6 @@ import (
 	//"duov6.com/objectstore/repositories"
 	"github.com/fatih/structs"
 	//"strconv"
-	"fmt"
 	"reflect"
 )
 
@@ -25,11 +24,6 @@ func (m *DeleteModifier) AndDeleteObject(obj interface{}) *DeleteModifier {
 	m.Request.Controls.Operation = "delete"
 	m.Request.Controls.Multiplicity = "single"
 	bodyMap := structs.Map(obj)
-	fmt.Println("##########################")
-	fmt.Println(bodyMap)
-	fmt.Println(m.Request.Body.Parameters.KeyProperty)
-	fmt.Println(bodyMap[m.Request.Body.Parameters.KeyProperty].(string))
-	fmt.Println("##########################")
 	key := bodyMap[m.Request.Body.Parameters.KeyProperty].(string)
 	m.Request.Controls.Id = key
 	return m
@@ -40,6 +34,7 @@ func (m *DeleteModifier) AndDeleteOne(obj interface{}) *DeleteModifier {
 	m.Request.Controls.Multiplicity = "single"
 	bodyMap := structs.Map(obj)
 	key := bodyMap[m.Request.Body.Parameters.KeyProperty].(string)
+	m.Request.Body.Object = bodyMap
 	m.Request.Controls.Id = key
 	return m
 }
