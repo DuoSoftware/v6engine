@@ -36,7 +36,7 @@ func statusHandlder(params martini.Params, w http.ResponseWriter, r *http.Reques
 }
 
 func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request) {
-
+	isSuccess := true
 	var request structs.ServiceRequest
 	err := getServiceRequest(r, &request, params)
 	if err != nil {
@@ -45,9 +45,18 @@ func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request
 		response := repositories.Execute(request)
 		if response.Err != nil {
 			fmt.Println(response.Err.Error())
+			isSuccess = false
 		} else {
 			fmt.Println("Process Completed!")
+			isSuccess = true
 		}
+	}
+
+	if isSuccess {
+		w.WriteHeader(200)
+
+	} else {
+		w.WriteHeader(500)
 	}
 
 }
@@ -62,6 +71,8 @@ func getServiceRequest(r *http.Request, request *structs.ServiceRequest, params 
 			err = json.Unmarshal(rb, &request)
 			if err != nil {
 				return err
+			} else {
+				fmt.Println(string(rb))
 			}
 		}
 	}
