@@ -370,7 +370,8 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 
 			client.Go("ignore", "com.duosoftware.tenant", "users").StoreObject().WithKeyField("TenantID").AndStoreOne(t).Ok()
 			term.Write("Remove user from com.duosoftware.tenant.users is succefull#"+TenantID, term.Debug)
-			client.Go("ignore", "com.duosoftware.tenant", "authorized").DeleteObject().AndDeleteObject(Activ).ByUniqueKey("ID").Ok()
+			//client.Go("ignore", "com.duosoftware.tenant", "authorized").DeleteObject().AndDeleteObject(Activ).ByUniqueKey("ID").Ok()
+			client.Go("ignore", "com.duosoftware.tenant", "authorized").DeleteObject().WithKeyField("ID").AndDeleteObject(Activ).Ok()
 			term.Write("Delete user from com.duosoftware.tenant.authorized is succefull#"+Activ.ID, term.Debug)
 			//client.Go(securityToken, namespace, class)
 			//return t.Users
