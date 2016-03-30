@@ -10,7 +10,7 @@ func GetSQLTableName(repo string, namespace string, class string) (table string)
 	} else if repo == "CDS" {
 		table = class
 	} else {
-		table = "_" + strings.Replace(namespace, ".", "", -1) + "." + class
+		table = "_" + strings.ToLower(strings.Replace(namespace, ".", "", -1)) + "." + class
 	}
 	return
 }
