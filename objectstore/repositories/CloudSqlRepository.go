@@ -1329,17 +1329,6 @@ func (repository CloudSqlRepository) executeQueryMany(conn *sql.DB, query string
 
 func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string, tableName interface{}) (result map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
-	fmt.Println("--------------------------------")
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	if err = conn.Ping(); err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("pinged!")
-	}
-	fmt.Println("--------------------------------")
 	fmt.Print("Query One : ")
 	if len(query) > 1000 {
 		fmt.Println("Query Found but Too Long to STDOUT!")
