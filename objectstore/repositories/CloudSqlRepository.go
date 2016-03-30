@@ -13,6 +13,7 @@ import (
 	"github.com/twinj/uuid"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type CloudSqlRepository struct {
@@ -927,8 +928,9 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		var c *sql.DB
 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-		c.SetMaxIdleConns(1000)
+		c.SetMaxIdleConns(100)
 		c.SetMaxOpenConns(0)
+		c.SetConnMaxLifetime(1 * time.Hour)
 		conn = c
 		connection[request.Controls.Namespace] = c
 	} else {
@@ -937,8 +939,9 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 			var c *sql.DB
 			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-			c.SetMaxIdleConns(1000)
+			c.SetMaxIdleConns(100)
 			c.SetMaxOpenConns(0)
+			c.SetConnMaxLifetime(1 * time.Hour)
 			conn = c
 			connection[request.Controls.Namespace] = c
 		} else {
@@ -1326,6 +1329,17 @@ func (repository CloudSqlRepository) executeQueryMany(conn *sql.DB, query string
 
 func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string, tableName interface{}) (result map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
+	fmt.Println("--------------------------------")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	if err = conn.Ping(); err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("pinged!")
+	}
+	fmt.Println("--------------------------------")
 	fmt.Print("Query One : ")
 	if len(query) > 1000 {
 		fmt.Println("Query Found but Too Long to STDOUT!")
