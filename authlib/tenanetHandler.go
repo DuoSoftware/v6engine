@@ -92,13 +92,65 @@ func (h *TenantHandler) CreateTenant(t Tenant, user session.AuthCertificate, upd
 		} else {
 			if update {
 				term.Write("SaveUser saving Tenant  "+t.TenantID+" Update user "+user.UserID, term.Debug)
-				client.Go("ignore", "com.duosoftware.tenant", "tenants").StoreObject().WithKeyField("TenantID").AndStoreOne(t).Ok()
+				//uList.OtherData=
+				//client.Go("ignore", "com.duosoftware.tenant", "tenants").StoreObject().WithKeyField("TenantID").AndStoreOne(t).Ok()
 			}
 		}
 	} else {
 		term.Write("SaveUser saving Tenant fetech Error #"+err, term.Error)
 	}
 	return t
+}
+
+func (h *TenantHandler) TransferAdmin(user session.AuthCertificate, UserID string) bool {
+	b, auth := h.Autherized(user.Domain, user)
+	t := h.GetTenant(user.Domain)
+	if t.TenantID == "" {
+		return false
+	}
+	if b {
+		if auth.SecurityLevel == "admin" {
+
+			h.RemoveUserFromTenant(user.UserID, user.Domain)
+			h.AddUsersToTenant(auth.TenantID, t.Name, UserID, "admin")
+			return true
+		}
+	}
+	return false
+}
+
+func (h *TenantHandler) UpgradPackage(user session.AuthCertificate, Otherdata map[string]string) (Tenant, string) {
+	term.Write("Upgrad Tenanant  "+user.Domain, term.Debug)
+	//client.c
+	var t Tenant
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "tenants").GetOne().ByUniqueKey(user.Domain).Ok()
+	if err == "" {
+		//var t Tenant
+		err := json.Unmarshal(bytes, &t)
+		if err == nil || t.TenantID != "" {
+
+			term.Write("Update tenanat  "+t.Name+" New Tenant "+t.Name, term.Debug)
+			var inputParams map[string]string
+			inputParams = make(map[string]string)
+			inputParams["@@email@@"] = user.Email
+			inputParams["@@name@@"] = user.Name
+			inputParams["@@tenantID@@"] = t.TenantID
+			inputParams["@@tenantName@@"] = t.Name
+			t.OtherData = Otherdata
+			//h.AddUsersToTenant(t.TenantID, t.Name, user.UserID, "admin")
+			email.Send("ignore", "Tenent Upgrade Notification!", "com.duosoftware.auth", "tenant", "tenant_upgrade", inputParams, nil, user.Email)
+			//email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, user.Email)
+			client.Go("ignore", "com.duosoftware.tenant", "tenants").StoreObject().WithKeyField("TenantID").AndStoreOne(t).Ok()
+			return t, ""
+		} else {
+			return t, err.Error()
+			term.Write("SaveUser saving Tenant fetech Error #"+err.Error(), term.Error)
+		}
+	} else {
+		return t, err
+		term.Write("SaveUser saving Tenant fetech Error #"+err, term.Error)
+	}
+	return t, "Not Updated Error Updating"
 }
 
 func (h *TenantHandler) AutherizedUser(TenantID, UserID string) (bool, TenantAutherized) {

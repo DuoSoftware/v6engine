@@ -68,7 +68,7 @@ func (A Auth) LogOut(SecurityToken string) bool {
 		h.LogOut(c)
 		return true
 	}
-	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Session or Application not exist"))
+	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Session or Application not exist."))
 
 	return false
 }
@@ -141,7 +141,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		h.AddSession(outCrt)
 		return
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Invalid user name password"))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Invalid user name password."))
 		//A.Context.Request().
 		return
 	}
@@ -153,7 +153,7 @@ func (A Auth) GetUser(Email string) (outCrt User) {
 	if err == "" {
 		return
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("User Dose not exist"))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("User Dose not exist."))
 		return
 	}
 }
@@ -233,7 +233,7 @@ func (A Auth) Authorize(SecurityToken string, ApplicationID string) (a AuthCerti
 		}
 
 	}
-	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Session or Application not exist"))
+	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Session or Application not exist."))
 
 	return
 }
@@ -273,7 +273,7 @@ func (A Auth) GetScope(SecurityToken, Key, Value string) map[string]interface{} 
 	if err == "" {
 		return data
 	}
-	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Session or Application not exist"))
+	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Session or Application not exist."))
 	return data
 }
 
@@ -298,7 +298,7 @@ func (A Auth) UpdateScope(object AuthorizeAppData, SecurityToken, UserID, Applic
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 		//insert to Objectstore ends here
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token  Incorrect"))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token  Incorrect."))
 		//return
 	}
 }
@@ -338,10 +338,13 @@ func (A Auth) GetGUID() string {
 
 func (A Auth) AddUser(u User) {
 	h := newAuthHandler()
-	u = h.SaveUser(u, false)
-	b, _ := json.Marshal(u)
-
-	A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	u, err := h.SaveUser(u, false)
+	if err == "" {
+		b, _ := json.Marshal(u)
+		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
+	}
 
 }
 
@@ -353,13 +356,17 @@ func (A Auth) RegisterTenantUser(u User) {
 		t := TenantHandler{}
 		//u.EmailAddress=strings.ToLower(u.EmailAddress
 
-		u = h.SaveUser(u, false)
-		b, _ := json.Marshal(u)
-		x := t.GetTenant(c.Domain)
-		t.AddUsersToTenant(x.TenantID, x.Name, u.UserID, "User")
-		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+		u, err := h.SaveUser(u, false)
+		if err == "" {
+			b, _ := json.Marshal(u)
+			x := t.GetTenant(c.Domain)
+			t.AddUsersToTenant(x.TenantID, x.Name, u.UserID, "User")
+			A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+		} else {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
+		}
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Incorrect"))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Incorrect."))
 		//return
 	}
 
@@ -380,7 +387,7 @@ func (A Auth) CheckPassword(password string) bool {
 			return false
 		}
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Incorrect"))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Incorrect."))
 		return false
 	}
 

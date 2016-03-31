@@ -259,7 +259,7 @@ func (h *AuthHandler) ChangePassword(a AuthCertificate, newPassword string) bool
 }
 
 // SaveUser helps to save the users
-func (h *AuthHandler) SaveUser(u User, update bool) User {
+func (h *AuthHandler) SaveUser(u User, update bool) (User, string) {
 	term.Write("SaveUser saving user  "+u.Name, term.Debug)
 	u.EmailAddress = strings.ToLower(u.EmailAddress)
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(u.EmailAddress).Ok()
@@ -294,6 +294,9 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 			client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
 			term.Write("Activation stored", term.Debug)
 			client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
+			u.Password = "*****"
+			u.ConfirmPassword = "*****"
+			return u, ""
 		} else {
 			if update {
 				u.UserID = uList.UserID
@@ -301,14 +304,21 @@ func (h *AuthHandler) SaveUser(u User, update bool) User {
 				u.ConfirmPassword = common.GetHash(u.Password)
 				term.Write("SaveUser saving user  "+u.Name+" Update User "+u.UserID, term.Debug)
 				client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
+				u.Password = "*****"
+				u.ConfirmPassword = "*****"
+				return u, ""
+			} else {
+				return u, "Already Registered."
 			}
 		}
 	} else {
+
 		term.Write("SaveUser saving user fetech Error #"+err, term.Error)
+		return u, err
 	}
 	u.Password = "*****"
 	u.ConfirmPassword = "*****"
-	return u
+	return u, "Error User Registered."
 }
 
 // UserActivation Helps to activate the users

@@ -16,11 +16,13 @@ type TenantSvc struct {
 	getSampleTenantForm gorest.EndPoint `method:"GET" path:"/tenant/GetSampleTenantForm/" output:"Tenant"`
 	inviteUser          gorest.EndPoint `method:"POST" path:"/tenant/InviteUser/" postdata:"[]InviteUsers"`
 	createTenant        gorest.EndPoint `method:"POST" path:"/tenant/CreateTenant/" postdata:"Tenant"`
+	tenantUpgrade       gorest.EndPoint `method:"POST" path:"/tenant/TenantUpgrade/" postdata:"Otherdata"`
 	searchTenants       gorest.EndPoint `method:"GET" path:"/tenant/SearchTenants/{SearchString:string}/{pagesize:int}/{startPoint:int}" output:"[]Tenant"`
 	subciribe           gorest.EndPoint `method:"GET" path:"/tenant/Subciribe/{TenantID:string}" output:"bool"`
 	getUsers            gorest.EndPoint `method:"GET" path:"/tenant/GetUsers/{TenantID:string}" output:"[]string"`
 	addUser             gorest.EndPoint `method:"GET" path:"/tenant/AddUser/{email:string}/{level:string}" output:"bool"`
 	removeUser          gorest.EndPoint `method:"GET" path:"/tenant/RemoveUser/{email:string}" output:"bool"`
+	tranferAdmin        gorest.EndPoint `method:"GET" path:"/tenant/TranferAdmin/{email:string}" output:"bool"`
 }
 
 func (T TenantSvc) CreateTenant(t Tenant) {
@@ -31,6 +33,48 @@ func (T TenantSvc) CreateTenant(t Tenant) {
 		b, _ := json.Marshal(th.CreateTenant(t, user, false))
 		T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 
+	} else {
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		return
+	}
+}
+
+func (T TenantSvc) TenantUpgrade(Otherdata map[string]string) {
+	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		th := TenantHandler{}
+		t, err := th.UpgradPackage(user, Otherdata)
+
+		if err == "" {
+			b, _ := json.Marshal(t)
+			T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+			return
+		} else {
+			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
+			return
+		}
+
+	} else {
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		return
+	}
+
+}
+
+func (T TenantSvc) TranferAdmin(email string) bool {
+	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		auth := AuthHandler{}
+		u, err := auth.GetUser(email)
+		if err == "" {
+			th := TenantHandler{}
+			return th.TransferAdmin(user, u.UserID)
+		} else {
+			return false
+		}
+	} else {
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		return false
 	}
 }
 
