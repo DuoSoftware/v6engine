@@ -204,8 +204,14 @@ func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{
 	if isError == true {
 		err = errors.New(errorMessage)
 	} else {
+
+		fmt.Println("------------")
+		fmt.Println(request.Body.Parameters.KeyProperty)
+		fmt.Println(request)
+		fmt.Println("------------")
+
 		key := ""
-		if request.Body.Parameters.KeyProperty == "" {
+		if request.Body.Parameters.KeyProperty == "" || request.Controls.Id != "" {
 			key = getNoSqlKey(request)
 		} else {
 			key = getNoSqlKeyById(request, data)

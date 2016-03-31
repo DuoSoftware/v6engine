@@ -8,7 +8,7 @@ type ServiceRequest struct {
 	ControlParameters  map[string]interface{}
 	Parameters         map[string]interface{}
 	ScheduleParameters map[string]interface{}
-	Body               []byte
+	Body               interface{} //previously []byte
 }
 
 type ServiceResponse struct {

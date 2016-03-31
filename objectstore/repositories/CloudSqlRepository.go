@@ -13,6 +13,7 @@ import (
 	"github.com/twinj/uuid"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type CloudSqlRepository struct {
@@ -674,90 +675,173 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 	return
 }
 
-func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
-	runtime := 0       //times of loop run
-	lastOperation := 1 //0=update, 1= insert
-	isFirstRow := true
-	var keyArray []string
+func (repository CloudSqlRepository) getSingleQueryNew(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
+	var updateArray []map[string]interface{}
+	var insertArray []map[string]interface{}
+
 	for _, obj := range records {
 		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj))
-
 		if currentObject == nil || len(currentObject) == 0 {
-			lastOperation = 1
-			runtime += 1
-			if isFirstRow {
-				query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
-			}
-
-			id := ""
-
-			if obj["OriginalIndex"] == nil {
-				id = getNoSqlKeyById(request, obj)
-			} else {
-				id = obj["OriginalIndex"].(string)
-			}
-
-			delete(obj, "OriginalIndex")
-
-			keyList := ""
-			valueList := ""
-
-			if isFirstRow {
-				for k, _ := range obj {
-					keyList += ("," + k)
-					keyArray = append(keyArray, k)
-				}
-			}
-			//fmt.Println(keyArray)
-			for _, k := range keyArray {
-				v := obj[k]
-				valueList += ("," + repository.getSqlFieldValue(v))
-			}
-
-			if isFirstRow {
-				query += "(__os_id" + keyList + ") VALUES "
-			} else {
-				query += ","
-			}
-
-			//query += ("(\"" + getNoSqlKeyById(request, obj) + "\"" + valueList + ")")
-			query += ("(\"" + id + "\"" + valueList + ")")
-
+			insertArray = append(insertArray, obj)
 		} else {
-			runtime += 1
-			lastOperation = 0
-			updateValues := ""
-			isFirst := true
-			for k, v := range obj {
-				if isFirst {
-					isFirst = false
-				} else {
-					updateValues += ","
-				}
-
-				updateValues += (k + "=" + repository.getSqlFieldValue(v))
-			}
-			Updatequery := ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";")
-			updateQueryCloudSql = append(updateQueryCloudSql, Updatequery)
-			//query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";###")
-			//_ = repository.executeNonQuery(conn, Updatequery)
+			updateArray = append(updateArray, obj)
 		}
+	}
+
+	//create update scripts
+	for _, obj := range updateArray {
+		updateValues := ""
+		isFirst := true
+		for k, v := range obj {
+			if isFirst {
+				isFirst = false
+			} else {
+				updateValues += ","
+			}
+
+			updateValues += (k + "=" + repository.getSqlFieldValue(v))
+		}
+		Updatequery := ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";")
+		updateQueryCloudSql = append(updateQueryCloudSql, Updatequery)
+	}
+
+	//create insert scripts
+	isFirstRow := true
+	var keyArray []string
+	for _, obj := range insertArray {
+		if isFirstRow {
+			query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
+		}
+
+		id := ""
+
+		if obj["OriginalIndex"] == nil {
+			id = getNoSqlKeyById(request, obj)
+		} else {
+			id = obj["OriginalIndex"].(string)
+		}
+
+		delete(obj, "OriginalIndex")
+
+		keyList := ""
+		valueList := ""
+
+		if isFirstRow {
+			for k, _ := range obj {
+				keyList += ("," + k)
+				keyArray = append(keyArray, k)
+			}
+		}
+		//fmt.Println(keyArray)
+		for _, k := range keyArray {
+			v := obj[k]
+			valueList += ("," + repository.getSqlFieldValue(v))
+		}
+
+		if isFirstRow {
+			query += "(__os_id" + keyList + ") VALUES "
+		} else {
+			query += ","
+		}
+
+		//query += ("(\"" + getNoSqlKeyById(request, obj) + "\"" + valueList + ")")
+		query += ("(\"" + id + "\"" + valueList + ")")
 
 		if isFirstRow {
 			isFirstRow = false
 		}
-
-		if runtime == 1 && lastOperation == 0 {
-			isFirstRow = true
-		} else {
-			isFirstRow = false
-		}
-
-		// if isFirstRow {
-		// 	isFirstRow = false
-		// }
 	}
+
 	return
+}
+
+func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
+
+	return repository.getSingleQueryNew(request, namespace, class, records, conn)
+
+	// runtime := 0       //times of loop run
+	// lastOperation := 1 //0=update, 1= insert
+	// isFirstRow := true
+	// var keyArray []string
+	// for _, obj := range records {
+	// 	currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj))
+
+	// 	if currentObject == nil || len(currentObject) == 0 {
+	// 		lastOperation = 1
+	// 		runtime += 1
+	// 		if isFirstRow {
+	// 			query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
+	// 		}
+
+	// 		id := ""
+
+	// 		if obj["OriginalIndex"] == nil {
+	// 			id = getNoSqlKeyById(request, obj)
+	// 		} else {
+	// 			id = obj["OriginalIndex"].(string)
+	// 		}
+
+	// 		delete(obj, "OriginalIndex")
+
+	// 		keyList := ""
+	// 		valueList := ""
+
+	// 		if isFirstRow {
+	// 			for k, _ := range obj {
+	// 				keyList += ("," + k)
+	// 				keyArray = append(keyArray, k)
+	// 			}
+	// 		}
+	// 		//fmt.Println(keyArray)
+	// 		for _, k := range keyArray {
+	// 			v := obj[k]
+	// 			valueList += ("," + repository.getSqlFieldValue(v))
+	// 		}
+
+	// 		if isFirstRow {
+	// 			query += "(__os_id" + keyList + ") VALUES "
+	// 		} else {
+	// 			query += ","
+	// 		}
+
+	// 		//query += ("(\"" + getNoSqlKeyById(request, obj) + "\"" + valueList + ")")
+	// 		query += ("(\"" + id + "\"" + valueList + ")")
+
+	// 	} else {
+	// 		runtime += 1
+	// 		lastOperation = 0
+	// 		updateValues := ""
+	// 		isFirst := true
+	// 		for k, v := range obj {
+	// 			if isFirst {
+	// 				isFirst = false
+	// 			} else {
+	// 				updateValues += ","
+	// 			}
+
+	// 			updateValues += (k + "=" + repository.getSqlFieldValue(v))
+	// 		}
+	// 		Updatequery := ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";")
+	// 		updateQueryCloudSql = append(updateQueryCloudSql, Updatequery)
+	// 		//query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";###")
+	// 		//_ = repository.executeNonQuery(conn, Updatequery)
+	// 	}
+
+	// 	if isFirstRow {
+	// 		isFirstRow = false
+	// 	}
+
+	// 	if runtime == 1 && lastOperation == 0 {
+	// 		isFirstRow = true
+	// 	} else {
+	// 		isFirstRow = false
+	// 	}
+
+	// 	// if isFirstRow {
+	// 	// 	isFirstRow = false
+	// 	// }
+	// }
+	// return
 }
 
 func (repository CloudSqlRepository) getDeleteScript(namespace string, class string, id string) string {
@@ -927,8 +1011,9 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		var c *sql.DB
 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-		c.SetMaxIdleConns(1000)
+		c.SetMaxIdleConns(100)
 		c.SetMaxOpenConns(0)
+		c.SetConnMaxLifetime(time.Duration(600) * time.Second)
 		conn = c
 		connection[request.Controls.Namespace] = c
 	} else {
@@ -937,8 +1022,9 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 			var c *sql.DB
 			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-			c.SetMaxIdleConns(1000)
+			c.SetMaxIdleConns(100)
 			c.SetMaxOpenConns(0)
+			c.SetConnMaxLifetime(time.Duration(600) * time.Second)
 			conn = c
 			connection[request.Controls.Namespace] = c
 		} else {

@@ -434,7 +434,8 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 	}
 
 	var ut UserTenants
-	client.Go("ignore", "com.duosoftware.tenant", "authorized").DeleteObject().AndDeleteObject(Activ).ByUniqueKey("ID").Ok()
+	client.Go("ignore", "com.duosoftware.tenant", "authorized").DeleteObject().WithKeyField("ID").AndDeleteObject(Activ).Ok()
+	//client.Go("ignore", "com.duosoftware.tenant", "authorized").DeleteObject().AndDeleteObject(Activ).ByUniqueKey("ID").Ok()
 	bytes1, err1 := client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").GetOne().ByUniqueKey(UserID).Ok()
 	//var t TenantUsers
 	if err1 == "" {

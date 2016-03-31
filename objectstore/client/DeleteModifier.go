@@ -34,6 +34,7 @@ func (m *DeleteModifier) AndDeleteOne(obj interface{}) *DeleteModifier {
 	m.Request.Controls.Multiplicity = "single"
 	bodyMap := structs.Map(obj)
 	key := bodyMap[m.Request.Body.Parameters.KeyProperty].(string)
+	m.Request.Body.Object = bodyMap
 	m.Request.Controls.Id = key
 	return m
 }
