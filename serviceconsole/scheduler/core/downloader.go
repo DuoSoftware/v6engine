@@ -2,7 +2,6 @@ package core
 
 import (
 	"duov6.com/objectstore/client"
-
 	"encoding/json"
 	"fmt"
 	"time"
@@ -23,8 +22,9 @@ func (d *Downloader) DownloadObjects() {
 
 	nowTime := time.Now().Local()                             //current time
 	addedtime := nowTime.Add(time.Duration(15 * time.Minute)) //add 15 minutes to current time
-	formattedTime := addedtime.Format("20060102150405")       //formatted new time
-	rawBytes, err := client.Go("efba1d6c3566e9bcfdf61a9a8d238dd8", "com.duosoftware.com", "schedule").GetMany().ByQuerying("Timestamp:[* " + formattedTime + "]").Ok()
+	formattedTime := addedtime.Format("20060102150405")
+	fmt.Println(formattedTime) //formatted new time
+	rawBytes, err := client.Go("efba1d6c3566e9bcfdf61a9a8d238dd8", "com.duosoftware.com", "schedule").GetMany().BySearching("Timestamp:%" + formattedTime).Ok()
 	if len(err) != 0 {
 		fmt.Println("ERROR : " + err)
 	}
@@ -33,7 +33,7 @@ func (d *Downloader) DownloadObjects() {
 
 func (d *Downloader) StartDownloadTimer() { //call downloadObjects every 15 minutes
 
-	c := time.Tick(1 * time.Second /*Minute*/)
+	c := time.Tick(1 * time.Minute /*Minute*/)
 	for now := range c {
 		_ = now
 		d.DownloadTicks++

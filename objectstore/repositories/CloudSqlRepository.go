@@ -920,6 +920,15 @@ func (repository CloudSqlRepository) checkAvailabilityTable(conn *sql.DB, dbName
 
 	alterColumns := ""
 	cacheItem := tableCache[dbName+"."+class]
+
+	fmt.Println()
+	fmt.Println("------------ CURRENT TABLE FIELDS AND TYPES -----------------")
+	for singleFieldName, singleFieldType := range cacheItem {
+		fmt.Println(singleFieldName + " : " + singleFieldType)
+	}
+	fmt.Println("-------------------------------------------------------------")
+	fmt.Println()
+
 	isFirst := true
 	for k, v := range obj {
 		if k != "OriginalIndex" {

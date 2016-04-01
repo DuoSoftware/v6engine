@@ -1,9 +1,11 @@
 package core
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/streadway/amqp"
+	"net/http"
 	"time"
 )
 
@@ -62,7 +64,7 @@ func (t *ScheduleTable) InsertObject(obj map[string]interface{}) {
 		currentTableRow := TableRow{Timestamp: timestamp, Objects: make([]map[string]interface{}, 1)}
 		currentTableRow.Objects[0] = obj
 		//t.Rows = append(t.Rows, currentTableRow)
-		t.AddRow(currentTableRow)
+		t.AddRow(&currentTableRow)
 	}
 }
 
@@ -70,7 +72,7 @@ func (t *ScheduleTable) AddRow(row *TableRow) {
 	//tablesize := len(t.Rows)
 	//t.Rows[tablesize].Timestamp = row.Timestamp
 	//t.Rows[tablesize].Objects = row.Objects
-	t.Rows = append(t.Rows, row)
+	t.Rows = append(t.Rows, *row)
 }
 
 func (t *ScheduleTable) Contains(timestamp string) bool {
@@ -121,12 +123,28 @@ func (d *Dispatcher) TriggerTimer() {
 	x := currenttime.Format("20141212101112")
 	tableRow := d.ScheduleTable.GetForExecution(x)
 	if tableRow != nil {
-		dispatchObjectToRabbitMQ(tableRow.Objects)
+		//dispatchObjectToRabbitMQ(tableRow.Objects)
+		dispatchToTaskQueue(tableRow.Objects)
 		d.ScheduleTable.Delete(tableRow.Timestamp)
 	}
 }
 
-func dispatchObjectToRabbitMQ(objects []map[string]interface{}) {
+func dispatchToTaskQueue(objects []map[string]interface{}) {
+	asdf, _ := json.Marshal(objects)
+
+	url := "http://localhost:6000/aa/bb"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(asdf))
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Data sending error : " + err.Error())
+	} else {
+		fmt.Println("Data Sent Successfully!")
+	}
+	defer resp.Body.Close()
+}
+
+func dispatchObjectToRabbitMQ1(objects []map[string]interface{}) {
 	fmt.Println("dispatchtorabbitmq method")
 	conn, err := amqp.Dial("amqp://admin:admin@192.168.1.194:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
