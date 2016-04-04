@@ -1,10 +1,11 @@
 package structs
 
 type ServiceRequest struct {
-	RefID              string
+	RefId              string
 	RefType            string
 	OperationCode      string
 	TimeStamp          string
+	TimeStampReadable  string
 	ControlParameters  map[string]interface{}
 	Parameters         map[string]interface{}
 	ScheduleParameters map[string]interface{}

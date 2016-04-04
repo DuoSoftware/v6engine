@@ -132,7 +132,7 @@ func (d *Dispatcher) TriggerTimer() {
 func dispatchToTaskQueue(objects []map[string]interface{}) {
 	asdf, _ := json.Marshal(objects)
 
-	url := "http://localhost:6000/aa/bb"
+	url := "http://localhost:8080/scheduler/schedule"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(asdf))
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -144,7 +144,7 @@ func dispatchToTaskQueue(objects []map[string]interface{}) {
 	defer resp.Body.Close()
 }
 
-func dispatchObjectToRabbitMQ1(objects []map[string]interface{}) {
+func dispatchObjectToRabbitMQ(objects []map[string]interface{}) {
 	fmt.Println("dispatchtorabbitmq method")
 	conn, err := amqp.Dial("amqp://admin:admin@192.168.1.194:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")

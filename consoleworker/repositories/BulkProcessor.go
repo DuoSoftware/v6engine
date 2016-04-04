@@ -54,10 +54,11 @@ func createServiceRequests(data []map[string]interface{}, request structs.Servic
 
 	for x := 0; x < len(data); x++ {
 		serviceRequest := structs.ServiceRequest{}
-		serviceRequest.RefID = duocommon.GetGUID()
+		serviceRequest.RefId = duocommon.GetGUID()
 		serviceRequest.RefType = request.RefType
 		serviceRequest.OperationCode = "SmoothFlow"
 		serviceRequest.TimeStamp = common.GetTime()
+		serviceRequest.TimeStampReadable = common.GetTimeReadable()
 		serviceRequest.Parameters = data[x]
 		serviceRequest.Body = []byte("Request Originated from Bulk Processor in DuoWorker @ " + serviceRequest.TimeStamp)
 		serviceRequests[x] = serviceRequest

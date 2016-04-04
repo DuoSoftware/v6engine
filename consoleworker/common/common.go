@@ -47,7 +47,21 @@ func GetTime() (retTime string) {
 	minute := strconv.Itoa(currentTime.Minute())
 	second := strconv.Itoa(currentTime.Second())
 
-	retTime = (year + "-" + month + "-" + day + "T" + hour + ":" + minute + ":" + second)
+	retTime = (year + month + day + hour + minute + second)
+
+	return
+}
+
+func GetTimeReadable() (retTime string) {
+	currentTime := time.Now().Local()
+	year := strconv.Itoa(currentTime.Year())
+	month := strconv.Itoa(int(currentTime.Month()))
+	day := strconv.Itoa(currentTime.Day())
+	hour := strconv.Itoa(currentTime.Hour())
+	minute := strconv.Itoa(currentTime.Minute())
+	second := strconv.Itoa(currentTime.Second())
+
+	retTime = (year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second)
 
 	return
 }
