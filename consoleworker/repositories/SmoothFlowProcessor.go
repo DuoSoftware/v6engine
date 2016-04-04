@@ -3,6 +3,7 @@ package repositories
 import (
 	"duov6.com/consoleworker/common"
 	"duov6.com/consoleworker/structs"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -43,14 +44,15 @@ func (repository SmoothFlowProcessor) ProcessWorker(request structs.ServiceReque
 	return response
 }
 
-func JsonBuilder(data map[string]interface{}) (json string) {
-	json = ""
+func JsonBuilder(data map[string]interface{}) (jsonString string) {
+	jsonString = ""
 
 	for key, value := range data {
-		json += "\"" + key + "\":\"" + value.(string) + "\","
+		byteValue, _ := json.Marshal(value)
+		jsonString += "\"" + key + "\":\"" + string(byteValue) + "\","
 	}
 
-	json = strings.TrimSuffix(json, ",")
+	jsonString = strings.TrimSuffix(jsonString, ",")
 
 	return
 }
