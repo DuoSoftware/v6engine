@@ -63,7 +63,7 @@ func (A Auth) UserActivation(token string) bool {
 func (A Auth) LogOut(SecurityToken string) bool {
 	h := newAuthHandler()
 
-	c, err := h.GetSession(SecurityToken, "")
+	c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
 		h.LogOut(c)
 		return true
