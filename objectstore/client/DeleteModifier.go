@@ -6,7 +6,9 @@ import (
 	//"duov6.com/objectstore/repositories"
 	"github.com/fatih/structs"
 	//"strconv"
+	//"fmt"
 	"reflect"
+	"strings"
 )
 
 type DeleteModifier struct {
@@ -32,7 +34,15 @@ func (m *DeleteModifier) AndDeleteObject(obj interface{}) *DeleteModifier {
 func (m *DeleteModifier) AndDeleteOne(obj interface{}) *DeleteModifier {
 	m.Request.Controls.Operation = "delete"
 	m.Request.Controls.Multiplicity = "single"
-	bodyMap := structs.Map(obj)
+
+	bodyMap := make(map[string]interface{})
+
+	if strings.Contains(reflect.TypeOf(obj).String(), "map") {
+		bodyMap = obj.(map[string]interface{})
+	} else {
+		bodyMap = structs.Map(obj)
+	}
+
 	key := bodyMap[m.Request.Body.Parameters.KeyProperty].(string)
 	m.Request.Body.Object = bodyMap
 	m.Request.Controls.Id = key

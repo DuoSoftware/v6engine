@@ -2,10 +2,12 @@ package core
 
 import (
 	"bytes"
+	"duov6.com/serviceconsole/scheduler/common"
 	"encoding/json"
 	"fmt"
 	"github.com/streadway/amqp"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -21,12 +23,14 @@ type TableRow struct {
 }
 
 func (d *Dispatcher) addObjects(objects []map[string]interface{}) {
+	fmt.Println("Executing Dispatcher::AddObjects Method!")
 	for _, ob := range objects {
 		d.ScheduleTable.InsertObject(ob)
 	}
 }
 
 func (t *ScheduleTable) Get(timestamp string) (obj []map[string]interface{}) {
+	fmt.Println("Executing Dispatcher::Get Object By TimeStamp Method!")
 	if t.Contains(timestamp) == true {
 
 		for _, element := range t.Rows {
@@ -39,6 +43,7 @@ func (t *ScheduleTable) Get(timestamp string) (obj []map[string]interface{}) {
 }
 
 func (t *ScheduleTable) GetRow(timestamp string) *TableRow {
+	fmt.Println("Executing Dispatcher::Get Row by TimeStamp Method!")
 	if t.Contains(timestamp) == true {
 
 		for _, element := range t.Rows {
@@ -52,8 +57,8 @@ func (t *ScheduleTable) GetRow(timestamp string) *TableRow {
 }
 
 func (t *ScheduleTable) InsertObject(obj map[string]interface{}) {
-
-	timestamp := obj["Timestamp"].(string)
+	fmt.Println("Executing Dispatcher::InsertObject Method!")
+	timestamp := obj["TimeStamp"].(string)
 
 	if t.Contains(timestamp) {
 		currentTableRow := t.GetRow(timestamp)
@@ -69,6 +74,7 @@ func (t *ScheduleTable) InsertObject(obj map[string]interface{}) {
 }
 
 func (t *ScheduleTable) AddRow(row *TableRow) {
+	fmt.Println("Executing Dispatcher::AddRow Method!")
 	//tablesize := len(t.Rows)
 	//t.Rows[tablesize].Timestamp = row.Timestamp
 	//t.Rows[tablesize].Objects = row.Objects
@@ -76,6 +82,7 @@ func (t *ScheduleTable) AddRow(row *TableRow) {
 }
 
 func (t *ScheduleTable) Contains(timestamp string) bool {
+	fmt.Println("Executing Dispatcher::Contain Method!")
 	for _, rows := range t.Rows {
 		if rows.Timestamp == timestamp {
 			return true
@@ -86,6 +93,7 @@ func (t *ScheduleTable) Contains(timestamp string) bool {
 }
 
 func (t *ScheduleTable) Delete(timestamp string) {
+	fmt.Println("Executing Dispatcher::Delete Method!")
 	var removeIndex = -1
 
 	for index, e := range t.Rows {
@@ -100,9 +108,22 @@ func (t *ScheduleTable) Delete(timestamp string) {
 
 }
 
+//Original Method... Don't Delete
+// func (t *ScheduleTable) GetForExecution(timestamp string) *TableRow {
+// 	fmt.Println("Executing Dispatcher::GetForExecution Method!")
+// 	for _, row := range t.Rows {
+// 		if row.Timestamp == timestamp {
+// 			return &row
+// 		}
+// 	}
+
+// 	return nil
+// }
+
 func (t *ScheduleTable) GetForExecution(timestamp string) *TableRow {
+	fmt.Println("Executing Dispatcher::GetForExecution Method!")
 	for _, row := range t.Rows {
-		if row.Timestamp == timestamp {
+		if strings.Contains(row.Timestamp, timestamp) {
 			return &row
 		}
 	}
@@ -111,29 +132,41 @@ func (t *ScheduleTable) GetForExecution(timestamp string) *TableRow {
 }
 
 func newDispatcher() (d *Dispatcher) {
+	fmt.Println("Executing Dispatcher::NewDispatcher Method!")
 	newObj := Dispatcher{}
 	newObj.ScheduleTable = ScheduleTable{}
 	newObj.ScheduleTable.Rows = make([]TableRow, 0)
 	return &newObj
-
 }
 
 func (d *Dispatcher) TriggerTimer() {
+	fmt.Println("Executing Dispatcher::TriggerTimer Method!")
 	currenttime := time.Now().Local()
-	x := currenttime.Format("20141212101112")
+	x := currenttime.Format("200601021504")
 	tableRow := d.ScheduleTable.GetForExecution(x)
 	if tableRow != nil {
 		//dispatchObjectToRabbitMQ(tableRow.Objects)
-		dispatchToTaskQueue(tableRow.Objects)
+		for _, obj := range tableRow.Objects {
+			dispatchToTaskQueue(obj)
+		}
 		d.ScheduleTable.Delete(tableRow.Timestamp)
+	} else {
+		fmt.Println("No Objects To Execute at : " + x)
+		if len(d.ScheduleTable.Rows) > 0 {
+			fmt.Println("But Queued these Tasks : ")
+			fmt.Println(d.ScheduleTable.Rows)
+		}
 	}
 }
 
-func dispatchToTaskQueue(objects []map[string]interface{}) {
-	asdf, _ := json.Marshal(objects)
-
-	url := "http://localhost:8080/scheduler/schedule"
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(asdf))
+func dispatchToTaskQueue(object map[string]interface{}) {
+	fmt.Println("Executing Dispatcher::Dispatch to Task Queue Method!")
+	byteArray, _ := json.Marshal(object)
+	settings := common.GetSettings()
+	url := settings["SVC_TQ_URL"]
+	fmt.Println(url)
+	//url = "http://localhost:6000/aa/bb"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(byteArray))
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {

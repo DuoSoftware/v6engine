@@ -17,3 +17,5 @@ testpj/March2016/testObjSvc.exe
 recordmanager/recordmanager.exe
 objectstore/requests.log
 duoauth/ObjectStoreLog.log
+serviceconsole/scheduler/scheduler.exe
+serviceconsole/scheduler/scheduler.exe
