@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/streadway/amqp"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -126,10 +127,69 @@ func (t *ScheduleTable) GetForExecution(timestamp string) *TableRow {
 		if strings.Contains(row.Timestamp, timestamp) {
 			return &row
 		}
+
+		rowTime := t.GetTimeFromString(row.Timestamp)
+		nowTime := t.GetTimeFromString(timestamp)
+
+		if rowTime.Before(nowTime) {
+			return &row
+		}
 	}
 
 	return nil
 }
+
+func (t *ScheduleTable) GetTimeFromString(timestamp string) time.Time {
+
+	year, _ := strconv.Atoi(timestamp[0:4])
+	month := timestamp[4:6]
+	date, _ := strconv.Atoi(timestamp[6:8])
+	hour, _ := strconv.Atoi(timestamp[8:10])
+	min, _ := strconv.Atoi(timestamp[10:12])
+
+	var monthTime time.Month
+
+	switch month {
+	case "01":
+		monthTime = time.January
+	case "02":
+		monthTime = time.February
+	case "03":
+		monthTime = time.March
+	case "04":
+		monthTime = time.April
+	case "05":
+		monthTime = time.May
+	case "06":
+		monthTime = time.June
+	case "07":
+		monthTime = time.July
+	case "08":
+		monthTime = time.August
+	case "09":
+		monthTime = time.September
+	case "10":
+		monthTime = time.October
+	case "11":
+		monthTime = time.November
+	case "12":
+		monthTime = time.December
+	}
+
+	newTime := time.Date(year, monthTime, date, hour, min, 0, 0, time.UTC)
+	return newTime
+}
+
+// func (t *ScheduleTable) GetTimeFromString(timestamp string) *TableRow {
+
+// 	year, _ := strconv.Atoi(timestamp[0:4])
+// 	month, _ := strconv.Atoi(timestamp[4:6])
+// 	date, _ := strconv.Atoi(timestamp[6:8])
+// 	hour, _ := strconv.Atoi(timestamp[8:10])
+// 	min, _ := strconv.Atoi(timestamp[10:12])
+
+// 	return
+// }
 
 func newDispatcher() (d *Dispatcher) {
 	fmt.Println("Executing Dispatcher::NewDispatcher Method!")
