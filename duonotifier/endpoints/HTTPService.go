@@ -25,8 +25,14 @@ func (h *HTTPService) Start() {
 		AllowCredentials: true,
 	}))
 
+	m.Get("/", versionHandler)
 	m.Post("/:namespace", handleRequest)
 	m.RunOnAddr(":7000")
+}
+
+func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	versionData := "{\"name\": \"DuoNotifier\",\"version\": \"1.0.0-a\",\"Change Log\":\"Added Logs!\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	fmt.Fprintf(w, versionData)
 }
 
 func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request) {
@@ -50,9 +56,16 @@ func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request
 func getTemplateRequest(body []byte) messaging.TemplateRequest {
 	var templateRequest messaging.TemplateRequest
 
+	fmt.Println("--------------------------------------------")
+	fmt.Println("Request in String : ")
+	fmt.Println(string(body))
+	fmt.Println("Request in Map : ")
 	err := json.Unmarshal(body, &templateRequest)
 	if err != nil {
 		fmt.Println(err.Error())
+	} else {
+		fmt.Println(templateRequest)
 	}
+	fmt.Println("--------------------------------------------")
 	return templateRequest
 }

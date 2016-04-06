@@ -19,3 +19,4 @@ objectstore/requests.log
 duoauth/ObjectStoreLog.log
 serviceconsole/scheduler/scheduler.exe
 serviceconsole/scheduler/scheduler.exe
+duonotifier/DuoNotifier.exe
