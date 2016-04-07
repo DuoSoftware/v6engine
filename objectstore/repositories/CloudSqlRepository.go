@@ -1001,6 +1001,7 @@ func (repository CloudSqlRepository) checkSchema(conn *sql.DB, namespace string,
 ///////////////////////////////////////Helper functions/////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+/*
 var connection map[string]*sql.DB
 
 func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
@@ -1048,6 +1049,58 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 	}
 	fmt.Println("-------------------------------")
 	fmt.Println()
+	return conn, err
+}
+*/
+
+func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
+
+	// if connection == nil {
+	// 	connection = make(map[string]*sql.DB)
+	// }
+
+	// fmt.Println()
+	// fmt.Println("-------------------------------")
+	// connParams := request.Configuration.ServerConfiguration["MYSQL"]
+	// fmt.Println("Using Server : " + connParams["Url"])
+	// fmt.Println("Connection : ")
+
+	// if connection[request.Controls.Namespace] == nil {
+	fmt.Println("Nil Connection! Creating MySQL Connection!")
+	var c *sql.DB
+	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+	c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
+	//c.SetMaxIdleConns(100)
+	//c.SetMaxOpenConns(0)
+	//c.SetConnMaxLifetime(time.Duration(600) * time.Second)
+	_ = time.Now()
+	conn = c
+	//connection[request.Controls.Namespace] = c
+	// } else {
+	// 	if connection[request.Controls.Namespace].Ping(); err != nil {
+	// 		fmt.Println("Cached Connection Timed Out! Creating new Connection!")
+	// 		var c *sql.DB
+	// 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+	// 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
+	// 		//c.SetMaxIdleConns(100)
+	// 		//c.SetMaxOpenConns(0)
+	// 		//c.SetConnMaxLifetime(time.Duration(600) * time.Second)
+	// 		conn = c
+	// 		connection[request.Controls.Namespace] = c
+	// 	} else {
+	// 		fmt.Println("Using Cached Connection!")
+	// 		conn = connection[request.Controls.Namespace]
+	// 	}
+	// }
+
+	// if conn == nil {
+	// 	fmt.Println("NIL CONNECTION! SOMETHING TERRIBLY GONE WRONG!")
+	// } else {
+	// 	fmt.Println(conn)
+	// }
+
+	// fmt.Println("-------------------------------")
+	// fmt.Println()
 	return conn, err
 }
 
@@ -1565,10 +1618,10 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 }
 
 func (repository CloudSqlRepository) closeConnection(conn *sql.DB) {
-	// err := conn.Close()
-	// if err != nil {
-	// 	term.Write(err.Error(), 1)
-	// } else {
-	// 	term.Write("Connection Closed!", 2)
-	// }
+	err := conn.Close()
+	if err != nil {
+		term.Write(err.Error(), 1)
+	} else {
+		term.Write("Connection Closed!", 2)
+	}
 }
