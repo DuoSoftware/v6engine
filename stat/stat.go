@@ -38,6 +38,7 @@ var SucessFullCall StatusAll
 var FailedCall StatusAll
 
 func Add(stats States) string {
+
 	if isRuning {
 		if stats.ID == "" {
 			stats.ID = common.GetGUID()
@@ -45,6 +46,7 @@ func Add(stats States) string {
 		}
 		Data = append(Data, stats)
 	}
+
 	return stats.ID
 }
 

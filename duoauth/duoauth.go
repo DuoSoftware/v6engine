@@ -62,7 +62,7 @@ func main() {
 	term.GetConfig()
 
 	//go Bingo()
-	stat.Start()
+	//stat.Start()
 	go webServer()
 	go runRestFul()
 
