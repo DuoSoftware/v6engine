@@ -132,9 +132,9 @@ func Write(data interface{}, mType int) {
 			fmt.Println(FgGreen + time.Now().String() + " Information! " + Lable + Reset)
 		}
 	case Debug:
-		//if Config.DebugLine {
-		fmt.Println(FgBlue + time.Now().String() + " Debug! " + Lable + Reset)
-		//}
+		if Config.DebugLine {
+			fmt.Println(FgBlue + time.Now().String() + " Debug! " + Lable + Reset)
+		}
 	case Splash:
 		fmt.Println(FgBlack + BgWhite + Lable + Reset)
 	case Blank:
