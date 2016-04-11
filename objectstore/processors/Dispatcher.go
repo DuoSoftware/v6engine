@@ -5,7 +5,7 @@ import (
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
 	"duov6.com/term"
-	//"fmt"
+	"fmt"
 	"strconv"
 )
 
@@ -13,6 +13,24 @@ type Dispatcher struct {
 }
 
 func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.RepositoryResponse {
+
+	transactionID := request.Body.Parameters.TransactionID
+	transactionStruct := request.Body.Transaction
+
+	var outResponse repositories.RepositoryResponse
+
+	if transactionID != "" || transactionStruct.Type != "" {
+		fmt.Println("Transaction Request.")
+		var t Transaction
+		outResponse = t.ProcessTransaction(request)
+	} else {
+		fmt.Println("Default Request.")
+		outResponse = d.ProcessDefaultDispatcher(request)
+	}
+	return outResponse
+}
+
+func (d *Dispatcher) ProcessDefaultDispatcher(request *messaging.ObjectRequest) repositories.RepositoryResponse {
 
 	var storageEngine storageengines.AbstractStorageEngine // request.StoreConfiguration.StorageEngine
 

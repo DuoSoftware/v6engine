@@ -5,4 +5,5 @@ type ObjectParameters struct {
 	KeyValue      string
 	AutoIncrement bool
 	GUIDKey       bool
+	TransactionID string
 }
