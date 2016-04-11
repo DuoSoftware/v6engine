@@ -22,8 +22,6 @@ func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.Rep
 		storageEngine = storageengines.ReplicatedStorageEngine{}
 	case "SINGLE":
 		storageEngine = storageengines.SingleStorageEngine{}
-	case "QUEUED":
-		storageEngine = storageengines.QueuedStorageEngine{}
 	}
 
 	var outResponse repositories.RepositoryResponse = storageEngine.Store(request)
