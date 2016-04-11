@@ -4,7 +4,8 @@ import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
-	"fmt"
+	"duov6.com/term"
+	//"fmt"
 	"strconv"
 )
 
@@ -29,7 +30,7 @@ func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.Rep
 
 	if request.IsLogEnabled {
 		for index, element := range request.MessageStack {
-			fmt.Println("S-" + strconv.Itoa(index) + " : " + element)
+			term.Write("S-"+strconv.Itoa(index)+" : "+element, term.Debug)
 		}
 	}
 
