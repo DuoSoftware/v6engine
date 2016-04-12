@@ -454,15 +454,6 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 			obj, err = repository.executeQueryMany(conn, query, tableName)
 		}
 
-		// fmt.Println("##############################################################")
-		// fmt.Println("availableDbs : ")
-		// fmt.Println(availableDbs)
-		// fmt.Println("availableTables : ")
-		// fmt.Println(availableTables)
-		// fmt.Println("tableCache : ")
-		// fmt.Println(tableCache)
-		// fmt.Println("##############################################################")
-
 		if err == nil {
 			var bytes []byte
 			if isOne {
@@ -1455,7 +1446,7 @@ func (repository CloudSqlRepository) rowsToMap(rows *sql.Rows, tableName interfa
 
 func (repository CloudSqlRepository) executeQueryMany(conn *sql.DB, query string, tableName interface{}) (result []map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
-	fmt.Print("Query Many : ")
+	term.Write("Query Many : ", term.Debug)
 
 	if len(query) > 1000 {
 		term.Write("Query Found but Too Long to STDOUT!", term.Debug)
@@ -1477,7 +1468,7 @@ func (repository CloudSqlRepository) executeQueryMany(conn *sql.DB, query string
 
 func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string, tableName interface{}) (result map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
-	fmt.Print("Query One : ")
+	term.Write("Query One : ", term.Debug)
 	if len(query) > 1000 {
 		term.Write("Query Found but Too Long to STDOUT!", term.Debug)
 	} else {
@@ -1503,7 +1494,7 @@ func (repository CloudSqlRepository) executeQueryOne(conn *sql.DB, query string,
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
 
-	fmt.Print("Executing Non-Query : ")
+	term.Write("Executing Non-Query : ", term.Debug)
 	if len(query) > 1000 {
 		term.Write("Query Found but Too Long to STDOUT!", term.Debug)
 	} else {
