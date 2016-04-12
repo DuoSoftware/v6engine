@@ -2,8 +2,8 @@ package repositories
 
 import (
 	"duov6.com/objectstore/messaging"
+	"duov6.com/term"
 	"errors"
-	"fmt"
 	"github.com/xuyu/goredis"
 	"strconv"
 )
@@ -29,19 +29,19 @@ func GetByKey(request *messaging.ObjectRequest) (output []byte) {
 	client, isError, errorMessage := getRedisConnection(request)
 
 	if isError == true {
-		fmt.Println(errorMessage)
+		term.Write(errorMessage, term.Debug)
 	} else {
 		key := getNoSqlKey(request)
 		result, err := client.Get(key)
 		if err != nil {
-			fmt.Println("ERROR : " + err.Error())
+			term.Write("ERROR : "+err.Error(), term.Debug)
 		} else {
 			if checkEmptyByteArray(result) {
 				result = nil
 			}
 			output = result
 			if !checkEmptyByteArray(result) {
-				fmt.Println("Retrieved from Cache!")
+				term.Write("Retrieved from Cache!", term.Debug)
 			}
 		}
 		client.ClosePool()
@@ -54,19 +54,19 @@ func GetSearch(request *messaging.ObjectRequest) (output []byte) {
 	client, isError, errorMessage := getRedisConnection(request)
 
 	if isError == true {
-		fmt.Println(errorMessage)
+		term.Write(errorMessage, term.Debug)
 	} else {
 		key := getSearchResultKey(request)
 		result, err := client.Get(key)
 		if err != nil {
-			fmt.Println("ERROR : " + err.Error())
+			term.Write("ERROR : "+err.Error(), term.Debug)
 		} else {
 			if checkEmptyByteArray(result) {
 				result = nil
 			}
 			output = result
 			if !checkEmptyByteArray(result) {
-				fmt.Println("Retrieved from Cache!")
+				term.Write("Retrieved from Cache!", term.Debug)
 			}
 		}
 		client.ClosePool()
@@ -79,19 +79,19 @@ func GetQuery(request *messaging.ObjectRequest) (output []byte) {
 	client, isError, errorMessage := getRedisConnection(request)
 
 	if isError == true {
-		fmt.Println(errorMessage)
+		term.Write(errorMessage, term.Debug)
 	} else {
 		key := getQueryResultKey(request)
 		result, err := client.Get(key)
 		if err != nil {
-			fmt.Println("ERROR : " + err.Error())
+			term.Write("ERROR : "+err.Error(), term.Debug)
 		} else {
 			if checkEmptyByteArray(result) {
 				result = nil
 			}
 			output = result
 			if !checkEmptyByteArray(result) {
-				fmt.Println("Retrieved from Cache!")
+				term.Write("Retrieved from Cache!", term.Debug)
 			}
 		}
 		client.ClosePool()
@@ -119,7 +119,7 @@ func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) 
 		err = client.Set(key, value, ttl, 0, false, false)
 
 		if err != nil {
-			fmt.Println("Inserted One Record to Cache!")
+			term.Write("Inserted One Record to Cache!", term.Debug)
 		}
 
 		client.ClosePool()
@@ -142,7 +142,7 @@ func SetResultRedis(request *messaging.ObjectRequest, data interface{}) (err err
 		err = client.Set(key, value, ttl, 0, false, false)
 
 		if err != nil {
-			fmt.Println("Inserted Search Result Set to Cache!")
+			term.Write("Inserted Search Result Set to Cache!", term.Debug)
 		}
 		client.ClosePool()
 	}
@@ -162,7 +162,7 @@ func SetQueryRedis(request *messaging.ObjectRequest, data interface{}) (err erro
 		err = client.Set(key, value, ttl, 0, false, false)
 
 		if err != nil {
-			fmt.Println("Inserted Query Result Set to Cache!")
+			term.Write("Inserted Query Result Set to Cache!", term.Debug)
 		}
 		client.ClosePool()
 	}
@@ -187,7 +187,7 @@ func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{
 			}
 		}
 		if err != nil {
-			fmt.Println("Inserted Many Records to Cache!")
+			term.Write("Inserted Many Records to Cache!", term.Debug)
 		}
 
 		client.ClosePool()
@@ -205,10 +205,10 @@ func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{
 		err = errors.New(errorMessage)
 	} else {
 
-		fmt.Println("------------")
-		fmt.Println(request.Body.Parameters.KeyProperty)
-		fmt.Println(request)
-		fmt.Println("------------")
+		term.Write("------------", term.Debug)
+		term.Write(request.Body.Parameters.KeyProperty, term.Debug)
+		term.Write(request, term.Debug)
+		term.Write("------------", term.Debug)
 
 		key := ""
 		if request.Body.Parameters.KeyProperty == "" || request.Controls.Id != "" {
@@ -282,7 +282,7 @@ func ResetSearchResultCache(request *messaging.ObjectRequest) (err error) {
 		}
 
 		if err != nil {
-			fmt.Println("Resetted the pattern Key Set in Cache!")
+			term.Write("Resetted the pattern Key Set in Cache!", term.Debug)
 		}
 
 		client.ClosePool()
