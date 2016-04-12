@@ -5,7 +5,7 @@ import (
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
 	"duov6.com/term"
-	"fmt"
+	//"fmt"
 	"strconv"
 )
 
@@ -20,11 +20,11 @@ func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.Rep
 	var outResponse repositories.RepositoryResponse
 
 	if transactionID != "" || transactionStruct.Type != "" {
-		fmt.Println("Transaction Request.")
+		//fmt.Println("Transaction Request.")
 		var t Transaction
 		outResponse = t.ProcessTransaction(request)
 	} else {
-		fmt.Println("Default Request.")
+		//fmt.Println("Default Request.")
 		outResponse = d.ProcessDefaultDispatcher(request)
 	}
 	return outResponse

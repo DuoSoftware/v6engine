@@ -2,8 +2,8 @@ package configuration
 
 import "duov6.com/cebadapter"
 import (
-	"fmt"
-	"reflect"
+	//"fmt"
+	//"reflect"
 	"strings"
 )
 
@@ -46,22 +46,22 @@ func CheckIfOverridable(configAll []interface{}, namespace string, class string)
 		configMap := configAll[x].(map[string]interface{})
 
 		if configMap["StoreId"].(string) == namespace+"."+class {
-			fmt.Println("NAMESPACE, CLASS OVERRIDE")
+			//fmt.Println("NAMESPACE, CLASS OVERRIDE")
 			isOverride = true
 			overideIndex[index] = x
 			index++
 		} else if configMap["StoreId"].(string) == "*."+class {
-			fmt.Println("CLASS OVERRIDE")
+			//fmt.Println("CLASS OVERRIDE")
 			isOverride = true
 			overideIndex[index] = x
 			index++
 		} else if configMap["StoreId"].(string) == namespace+".*" {
-			fmt.Println("CLASS RANGE OVERRIDE")
+			//fmt.Println("CLASS RANGE OVERRIDE")
 			isOverride = true
 			overideIndex[index] = x
 			index++
 		} else if strings.Contains(namespace, strings.Replace(configMap["StoreId"].(string), "*", "", 1)) {
-			fmt.Println("NAMESPACE RANGE OVERRIDE")
+			//fmt.Println("NAMESPACE RANGE OVERRIDE")
 			isOverride = true
 			overideIndex[index] = x
 			index++
@@ -126,7 +126,7 @@ func getDefaultConfigurations(index int, configAll []interface{}) StoreConfigura
 	if configMap["AutoIncrementMetaData"] != nil {
 		retConfig.AutoIncrementMetaData = make(map[string]map[string]string)
 
-		fmt.Println(reflect.TypeOf(configMap["AutoIncrementMetaData"]))
+		//fmt.Println(reflect.TypeOf(configMap["AutoIncrementMetaData"]))
 
 		for k, v := range configMap["AutoIncrementMetaData"].(map[string]interface{}) {
 

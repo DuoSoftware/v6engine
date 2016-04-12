@@ -13,19 +13,23 @@ type Transaction struct {
 }
 
 func (t *Transaction) ProcessTransaction(request *messaging.ObjectRequest) repositories.RepositoryResponse {
+	var outResponse repositories.RepositoryResponse
+
+	//Fake Logic!
 	var storageEngine storageengines.AbstractStorageEngine
 	storageEngine = storageengines.ReplicatedStorageEngine{}
-	var outResponse repositories.RepositoryResponse = storageEngine.Store(request)
+	outResponse = storageEngine.Store(request)
 	return outResponse
 }
 
-// func (t *Transaction) GetRequestType() string {
-// 	if transactionID != "" {
-// 		return "operation"
-// 	} else if transactionStruct.Type != "" {
-// 		return "command"
-// 	}
-// }
+func (t *Transaction) GetRequestType(request *messaging.ObjectRequest) (reqType string) {
+	if request.Body.Parameters.TransactionID != "" {
+		reqType = "operation"
+	} else if request.Body.Transaction.Type != "" {
+		reqType = "command"
+	}
+	return
+}
 
 func (t *Transaction) GetTransactionID() string {
 	return uuid.NewV1().String()

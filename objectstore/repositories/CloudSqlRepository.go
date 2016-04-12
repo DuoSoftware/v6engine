@@ -475,7 +475,7 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 			if len(bytes) > 1000 {
 				term.Write("Data Found but Too Long to STDOUT!", term.Debug)
 			} else {
-				fmt.Println(obj)
+				term.Write(obj, term.Debug)
 			}
 			term.Write("---------------------------------", term.Debug)
 
@@ -611,7 +611,7 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 	if len(bytes) > 1000 {
 		term.Write("Data Found but Too Long to STDOUT!", term.Debug)
 	} else {
-		fmt.Println(obj)
+		term.Write(obj, term.Debug)
 	}
 	term.Write("--------------------------------------------", term.Debug)
 	return

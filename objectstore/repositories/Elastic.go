@@ -5,7 +5,8 @@ import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
 	"encoding/json"
-	"fmt"
+	//"fmt"
+	"duov6.com/term"
 	"github.com/mattbaird/elastigo/lib"
 	"github.com/twinj/uuid"
 	"io/ioutil"
@@ -66,7 +67,7 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 	isSearchGlobalNamespace := false
 	if request.Extras["searchGlobalNamespace"] != nil {
 		if strings.EqualFold(request.Extras["searchGlobalNamespace"].(string), "TRUE") {
-			fmt.Println("Global Search Enabled!")
+			term.Write("Global Search Enabled!", term.Debug)
 			isSearchGlobalNamespace = true
 		}
 	}
@@ -74,8 +75,8 @@ func (repository ElasticRepository) search(request *messaging.ObjectRequest, sea
 	var err error
 	var data elastigo.SearchResult
 
-	fmt.Println("Elastic Query : ")
-	fmt.Println(query)
+	term.Write("Elastic Query : ", term.Debug)
+	term.Write(query, term.Debug)
 
 	if isSearchGlobalNamespace {
 		data, err = conn.Search(request.Controls.Namespace, "", nil, query)
@@ -253,9 +254,9 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 		status[statusIndex] = tempStatus
 
 		if tempStatus {
-			fmt.Println("Inserted Stub : " + strconv.Itoa(statusIndex))
+			term.Write("Inserted Stub : "+strconv.Itoa(statusIndex), term.Debug)
 		} else {
-			fmt.Println("Inserting Failed Stub : " + strconv.Itoa(statusIndex))
+			term.Write("Inserting Failed Stub : "+strconv.Itoa(statusIndex), term.Debug)
 		}
 
 		statusIndex += 1
@@ -273,9 +274,9 @@ func (repository ElasticRepository) setManyElastic(request *messaging.ObjectRequ
 		status[statusIndex] = tempStatus
 
 		if tempStatus {
-			fmt.Println("Inserted Stub : " + strconv.Itoa(statusIndex))
+			term.Write("Inserted Stub : "+strconv.Itoa(statusIndex), term.Debug)
 		} else {
-			fmt.Println("Inserting Failed Stub : " + strconv.Itoa(statusIndex))
+			term.Write("Inserting Failed Stub : "+strconv.Itoa(statusIndex), term.Debug)
 		}
 
 		statusIndex += 1
@@ -622,7 +623,7 @@ func (repository ElasticRepository) executeGetSelectedFields(request *messaging.
 
 	query := "{\"_source\":[" + fieldString + "],\"from\": " + skip + ", \"size\": " + take + ", \"query\":{\"query_string\" : {\"query\" : \"" + "*" + "\"}}}"
 
-	//fmt.Println(query)
+	//term.Write(query, term.Debug)
 
 	data, err := conn.Search(request.Controls.Namespace, request.Controls.Class, nil, query)
 
