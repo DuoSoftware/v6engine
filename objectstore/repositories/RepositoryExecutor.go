@@ -3,8 +3,8 @@ package repositories
 import (
 	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/messaging"
+	"duov6.com/term"
 	"encoding/json"
-	"fmt"
 )
 
 func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (response RepositoryResponse) {
@@ -15,14 +15,14 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 			response = repository.InsertSingle(request)
 			if response.IsSuccess {
 				if errCache := cache.StoreOne(request, request.Body.Object); errCache != nil {
-					fmt.Println(errCache.Error())
+					term.Write(errCache.Error(), term.Debug)
 				}
 			}
 		} else {
 			response = repository.InsertMultiple(request)
 			if response.IsSuccess {
 				if errCache := cache.StoreMany(request, request.Body.Objects); errCache != nil {
-					fmt.Println(errCache.Error())
+					term.Write(errCache.Error(), term.Debug)
 				}
 			}
 		}
@@ -31,14 +31,14 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		//check cache
 		result := cache.Search(request)
 		if result == nil {
-			fmt.Println("Not Available in Cache.. Reading from Repositories...")
+			term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
 			response = repository.GetAll(request)
 
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
 				var data []map[string]interface{}
 				_ = json.Unmarshal(response.Body, &data)
 				if errCache := cache.StoreResult(request, data); errCache != nil {
-					fmt.Println(errCache.Error())
+					term.Write(errCache.Error(), term.Debug)
 				}
 			}
 		} else {
@@ -51,7 +51,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		//check cache
 		result := cache.GetByKey(request)
 		if result == nil {
-			fmt.Println("Not Available in Cache.. Reading from Repositories...")
+			term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
 			response = repository.GetByKey(request)
 
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
@@ -60,7 +60,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 				_ = json.Unmarshal(response.Body, &data)
 
 				if errCache := cache.StoreOne(request, data); errCache != nil {
-					fmt.Println(errCache.Error())
+					term.Write(errCache.Error(), term.Debug)
 				}
 			}
 		} else {
@@ -72,13 +72,13 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		//check cache
 		result := cache.Search(request)
 		if result == nil {
-			fmt.Println("Not Available in Cache.. Reading from Repositories...")
+			term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
 			response = repository.GetSearch(request)
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
 				var data []map[string]interface{}
 				_ = json.Unmarshal(response.Body, &data)
 				if errCache := cache.StoreResult(request, data); errCache != nil {
-					fmt.Println(errCache.Error())
+					term.Write(errCache.Error(), term.Debug)
 				}
 			}
 		} else {
@@ -91,13 +91,13 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		//check cache
 		result := cache.Query(request)
 		if result == nil {
-			fmt.Println("Not Available in Cache.. Reading from Repositories...")
+			term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
 			response = repository.GetQuery(request)
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
 				var data []map[string]interface{}
 				_ = json.Unmarshal(response.Body, &data)
 				if errCache := cache.StoreQuery(request, data); errCache != nil {
-					fmt.Println(errCache.Error())
+					term.Write(errCache.Error(), term.Debug)
 				}
 			}
 		} else {
@@ -111,14 +111,14 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 			response = repository.UpdateSingle(request)
 			if response.IsSuccess {
 				if errCache := cache.StoreOne(request, request.Body.Object); errCache != nil {
-					fmt.Println(errCache.Error())
+					term.Write(errCache.Error(), term.Debug)
 				}
 			}
 		} else {
 			response = repository.UpdateMultiple(request)
 			if response.IsSuccess {
 				if errCache := cache.StoreMany(request, request.Body.Objects); errCache != nil {
-					fmt.Println(errCache.Error())
+					term.Write(errCache.Error(), term.Debug)
 				}
 			}
 		}
@@ -127,14 +127,14 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 			response = repository.DeleteSingle(request)
 			if response.IsSuccess {
 				if errCache := cache.DeleteOne(request, request.Body.Object); errCache != nil {
-					fmt.Println(errCache.Error())
+					term.Write(errCache.Error(), term.Debug)
 				}
 			}
 		} else {
 			response = repository.DeleteMultiple(request)
 			if response.IsSuccess {
 				if errCache := cache.DeleteMany(request, request.Body.Objects); errCache != nil {
-					fmt.Println(errCache.Error())
+					term.Write(errCache.Error(), term.Debug)
 				}
 			}
 		}
