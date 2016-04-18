@@ -968,7 +968,9 @@ func (repository CloudSqlRepository) buildTableCache(conn *sql.DB, dbName string
 			for _, cRow := range exResult {
 				newMap[cRow["Field"].(string)] = cRow["Type"].(string)
 			}
-			tableCache[dbName+"."+class] = newMap
+			if tableCache[dbName+"."+class] == nil {
+				tableCache[dbName+"."+class] = newMap
+			}
 		}
 	}
 
