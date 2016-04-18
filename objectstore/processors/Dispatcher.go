@@ -20,11 +20,11 @@ func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.Rep
 	var outResponse repositories.RepositoryResponse
 
 	if transactionID != "" || transactionStruct.Type != "" {
-		//fmt.Println("Transaction Request.")
+		term.Write("Transaction Request", term.Error)
 		var t Transaction
 		outResponse = t.ProcessTransaction(request)
 	} else {
-		//fmt.Println("Default Request.")
+		term.Write("Default Request", term.Error)
 		outResponse = d.ProcessDefaultDispatcher(request)
 	}
 	return outResponse

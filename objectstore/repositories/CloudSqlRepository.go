@@ -873,7 +873,9 @@ func (repository CloudSqlRepository) checkAvailabilityDb(conn *sql.DB, dbName st
 		if dbResult["SCHEMA_NAME"] == nil {
 			repository.executeNonQuery(conn, "CREATE DATABASE IF NOT EXISTS "+dbName)
 		}
-		availableDbs[dbName] = true
+		if availableDbs[dbName] == nil || availableDbs[dbName] == false {
+			availableDbs[dbName] = true
+		}
 	} else {
 		term.Write(err.Error(), 1)
 	}
@@ -990,7 +992,6 @@ func (repository CloudSqlRepository) checkSchema(conn *sql.DB, namespace string,
 ///////////////////////////////////////Helper functions/////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-/*
 var connection map[string]*sql.DB
 
 func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
@@ -999,49 +1000,50 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		connection = make(map[string]*sql.DB)
 	}
 
-	term.Write()
-	term.Write("-------------------------------")
-	connParams := request.Configuration.ServerConfiguration["MYSQL"]
-	term.Write("Using Server : " + connParams["Url"])
-	term.Write("Connection : ")
+	var stats sql.DBStats
+
+	//term.Write("-----------------------------------------------", term.Information)
+	//connParams := request.Configuration.ServerConfiguration["MYSQL"]
+	//term.Write("Using Server : "+connParams["Url"], term.Information)
+	//term.Write("Connection : ", term.Information)
 
 	if connection[request.Controls.Namespace] == nil {
-		term.Write("Nil Connection! Creating MySQL Connection!")
+		//	term.Write("Nil Connection! Creating MySQL Connection!", term.Information)
 		var c *sql.DB
 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-		c.SetMaxIdleConns(100)
+		c.SetMaxIdleConns(1000)
 		c.SetMaxOpenConns(0)
-		c.SetConnMaxLifetime(time.Duration(600) * time.Second)
+		c.SetConnMaxLifetime(time.Duration(120) * time.Second)
 		conn = c
 		connection[request.Controls.Namespace] = c
+		stats = conn.Stats()
 	} else {
 		if connection[request.Controls.Namespace].Ping(); err != nil {
-			term.Write("Cached Connection Timed Out! Creating new Connection!")
+			_ = connection[request.Controls.Namespace].Close()
+			connection[request.Controls.Namespace] = nil
+			//	term.Write("Cached Connection Timed Out! Creating new Connection!", term.Information)
 			var c *sql.DB
 			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-			c.SetMaxIdleConns(100)
+			c.SetMaxIdleConns(1000)
 			c.SetMaxOpenConns(0)
-			c.SetConnMaxLifetime(time.Duration(600) * time.Second)
+			c.SetConnMaxLifetime(time.Duration(120) * time.Second)
 			conn = c
 			connection[request.Controls.Namespace] = c
+			stats = conn.Stats()
 		} else {
-			term.Write("Using Cached Connection!")
+			//	term.Write("Using Cached Connection!", term.Information)
 			conn = connection[request.Controls.Namespace]
+			stats = conn.Stats()
 		}
 	}
-	if conn == nil {
-		term.Write("NIL CONNECTION! SOMETHING TERRIBLY GONE WRONG!")
-	} else {
-		term.Write(conn)
-	}
-	term.Write("-------------------------------")
-	term.Write()
+
+	fmt.Println("Open Connections : " + strconv.Itoa(stats.OpenConnections))
 	return conn, err
 }
-*/
 
+/*
 func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
 
 	// if connection == nil {
@@ -1055,7 +1057,7 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 	// term.Write("Connection : ")
 
 	// if connection[request.Controls.Namespace] == nil {
-	term.Write("Nil Connection! Creating MySQL Connection!", term.Information)
+	term.Write("Nil Connection! Creating MySQL Connection!", term.Debug)
 	var c *sql.DB
 	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 	c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
@@ -1091,12 +1093,13 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 	// term.Write("-------------------------------")
 	// term.Write()
 	if err != nil {
-		term.Write("Connection Error! Check DB : "+err.Error(), term.Information)
+		term.Write("Connection Error! Check DB : "+err.Error(), term.Debug)
 	} else {
-		term.Write("Connection Created Successfully!", term.Information)
+		term.Write("Connection Created Successfully!", term.Debug)
 	}
 	return conn, err
 }
+*/
 
 func (repository CloudSqlRepository) getDatabaseName(namespace string) string {
 	return "_" + strings.ToLower(strings.Replace(namespace, ".", "", -1))
@@ -1611,10 +1614,10 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 }
 
 func (repository CloudSqlRepository) closeConnection(conn *sql.DB) {
-	err := conn.Close()
-	if err != nil {
-		term.Write(err.Error(), 1)
-	} else {
-		term.Write("Connection Closed!", 2)
-	}
+	// err := conn.Close()
+	// if err != nil {
+	// 	term.Write(err.Error(), 1)
+	// } else {
+	// 	term.Write("Connection Closed!", 2)
+	// }
 }
