@@ -901,8 +901,9 @@ func (repository CloudSqlRepository) checkAvailabilityTable(conn *sql.DB, dbName
 					return
 				}
 			}
-
-			availableTables[dbName+"."+class] = true
+			if availableTables[dbName+"."+class] == nil || availableTables[dbName+"."+class] == false {
+				availableTables[dbName+"."+class] = true
+			}
 
 		} else {
 			return
@@ -1002,8 +1003,8 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		connection = make(map[string]*sql.DB)
 	}
 
-	var stats sql.DBStats
-
+	//var stats sql.DBStats
+	//_ = time.Now()
 	//term.Write("-----------------------------------------------", term.Information)
 	//connParams := request.Configuration.ServerConfiguration["MYSQL"]
 	//term.Write("Using Server : "+connParams["Url"], term.Information)
@@ -1019,7 +1020,7 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		c.SetConnMaxLifetime(time.Duration(120) * time.Second)
 		conn = c
 		connection[request.Controls.Namespace] = c
-		stats = conn.Stats()
+		//stats = conn.Stats()
 	} else {
 		if connection[request.Controls.Namespace].Ping(); err != nil {
 			_ = connection[request.Controls.Namespace].Close()
@@ -1033,15 +1034,15 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 			c.SetConnMaxLifetime(time.Duration(120) * time.Second)
 			conn = c
 			connection[request.Controls.Namespace] = c
-			stats = conn.Stats()
+			//stats = conn.Stats()
 		} else {
-			//	term.Write("Using Cached Connection!", term.Information)
+			//term.Write("Using Cached Connection!", term.Information)
 			conn = connection[request.Controls.Namespace]
-			stats = conn.Stats()
+			//stats = conn.Stats()
 		}
 	}
 
-	fmt.Println("Open Connections : " + strconv.Itoa(stats.OpenConnections))
+	//fmt.Println("Open Connections : " + strconv.Itoa(stats.OpenConnections))
 	return conn, err
 }
 
