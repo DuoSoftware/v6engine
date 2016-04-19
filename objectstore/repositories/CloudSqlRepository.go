@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"duov6.com/common"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
 	"duov6.com/term"
@@ -10,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/twinj/uuid"
 	"strconv"
 	"strings"
 	"time"
@@ -914,7 +914,7 @@ func (repository CloudSqlRepository) checkAvailabilityDb(conn *sql.DB, dbName st
 		if dbResult["SCHEMA_NAME"] == nil {
 			repository.executeNonQuery(conn, "CREATE DATABASE IF NOT EXISTS "+dbName)
 		}
-		if availableDbs[dbName] == nil || availableDbs[dbName] == false {
+		if availableDbs[dbName] == nil {
 			availableDbs[dbName] = true
 		}
 	} else {
@@ -1597,7 +1597,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 	}
 
 	if isGUIDKey {
-		returnID = uuid.NewV1().String()
+		returnID = common.GetGUID()
 	} else if isAutoIncrementId {
 		session, isError := repository.getConnection(request)
 		if isError != nil {
@@ -1621,7 +1621,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					return
 				} else {
 					//insert record with count 1 and return
-					insertQuery := "INSERT INTO " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','1','" + uuid.NewV1().String() + "')"
+					insertQuery := "INSERT INTO " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','1','" + common.GetGUID() + "')"
 					err = repository.executeNonQuery(session, insertQuery)
 					if err != nil {
 						returnID = "1"
@@ -1640,7 +1640,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 
 				if len(myMap) == 0 {
 					request.Log("New Class! New record for this class will be inserted")
-					insertNewClassQuery := "INSERT INTO " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes (class,maxCount,version) values ('" + strings.ToLower(request.Controls.Class) + "', '1', '" + uuid.NewV1().String() + "');"
+					insertNewClassQuery := "INSERT INTO " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes (class,maxCount,version) values ('" + strings.ToLower(request.Controls.Class) + "', '1', '" + common.GetGUID() + "');"
 					err := repository.executeNonQuery(session, insertNewClassQuery)
 					if err != nil {
 						returnID = ""

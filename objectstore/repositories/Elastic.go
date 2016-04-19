@@ -6,9 +6,9 @@ import (
 	"duov6.com/queryparser"
 	"encoding/json"
 	//"fmt"
+	"duov6.com/common"
 	"duov6.com/term"
 	"github.com/mattbaird/elastigo/lib"
-	"github.com/twinj/uuid"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -717,7 +717,7 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 	}
 
 	if isRandomKeyID {
-		returnID = uuid.NewV1().String()
+		returnID = common.GetGUID()
 	} else if isAutoIncrementing {
 		key := request.Controls.Class
 		data, err := conn.Get(request.Controls.Namespace, "domainClassAttributes", key, nil)
@@ -729,11 +729,11 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 			newRecord = make(map[string]interface{})
 			newRecord["class"] = request.Controls.Class
 			newRecord["maxCount"] = "1"
-			newRecord["version"] = uuid.NewV1().String()
+			newRecord["version"] = common.GetGUID()
 			_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", key, nil, newRecord)
 
 			if err != nil {
-				return uuid.NewV1().String()
+				return common.GetGUID()
 			} else {
 				return "1"
 			}
@@ -743,7 +743,7 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 			currentMap = make(map[string]interface{})
 			byteData, err := data.Source.MarshalJSON()
 			if err != nil {
-				return uuid.NewV1().String()
+				return common.GetGUID()
 			}
 			json.Unmarshal(byteData, &currentMap)
 			maxCount = currentMap["maxCount"].(string)
@@ -755,10 +755,10 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 			newRecord = make(map[string]interface{})
 			newRecord["class"] = request.Controls.Class
 			newRecord["maxCount"] = maxCount
-			newRecord["version"] = uuid.NewV1().String()
+			newRecord["version"] = common.GetGUID()
 			_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", request.Controls.Class, nil, newRecord)
 			if err != nil {
-				return uuid.NewV1().String()
+				return common.GetGUID()
 			} else {
 				return maxCount
 			}
