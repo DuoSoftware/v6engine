@@ -121,3 +121,13 @@ func checkEmptyByteArray(input []byte) (status bool) {
 	}
 	return
 }
+
+func CheckRedisAvailability(request *messaging.ObjectRequest) (status bool) {
+	status = true
+	if request.Configuration.ServerConfiguration["REDIS"] == nil {
+		status = false
+	}
+	//remove this when going Live
+	status = false
+	return
+}
