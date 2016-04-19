@@ -112,7 +112,7 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 	orderbyfield := ""
 	skip := "0"
 	take := "100"
-
+	isFullTextSearch := false
 	if request.Extras["skip"] != nil {
 		skip = request.Extras["skip"].(string)
 	}
@@ -154,19 +154,22 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 		} else {
 			//Full Text Search Query
 			query = repository.getFullTextSearchQuery(request)
+			isFullTextSearch = true
 		}
 	}
 
-	if isOrderByAsc {
-		query += " order by " + orderbyfield + " asc "
-	} else if isOrderByDesc {
-		query += " order by " + orderbyfield + " desc "
+	if !isFullTextSearch {
+		if isOrderByAsc {
+			query += " order by " + orderbyfield + " asc "
+		} else if isOrderByDesc {
+			query += " order by " + orderbyfield + " desc "
+		}
+
+		query += " limit " + take
+		query += " offset " + skip
+
+		query += ";"
 	}
-
-	query += " limit " + take
-	query += " offset " + skip
-
-	query += ";"
 
 	response = repository.queryCommonMany(query, request)
 	return response
@@ -177,14 +180,14 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 
 	if tableCache[repository.getDatabaseName(request.Controls.Namespace)+"."+request.Controls.Class] != nil {
 		//Available in Table Cache
-		for name, _ := range tableCache[repository.getDatabaseName(request.Controls.Namespace)+"."+request.Controls.Class] {
-			if name != "__osHeaders" {
+		for name, fieldType := range tableCache[repository.getDatabaseName(request.Controls.Namespace)+"."+request.Controls.Class] {
+			if name != "__osHeaders" && strings.EqualFold(fieldType, "TEXT") {
 				fieldNames = append(fieldNames, name)
 			}
 		}
 	} else {
 		//Get From Db
-		query := "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
+		query := "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
 		repoResponse := repository.queryCommonMany(query, request)
 		var mapArray []map[string]interface{}
 		err := json.Unmarshal(repoResponse.Body, &mapArray)
@@ -192,14 +195,14 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 			term.Write(err.Error(), term.Error)
 		} else {
 			for _, value := range mapArray {
-				if value["COLUMN_NAME"].(string) != "__osHeaders" {
+				if value["COLUMN_NAME"].(string) != "__osHeaders" && strings.EqualFold(value["DATA_TYPE"].(string), "TEXT") {
 					fieldNames = append(fieldNames, value["COLUMN_NAME"].(string))
 				}
 			}
 		}
 	}
 
-	query = "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE Concat("
+	/*query = "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE Concat("
 
 	//Make Argument Array
 	fullTextArguments := ""
@@ -212,7 +215,23 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 	queryParam := request.Body.Query.Parameters
 	queryParam = strings.TrimPrefix(queryParam, "*")
 	queryParam = strings.TrimSuffix(queryParam, "*")
-	query += fullTextArguments + ") LIKE '%" + queryParam + "%' "
+	query += fullTextArguments + ") LIKE '%" + queryParam + "%' "*/
+
+	//Indexed Queries
+	queryParam := request.Body.Query.Parameters
+	queryParam = strings.TrimPrefix(queryParam, "*")
+	queryParam = strings.TrimSuffix(queryParam, "*")
+
+	query = "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE MATCH ("
+
+	fullTextArguments := ""
+	for _, field := range fieldNames {
+		fullTextArguments += field + ","
+	}
+	fullTextArguments = strings.TrimSuffix(fullTextArguments, ",")
+	query += fullTextArguments + ") AGAINST ('" + queryParam
+	query += "' IN BOOLEAN MODE);"
+
 	return
 }
 
@@ -842,13 +861,35 @@ func (repository CloudSqlRepository) getDeleteScript(namespace string, class str
 func (repository CloudSqlRepository) getCreateScript(namespace string, class string, obj map[string]interface{}) string {
 	query := "CREATE TABLE IF NOT EXISTS " + repository.getDatabaseName(namespace) + "." + class + "(__os_id varchar(255) primary key"
 	//query := "CREATE TABLE IF NOT EXISTS " + repository.getDatabaseName(namespace) + "." + class + "(__os_id text"
+
+	var textFields []string
+
 	for k, v := range obj {
 		if k != "OriginalIndex" {
-			query += (", " + k + " " + repository.golangToSql(v))
+			dataType := repository.golangToSql(v)
+			query += (", " + k + " " + dataType)
+
+			if strings.EqualFold(dataType, "TEXT") {
+				textFields = append(textFields, k)
+			}
 		}
 	}
 
+	if len(textFields) > 0 {
+		query += ", FULLTEXT("
+		fieldList := ""
+
+		for _, field := range textFields {
+			fieldList += field + ","
+		}
+
+		fieldList = strings.TrimSuffix(fieldList, ",")
+		query += fieldList
+		query += ")"
+	}
+
 	query += ")"
+
 	//term.Write(query)
 	return query
 }
@@ -941,6 +982,23 @@ func (repository CloudSqlRepository) checkAvailabilityTable(conn *sql.DB, dbName
 	if len(alterColumns) != 0 {
 		alterQuery := "ALTER TABLE " + dbName + "." + class + " " + alterColumns
 		err = repository.executeNonQuery(conn, alterQuery)
+		//update Fulltext fields
+		fullTextQuery := "ALTER TABLE " + dbName + "." + class + " ADD FULLTEXT("
+		tableTypes := tableCache[dbName+"."+class]
+
+		fullTextFields := ""
+
+		for field, fieldtype := range tableTypes {
+			if strings.EqualFold(fieldtype, "TEXT") {
+				fullTextFields += field + ","
+			}
+		}
+
+		fullTextFields = strings.TrimSuffix(fullTextFields, ",")
+		fullTextQuery += fullTextFields
+		fullTextQuery += ");"
+		err = repository.executeNonQuery(conn, fullTextQuery)
+
 	}
 
 	return
