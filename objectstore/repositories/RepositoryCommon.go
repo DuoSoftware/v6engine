@@ -128,6 +128,6 @@ func CheckRedisAvailability(request *messaging.ObjectRequest) (status bool) {
 		status = false
 	}
 	//remove this when going Live
-	//status = false
+	status = false
 	return
 }
