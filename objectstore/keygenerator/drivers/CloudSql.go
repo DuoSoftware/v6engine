@@ -10,7 +10,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type CloudSql struct {
@@ -24,13 +23,13 @@ func (driver CloudSql) getConnection(request *messaging.ObjectRequest) (conn *sq
 	return conn, err
 }
 
-func (driver CloudSql) VerifyMaxValueDB(request *messaging.ObjectRequest, amount int, verifyDBTable bool) (maxValue string) {
+func (driver CloudSql) VerifyMaxValueDB(request *messaging.ObjectRequest, amount int, verifySchema bool) (maxValue string) {
 
 	session, isError := driver.getConnection(request)
 	if isError != nil {
 		return
 	} else {
-		if verifyDBTable {
+		if verifySchema {
 			driver.verifyDBTableAvailability(session, request)
 		}
 
@@ -41,26 +40,28 @@ func (driver CloudSql) VerifyMaxValueDB(request *messaging.ObjectRequest, amount
 		myMap, _ := driver.executeQueryOne(session, readQuery, (db + ".domainClassAttributes"))
 
 		if len(myMap) == 0 {
-			maxValue = amount
+			maxValue = strconv.Itoa(amount + 1)
 			insertNewClassQuery := "INSERT INTO " + db + ".domainClassAttributes (class,maxCount,version) values ('" + class + "', '" + maxValue + "', '" + common.GetGUID() + "');"
 			err := driver.executeNonQuery(session, insertNewClassQuery)
 			if err != nil {
-				return
+				fmt.Println(err.Error())
 			}
 		} else {
 			maxCount, err := strconv.Atoi(myMap["maxCount"].(string))
 			if maxCount <= amount {
-				maxCount = amount
+				maxCount = amount + 1
+			} else {
+				maxCount += 1
 			}
 			maxValue = strconv.Itoa(maxCount)
 			updateQuery := "UPDATE " + db + ".domainClassAttributes SET maxCount='" + maxValue + "' WHERE class = '" + class + "' ;"
 			err = driver.executeNonQuery(session, updateQuery)
 			if err != nil {
-				return
+				fmt.Println(err.Error())
 			}
 		}
 
-		driver.CloseConnection(conn)
+		driver.CloseConnection(session)
 	}
 	return
 }

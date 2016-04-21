@@ -2,7 +2,7 @@ package keygenerator
 
 import (
 	"duov6.com/common"
-	//"duov6.com/objectstore/keygenerator/drivers"
+	"duov6.com/objectstore/keygenerator/drivers"
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
 	"errors"
@@ -15,47 +15,95 @@ import (
 
 func GetIncrementID(request *messaging.ObjectRequest, repository string) (key string) {
 
-	// ifShouldVerifyList, err := VerifyListRefresh(request)
-	// if err != nil {
-	// 	key = common.GetGUID()
-	// }
-	//fmt.Println(ifShouldVerifyList)
-	key = common.GetGUID()
-
-	// if ifShouldVerifyList {
-	// 	if strings.EqualFold(repository, "CloudSQL") {
-	// 		//check if key is available
-	// 		listKey := "KeyGenList." + request.Controls.Namespace + "." + request.Controls.Class
-	// 		lockKey := "KeyGenLock." + request.Controls.Namespace + "." + request.Controls.Class
-	// 		var sqlDriver drivers.CloudSql
-	// 		go sqlDriver.UpdateCloudSqlRecordID(request, 1450)
-	// 	} else if strings.EqualFold(repository, "ELASTIC") {
-	// 		//go drivers.UpdateElasticRecordID(request, 1450)
-	// 	}
-	// }
+	client, err := GetConnection(request)
+	if err != nil {
+		key = common.GetGUID()
+		fmt.Println(err.Error() + " Returning an Unique GUID : " + key)
+	} else {
+		key = ExecuteKeyGenProcess(client, request, repository)
+	}
 
 	return
 }
 
-func VerifyListRefresh(request *messaging.ObjectRequest) (status bool, err error) {
-	status = false
+func ExecuteKeyGenProcess(client *goredis.Redis, request *messaging.ObjectRequest, repository string) (key string) {
+	if status := CheckForKeyGen(request, client); status {
+		//Key Available in Database
+		if isLock := CheckKeyGenLock(request, client); isLock {
+			for true {
+				time.Sleep(1 * time.Second)
+				if isLock = CheckKeyGenLock(request, client); !isLock {
+					// Lock is Over
+					key = GetKeyGenKey(request, client)
+					return
+				}
+			}
+		} else {
+			if isUpdateTime := CheckIfTimeToUpdateDB(request, client, float64(1.0)); isUpdateTime {
+				if isLocked := CheckKeyGenLock(request, client); isLocked {
+					for true {
+						time.Sleep(1 * time.Second)
+						if isLocked = CheckKeyGenLock(request, client); !isLocked {
+							// Lock is Over
+							key = GetKeyGenKey(request, client)
+							return
+						}
+					}
+				} else {
+					//Not locked. Ready to update
+					LockKeyGen(request, client)
+					currentVal := ReadKeyGenKey(request, client)
+					IntCurrentVal, err := strconv.Atoi(currentVal)
+					if err != nil {
+						fmt.Println(err.Error())
+						return
+					}
 
-	client, err := GetConnection(request)
-	if err != nil {
-		return
+					max := VerifyMaxFromDB(request, repository, IntCurrentVal, false)
+
+					intMax, err := strconv.Atoi(max)
+					if err != nil {
+						key = GetKeyGenKey(request, client)
+						fmt.Println(err.Error())
+						return
+					}
+
+					if intMax > IntCurrentVal {
+						SetKeyGenKey(request, client, max)
+					}
+
+					UnlockKeyGen(request, client)
+					key = max
+				}
+			} else {
+				key = GetKeyGenKey(request, client)
+			}
+		}
+
+	} else {
+		//Key Not Available in Database
+		LockKeyGen(request, client)
+		max := VerifyMaxFromDB(request, repository, 0, true)
+		SetKeyGenKey(request, client, max)
+		UnlockKeyGen(request, client)
+		SetKeyGenTime(request, client)
+		key = max
 	}
+	return
+}
 
-	listKey := "KeyGenList." + request.Controls.Namespace + "." + request.Controls.Class
-
-	length, err := client.LLen(listKey)
-	if err != nil {
-		return
+func VerifyMaxFromDB(request *messaging.ObjectRequest, repository string, count int, verifySchema bool) (max string) {
+	switch repository {
+	case "CLOUDSQL":
+		var sqlDriver drivers.CloudSql
+		max = sqlDriver.VerifyMaxValueDB(request, count, verifySchema)
+		break
+	case "ELASTIC":
+		break
+	default:
+		fmt.Println("Error! No such Repository : " + repository + " exists!")
+		break
 	}
-
-	if length < 550 {
-		status = true
-	}
-	client.ClosePool()
 	return
 }
 
@@ -69,43 +117,6 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 	}
 	return
 }
-
-// func CheckListAvailability(key string) (status bool) {
-// 	status = false
-// 	client, err := GetConnection(request)
-// 	if err != nil {
-// 		return
-// 	}
-
-// 	status, err = client.Exists(key)
-// 	if err != nil {
-// 		return
-// 	}
-// 	client.ClosePool()
-// 	return
-// }
-
-// func CheckIfKeysAvailable(listkey string, lockkey string) (status bool) {
-// 	status = CheckListAvailability(lockkey)
-// 	if !status {
-// 		err = client.Set(lockkey, "false", 0, 0, false, false)
-// 		if err != nil {
-// 			return
-// 		}
-// 	}
-// 	status = CheckListAvailability(listkey)
-// }
-
-// func SetListItems(value int, listName string) {
-// 	client, err := GetConnection(request)
-// 	if err != nil {
-// 		return
-// 	}
-
-// 	client.ClosePool()
-// }
-
-//-----------------------------------------------------------------------------------------------------------
 
 func CheckForKeyGen(request *messaging.ObjectRequest, client *goredis.Redis) (status bool) {
 	incrementKey := "KeyGenKey." + request.Controls.Namespace + "." + request.Controls.Class
@@ -159,7 +170,7 @@ func UnlockKeyGen(request *messaging.ObjectRequest, client *goredis.Redis) {
 
 func SetKeyGenTime(request *messaging.ObjectRequest, client *goredis.Redis) {
 	key := "KeyGenTime." + request.Controls.Namespace + "." + request.Controls.Class
-	nowTime := time.Now().Format("2006-01-02 15:04:05")
+	nowTime := time.Now().UTC().Format("2006-01-02 15:04:05")
 	err := client.Set(key, nowTime, 0, 0, false, false)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -188,6 +199,7 @@ func CheckIfTimeToUpdateDB(request *messaging.ObjectRequest, client *goredis.Red
 	} else {
 		difference := time.Now().UTC().Sub(KeyGenTime)
 		if difference.Minutes() > timeInMinutes {
+			SetKeyGenTime(request, client)
 			fmt.Println("Readying to Update DomainClassAttributes class....")
 			status = true
 		}
@@ -210,7 +222,7 @@ func GetKeyGenKey(request *messaging.ObjectRequest, client *goredis.Redis) (valu
 		fmt.Println(err.Error())
 		return
 	}
-	value = strconv.FormatInt(val, 16)
+	value = strconv.FormatInt(val, 10)
 	return
 }
 
@@ -222,7 +234,13 @@ func ReadKeyGenKey(request *messaging.ObjectRequest, client *goredis.Redis) (val
 	}
 	err = json.Unmarshal(bvalue, &value)
 	if err != nil {
-		fmt.Println(err.Error())
+		var intVal int
+		err = json.Unmarshal(bvalue, &intVal)
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			value = strconv.Itoa(intVal)
+		}
 	}
 	return
 }

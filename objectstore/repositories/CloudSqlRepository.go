@@ -1613,7 +1613,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 		returnID = common.GetGUID()
 	} else if isAutoIncrementId {
 		if CheckRedisAvailability(request) {
-			return keygenerator.GetIncrementID(request, "CloudSQL")
+			return keygenerator.GetIncrementID(request, "CLOUDSQL")
 		} else {
 			session, isError := repository.getConnection(request)
 			if isError != nil {
