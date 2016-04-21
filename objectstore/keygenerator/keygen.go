@@ -39,7 +39,7 @@ func ExecuteKeyGenProcess(client *goredis.Redis, request *messaging.ObjectReques
 				}
 			}
 		} else {
-			if isUpdateTime := CheckIfTimeToUpdateDB(request, client, float64(1.0)); isUpdateTime {
+			if isUpdateTime := CheckIfTimeToUpdateDB(request, client, float64(5.0)); isUpdateTime {
 				if isLocked := CheckKeyGenLock(request, client); isLocked {
 					for true {
 						time.Sleep(1 * time.Second)
