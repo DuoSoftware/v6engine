@@ -276,11 +276,3 @@ func (driver CloudSql) CloseConnection(conn *sql.DB) {
 		fmt.Println(err.Error())
 	}
 }
-
-// else {
-// 			insertQuery := "INSERT INTO " + database + ".domainClassAttributes (class, maxCount,version) VALUES ('" + class + "','2000','" + common.GetGUID() + "')"
-// 			err = driver.executeNonQuery(conn, insertQuery)
-// 			if err != nil {
-// 				fmt.Println(err.Error())
-// 			}
-// 		}
