@@ -4,19 +4,22 @@ import (
 	"duov6.com/common"
 	//"duov6.com/objectstore/keygenerator/drivers"
 	"duov6.com/objectstore/messaging"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/xuyu/goredis"
+	"strconv"
+	"time"
 	//"strings"
 )
 
 func GetIncrementID(request *messaging.ObjectRequest, repository string) (key string) {
 
-	ifShouldVerifyList, err := VerifyListRefresh(request)
-	if err != nil {
-		key = common.GetGUID()
-	}
-	fmt.Println(ifShouldVerifyList)
+	// ifShouldVerifyList, err := VerifyListRefresh(request)
+	// if err != nil {
+	// 	key = common.GetGUID()
+	// }
+	//fmt.Println(ifShouldVerifyList)
 	key = common.GetGUID()
 
 	// if ifShouldVerifyList {
@@ -91,7 +94,6 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 // 		}
 // 	}
 // 	status = CheckListAvailability(listkey)
-
 // }
 
 // func SetListItems(value int, listName string) {
@@ -102,3 +104,125 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 
 // 	client.ClosePool()
 // }
+
+//-----------------------------------------------------------------------------------------------------------
+
+func CheckForKeyGen(request *messaging.ObjectRequest, client *goredis.Redis) (status bool) {
+	incrementKey := "KeyGenKey." + request.Controls.Namespace + "." + request.Controls.Class
+	//lockKey := "KeyGenLock." + request.Controls.Namespace + "." + request.Controls.Class
+	//timeKey := "KeyGenTime." + request.Controls.Namespace + "." + request.Controls.Class
+	status, err := client.Exists(incrementKey)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return
+}
+
+func CheckKeyGenLock(request *messaging.ObjectRequest, client *goredis.Redis) (status bool) {
+	status = false
+	key := "KeyGenLock." + request.Controls.Namespace + "." + request.Controls.Class
+	val, err := client.Get(key)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if val == nil {
+		_ = client.Set(key, "false", 0, 0, false, false)
+		return
+	}
+
+	err = json.Unmarshal(val, &status)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	return
+
+}
+
+func LockKeyGen(request *messaging.ObjectRequest, client *goredis.Redis) {
+	key := "KeyGenLock." + request.Controls.Namespace + "." + request.Controls.Class
+	err := client.Set(key, "false", 0, 0, false, false)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+func UnlockKeyGen(request *messaging.ObjectRequest, client *goredis.Redis) {
+	key := "KeyGenLock." + request.Controls.Namespace + "." + request.Controls.Class
+	err := client.Set(key, "false", 0, 0, false, false)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+func SetKeyGenTime(request *messaging.ObjectRequest, client *goredis.Redis) {
+	key := "KeyGenTime." + request.Controls.Namespace + "." + request.Controls.Class
+	nowTime := time.Now().Format("2006-01-02 15:04:05")
+	err := client.Set(key, nowTime, 0, 0, false, false)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+func CheckIfTimeToUpdateDB(request *messaging.ObjectRequest, client *goredis.Redis, timeInMinutes float64) (status bool) {
+	status = false
+	timeKey := "KeyGenTime." + request.Controls.Namespace + "." + request.Controls.Class
+
+	val, err := client.Get(timeKey)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if val == nil {
+		nowTime := time.Now().UTC().Format("2006-01-02 15:04:05")
+		_ = client.Set(timeKey, nowTime, 0, 0, false, false)
+		return
+	}
+
+	KeyGenTime, err := time.Parse("2006-01-02 15:04:05", string(val))
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		difference := time.Now().UTC().Sub(KeyGenTime)
+		if difference.Minutes() > timeInMinutes {
+			fmt.Println("Readying to Update DomainClassAttributes class....")
+			status = true
+		}
+	}
+	return
+}
+
+func SetKeyGenKey(request *messaging.ObjectRequest, client *goredis.Redis, value string) {
+	key := "KeyGenKey." + request.Controls.Namespace + "." + request.Controls.Class
+	err := client.Set(key, value, 0, 0, false, false)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+func GetKeyGenKey(request *messaging.ObjectRequest, client *goredis.Redis) (value string) {
+	key := "KeyGenKey." + request.Controls.Namespace + "." + request.Controls.Class
+	val, err := client.Incr(key)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	value = strconv.FormatInt(val, 16)
+	return
+}
+
+func ReadKeyGenKey(request *messaging.ObjectRequest, client *goredis.Redis) (value string) {
+	key := "KeyGenKey." + request.Controls.Namespace + "." + request.Controls.Class
+	bvalue, err := client.Get(key)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	err = json.Unmarshal(bvalue, &value)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return
+}

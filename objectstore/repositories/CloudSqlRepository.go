@@ -1595,9 +1595,6 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string)
 	return
 }
 
-var incrementReqCountCloudSql int
-var incrementFetch map[string]time.Time // incrementPrefetch["namespace+"."+class"]
-
 func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
 
 	isGUIDKey := false
@@ -1616,10 +1613,6 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 		returnID = common.GetGUID()
 	} else if isAutoIncrementId {
 		if CheckRedisAvailability(request) {
-			if !didhuehuehuerun {
-				go repository.huehuehue()
-				didhuehuehuerun = true
-			}
 			return keygenerator.GetIncrementID(request, "CloudSQL")
 		} else {
 			session, isError := repository.getConnection(request)
@@ -1717,18 +1710,4 @@ func (repository CloudSqlRepository) closeConnection(conn *sql.DB) {
 	// } else {
 	// 	term.Write("Connection Closed!", 2)
 	// }
-}
-
-var didhuehuehuerun bool
-
-func (repository CloudSqlRepository) huehuehue() {
-	tickCount := 0
-	c := time.Tick(1 * time.Minute)
-	for _ = range c {
-		tickCount++
-		if tickCount == 5 {
-			fmt.Println("FUCKERS")
-			tickCount = 0
-		}
-	}
 }
