@@ -93,6 +93,7 @@ func ExecuteKeyGenProcess(client *goredis.Redis, request *messaging.ObjectReques
 }
 
 func VerifyMaxFromDB(request *messaging.ObjectRequest, repository string, count int, verifySchema bool) (max string) {
+	fmt.Println("Readying to Update DomainClassAttributes class....")
 	switch repository {
 	case "CLOUDSQL":
 		var sqlDriver drivers.CloudSql
@@ -107,14 +108,32 @@ func VerifyMaxFromDB(request *messaging.ObjectRequest, repository string, count 
 	return
 }
 
+var RedisConnection *goredis.Redis
+
 func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err error) {
-	client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
-	if err != nil {
-		return nil, err
+	if RedisConnection == nil {
+		client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
+		if err != nil {
+			return nil, err
+		}
+		if client == nil {
+			return nil, errors.New("Connection to REDIS Failed!")
+		}
+	} else {
+		if err = RedisConnection.Ping(); err != nil {
+			RedisConnection = nil
+			client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
+			if err != nil {
+				return nil, err
+			}
+			if client == nil {
+				return nil, errors.New("Connection to REDIS Failed!")
+			}
+		} else {
+			client = RedisConnection
+		}
 	}
-	if client == nil {
-		return nil, errors.New("Connection to REDIS Failed!")
-	}
+
 	return
 }
 
@@ -200,7 +219,6 @@ func CheckIfTimeToUpdateDB(request *messaging.ObjectRequest, client *goredis.Red
 		difference := time.Now().UTC().Sub(KeyGenTime)
 		if difference.Minutes() > timeInMinutes {
 			SetKeyGenTime(request, client)
-			fmt.Println("Readying to Update DomainClassAttributes class....")
 			status = true
 		}
 	}
