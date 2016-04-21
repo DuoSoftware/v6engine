@@ -225,13 +225,19 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 
 	query = "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE MATCH ("
 
+	argumentCount := 0
 	fullTextArguments := ""
 	for _, field := range fieldNames {
-		fullTextArguments += field + ","
+		if argumentCount < 16 {
+			fullTextArguments += field + ","
+		} else {
+			break
+		}
+		argumentCount += 1
 	}
 	fullTextArguments = strings.TrimSuffix(fullTextArguments, ",")
 	query += fullTextArguments + ") AGAINST ('" + queryParam
-	query += "' IN BOOLEAN MODE);"
+	query += "*' IN BOOLEAN MODE);"
 
 	return
 }
@@ -876,12 +882,18 @@ func (repository CloudSqlRepository) getCreateScript(namespace string, class str
 		}
 	}
 
+	fullTextFieldCount := 0
 	if len(textFields) > 0 {
 		query += ", FULLTEXT("
 		fieldList := ""
 
 		for _, field := range textFields {
-			fieldList += field + ","
+			if fullTextFieldCount < 16 {
+				fieldList += field + ","
+			} else {
+				break
+			}
+			fullTextFieldCount += 1
 		}
 
 		fieldList = strings.TrimSuffix(fieldList, ",")
@@ -1583,6 +1595,9 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string)
 	return
 }
 
+var incrementReqCountCloudSql int
+var incrementFetch map[string]time.Time // incrementPrefetch["namespace+"."+class"]
+
 func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
 
 	isGUIDKey := false
@@ -1678,6 +1693,19 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 	return
 }
 
+func (repository CloudSqlRepository) FetchDomainClassAttributes(request *messaging.ObjectRequest) {
+	//check if key available
+	//if not fetch from db
+	//set key in redis
+	//update map
+
+}
+
+func (repository CloudSqlRepository) UpdateDomainClassAttributes(request *messaging.ObjectRequest) {
+	//get number from redis
+	//update the db
+}
+
 func (repository CloudSqlRepository) closeConnection(conn *sql.DB) {
 	// err := conn.Close()
 	// if err != nil {
@@ -1685,76 +1713,4 @@ func (repository CloudSqlRepository) closeConnection(conn *sql.DB) {
 	// } else {
 	// 	term.Write("Connection Closed!", 2)
 	// }
-}
-
-func (repository CloudSqlRepository) IncrementDomainClassAttributes(request *messaging.ObjectRequest, amount int) {
-	returnID := ""
-	session, isError := repository.getConnection(request)
-	if isError != nil {
-		returnID = ""
-		repository.closeConnection(session)
-		return
-	} else {
-		_ = repository.checkAvailabilityDb(session, repository.getDatabaseName(request.Controls.Namespace))
-
-		//Reading maxCount from DB
-		checkTableQuery := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME='domainClassAttributes';"
-		tableResultMap, _ := repository.executeQueryOne(session, checkTableQuery, request.Controls.Class)
-		if len(tableResultMap) == 0 {
-			//Create new domainClassAttributes  table
-			createDomainAttrQuery := "create table " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);"
-			err := repository.executeNonQuery(session, createDomainAttrQuery)
-			if err != nil {
-				returnID = "1"
-				repository.closeConnection(session)
-				return
-			} else {
-				//insert record with count 1 and return
-				insertQuery := "INSERT INTO " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','1','" + common.GetGUID() + "')"
-				err = repository.executeNonQuery(session, insertQuery)
-				if err != nil {
-					returnID = "1"
-					repository.closeConnection(session)
-					return
-				} else {
-					returnID = "1"
-					repository.closeConnection(session)
-					return
-				}
-			}
-		} else {
-			//This is a new Class.. Create New entry
-			readQuery := "SELECT maxCount FROM " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes where class = '" + strings.ToLower(request.Controls.Class) + "';"
-			myMap, _ := repository.executeQueryOne(session, readQuery, (repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes"))
-
-			if len(myMap) == 0 {
-				request.Log("New Class! New record for this class will be inserted")
-				insertNewClassQuery := "INSERT INTO " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes (class,maxCount,version) values ('" + strings.ToLower(request.Controls.Class) + "', '1', '" + common.GetGUID() + "');"
-				err := repository.executeNonQuery(session, insertNewClassQuery)
-				if err != nil {
-					returnID = ""
-					repository.closeConnection(session)
-					return
-				} else {
-					returnID = "1"
-					repository.closeConnection(session)
-					return
-				}
-			} else {
-				//Inrement one and UPDATE
-				maxCount := 0
-				maxCount, err := strconv.Atoi(myMap["maxCount"].(string))
-				maxCount += amount
-				returnID = strconv.Itoa(maxCount)
-				updateQuery := "UPDATE " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes SET maxCount='" + returnID + "' WHERE class = '" + strings.ToLower(request.Controls.Class) + "' ;"
-				err = repository.executeNonQuery(session, updateQuery)
-				if err != nil {
-					returnID = ""
-					repository.closeConnection(session)
-					return
-				}
-			}
-		}
-	}
-	repository.closeConnection(session)
 }

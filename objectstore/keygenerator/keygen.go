@@ -2,12 +2,12 @@ package keygenerator
 
 import (
 	"duov6.com/common"
+	//"duov6.com/objectstore/keygenerator/drivers"
 	"duov6.com/objectstore/messaging"
-	//"duov6.com/objectstore/repositories"
 	"errors"
+	"fmt"
 	"github.com/xuyu/goredis"
 	//"strings"
-	"fmt"
 )
 
 func GetIncrementID(request *messaging.ObjectRequest, repository string) (key string) {
@@ -18,14 +18,17 @@ func GetIncrementID(request *messaging.ObjectRequest, repository string) (key st
 	}
 	fmt.Println(ifShouldVerifyList)
 	key = common.GetGUID()
+
 	// if ifShouldVerifyList {
-	// 	var repository repositories.AbstractRepository
 	// 	if strings.EqualFold(repository, "CloudSQL") {
-	// 		repository = repositories.Create("CLOUDSQL")
+	// 		//check if key is available
+	// 		listKey := "KeyGenList." + request.Controls.Namespace + "." + request.Controls.Class
+	// 		lockKey := "KeyGenLock." + request.Controls.Namespace + "." + request.Controls.Class
+	// 		var sqlDriver drivers.CloudSql
+	// 		go sqlDriver.UpdateCloudSqlRecordID(request, 1450)
 	// 	} else if strings.EqualFold(repository, "ELASTIC") {
-	// 		repository = repositories.Create("ELASTIC")
+	// 		//go drivers.UpdateElasticRecordID(request, 1450)
 	// 	}
-	// 	go repository.IncrementDomainClassAttributes(request, 1950)
 	// }
 
 	return
@@ -49,6 +52,7 @@ func VerifyListRefresh(request *messaging.ObjectRequest) (status bool, err error
 	if length < 550 {
 		status = true
 	}
+	client.ClosePool()
 	return
 }
 
@@ -62,3 +66,39 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 	}
 	return
 }
+
+// func CheckListAvailability(key string) (status bool) {
+// 	status = false
+// 	client, err := GetConnection(request)
+// 	if err != nil {
+// 		return
+// 	}
+
+// 	status, err = client.Exists(key)
+// 	if err != nil {
+// 		return
+// 	}
+// 	client.ClosePool()
+// 	return
+// }
+
+// func CheckIfKeysAvailable(listkey string, lockkey string) (status bool) {
+// 	status = CheckListAvailability(lockkey)
+// 	if !status {
+// 		err = client.Set(lockkey, "false", 0, 0, false, false)
+// 		if err != nil {
+// 			return
+// 		}
+// 	}
+// 	status = CheckListAvailability(listkey)
+
+// }
+
+// func SetListItems(value int, listName string) {
+// 	client, err := GetConnection(request)
+// 	if err != nil {
+// 		return
+// 	}
+
+// 	client.ClosePool()
+// }
