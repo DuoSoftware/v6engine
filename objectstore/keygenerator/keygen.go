@@ -81,18 +81,41 @@ func ExecuteKeyGenProcess(client *goredis.Redis, request *messaging.ObjectReques
 		}
 
 	} else {
+		if IsLockKey := CheckKeyGenLock(request, client); !IsLockKey {
+			LockKeyGen(request, client)
+			max := VerifyMaxFromDB(request, repository, 0, true)
+			SetKeyGenKey(request, client, max)
+			UnlockKeyGen(request, client)
+			SetKeyGenTime(request, client)
+			key = max
+		} else {
+			for true {
+				time.Sleep(1 * time.Second)
+				if isLock := CheckKeyGenLock(request, client); !isLock {
+					// Lock is Over
+					key = GetKeyGenKey(request, client)
+					return
+				}
+			}
+		}
 		//Key Not Available in Database
-		LockKeyGen(request, client)
-		max := VerifyMaxFromDB(request, repository, 0, true)
-		SetKeyGenKey(request, client, max)
-		UnlockKeyGen(request, client)
-		SetKeyGenTime(request, client)
-		key = max
+		// LockKeyGen(request, client)
+		// max := VerifyMaxFromDB(request, repository, 0, true)
+		// SetKeyGenKey(request, client, max)
+		// UnlockKeyGen(request, client)
+		// SetKeyGenTime(request, client)
+		// key = max
 	}
 	return
 }
 
 func VerifyMaxFromDB(request *messaging.ObjectRequest, repository string, count int, verifySchema bool) (max string) {
+	client, _ := GetConnection(request)
+	if lock := CheckKeyGenLock(request, client); lock {
+		time.Sleep(2 * time.Second)
+		max = GetKeyGenKey(request, client)
+		return
+	}
 	fmt.Println("Readying to Update DomainClassAttributes class....")
 	switch repository {
 	case "CLOUDSQL":
