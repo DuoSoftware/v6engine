@@ -16,52 +16,24 @@ import (
 type CloudSql struct {
 }
 
-var CloudSqlConnection map[string]*sql.DB
-
 func (driver CloudSql) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
-
-	if CloudSqlConnection == nil {
-		CloudSqlConnection = make(map[string]*sql.DB)
-	}
-
-	if CloudSqlConnection[request.Controls.Namespace] == nil {
-		var c *sql.DB
-		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-		c.SetMaxIdleConns(10)
-		c.SetMaxOpenConns(0)
-		c.SetConnMaxLifetime(time.Duration(120) * time.Second)
-		conn = c
-		CloudSqlConnection[request.Controls.Namespace] = c
-	} else {
-		if CloudSqlConnection[request.Controls.Namespace].Ping(); err != nil {
-			_ = CloudSqlConnection[request.Controls.Namespace].Close()
-			CloudSqlConnection[request.Controls.Namespace] = nil
-			var c *sql.DB
-			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-			c.SetMaxIdleConns(10)
-			c.SetMaxOpenConns(0)
-			c.SetConnMaxLifetime(time.Duration(120) * time.Second)
-			conn = c
-			CloudSqlConnection[request.Controls.Namespace] = c
-		} else {
-			conn = CloudSqlConnection[request.Controls.Namespace]
-		}
-	}
+	var c *sql.DB
+	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+	c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
+	conn = c
 	return conn, err
 }
-func (driver CloudSql) UpdateCloudSqlRecordID(request *messaging.ObjectRequest, amount int) {
-	fmt.Println("huehuehue")
-}
 
-func (driver CloudSql) UpdateCloudSqlRecordID1(request *messaging.ObjectRequest, amount int) {
+func (driver CloudSql) VerifyMaxValueDB(request *messaging.ObjectRequest, amount int, verifyDBTable bool) (maxValue string) {
 
 	session, isError := driver.getConnection(request)
 	if isError != nil {
 		return
 	} else {
-		driver.verifyDBTableAvailability(session, request)
+		if verifyDBTable {
+			driver.verifyDBTableAvailability(session, request)
+		}
+
 		db := driver.getDatabaseName(request.Controls.Namespace)
 		class := strings.ToLower(request.Controls.Class)
 
@@ -69,25 +41,27 @@ func (driver CloudSql) UpdateCloudSqlRecordID1(request *messaging.ObjectRequest,
 		myMap, _ := driver.executeQueryOne(session, readQuery, (db + ".domainClassAttributes"))
 
 		if len(myMap) == 0 {
-			insertNewClassQuery := "INSERT INTO " + db + ".domainClassAttributes (class,maxCount,version) values ('" + class + "', '2000', '" + common.GetGUID() + "');"
+			maxValue = amount
+			insertNewClassQuery := "INSERT INTO " + db + ".domainClassAttributes (class,maxCount,version) values ('" + class + "', '" + maxValue + "', '" + common.GetGUID() + "');"
 			err := driver.executeNonQuery(session, insertNewClassQuery)
 			if err != nil {
 				return
 			}
 		} else {
-			//Inrement one and UPDATE
-			maxCount := 0
 			maxCount, err := strconv.Atoi(myMap["maxCount"].(string))
-			maxCount += amount
-			returnID := strconv.Itoa(maxCount)
-			updateQuery := "UPDATE " + db + ".domainClassAttributes SET maxCount='" + returnID + "' WHERE class = '" + class + "' ;"
+			if maxCount <= amount {
+				maxCount = amount
+			}
+			maxValue = strconv.Itoa(maxCount)
+			updateQuery := "UPDATE " + db + ".domainClassAttributes SET maxCount='" + maxValue + "' WHERE class = '" + class + "' ;"
 			err = driver.executeNonQuery(session, updateQuery)
 			if err != nil {
 				return
 			}
 		}
-	}
 
+		driver.CloseConnection(conn)
+	}
 	return
 }
 
@@ -293,6 +267,13 @@ func (driver CloudSql) getInterfaceValue(tmp string) (outData interface{}) {
 		outData = tmp
 	}
 	return
+}
+
+func (driver CloudSql) CloseConnection(conn *sql.DB) {
+	err := conn.Close()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }
 
 // else {
