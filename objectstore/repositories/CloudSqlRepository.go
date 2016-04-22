@@ -1086,9 +1086,9 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		var c *sql.DB
 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-		c.SetMaxIdleConns(10)
+		c.SetMaxIdleConns(100)
 		c.SetMaxOpenConns(0)
-		c.SetConnMaxLifetime(time.Duration(120) * time.Second)
+		c.SetConnMaxLifetime(time.Duration(5) * time.Minute)
 		conn = c
 		connection[request.Controls.Namespace] = c
 		//stats = conn.Stats()
@@ -1100,9 +1100,9 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 			var c *sql.DB
 			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-			c.SetMaxIdleConns(10)
+			c.SetMaxIdleConns(100)
 			c.SetMaxOpenConns(0)
-			c.SetConnMaxLifetime(time.Duration(120) * time.Second)
+			c.SetConnMaxLifetime(time.Duration(5) * time.Minute)
 			conn = c
 			connection[request.Controls.Namespace] = c
 			//stats = conn.Stats()
