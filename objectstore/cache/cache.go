@@ -58,6 +58,44 @@ func StoreOne(request *messaging.ObjectRequest, data map[string]interface{}) (er
 	return
 }
 
+func StoreKeyValue(request *messaging.ObjectRequest, key string, value string) (err error) {
+	if CheckCacheAvailability(request) {
+		err = repositories.StoreKeyValue(request, key, value)
+		if err != nil {
+			term.Write("Error storing One Key Value to Cache : "+err.Error(), term.Debug)
+		}
+	}
+	return
+}
+
+func GetKeyValue(request *messaging.ObjectRequest, key string) (value []byte) {
+	if CheckCacheAvailability(request) {
+		value = repositories.GetKeyValue(request, key)
+	}
+	return
+}
+
+func ExistsKeyValue(request *messaging.ObjectRequest, key string) (status bool) {
+	if CheckCacheAvailability(request) {
+		status = repositories.ExistsKeyValue(request, key)
+	}
+	return
+}
+
+func GetKeyListPattern(request *messaging.ObjectRequest, pattern string) (value []string) {
+	if CheckCacheAvailability(request) {
+		value = repositories.GetKeyListPattern(request, pattern)
+	}
+	return
+}
+
+func DeleteKey(request *messaging.ObjectRequest, key string) (status bool) {
+	if CheckCacheAvailability(request) {
+		status = repositories.DeleteKey(request, key)
+	}
+	return
+}
+
 func StoreMany(request *messaging.ObjectRequest, data []map[string]interface{}) (err error) {
 	if CheckCacheAvailability(request) {
 		err = repositories.SetManyRedis(request, data)

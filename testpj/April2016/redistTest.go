@@ -51,8 +51,9 @@ func GetConnection() (client *goredis.Redis, err error) {
 
 func main() {
 	//store()
+	delete()
 	//get()
-	incr()
+	//incr()
 	//fmt.Println(CheckKeyGenLock())
 }
 
@@ -63,6 +64,12 @@ func incr() {
 	dd := strconv.FormatInt(val, 16)
 
 	fmt.Println(dd)
+}
+
+func delete() {
+	client, _ := GetConnection()
+	stat, _ := client.Expire("cc", 0)
+	fmt.Println(stat)
 }
 
 func GetTimeFromString(timestamp string) time.Time {

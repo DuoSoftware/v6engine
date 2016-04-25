@@ -67,7 +67,6 @@ func GetConfig() TerminalConfig {
 func SetConfig(c TerminalConfig) {
 	Config = c
 	config.Add(c, "Terminal")
-
 }
 
 func SetupConfig() {
@@ -108,7 +107,7 @@ func Read(Lable string) string {
 
 func Write(data interface{}, mType int) {
 	Lable := ""
-
+	//fmt.Println(data)
 	if reflect.TypeOf(data).String() == "string" {
 		Lable = data.(string)
 	} else {

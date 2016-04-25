@@ -6,6 +6,8 @@ import (
 	"errors"
 	"github.com/xuyu/goredis"
 	"strconv"
+
+	"fmt"
 )
 
 func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, isError bool, errorMessage string) {
@@ -289,4 +291,81 @@ func ResetSearchResultCache(request *messaging.ObjectRequest) (err error) {
 	}
 
 	return err
+}
+
+func StoreKeyValue(request *messaging.ObjectRequest, key string, value string) (err error) {
+	client, err := GetReusedRedisConnection(request)
+	if err != nil {
+		return
+	}
+	err = client.Set(key, value, 0, 0, false, false)
+	return
+}
+
+func GetKeyValue(request *messaging.ObjectRequest, key string) (value []byte) {
+	client, err := GetReusedRedisConnection(request)
+	if err != nil {
+		return
+	}
+	value, err = client.Get(key)
+	return
+}
+
+func GetKeyListPattern(request *messaging.ObjectRequest, key string) (value []string) {
+	client, err := GetReusedRedisConnection(request)
+	if err != nil {
+		return
+	}
+	value, err = client.Keys(key)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return
+}
+
+func ExistsKeyValue(request *messaging.ObjectRequest, key string) (status bool) {
+	client, err := GetReusedRedisConnection(request)
+	if err != nil {
+		return
+	}
+	status, err = client.Exists(key)
+	return
+}
+
+func DeleteKey(request *messaging.ObjectRequest, key string) (status bool) {
+	client, err := GetReusedRedisConnection(request)
+	if err != nil {
+		return
+	}
+	status, err = client.Expire(key, 0)
+	return
+}
+
+var RedisConnection *goredis.Redis
+
+func GetReusedRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err error) {
+	if RedisConnection == nil {
+		client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
+		if err != nil {
+			return nil, err
+		}
+		if client == nil {
+			return nil, errors.New("Connection to REDIS Failed!")
+		}
+	} else {
+		if err = RedisConnection.Ping(); err != nil {
+			RedisConnection = nil
+			client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
+			if err != nil {
+				return nil, err
+			}
+			if client == nil {
+				return nil, errors.New("Connection to REDIS Failed!")
+			}
+		} else {
+			client = RedisConnection
+		}
+	}
+
+	return
 }
