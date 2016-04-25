@@ -4,10 +4,9 @@ import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/term"
 	"errors"
+	"fmt"
 	"github.com/xuyu/goredis"
 	"strconv"
-
-	"fmt"
 )
 
 func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, isError bool, errorMessage string) {
@@ -103,7 +102,6 @@ func GetQuery(request *messaging.ObjectRequest) (output []byte) {
 }
 
 func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) (err error) {
-
 	client, isError, errorMessage := getRedisConnection(request)
 	if isError == true {
 		err = errors.New(errorMessage)

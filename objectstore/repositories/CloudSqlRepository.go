@@ -103,7 +103,6 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 func (repository CloudSqlRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Get-By-Key!", 2)
 	query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE __os_id = '" + getNoSqlKey(request) + "';"
-	//query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE __os_id = \"" + getNoSqlKey(request) + "\""
 	return repository.queryCommonOne(query, request)
 }
 
@@ -232,7 +231,6 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 	queryParam = strings.TrimPrefix(queryParam, "*")
 	queryParam = strings.TrimSuffix(queryParam, "*")
 	query += fullTextArguments + ") LIKE '%" + queryParam + "%' "*/
-
 	//Indexed Queries
 	queryParam := request.Body.Query.Parameters
 	queryParam = strings.TrimPrefix(queryParam, "*")
@@ -540,20 +538,18 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 				bytes, _ = json.Marshal(obj.([]map[string]interface{}))
 			}
 
-			term.Write("--------- Object Value ----------", term.Debug)
+			term.Write("Object Value :", term.Debug)
 			if len(bytes) > 1000 {
 				term.Write("Data Found but Too Long to STDOUT!", term.Debug)
 			} else {
 				term.Write(obj, term.Debug)
 			}
-			term.Write("---------------------------------", term.Debug)
 
 			//bytes, _ := json.Marshal(obj)
 			if checkEmptyByteArray(bytes) {
 				response.GetResponseWithBody(getEmptyByteObject())
 			} else {
 				response.GetResponseWithBody(bytes)
-				//response.GetSuccessResByObject(obj)
 			}
 		} else {
 			response.GetResponseWithBody(getEmptyByteObject())
@@ -627,50 +623,6 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 	return response
 }
 
-// func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest) RepositoryResponse {
-// 	response := RepositoryResponse{}
-
-// 	conn, _ := repository.getConnection(request)
-
-// 	scripts, err := repository.getStoreScript(conn, request)
-// 	for x := 0; x < len(scripts); x++ {
-// 		script := scripts[x]
-// 		queryArray := strings.Split(script, "###")
-
-// 		if strings.Contains(script, "###") {
-// 			//Multiple Updates
-// 			for index := 0; index < (len(queryArray) - 1); index++ {
-// 				err := repository.executeNonQuery(conn, queryArray[index])
-// 				if err != nil {
-// 					response.IsSuccess = false
-// 					response.Message = "Error Inserting All Objects in CloudSQL. Check Data!"
-// 					return response
-// 				}
-// 			}
-
-// 		} else {
-// 			if err == nil {
-// 				err := repository.executeNonQuery(conn, script)
-// 				if err != nil {
-// 					response.IsSuccess = false
-// 					response.Message = "Error Inserting All Objects in CloudSQL. Check Data!"
-// 					return response
-// 				}
-// 			} else {
-// 				response.IsSuccess = false
-// 				response.Message = "Error generating CloudSQL query : " + err.Error()
-// 				return response
-// 			}
-// 		}
-// 	}
-
-// 	response.IsSuccess = true
-// 	response.Message = "Successfully stored object(s) in CloudSQL"
-
-// 	repository.closeConnection(conn)
-// 	return response
-// }
-
 func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, class string, id string, request *messaging.ObjectRequest) (obj map[string]interface{}) {
 	isCacheable := false
 	if request != nil {
@@ -684,9 +636,13 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 		if result == nil {
 			query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = '" + id + "';"
 			obj, _ = repository.executeQueryOne(request, conn, query, nil)
-			err := cache.StoreOne(request, obj)
-			if err != nil {
-				term.Write(err.Error(), term.Error)
+			if obj == nil || len(obj) == 0 {
+				//Data not available.
+			} else {
+				err := cache.StoreOne(request, obj)
+				if err != nil {
+					term.Write(err.Error(), term.Error)
+				}
 			}
 		} else {
 			err := json.Unmarshal(result, &obj)
@@ -759,7 +715,7 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 	return
 }
 
-func (repository CloudSqlRepository) getSingleQueryNew(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
+func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
 	var updateArray []map[string]interface{}
 	var insertArray []map[string]interface{}
 
@@ -839,102 +795,12 @@ func (repository CloudSqlRepository) getSingleQueryNew(request *messaging.Object
 	return
 }
 
-func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
-
-	return repository.getSingleQueryNew(request, namespace, class, records, conn)
-
-	// runtime := 0       //times of loop run
-	// lastOperation := 1 //0=update, 1= insert
-	// isFirstRow := true
-	// var keyArray []string
-	// for _, obj := range records {
-	// 	currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj), request)
-
-	// 	if currentObject == nil || len(currentObject) == 0 {
-	// 		lastOperation = 1
-	// 		runtime += 1
-	// 		if isFirstRow {
-	// 			query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
-	// 		}
-
-	// 		id := ""
-
-	// 		if obj["OriginalIndex"] == nil {
-	// 			id = getNoSqlKeyById(request, obj)
-	// 		} else {
-	// 			id = obj["OriginalIndex"].(string)
-	// 		}
-
-	// 		delete(obj, "OriginalIndex")
-
-	// 		keyList := ""
-	// 		valueList := ""
-
-	// 		if isFirstRow {
-	// 			for k, _ := range obj {
-	// 				keyList += ("," + k)
-	// 				keyArray = append(keyArray, k)
-	// 			}
-	// 		}
-	// 		//term.Write(keyArray)
-	// 		for _, k := range keyArray {
-	// 			v := obj[k]
-	// 			valueList += ("," + repository.getSqlFieldValue(v))
-	// 		}
-
-	// 		if isFirstRow {
-	// 			query += "(__os_id" + keyList + ") VALUES "
-	// 		} else {
-	// 			query += ","
-	// 		}
-
-	// 		//query += ("(\"" + getNoSqlKeyById(request, obj) + "\"" + valueList + ")")
-	// 		query += ("(\"" + id + "\"" + valueList + ")")
-
-	// 	} else {
-	// 		runtime += 1
-	// 		lastOperation = 0
-	// 		updateValues := ""
-	// 		isFirst := true
-	// 		for k, v := range obj {
-	// 			if isFirst {
-	// 				isFirst = false
-	// 			} else {
-	// 				updateValues += ","
-	// 			}
-
-	// 			updateValues += (k + "=" + repository.getSqlFieldValue(v))
-	// 		}
-	// 		Updatequery := ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";")
-	// 		updateQueryCloudSql = append(updateQueryCloudSql, Updatequery)
-	// 		//query += ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";###")
-	// 		//_ = repository.executeNonQuery(conn, Updatequery)
-	// 	}
-
-	// 	if isFirstRow {
-	// 		isFirstRow = false
-	// 	}
-
-	// 	if runtime == 1 && lastOperation == 0 {
-	// 		isFirstRow = true
-	// 	} else {
-	// 		isFirstRow = false
-	// 	}
-
-	// 	// if isFirstRow {
-	// 	// 	isFirstRow = false
-	// 	// }
-	// }
-	// return
-}
-
 func (repository CloudSqlRepository) getDeleteScript(namespace string, class string, id string) string {
 	return "DELETE FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = \"" + id + "\""
 }
 
 func (repository CloudSqlRepository) getCreateScript(namespace string, class string, obj map[string]interface{}) string {
 	query := "CREATE TABLE IF NOT EXISTS " + repository.getDatabaseName(namespace) + "." + class + "(__os_id varchar(255) primary key"
-	//query := "CREATE TABLE IF NOT EXISTS " + repository.getDatabaseName(namespace) + "." + class + "(__os_id text"
 
 	var textFields []string
 
@@ -1080,21 +946,13 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 		tableCacheKeys = cache.GetKeyListPattern(request, tableCachePattern)
 
 		for _, key := range tableCacheKeys {
-			var value string
 			byteVal := cache.GetKeyValue(request, key)
-			err = json.Unmarshal(byteVal, &value)
-			cacheItem[key] = value
+			cacheItem[strings.TrimPrefix(key, ("CloudSqlTableCache."+dbName+"."+request.Controls.Class+"."))] = string(byteVal)
 		}
 
 	} else {
 		cacheItem = tableCache[dbName+"."+class]
 	}
-
-	term.Write("------------ CURRENT TABLE FIELDS AND TYPES -----------------", term.Debug)
-	for singleFieldName, singleFieldType := range cacheItem {
-		term.Write(singleFieldName+" : "+singleFieldType, term.Debug)
-	}
-	term.Write("-------------------------------------------------------------", term.Debug)
 
 	isFirst := true
 	for k, v := range obj {
@@ -1176,12 +1034,18 @@ func (repository CloudSqlRepository) buildTableCache(request *messaging.ObjectRe
 			}
 		}
 	} else {
-		var exResult []map[string]interface{}
-		exResult, err := repository.executeQueryMany(request, conn, "EXPLAIN "+dbName+"."+class, nil)
-		if err == nil {
-			for _, cRow := range exResult {
-				key := "CloudSqlTableCache." + dbName + "." + request.Controls.Class + "." + cRow["Field"].(string)
-				err = cache.StoreKeyValue(request, key, (cRow["Type"].(string)))
+
+		tableCachePattern := "CloudSqlTableCache." + dbName + "." + request.Controls.Class + ".*"
+		var tableCacheKeys []string
+		tableCacheKeys = cache.GetKeyListPattern(request, tableCachePattern)
+		if len(tableCacheKeys) == 0 {
+			var exResult []map[string]interface{}
+			exResult, err := repository.executeQueryMany(request, conn, "EXPLAIN "+dbName+"."+class, nil)
+			if err == nil {
+				for _, cRow := range exResult {
+					key := "CloudSqlTableCache." + dbName + "." + request.Controls.Class + "." + cRow["Field"].(string)
+					err = cache.StoreKeyValue(request, key, (cRow["Type"].(string)))
+				}
 			}
 		}
 	}
@@ -1214,7 +1078,6 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		connection = make(map[string]*sql.DB)
 	}
 
-	//var stats sql.DBStats
 	//_ = time.Now()
 	//term.Write("-----------------------------------------------", term.Information)
 	//connParams := request.Configuration.ServerConfiguration["MYSQL"]
@@ -1231,7 +1094,6 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		c.SetConnMaxLifetime(time.Duration(5) * time.Minute)
 		conn = c
 		connection[request.Controls.Namespace] = c
-		//stats = conn.Stats()
 	} else {
 		if connection[request.Controls.Namespace].Ping(); err != nil {
 			_ = connection[request.Controls.Namespace].Close()
@@ -1245,15 +1107,11 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 			c.SetConnMaxLifetime(time.Duration(5) * time.Minute)
 			conn = c
 			connection[request.Controls.Namespace] = c
-			//stats = conn.Stats()
 		} else {
 			//term.Write("Using Cached Connection!", term.Information)
 			conn = connection[request.Controls.Namespace]
-			//stats = conn.Stats()
 		}
 	}
-
-	//fmt.Println("Open Connections : " + strconv.Itoa(stats.OpenConnections))
 	return conn, err
 }
 
@@ -1486,11 +1344,6 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 		return b
 	}
 
-	// term.Write("--------------")
-	// term.Write(t)
-	// term.Write(string(b))
-	// term.Write("--------------")
-
 	var outData interface{}
 	tmp := string(b)
 	switch t {
@@ -1608,7 +1461,7 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 	values := make([]interface{}, count)
 	valuePtrs := make([]interface{}, count)
 
-	var cacheItem map[string]string
+	cacheItem := make(map[string]string)
 
 	if tableName != nil {
 		if CheckRedisAvailability(request) {
@@ -1617,10 +1470,8 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 			tableCacheKeys = cache.GetKeyListPattern(request, tableCachePattern)
 
 			for _, key := range tableCacheKeys {
-				var value string
 				byteVal := cache.GetKeyValue(request, key)
-				err = json.Unmarshal(byteVal, &value)
-				cacheItem[key] = value
+				cacheItem[strings.TrimPrefix(key, "CloudSqlTableCache."+tableName.(string)+".")] = string(byteVal)
 			}
 		} else {
 			tName := tableName.(string)
