@@ -107,7 +107,7 @@ func Read(Lable string) string {
 
 func Write(data interface{}, mType int) {
 	Lable := ""
-	fmt.Println(data)
+	//fmt.Println(data)
 	if reflect.TypeOf(data).String() == "string" {
 		Lable = data.(string)
 	} else {
