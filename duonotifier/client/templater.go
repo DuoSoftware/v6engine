@@ -4,7 +4,7 @@ import (
 	"duov6.com/duonotifier/messaging"
 	"duov6.com/objectstore/client"
 	"encoding/json"
-	"fmt"
+	//"fmt"
 	"strings"
 )
 
@@ -49,7 +49,7 @@ func getFormatted(request messaging.TemplateRequest, data map[string]interface{}
 
 		if key != "TemplateID" {
 			stringVal := value.(string)
-			fmt.Println(stringVal)
+			//fmt.Println(stringVal)
 			for param, paramVal := range keyWordMap {
 				stringVal = strings.Replace(stringVal, param, paramVal, -1)
 			}

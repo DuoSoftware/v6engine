@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"duov6.com/duonotifier/messaging"
 	"encoding/json"
-	"fmt"
+	//"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -21,7 +21,7 @@ func Send(securityToken string, subject string, domain string, class string, tem
 	client := &http.Client{}
 	_, err = client.Do(req)
 	if err != nil {
-		fmt.Println(err.Error())
+		//fmt.Println(err.Error())
 		response.IsSuccess = false
 		response.Message = "Email sending Failed!"
 	} else {
