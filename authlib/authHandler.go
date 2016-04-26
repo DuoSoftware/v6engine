@@ -10,7 +10,7 @@ import (
 	"duov6.com/objectstore/client"
 	"duov6.com/term"
 	"encoding/json"
-	"fmt"
+	//"fmt"
 	"strings"
 	//"time"
 )
@@ -269,7 +269,7 @@ func (h *AuthHandler) SaveUser(u User, update bool) (User, string) {
 		err := json.Unmarshal(bytes, &uList)
 		//if err == nil || bytes == nil {
 		term.Write("SaveUser saving user retrived", term.Debug)
-		fmt.Println(uList)
+		//fmt.Println(uList)
 		term.Write("SaveUser saving user retrived", term.Debug)
 		if err != nil || uList.UserID == "" {
 			u.Active = false
@@ -361,14 +361,14 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 	term.Write(Config.UserName, term.Debug)
 	email = strings.ToLower(email)
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(email).Ok()
-	fmt.Println(string(bytes))
+	//fmt.Println(string(bytes))
 	var user User
 	if err == "" {
 		if bytes != nil {
 			var uList User
 			err := json.Unmarshal(bytes, &uList)
 			if err == nil {
-				fmt.Println(uList)
+				//fmt.Println(uList)
 				if uList.Password == common.GetHash(password) && strings.ToLower(uList.EmailAddress) == strings.ToLower(email) {
 					return uList, ""
 				} else {
