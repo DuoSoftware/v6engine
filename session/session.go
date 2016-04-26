@@ -31,9 +31,13 @@ func AddSession(a AuthCertificate) {
 }
 
 func RemoveSession(SecurityToken string) {
-	client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().ByUniqueKey(SecurityToken)
-	//client.Go("ignore", "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
-	term.Write("LogOut for SecurityToken :"+SecurityToken, term.Debug)
+	//client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().ByUniqueKey(SecurityToken)
+	Activ, err := GetSession(SecurityToken, "Nil")
+	if err == "" {
+		client.Go("ignore", "com.duosoftware.tenant", "authorized").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(Activ).Ok()
+		//client,.Go("ignore", "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
+		term.Write("LogOut for SecurityToken :"+SecurityToken, term.Debug)
+	}
 	//return true
 }
 
