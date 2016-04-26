@@ -6,7 +6,7 @@ import (
 	"duov6.com/gorest"
 	"duov6.com/objectstore/client"
 	"encoding/json"
-	"fmt"
+	//"fmt"
 	//"golang.org/x/oauth2"
 	//"crypto/hmac"
 	"strconv"
@@ -178,7 +178,7 @@ func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 			}
 		}*/
 	c, err := h.GetSession(SecurityToken, Domain)
-	fmt.Println(c)
+	//fmt.Println(c)
 	if err == "" {
 		a = c
 		return a
