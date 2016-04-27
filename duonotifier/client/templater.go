@@ -47,7 +47,7 @@ func getFormatted(request messaging.TemplateRequest, data map[string]interface{}
 
 	for key, value := range dataCopy {
 
-		if key != "TemplateID" {
+		if key != "TemplateID" && !strings.Contains(key, "osHeaders") {
 			stringVal := value.(string)
 			//fmt.Println(stringVal)
 			for param, paramVal := range keyWordMap {

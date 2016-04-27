@@ -6,6 +6,7 @@ import (
 	"duov6.com/authlib"
 	"duov6.com/objectstore/backup"
 	"duov6.com/objectstore/configuration"
+	"duov6.com/objectstore/keygenerator"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/processors"
 	"duov6.com/objectstore/repositories"
@@ -65,6 +66,17 @@ func (h *HTTPService) Start(isLogEnabled bool, isJsonStackEnabled bool) {
 	// m.Get("/crossdomain.xml", Crossdomain)
 	// m.Get("/clientaccesspolicy.xml", Clientaccesspolicy)
 	m.Run()
+}
+
+var isFlusherActivated bool
+
+func startKeyFlusher(request *messaging.ObjectRequest) {
+	if !isFlusherActivated {
+		isFlusherActivated = true
+		if repositories.CheckRedisAvailability(request) {
+			go keygenerator.UpdateCountsToDB()
+		}
+	}
 }
 
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
@@ -197,7 +209,7 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 	if isSuccess == false {
 		responseMessage = getQueryResponseString("Invalid Query Request", message, false, objectRequest.MessageStack, nil)
 	} else {
-
+		//startKeyFlusher(&objectRequest)
 		dispatcher := processors.Dispatcher{}
 		var repResponse repositories.RepositoryResponse = dispatcher.Dispatch(&objectRequest)
 		isSuccess = repResponse.IsSuccess

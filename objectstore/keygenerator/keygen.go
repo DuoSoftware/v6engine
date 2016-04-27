@@ -2,6 +2,7 @@ package keygenerator
 
 import (
 	"duov6.com/common"
+	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/keygenerator/drivers"
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
@@ -13,8 +14,20 @@ import (
 	//"strings"
 )
 
-func GetIncrementID(request *messaging.ObjectRequest, repository string) (key string) {
+func UpdateCountsToDB() {
+	tickCount := 0
+	c := time.Tick(1 * time.Second)
+	for _ = range c {
+		tickCount++
+		if tickCount == 5 {
+			tickCount = 0
+			fmt.Println("Executing KeyGen Update Routine")
+			_ = configuration.ConfigurationManager{}.Get("ignore", "com.duosoftware.auth", "users")
+		}
+	}
+}
 
+func GetIncrementID(request *messaging.ObjectRequest, repository string) (key string) {
 	client, err := GetConnection(request)
 	if err != nil {
 		key = common.GetGUID()
