@@ -40,33 +40,34 @@ func GetIncrementID(request *messaging.ObjectRequest, repository string) (key st
 func ExecuteKeyGenProcess(client *goredis.Redis, request *messaging.ObjectRequest, repository string) (key string) {
 	if status := CheckForKeyGen(request, client); status {
 		//Key Available in Database
-		if isLock := CheckKeyGenLock(request, client); isLock {
-			for true {
-				if isLock = CheckKeyGenLock(request, client); !isLock {
-					// Lock is Over
-					key = GetKeyGenKey(request, client)
-					SetKeyGenTime(request, client)
-					return
-				}
-			}
-		} else {
-			key = GetKeyGenKey(request, client)
-			SetKeyGenTime(request, client)
-		}
+		// if isLock := CheckKeyGenLock(request, client); isLock {
+		// 	for true {
+		// 		if isLock = CheckKeyGenLock(request, client); !isLock {
+		// 			// Lock is Over
+		// 			key = GetKeyGenKey(request, client)
+		// 			SetKeyGenTime(request, client)
+		// 			return
+		// 		}
+		// 	}
+		// } else {
+		key = GetKeyGenKey(request, client)
+		//SetKeyGenTime(request, client)
+		//	}
 	} else {
 		if IsLockKey := CheckKeyGenLock(request, client); !IsLockKey {
 			LockKeyGen(request, client)
 			max := VerifyMaxFromDB(request, repository, 0)
 			SetKeyGenKey(request, client, max)
 			UnlockKeyGen(request, client)
-			SetKeyGenTime(request, client)
+			//SetKeyGenTime(request, client)
 			key = max
 		} else {
 			for true {
+				time.Sleep(1)
 				if isLock := CheckKeyGenLock(request, client); !isLock {
 					// Lock is Over
 					key = GetKeyGenKey(request, client)
-					SetKeyGenTime(request, client)
+					//SetKeyGenTime(request, client)
 					return
 				}
 			}
@@ -109,7 +110,7 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 	port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
 	if RedisConnection == nil {
 		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=10s&maxidle=10")
+		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +121,7 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 		if err = RedisConnection.Ping(); err != nil {
 			RedisConnection = nil
 			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=10s&maxidle=10")
+			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
 			if err != nil {
 				return nil, err
 			}
@@ -135,10 +136,12 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 	return
 }
 
+var RedisConnectionTCP *goredis.Redis
+
 func GetConnectionTCP(host string, port string) (client *goredis.Redis, err error) {
-	if RedisConnection == nil {
+	if RedisConnectionTCP == nil {
 		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=10s&maxidle=10")
+		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
 		if err != nil {
 			return nil, err
 		}
@@ -146,10 +149,10 @@ func GetConnectionTCP(host string, port string) (client *goredis.Redis, err erro
 			return nil, errors.New("Connection to REDIS Failed!")
 		}
 	} else {
-		if err = RedisConnection.Ping(); err != nil {
-			RedisConnection = nil
+		if err = RedisConnectionTCP.Ping(); err != nil {
+			RedisConnectionTCP = nil
 			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=10s&maxidle=10")
+			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
 			if err != nil {
 				return nil, err
 			}
