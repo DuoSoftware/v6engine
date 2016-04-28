@@ -543,6 +543,17 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			response.Message = "Connection Failed to CloudSQL Server"
 		}
 		repository.closeConnection(conn)
+	case "FlushCache":
+		if CheckRedisAvailability(request) {
+			keygenerator.FlushCache(request)
+		} else {
+			tableCache = nil
+			availableDbs = nil
+			availableTables = nil
+		}
+
+		response.IsSuccess = true
+		response.Message = "Cache Cleared successfully!"
 	default:
 		return repository.GetAll(request)
 

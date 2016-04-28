@@ -306,3 +306,13 @@ func CreateNewKeyGenBundle(request *messaging.ObjectRequest) {
 		_ = CheckForKeyGen(request, client)
 	}
 }
+
+func FlushCache(request *messaging.ObjectRequest) {
+	client, err := GetConnection(request)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	_ = client.FlushAll()
+}
