@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"reflect"
-	"time"
+	//"reflect"
+	//"time"
 )
 
 const (
@@ -106,42 +106,41 @@ func Read(Lable string) string {
 }
 
 func Write(data interface{}, mType int) {
-	Lable := ""
-	//fmt.Println(data)
-	if reflect.TypeOf(data).String() == "string" {
-		Lable = data.(string)
-	} else {
-		byteArray, err := json.Marshal(data)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-		Lable = string(byteArray)
-	}
 
-	//var S string
-	switch mType {
-	case Error:
-		//log.Printf(format, ...)
-		if Config.ErrorLine {
-			fmt.Println(time.Now().String() + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
-		}
-	case Information:
-		fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Information! " + Lable + Reset)
-		// if Config.InformationLine {
-		// 	fmt.Println(FgGreen + time.Now().String() + " Information! " + Lable + Reset)
-		// }
-	case Debug:
-		if Config.DebugLine {
-			fmt.Println(FgBlue + time.Now().String() + " Debug! " + Lable + Reset)
-		}
-	case Splash:
-		fmt.Println(FgBlack + BgWhite + Lable + Reset)
-	case Blank:
-		fmt.Println(Lable)
-	default:
-		fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
-	}
+	//fmt.Println(data)
+
+	Lable := ""
+	// if reflect.TypeOf(data).String() == "string" {
+	// 	Lable = data.(string)
+	// } else {
+	// 	byteArray, err := json.Marshal(data)
+	// 	if err != nil {
+	// 		fmt.Println(err.Error())
+	// 		return
+	// 	}
+	// 	Lable = string(byteArray)
+	// }
+
+	// switch mType {
+	// case Error:
+	// 	if Config.ErrorLine {
+	// 		fmt.Println(time.Now().Format("2006-01-02 15:04:05") + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
+	// 	}
+	// case Information:
+	// 	if Config.InformationLine {
+	// 		fmt.Println(FgGreen + time.Now().Format("2006-01-02 15:04:05") + " Information! " + Lable + Reset)
+	// 	}
+	// case Debug:
+	// 	if Config.DebugLine {
+	// 		fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Debug! " + Lable + Reset)
+	// 	}
+	// case Splash:
+	// 	fmt.Println(FgBlack + BgWhite + Lable + Reset)
+	// case Blank:
+	// 	fmt.Println(Lable)
+	// default:
+	// 	fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
+	// }
 
 	if currentPlugin != nil {
 		currentPlugin.Log(Lable, mType)

@@ -109,7 +109,7 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 	port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
 	if RedisConnection == nil {
 		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
+		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=10s&maxidle=10")
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +120,7 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 		if err = RedisConnection.Ping(); err != nil {
 			RedisConnection = nil
 			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
+			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=10s&maxidle=10")
 			if err != nil {
 				return nil, err
 			}
@@ -138,7 +138,7 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 func GetConnectionTCP(host string, port string) (client *goredis.Redis, err error) {
 	if RedisConnection == nil {
 		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
+		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=10s&maxidle=10")
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +149,7 @@ func GetConnectionTCP(host string, port string) (client *goredis.Redis, err erro
 		if err = RedisConnection.Ping(); err != nil {
 			RedisConnection = nil
 			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
+			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=10s&maxidle=10")
 			if err != nil {
 				return nil, err
 			}
