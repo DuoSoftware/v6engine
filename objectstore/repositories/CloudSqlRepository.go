@@ -586,13 +586,6 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 				bytes, _ = json.Marshal(obj.([]map[string]interface{}))
 			}
 
-			term.Write("Object Value :", term.Debug)
-			if len(bytes) > 1000 {
-				term.Write("Data Found but Too Long to STDOUT!", term.Debug)
-			} else {
-				term.Write(obj, term.Debug)
-			}
-
 			//bytes, _ := json.Marshal(obj)
 			if checkEmptyByteArray(bytes) {
 				response.GetResponseWithBody(getEmptyByteObject())
@@ -1147,7 +1140,7 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		var c *sql.DB
 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-		c.SetMaxIdleConns(100)
+		c.SetMaxIdleConns(1000)
 		c.SetMaxOpenConns(0)
 		c.SetConnMaxLifetime(time.Duration(120) * time.Second)
 		conn = c
@@ -1160,7 +1153,7 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 			var c *sql.DB
 			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-			c.SetMaxIdleConns(100)
+			c.SetMaxIdleConns(1000)
 			c.SetMaxOpenConns(0)
 			c.SetConnMaxLifetime(time.Duration(120) * time.Second)
 			conn = c
