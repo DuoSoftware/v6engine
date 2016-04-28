@@ -299,7 +299,10 @@ func CreateNewKeyGenBundle(request *messaging.ObjectRequest) {
 		fmt.Println(err.Error())
 		return
 	}
-	SetKeyGenKey(request, client, "0")
-	SetKeyGenTime(request, client)
-	_ = CheckForKeyGen(request, client)
+
+	if !CheckForKeyGen(request, client) {
+		SetKeyGenKey(request, client, "0")
+		SetKeyGenTime(request, client)
+		_ = CheckForKeyGen(request, client)
+	}
 }

@@ -1142,7 +1142,7 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
 		c.SetMaxIdleConns(100)
 		c.SetMaxOpenConns(0)
-		c.SetConnMaxLifetime(time.Duration(60) * time.Second)
+		c.SetConnMaxLifetime(time.Duration(2) * time.Minute)
 		conn = c
 		connection[request.Controls.Namespace] = c
 	} else {
@@ -1155,7 +1155,7 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
 			c.SetMaxIdleConns(100)
 			c.SetMaxOpenConns(0)
-			c.SetConnMaxLifetime(time.Duration(60) * time.Second)
+			c.SetConnMaxLifetime(time.Duration(2) * time.Minute)
 			conn = c
 			connection[request.Controls.Namespace] = c
 		} else {
