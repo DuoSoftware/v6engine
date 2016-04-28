@@ -209,7 +209,7 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 	if isSuccess == false {
 		responseMessage = getQueryResponseString("Invalid Query Request", message, false, objectRequest.MessageStack, nil)
 	} else {
-		//startKeyFlusher(&objectRequest)
+		startKeyFlusher(&objectRequest)
 		dispatcher := processors.Dispatcher{}
 		var repResponse repositories.RepositoryResponse = dispatcher.Dispatch(&objectRequest)
 		isSuccess = repResponse.IsSuccess

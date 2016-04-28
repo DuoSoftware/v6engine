@@ -11,8 +11,8 @@ import (
 
 func store() {
 	client, _ := GetConnection()
-	now := time.Now().UTC().Format("2006-01-02 15:04:05")
-	_ = client.Set("cc", now, 0, 0, false, false)
+	//now := time.Now().UTC().Format("2006-01-02 15:04:05")
+	_ = client.Set("dd", "true", 0, 0, false, false)
 }
 
 func get() {
@@ -38,8 +38,24 @@ func get() {
 
 }
 
+func getBool() {
+	var dd bool
+	client, err := GetConnection()
+	val, _ := client.Get("dd")
+	fmt.Println(val)
+	err = json.Unmarshal(val, &dd)
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("-----")
+		fmt.Println(dd)
+	}
+}
+
 func GetConnection() (client *goredis.Redis, err error) {
-	client, err = goredis.DialURL("tcp://@" + "localhost" + ":" + "6379" + "/0?timeout=1s&maxidle=1")
+
+	client, err = goredis.Dial(&goredis.DialConfig{"tcp", ("localhost" + ":" + "6379"), 1, "", 1 * time.Second, 1})
+	//client, err = goredis.DialURL("tcp://@" + "localhost" + ":" + "6379" + "/0?timeout=1s&maxidle=1")
 	if err != nil {
 		return nil, err
 	}
@@ -50,9 +66,9 @@ func GetConnection() (client *goredis.Redis, err error) {
 }
 
 func main() {
-	//store()
-	delete()
-	//get()
+	store()
+	//delete()
+	//getBool()
 	//incr()
 	//fmt.Println(CheckKeyGenLock())
 }

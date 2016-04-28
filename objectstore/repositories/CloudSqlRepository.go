@@ -10,7 +10,7 @@ import (
 	"duov6.com/term"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
+	//"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
@@ -257,6 +257,17 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 
 func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Insert-Multiple!", 2)
+	var response RepositoryResponse
+
+	conn, err := repository.getConnection(request)
+	if err != nil {
+		response.IsSuccess = false
+		response.Message = err.Error()
+		return response
+	}
+
+	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Objects[0])
+
 	var idData map[string]interface{}
 	idData = make(map[string]interface{})
 
@@ -273,13 +284,25 @@ func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectReq
 	idMap["ID"] = idData
 	DataMap[0] = idMap
 
-	response := repository.queryStore(request)
+	response = repository.queryStore(request)
 	response.Data = DataMap
 	return response
 }
 
 func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Insert-Single!", 2)
+
+	var response RepositoryResponse
+
+	conn, err := repository.getConnection(request)
+	if err != nil {
+		response.IsSuccess = false
+		response.Message = err.Error()
+		return response
+	}
+
+	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Object)
+
 	id := repository.getRecordID(request, request.Body.Object)
 	request.Controls.Id = id
 	request.Body.Object[request.Body.Parameters.KeyProperty] = id
@@ -291,19 +314,44 @@ func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectReque
 	idData["ID"] = id
 	Data[0] = idData
 
-	response := repository.queryStore(request)
+	response = repository.queryStore(request)
 	response.Data = Data
 	return response
 }
 
 func (repository CloudSqlRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Update-Multiple!", 2)
-	return repository.queryStore(request)
+	var response RepositoryResponse
+
+	conn, err := repository.getConnection(request)
+	if err != nil {
+		response.IsSuccess = false
+		response.Message = err.Error()
+		return response
+	}
+
+	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Objects[0])
+
+	response = repository.queryStore(request)
+	return response
 }
 
 func (repository CloudSqlRepository) UpdateSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	term.Write("Executing Update-Single!", 2)
-	return repository.queryStore(request)
+
+	var response RepositoryResponse
+
+	conn, err := repository.getConnection(request)
+	if err != nil {
+		response.IsSuccess = false
+		response.Message = err.Error()
+		return response
+	}
+
+	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Object)
+
+	response = repository.queryStore(request)
+	return response
 }
 
 func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectRequest) RepositoryResponse {
@@ -660,28 +708,28 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messaging.ObjectRequest) (query []string, err error) {
 	namespace := request.Controls.Namespace
 	class := request.Controls.Class
-	var schemaObj map[string]interface{}
-	var allObjects []map[string]interface{}
-	if request.Body.Object != nil {
-		schemaObj = request.Body.Object
-		allObjects = make([]map[string]interface{}, 1)
-		allObjects[0] = schemaObj
-	} else {
-		if request.Body.Objects != nil {
-			if len(request.Body.Objects) != 0 {
-				schemaObj = request.Body.Objects[0]
-				allObjects = request.Body.Objects
-			} else {
-				err = errors.New("No objects available to store")
-				return
-			}
-		} else {
-			err = errors.New("No objects available to store")
-			return
-		}
-	}
+	// var schemaObj map[string]interface{}
+	// var allObjects []map[string]interface{}
+	// if request.Body.Object != nil {
+	// 	schemaObj = request.Body.Object
+	// 	allObjects = make([]map[string]interface{}, 1)
+	// 	allObjects[0] = schemaObj
+	// } else {
+	// 	if request.Body.Objects != nil {
+	// 		if len(request.Body.Objects) != 0 {
+	// 			schemaObj = request.Body.Objects[0]
+	// 			allObjects = request.Body.Objects
+	// 		} else {
+	// 			err = errors.New("No objects available to store")
+	// 			return
+	// 		}
+	// 	} else {
+	// 		err = errors.New("No objects available to store")
+	// 		return
+	// 	}
+	// }
 
-	repository.checkSchema(request, conn, namespace, class, schemaObj)
+	//repository.checkSchema(request, conn, namespace, class, schemaObj)
 
 	if request.Body.Object != nil {
 		arr := make([]map[string]interface{}, 1)
@@ -800,7 +848,10 @@ func (repository CloudSqlRepository) getDeleteScript(namespace string, class str
 }
 
 func (repository CloudSqlRepository) getCreateScript(namespace string, class string, obj map[string]interface{}) string {
-	query := "CREATE TABLE IF NOT EXISTS " + repository.getDatabaseName(namespace) + "." + class + "(__os_id varchar(255) primary key"
+
+	domain := repository.getDatabaseName(namespace)
+
+	query := "CREATE TABLE IF NOT EXISTS " + domain + "." + class + "(__os_id varchar(255) primary key"
 
 	var textFields []string
 
@@ -865,6 +916,7 @@ func (repository CloudSqlRepository) checkAvailabilityDb(request *messaging.Obje
 	if err == nil {
 		if dbResult["SCHEMA_NAME"] == nil {
 			repository.executeNonQuery(conn, "CREATE DATABASE IF NOT EXISTS "+dbName)
+			repository.executeNonQuery(conn, "create table "+dbName+".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);")
 		}
 
 		if CheckRedisAvailability(request) {
@@ -897,6 +949,10 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 					err = repository.executeNonQuery(conn, script)
 					if err != nil {
 						return
+					} else {
+						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','0','" + common.GetGUID() + "')"
+						_ = repository.executeNonQuery(conn, recordForIDService)
+						keygenerator.CreateNewKeyGenBundle(request)
 					}
 				}
 				if CheckRedisAvailability(request) {
@@ -919,9 +975,11 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 				if tableResult["Tables_in_"+dbName] == nil {
 					script := repository.getCreateScript(namespace, class, obj)
 					err = repository.executeNonQuery(conn, script)
-
 					if err != nil {
 						return
+					} else {
+						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','0','" + common.GetGUID() + "')"
+						_ = repository.executeNonQuery(conn, recordForIDService)
 					}
 				}
 				if availableTables[dbName+"."+class] == nil || availableTables[dbName+"."+class] == false {
@@ -1625,8 +1683,6 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 				repository.closeConnection(session)
 				return
 			} else {
-				_ = repository.checkAvailabilityDb(request, session, repository.getDatabaseName(request.Controls.Namespace))
-
 				//Reading maxCount from DB
 				checkTableQuery := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME='domainClassAttributes';"
 				tableResultMap, _ := repository.executeQueryOne(request, session, checkTableQuery, request.Controls.Class)

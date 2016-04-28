@@ -2,7 +2,6 @@ package keygenerator
 
 import (
 	"duov6.com/common"
-	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/keygenerator/drivers"
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
@@ -11,18 +10,17 @@ import (
 	"github.com/xuyu/goredis"
 	"strconv"
 	"time"
-	//"strings"
 )
 
 func UpdateCountsToDB() {
 	tickCount := 0
-	c := time.Tick(1 * time.Second)
+	c := time.Tick(1 * time.Minute)
 	for _ = range c {
 		tickCount++
-		if tickCount == 5 {
+		if tickCount == 30 {
 			tickCount = 0
-			fmt.Println("Executing KeyGen Update Routine")
-			_ = configuration.ConfigurationManager{}.Get("ignore", "com.duosoftware.auth", "users")
+			fmt.Println("Executing KeyGen Sync Routine. ( Every Once 30 Minutes )")
+			UpdateKeysInDB()
 		}
 	}
 }
@@ -44,96 +42,56 @@ func ExecuteKeyGenProcess(client *goredis.Redis, request *messaging.ObjectReques
 		//Key Available in Database
 		if isLock := CheckKeyGenLock(request, client); isLock {
 			for true {
-				time.Sleep(1 * time.Second)
 				if isLock = CheckKeyGenLock(request, client); !isLock {
 					// Lock is Over
 					key = GetKeyGenKey(request, client)
+					SetKeyGenTime(request, client)
 					return
 				}
 			}
 		} else {
-			if isUpdateTime := CheckIfTimeToUpdateDB(request, client, float64(5.0)); isUpdateTime {
-				if isLocked := CheckKeyGenLock(request, client); isLocked {
-					for true {
-						time.Sleep(1 * time.Second)
-						if isLocked = CheckKeyGenLock(request, client); !isLocked {
-							// Lock is Over
-							key = GetKeyGenKey(request, client)
-							return
-						}
-					}
-				} else {
-					//Not locked. Ready to update
-					LockKeyGen(request, client)
-					currentVal := ReadKeyGenKey(request, client)
-					IntCurrentVal, err := strconv.Atoi(currentVal)
-					if err != nil {
-						fmt.Println(err.Error())
-						return
-					}
-
-					max := VerifyMaxFromDB(request, repository, IntCurrentVal, false)
-
-					intMax, err := strconv.Atoi(max)
-					if err != nil {
-						key = GetKeyGenKey(request, client)
-						fmt.Println(err.Error())
-						return
-					}
-
-					if intMax > IntCurrentVal {
-						SetKeyGenKey(request, client, max)
-					}
-
-					UnlockKeyGen(request, client)
-					key = max
-				}
-			} else {
-				key = GetKeyGenKey(request, client)
-			}
+			key = GetKeyGenKey(request, client)
+			SetKeyGenTime(request, client)
 		}
-
 	} else {
 		if IsLockKey := CheckKeyGenLock(request, client); !IsLockKey {
 			LockKeyGen(request, client)
-			max := VerifyMaxFromDB(request, repository, 0, true)
+			max := VerifyMaxFromDB(request, repository, 0)
 			SetKeyGenKey(request, client, max)
 			UnlockKeyGen(request, client)
 			SetKeyGenTime(request, client)
 			key = max
 		} else {
 			for true {
-				time.Sleep(1 * time.Second)
 				if isLock := CheckKeyGenLock(request, client); !isLock {
 					// Lock is Over
 					key = GetKeyGenKey(request, client)
+					SetKeyGenTime(request, client)
 					return
 				}
 			}
 		}
-		//Key Not Available in Database
-		// LockKeyGen(request, client)
-		// max := VerifyMaxFromDB(request, repository, 0, true)
-		// SetKeyGenKey(request, client, max)
-		// UnlockKeyGen(request, client)
-		// SetKeyGenTime(request, client)
-		// key = max
 	}
 	return
 }
 
-func VerifyMaxFromDB(request *messaging.ObjectRequest, repository string, count int, verifySchema bool) (max string) {
+func VerifyMaxFromDB(request *messaging.ObjectRequest, repository string, count int) (max string) {
+
 	client, _ := GetConnection(request)
 	if lock := CheckKeyGenLock(request, client); lock {
-		time.Sleep(2 * time.Second)
-		max = GetKeyGenKey(request, client)
+		for true {
+			if isLock := CheckKeyGenLock(request, client); !isLock {
+				max = GetKeyGenKey(request, client)
+			}
+		}
 		return
 	}
-	fmt.Println("Readying to Update DomainClassAttributes class....")
+
+	fmt.Println("Syncing " + request.Controls.Namespace + ".DomainClassAttributes - " + repository)
 	switch repository {
 	case "CLOUDSQL":
 		var sqlDriver drivers.CloudSql
-		max = sqlDriver.VerifyMaxValueDB(request, count, verifySchema)
+		max = sqlDriver.VerifyMaxValueDB(request, count)
 		break
 	case "ELASTIC":
 		break
@@ -147,8 +105,11 @@ func VerifyMaxFromDB(request *messaging.ObjectRequest, repository string, count 
 var RedisConnection *goredis.Redis
 
 func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err error) {
+	host := request.Configuration.ServerConfiguration["REDIS"]["Host"]
+	port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
 	if RedisConnection == nil {
-		client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
+		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
+		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +119,37 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 	} else {
 		if err = RedisConnection.Ping(); err != nil {
 			RedisConnection = nil
-			client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
+			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
+			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
+			if err != nil {
+				return nil, err
+			}
+			if client == nil {
+				return nil, errors.New("Connection to REDIS Failed!")
+			}
+		} else {
+			client = RedisConnection
+		}
+	}
+
+	return
+}
+
+func GetConnectionTCP(host string, port string) (client *goredis.Redis, err error) {
+	if RedisConnection == nil {
+		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
+		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
+		if err != nil {
+			return nil, err
+		}
+		if client == nil {
+			return nil, errors.New("Connection to REDIS Failed!")
+		}
+	} else {
+		if err = RedisConnection.Ping(); err != nil {
+			RedisConnection = nil
+			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
+			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
 			if err != nil {
 				return nil, err
 			}
@@ -297,4 +288,15 @@ func ReadKeyGenKey(request *messaging.ObjectRequest, client *goredis.Redis) (val
 		}
 	}
 	return
+}
+
+func CreateNewKeyGenBundle(request *messaging.ObjectRequest) {
+	client, err := GetConnection(request)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	SetKeyGenKey(request, client, "0")
+	SetKeyGenTime(request, client)
+	_ = CheckForKeyGen(request, client)
 }

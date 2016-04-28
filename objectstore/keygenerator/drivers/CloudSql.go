@@ -23,16 +23,12 @@ func (driver CloudSql) getConnection(request *messaging.ObjectRequest) (conn *sq
 	return conn, err
 }
 
-func (driver CloudSql) VerifyMaxValueDB(request *messaging.ObjectRequest, amount int, verifySchema bool) (maxValue string) {
+func (driver CloudSql) VerifyMaxValueDB(request *messaging.ObjectRequest, amount int) (maxValue string) {
 
 	session, isError := driver.getConnection(request)
 	if isError != nil {
 		return
 	} else {
-		if verifySchema {
-			driver.verifyDBTableAvailability(session, request)
-		}
-
 		db := driver.getDatabaseName(request.Controls.Namespace)
 		class := strings.ToLower(request.Controls.Class)
 
@@ -61,7 +57,7 @@ func (driver CloudSql) VerifyMaxValueDB(request *messaging.ObjectRequest, amount
 			}
 		}
 
-		driver.CloseConnection(session)
+		go driver.CloseConnection(session)
 	}
 	return
 }
