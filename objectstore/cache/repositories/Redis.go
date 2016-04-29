@@ -11,18 +11,62 @@ import (
 
 func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, isError bool, errorMessage string) {
 
-	isError = false
-	client, err := goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
+	// isError = false
+	// client, err := goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
+	// if err != nil {
+	// 	isError = true
+	// 	errorMessage = err.Error()
+	// 	request.Log("Error! Can't connect to server!")
+	// 	return nil, isError, errorMessage
+
+	// }
+	// if client == nil {
+	// 	return nil, true, "No REDIS Host Found!"
+	// }
+	// return
+	client, err := GetConnection(request)
 	if err != nil {
 		isError = true
 		errorMessage = err.Error()
-		request.Log("Error! Can't connect to server!")
-		return nil, isError, errorMessage
+	}
+	return
+}
 
+var RedisCacheConnection *goredis.Redis
+
+func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err error) {
+	host := request.Configuration.ServerConfiguration["REDIS"]["Host"]
+	port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
+	if RedisCacheConnection == nil {
+		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
+		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=60s&maxidle=60")
+		if err != nil {
+			return nil, err
+		} else {
+			if client == nil {
+				return nil, errors.New("Connection to REDIS Failed!")
+			}
+			RedisCacheConnection = client
+		}
+
+	} else {
+		if err = RedisCacheConnection.Ping(); err != nil {
+			RedisCacheConnection = nil
+			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
+			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=60s&maxidle=60")
+			if err != nil {
+				return nil, err
+			} else {
+				if client == nil {
+					return nil, errors.New("Connection to REDIS Failed!")
+				}
+				RedisCacheConnection = client
+			}
+		} else {
+			client = RedisCacheConnection
+		}
 	}
-	if client == nil {
-		return nil, true, "No REDIS Host Found!"
-	}
+
 	return
 }
 
@@ -45,7 +89,7 @@ func GetByKey(request *messaging.ObjectRequest) (output []byte) {
 				term.Write("Retrieved from Cache!", term.Debug)
 			}
 		}
-		client.ClosePool()
+		//client.ClosePool()
 	}
 
 	return
@@ -70,7 +114,7 @@ func GetSearch(request *messaging.ObjectRequest) (output []byte) {
 				term.Write("Retrieved from Cache!", term.Debug)
 			}
 		}
-		client.ClosePool()
+		//client.ClosePool()
 	}
 
 	return
@@ -95,7 +139,7 @@ func GetQuery(request *messaging.ObjectRequest) (output []byte) {
 				term.Write("Retrieved from Cache!", term.Debug)
 			}
 		}
-		client.ClosePool()
+		//client.ClosePool()
 	}
 
 	return
@@ -122,7 +166,7 @@ func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) 
 			term.Write("Inserted One Record to Cache!", term.Debug)
 		}
 
-		client.ClosePool()
+		//client.ClosePool()
 	}
 
 	_ = ResetSearchResultCache(request)
@@ -144,7 +188,7 @@ func SetResultRedis(request *messaging.ObjectRequest, data interface{}) (err err
 		if err != nil {
 			term.Write("Inserted Search Result Set to Cache!", term.Debug)
 		}
-		client.ClosePool()
+		//client.ClosePool()
 	}
 
 	return
@@ -164,7 +208,7 @@ func SetQueryRedis(request *messaging.ObjectRequest, data interface{}) (err erro
 		if err != nil {
 			term.Write("Inserted Query Result Set to Cache!", term.Debug)
 		}
-		client.ClosePool()
+		//client.ClosePool()
 	}
 
 	return
@@ -182,7 +226,7 @@ func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{
 			value := getStringByObject(obj)
 			err = client.Set(key, value, ttl, 0, false, false)
 			if err != nil {
-				client.ClosePool()
+				//client.ClosePool()
 				return
 			}
 		}
@@ -190,7 +234,7 @@ func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{
 			term.Write("Inserted Many Records to Cache!", term.Debug)
 		}
 
-		client.ClosePool()
+		//client.ClosePool()
 	}
 
 	_ = ResetSearchResultCache(request)
@@ -220,7 +264,7 @@ func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{
 
 		_ = reply.OKValue()
 
-		client.ClosePool()
+		//client.ClosePool()
 	}
 
 	_ = ResetSearchResultCache(request)
@@ -239,7 +283,7 @@ func RemoveManyRedis(request *messaging.ObjectRequest, data []map[string]interfa
 			_ = reply.OKValue()
 		}
 
-		client.ClosePool()
+		//client.ClosePool()
 	}
 
 	_ = ResetSearchResultCache(request)
@@ -262,7 +306,7 @@ func ResetSearchResultCache(request *messaging.ObjectRequest) (err error) {
 				reply, err := client.ExecuteCommand("DEL", keyValue)
 				err = reply.OKValue()
 				if err != nil {
-					client.ClosePool()
+					//client.ClosePool()
 					return err
 				}
 			}
@@ -275,7 +319,7 @@ func ResetSearchResultCache(request *messaging.ObjectRequest) (err error) {
 				reply, err := client.ExecuteCommand("DEL", keyValue)
 				err = reply.OKValue()
 				if err != nil {
-					client.ClosePool()
+					//client.ClosePool()
 					return err
 				}
 			}
@@ -285,7 +329,7 @@ func ResetSearchResultCache(request *messaging.ObjectRequest) (err error) {
 			term.Write("Resetted the pattern Key Set in Cache!", term.Debug)
 		}
 
-		client.ClosePool()
+		//client.ClosePool()
 	}
 
 	return err

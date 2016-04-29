@@ -547,9 +547,9 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		if CheckRedisAvailability(request) {
 			keygenerator.FlushCache(request)
 		} else {
-			tableCache = nil
-			availableDbs = nil
-			availableTables = nil
+			tableCache = make(map[string]map[string]string)
+			availableDbs = make(map[string]interface{})
+			availableTables = make(map[string]interface{})
 		}
 
 		response.IsSuccess = true

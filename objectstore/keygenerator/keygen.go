@@ -28,6 +28,8 @@ func UpdateCountsToDB() {
 func GetIncrementID(request *messaging.ObjectRequest, repository string) (key string) {
 	client, err := GetConnection(request)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		key = common.GetGUID()
 		fmt.Println(err.Error() + " Returning an Unique GUID : " + key)
 	} else {
@@ -110,23 +112,28 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 	port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
 	if RedisConnection == nil {
 		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
+		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=60s&maxidle=60")
 		if err != nil {
 			return nil, err
+		} else {
+			if client == nil {
+				return nil, errors.New("Connection to REDIS Failed!")
+			}
+			RedisConnection = client
 		}
-		if client == nil {
-			return nil, errors.New("Connection to REDIS Failed!")
-		}
+
 	} else {
 		if err = RedisConnection.Ping(); err != nil {
 			RedisConnection = nil
 			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
+			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=60s&maxidle=60")
 			if err != nil {
 				return nil, err
-			}
-			if client == nil {
-				return nil, errors.New("Connection to REDIS Failed!")
+			} else {
+				if client == nil {
+					return nil, errors.New("Connection to REDIS Failed!")
+				}
+				RedisConnection = client
 			}
 		} else {
 			client = RedisConnection
@@ -141,26 +148,30 @@ var RedisConnectionTCP *goredis.Redis
 func GetConnectionTCP(host string, port string) (client *goredis.Redis, err error) {
 	if RedisConnectionTCP == nil {
 		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
+		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=60s&maxidle=60")
 		if err != nil {
 			return nil, err
-		}
-		if client == nil {
-			return nil, errors.New("Connection to REDIS Failed!")
+		} else {
+			if client == nil {
+				return nil, errors.New("Connection to REDIS Failed!")
+			}
+			RedisConnectionTCP = client
 		}
 	} else {
 		if err = RedisConnectionTCP.Ping(); err != nil {
 			RedisConnectionTCP = nil
 			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=1s&maxidle=1")
+			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=60s&maxidle=60")
 			if err != nil {
 				return nil, err
-			}
-			if client == nil {
-				return nil, errors.New("Connection to REDIS Failed!")
+			} else {
+				if client == nil {
+					return nil, errors.New("Connection to REDIS Failed!")
+				}
+				RedisConnectionTCP = client
 			}
 		} else {
-			client = RedisConnection
+			client = RedisConnectionTCP
 		}
 	}
 
@@ -173,6 +184,8 @@ func CheckForKeyGen(request *messaging.ObjectRequest, client *goredis.Redis) (st
 	//timeKey := "KeyGenTime." + request.Controls.Namespace + "." + request.Controls.Class
 	status, err := client.Exists(incrementKey)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 	}
 	return
@@ -183,6 +196,8 @@ func CheckKeyGenLock(request *messaging.ObjectRequest, client *goredis.Redis) (s
 	key := "KeyGenLock." + request.Controls.Namespace + "." + request.Controls.Class
 	val, err := client.Get(key)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 		return
 	}
@@ -194,6 +209,8 @@ func CheckKeyGenLock(request *messaging.ObjectRequest, client *goredis.Redis) (s
 
 	err = json.Unmarshal(val, &status)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 	}
 
@@ -205,6 +222,8 @@ func LockKeyGen(request *messaging.ObjectRequest, client *goredis.Redis) {
 	key := "KeyGenLock." + request.Controls.Namespace + "." + request.Controls.Class
 	err := client.Set(key, "false", 0, 0, false, false)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 	}
 }
@@ -213,6 +232,8 @@ func UnlockKeyGen(request *messaging.ObjectRequest, client *goredis.Redis) {
 	key := "KeyGenLock." + request.Controls.Namespace + "." + request.Controls.Class
 	err := client.Set(key, "false", 0, 0, false, false)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 	}
 }
@@ -222,6 +243,8 @@ func SetKeyGenTime(request *messaging.ObjectRequest, client *goredis.Redis) {
 	nowTime := time.Now().UTC().Format("2006-01-02 15:04:05")
 	err := client.Set(key, nowTime, 0, 0, false, false)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 	}
 }
@@ -232,6 +255,8 @@ func CheckIfTimeToUpdateDB(request *messaging.ObjectRequest, client *goredis.Red
 
 	val, err := client.Get(timeKey)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 		return
 	}
@@ -244,6 +269,8 @@ func CheckIfTimeToUpdateDB(request *messaging.ObjectRequest, client *goredis.Red
 
 	KeyGenTime, err := time.Parse("2006-01-02 15:04:05", string(val))
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 	} else {
 		difference := time.Now().UTC().Sub(KeyGenTime)
@@ -259,6 +286,8 @@ func SetKeyGenKey(request *messaging.ObjectRequest, client *goredis.Redis, value
 	key := "KeyGenKey." + request.Controls.Namespace + "." + request.Controls.Class
 	err := client.Set(key, value, 0, 0, false, false)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 	}
 }
@@ -267,6 +296,8 @@ func GetKeyGenKey(request *messaging.ObjectRequest, client *goredis.Redis) (valu
 	key := "KeyGenKey." + request.Controls.Namespace + "." + request.Controls.Class
 	val, err := client.Incr(key)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 		return
 	}
@@ -278,6 +309,8 @@ func ReadKeyGenKey(request *messaging.ObjectRequest, client *goredis.Redis) (val
 	key := "KeyGenKey." + request.Controls.Namespace + "." + request.Controls.Class
 	bvalue, err := client.Get(key)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 	}
 	err = json.Unmarshal(bvalue, &value)
@@ -296,6 +329,8 @@ func ReadKeyGenKey(request *messaging.ObjectRequest, client *goredis.Redis) (val
 func CreateNewKeyGenBundle(request *messaging.ObjectRequest) {
 	client, err := GetConnection(request)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 		return
 	}
@@ -310,6 +345,8 @@ func CreateNewKeyGenBundle(request *messaging.ObjectRequest) {
 func FlushCache(request *messaging.ObjectRequest) {
 	client, err := GetConnection(request)
 	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
 		fmt.Println(err.Error())
 		return
 	}
