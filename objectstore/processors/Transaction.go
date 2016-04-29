@@ -1,18 +1,23 @@
 package processors
 
 import (
+	"duov6.com/common"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
-	"github.com/twinj/uuid"
 	//"duov6.com/term"
 	//"fmt"
 )
 
-type Transaction struct {
+type TransactionDispatcher struct {
 }
 
-func (t *Transaction) ProcessTransaction(request *messaging.ObjectRequest) repositories.RepositoryResponse {
+const (
+	Command   = 0
+	Operation = 1
+)
+
+func (t *TransactionDispatcher) DispatchTransaction(request *messaging.ObjectRequest) repositories.RepositoryResponse {
 	var outResponse repositories.RepositoryResponse
 
 	//Fake Logic!
@@ -22,15 +27,15 @@ func (t *Transaction) ProcessTransaction(request *messaging.ObjectRequest) repos
 	return outResponse
 }
 
-func (t *Transaction) GetRequestType(request *messaging.ObjectRequest) (reqType string) {
+func (t *TransactionDispatcher) GetRequestType(request *messaging.ObjectRequest) (reqType int) {
 	if request.Body.Parameters.TransactionID != "" {
-		reqType = "operation"
+		reqType = Operation
 	} else if request.Body.Transaction.Type != "" {
-		reqType = "command"
+		reqType = Command
 	}
 	return
 }
 
-func (t *Transaction) GetTransactionID() string {
-	return uuid.NewV1().String()
+func (t *TransactionDispatcher) GetTransactionID() string {
+	return common.GetGUID()
 }

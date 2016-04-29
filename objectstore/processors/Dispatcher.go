@@ -21,8 +21,8 @@ func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.Rep
 
 	if transactionID != "" || transactionStruct.Type != "" {
 		term.Write("Transaction Request", term.Error)
-		var t Transaction
-		outResponse = t.ProcessTransaction(request)
+		var t TransactionDispatcher
+		outResponse = t.DispatchTransaction(request)
 	} else {
 		term.Write("Default Request", term.Error)
 		outResponse = d.ProcessDefaultDispatcher(request)

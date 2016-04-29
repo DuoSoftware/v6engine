@@ -1,10 +1,10 @@
 package Transaction
 
 import (
+	"duov6.com/common"
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
 	"errors"
-	"github.com/twinj/uuid"
 	"github.com/xuyu/goredis"
 	"strings"
 	"time"
@@ -84,5 +84,5 @@ func DeleteFromBlockList(request *messaging.ObjectRequest) (err error) {
 }
 
 func GetTransactionID() string {
-	return uuid.NewV1().String()
+	return common.GetGUID()
 }
