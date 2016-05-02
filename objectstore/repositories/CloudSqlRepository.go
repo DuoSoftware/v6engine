@@ -124,6 +124,8 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 		isOrderByDesc = true
 	}
 
+	domain := repository.getDatabaseName(request.Controls.Namespace)
+
 	response := RepositoryResponse{}
 	query := ""
 	if strings.Contains(request.Body.Query.Parameters, ":") {
@@ -141,11 +143,11 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 		fieldName = strings.TrimSpace(fieldName)
 		fieldValue = strings.TrimSpace(fieldValue)
 
-		query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "'"
+		query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "'"
 	} else {
 		if request.Body.Query.Parameters == "" || request.Body.Query.Parameters == "*" {
 			//Get All Query
-			query = "select * from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+			query = "select * from " + domain + "." + request.Controls.Class
 		} else {
 			//Full Text Search Query
 			query = repository.getFullTextSearchQuery(request)
@@ -196,7 +198,7 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 		}
 	} else {
 		//Get From Db
-		query := "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
+		query := "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + domain + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
 		repoResponse := repository.queryCommonMany(query, request)
 		var mapArray []map[string]interface{}
 		err := json.Unmarshal(repoResponse.Body, &mapArray)
@@ -230,7 +232,7 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 	queryParam = strings.TrimPrefix(queryParam, "*")
 	queryParam = strings.TrimSuffix(queryParam, "*")
 
-	query = "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE MATCH ("
+	query = "SELECT * FROM " + domain + "." + request.Controls.Class + " WHERE MATCH ("
 
 	argumentCount := 0
 	fullTextArguments := ""
@@ -405,7 +407,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 	switch queryType {
 	case "getFields":
 		request.Log("Starting GET-FIELDS sub routine!")
-		query := "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
+		query := "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + domain + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
 		repoResponse := repository.queryCommonMany(query, request)
 		var mapArray []map[string]interface{}
 		err := json.Unmarshal(repoResponse.Body, &mapArray)
@@ -423,7 +425,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		}
 	case "getClasses":
 		request.Log("Starting GET-CLASSES sub routine")
-		query := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + repository.getDatabaseName(request.Controls.Namespace) + "';"
+		query := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + domain + "';"
 		repoResponse := repository.queryCommonMany(query, request)
 		var mapArray []map[string]interface{}
 		err := json.Unmarshal(repoResponse.Body, &mapArray)
@@ -449,13 +451,13 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		for x := 1; x < len(fieldNames); x++ {
 			query += "," + fieldNames[x]
 		}
-		query += " from " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+		query += " from " + domain + "." + request.Controls.Class
 		return repository.queryCommonMany(query, request)
 	case "DropClass":
 		request.Log("Starting Delete-Class sub routine")
 		conn, err := repository.getConnection(request)
 		if err == nil {
-			query := "DROP TABLE " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+			query := "DROP TABLE " + domain + "." + request.Controls.Class
 			err := repository.executeNonQuery(conn, query)
 			if err != nil {
 				response.IsSuccess = false
@@ -1590,7 +1592,7 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string)
 }
 
 func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
-
+	domain := repository.getDatabaseName(request.Controls.Namespace)
 	isGUIDKey := false
 	isAutoIncrementId := false //else MANUAL key from the user
 
@@ -1616,11 +1618,11 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 				return
 			} else {
 				//Reading maxCount from DB
-				checkTableQuery := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + repository.getDatabaseName(request.Controls.Namespace) + "' AND TABLE_NAME='domainClassAttributes';"
+				checkTableQuery := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + domain + "' AND TABLE_NAME='domainClassAttributes';"
 				tableResultMap, _ := repository.executeQueryOne(request, session, checkTableQuery, request.Controls.Class)
 				if len(tableResultMap) == 0 {
 					//Create new domainClassAttributes  table
-					createDomainAttrQuery := "create table " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);"
+					createDomainAttrQuery := "create table " + domain + ".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);"
 					err := repository.executeNonQuery(session, createDomainAttrQuery)
 					if err != nil {
 						returnID = "1"
@@ -1628,7 +1630,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 						return
 					} else {
 						//insert record with count 1 and return
-						insertQuery := "INSERT INTO " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','1','" + common.GetGUID() + "')"
+						insertQuery := "INSERT INTO " + domain + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','1','" + common.GetGUID() + "')"
 						err = repository.executeNonQuery(session, insertQuery)
 						if err != nil {
 							returnID = "1"
@@ -1642,12 +1644,12 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					}
 				} else {
 					//This is a new Class.. Create New entry
-					readQuery := "SELECT maxCount FROM " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes where class = '" + strings.ToLower(request.Controls.Class) + "';"
-					myMap, _ := repository.executeQueryOne(request, session, readQuery, (repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes"))
+					readQuery := "SELECT maxCount FROM " + domain + ".domainClassAttributes where class = '" + strings.ToLower(request.Controls.Class) + "';"
+					myMap, _ := repository.executeQueryOne(request, session, readQuery, (domain + ".domainClassAttributes"))
 
 					if len(myMap) == 0 {
 						request.Log("New Class! New record for this class will be inserted")
-						insertNewClassQuery := "INSERT INTO " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes (class,maxCount,version) values ('" + strings.ToLower(request.Controls.Class) + "', '1', '" + common.GetGUID() + "');"
+						insertNewClassQuery := "INSERT INTO " + domain + ".domainClassAttributes (class,maxCount,version) values ('" + strings.ToLower(request.Controls.Class) + "', '1', '" + common.GetGUID() + "');"
 						err := repository.executeNonQuery(session, insertNewClassQuery)
 						if err != nil {
 							returnID = ""
@@ -1664,7 +1666,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 						maxCount, err := strconv.Atoi(myMap["maxCount"].(string))
 						maxCount++
 						returnID = strconv.Itoa(maxCount)
-						updateQuery := "UPDATE " + repository.getDatabaseName(request.Controls.Namespace) + ".domainClassAttributes SET maxCount='" + returnID + "' WHERE class = '" + strings.ToLower(request.Controls.Class) + "' ;"
+						updateQuery := "UPDATE " + domain + ".domainClassAttributes SET maxCount='" + returnID + "' WHERE class = '" + strings.ToLower(request.Controls.Class) + "' ;"
 						err = repository.executeNonQuery(session, updateQuery)
 						if err != nil {
 							returnID = ""

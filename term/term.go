@@ -125,7 +125,7 @@ func Write(data interface{}, mType int) {
 	switch mType {
 	case Error:
 		bt, _ := json.Marshal(data)
-		common.PublishLog("issues.txt", string(bt))
+		common.PublishLog("Errors.log", string(bt))
 		// if Config.ErrorLine {
 		// 	fmt.Println(time.Now().Format("2006-01-02 15:04:05") + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
 		// }
