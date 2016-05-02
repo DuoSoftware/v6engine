@@ -480,7 +480,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 						}
 					}
 
-					_ = cache.DeleteKey(request, ("CloudSqlAvailableTables." + request.Controls.Namespace + "." + request.Controls.Class))
+					_ = cache.DeleteKey(request, ("CloudSqlAvailableTables." + domain + "." + request.Controls.Class))
 				} else {
 					delete(availableTables, (domain + "." + request.Controls.Class))
 					delete(tableCache, (domain + "." + request.Controls.Class))
@@ -870,24 +870,24 @@ func (repository CloudSqlRepository) getCreateScript(namespace string, class str
 		}
 	}
 
-	fullTextFieldCount := 0
-	if len(textFields) > 0 {
-		query += ", FULLTEXT("
-		fieldList := ""
+	// fullTextFieldCount := 0
+	// if len(textFields) > 0 {
+	// 	query += ", FULLTEXT("
+	// 	fieldList := ""
 
-		for _, field := range textFields {
-			if fullTextFieldCount < 16 {
-				fieldList += field + ","
-			} else {
-				break
-			}
-			fullTextFieldCount += 1
-		}
+	// 	for _, field := range textFields {
+	// 		if fullTextFieldCount < 16 {
+	// 			fieldList += field + ","
+	// 		} else {
+	// 			break
+	// 		}
+	// 		fullTextFieldCount += 1
+	// 	}
 
-		fieldList = strings.TrimSuffix(fieldList, ",")
-		query += fieldList
-		query += ")"
-	}
+	// 	fieldList = strings.TrimSuffix(fieldList, ",")
+	// 	query += fieldList
+	// 	query += ")"
+	// }
 
 	query += ")"
 
