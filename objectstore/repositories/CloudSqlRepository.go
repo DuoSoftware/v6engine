@@ -10,12 +10,11 @@ import (
 	"duov6.com/term"
 	"encoding/base64"
 	"encoding/json"
-	//"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
 	"strings"
-	"time"
+	//"time"
 )
 
 type CloudSqlRepository struct {
@@ -26,7 +25,6 @@ func (repository CloudSqlRepository) GetRepositoryName() string {
 }
 
 func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
-	term.Write("Executing Get-All!", term.Debug)
 	isOrderByAsc := false
 	isOrderByDesc := false
 	orderbyfield := ""
@@ -65,7 +63,6 @@ func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) Re
 }
 
 func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
-	term.Write("Executing Get-Query!", 2)
 	response := RepositoryResponse{}
 	if request.Body.Query.Parameters != "*" {
 
@@ -91,7 +88,6 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 			return response
 		}
 
-		term.Write("Query : "+formattedQuery, term.Debug)
 		query := formattedQuery
 		response = repository.queryCommonMany(query, request)
 	} else {
@@ -101,13 +97,11 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 }
 
 func (repository CloudSqlRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
-	term.Write("Executing Get-By-Key!", 2)
 	query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE __os_id = '" + getNoSqlKey(request) + "';"
 	return repository.queryCommonOne(query, request)
 }
 
 func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
-	term.Write("Executing Get-Search!", 2)
 	isOrderByAsc := false
 	isOrderByDesc := false
 	orderbyfield := ""
@@ -256,7 +250,7 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 }
 
 func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
-	term.Write("Executing Insert-Multiple!", 2)
+
 	var response RepositoryResponse
 
 	conn, err := repository.getConnection(request)
@@ -290,7 +284,6 @@ func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectReq
 }
 
 func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	term.Write("Executing Insert-Single!", 2)
 
 	var response RepositoryResponse
 
@@ -320,7 +313,7 @@ func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectReque
 }
 
 func (repository CloudSqlRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
-	term.Write("Executing Update-Multiple!", 2)
+
 	var response RepositoryResponse
 
 	conn, err := repository.getConnection(request)
@@ -337,7 +330,6 @@ func (repository CloudSqlRepository) UpdateMultiple(request *messaging.ObjectReq
 }
 
 func (repository CloudSqlRepository) UpdateSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	term.Write("Executing Update-Single!", 2)
 
 	var response RepositoryResponse
 
@@ -355,7 +347,7 @@ func (repository CloudSqlRepository) UpdateSingle(request *messaging.ObjectReque
 }
 
 func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectRequest) RepositoryResponse {
-	term.Write("Executing Delete-Multiple!", 2)
+
 	response := RepositoryResponse{}
 	conn, err := repository.getConnection(request)
 	if err == nil {
@@ -383,7 +375,7 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 }
 
 func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	term.Write("Executing Delete-Single!", 2)
+
 	response := RepositoryResponse{}
 	conn, err := repository.getConnection(request)
 	if err == nil {
@@ -405,7 +397,7 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 }
 
 func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) RepositoryResponse {
-	term.Write("Executing Special!", 2)
+
 	response := RepositoryResponse{}
 	queryType := request.Body.Special.Type
 	domain := repository.getDatabaseName(request.Controls.Namespace)
@@ -1140,33 +1132,26 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		connection = make(map[string]*sql.DB)
 	}
 
-	//_ = time.Now()
-	//term.Write("-----------------------------------------------", term.Information)
-	//connParams := request.Configuration.ServerConfiguration["MYSQL"]
-	//term.Write("Using Server : "+connParams["Url"], term.Information)
-	//term.Write("Connection : ", term.Information)
-
 	if connection[request.Controls.Namespace] == nil {
-		//	term.Write("Nil Connection! Creating MySQL Connection!", term.Information)
 		var c *sql.DB
 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-		c.SetMaxIdleConns(100)
+		c.SetMaxIdleConns(0)
 		c.SetMaxOpenConns(0)
-		c.SetConnMaxLifetime(time.Duration(2) * time.Minute)
+		c.SetConnMaxLifetime(0)
 		conn = c
 		connection[request.Controls.Namespace] = c
 	} else {
 		if connection[request.Controls.Namespace].Ping(); err != nil {
 			_ = connection[request.Controls.Namespace].Close()
 			connection[request.Controls.Namespace] = nil
-			//	term.Write("Cached Connection Timed Out! Creating new Connection!", term.Information)
 			var c *sql.DB
 			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-			c.SetMaxIdleConns(100)
+			c.SetMaxIdleConns(0)
 			c.SetMaxOpenConns(0)
-			c.SetConnMaxLifetime(time.Duration(2) * time.Minute)
+			c.SetConnMaxLifetime(0)
+			//c.SetConnMaxLifetime(time.Duration(20) * time.Minute)
 			conn = c
 			connection[request.Controls.Namespace] = c
 		} else {
@@ -1177,63 +1162,14 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 	return conn, err
 }
 
-/*
-func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
-
-	// if connection == nil {
-	// 	connection = make(map[string]*sql.DB)
-	// }
-
-	// term.Write()
-	// term.Write("-------------------------------")
-	// connParams := request.Configuration.ServerConfiguration["MYSQL"]
-	// term.Write("Using Server : " + connParams["Url"])
-	// term.Write("Connection : ")
-
-	// if connection[request.Controls.Namespace] == nil {
-	term.Write("Nil Connection! Creating MySQL Connection!", term.Debug)
-	var c *sql.DB
-	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-	c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-	//c.SetMaxIdleConns(100)
-	//c.SetMaxOpenConns(0)
-	//c.SetConnMaxLifetime(time.Duration(600) * time.Second)
-	_ = time.Now()
-	conn = c
-	//connection[request.Controls.Namespace] = c
-	// } else {
-	// 	if connection[request.Controls.Namespace].Ping(); err != nil {
-	// 		term.Write("Cached Connection Timed Out! Creating new Connection!")
-	// 		var c *sql.DB
-	// 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-	// 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-	// 		//c.SetMaxIdleConns(100)
-	// 		//c.SetMaxOpenConns(0)
-	// 		//c.SetConnMaxLifetime(time.Duration(600) * time.Second)
-	// 		conn = c
-	// 		connection[request.Controls.Namespace] = c
-	// 	} else {
-	// 		term.Write("Using Cached Connection!")
-	// 		conn = connection[request.Controls.Namespace]
-	// 	}
-	// }
-
-	// if conn == nil {
-	// 	term.Write("NIL CONNECTION! SOMETHING TERRIBLY GONE WRONG!")
-	// } else {
-	// 	term.Write(conn)
-	// }
-
-	// term.Write("-------------------------------")
-	// term.Write()
-	if err != nil {
-		term.Write("Connection Error! Check DB : "+err.Error(), term.Debug)
-	} else {
-		term.Write("Connection Created Successfully!", term.Debug)
-	}
-	return conn, err
-}
-*/
+// func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
+// 	_ = time.Now()
+// 	var c *sql.DB
+// 	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+// 	c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
+// 	conn = c
+// 	return conn, err
+// }
 
 func (repository CloudSqlRepository) getDatabaseName(namespace string) string {
 	return "_" + strings.ToLower(strings.Replace(namespace, ".", "", -1))
@@ -1589,13 +1525,6 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 
 func (repository CloudSqlRepository) executeQueryMany(request *messaging.ObjectRequest, conn *sql.DB, query string, tableName interface{}) (result []map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
-	term.Write("Query Many : ", term.Debug)
-
-	if len(query) > 1000 {
-		term.Write("Query Found but Too Long to STDOUT!", term.Debug)
-	} else {
-		term.Write(query, term.Debug)
-	}
 
 	if err == nil {
 		result, err = repository.rowsToMap(request, rows, tableName)
@@ -1611,12 +1540,6 @@ func (repository CloudSqlRepository) executeQueryMany(request *messaging.ObjectR
 
 func (repository CloudSqlRepository) executeQueryOne(request *messaging.ObjectRequest, conn *sql.DB, query string, tableName interface{}) (result map[string]interface{}, err error) {
 	rows, err := conn.Query(query)
-	term.Write("Query One : ", term.Debug)
-	if len(query) > 1000 {
-		term.Write("Query Found but Too Long to STDOUT!", term.Debug)
-	} else {
-		term.Write(query, term.Debug)
-	}
 
 	if err == nil {
 		var resultSet []map[string]interface{}
@@ -1635,29 +1558,34 @@ func (repository CloudSqlRepository) executeQueryOne(request *messaging.ObjectRe
 	return
 }
 
+// func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
+
+// 	term.Write("Executing Non-Query : ", term.Debug)
+// 	if len(query) > 1000 {
+// 		term.Write("Query Found but Too Long to STDOUT!", term.Debug)
+// 	} else {
+// 		term.Write(query, term.Debug)
+// 	}
+
+// 	var stmt *sql.Stmt
+// 	stmt, err = conn.Prepare(query)
+// 	if err != nil {
+// 		term.Write(err.Error(), term.Debug)
+// 		return err
+// 	}
+// 	_, err = stmt.Exec()
+
+// 	if err != nil {
+// 		term.Write(err.Error(), term.Debug)
+// 		return err
+// 	}
+
+// 	_ = stmt.Close()
+// 	return
+// }
+
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
-
-	term.Write("Executing Non-Query : ", term.Debug)
-	if len(query) > 1000 {
-		term.Write("Query Found but Too Long to STDOUT!", term.Debug)
-	} else {
-		term.Write(query, term.Debug)
-	}
-
-	var stmt *sql.Stmt
-	stmt, err = conn.Prepare(query)
-	if err != nil {
-		term.Write(err.Error(), term.Debug)
-		return err
-	}
-	_, err = stmt.Exec()
-
-	if err != nil {
-		term.Write(err.Error(), term.Debug)
-		return err
-	}
-
-	_ = stmt.Close()
+	_, err = conn.Exec(query)
 	return
 }
 

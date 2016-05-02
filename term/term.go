@@ -2,6 +2,7 @@ package term
 
 import (
 	"bufio"
+	"duov6.com/common"
 	"duov6.com/config"
 	"duov6.com/updater"
 	"encoding/json"
@@ -121,26 +122,28 @@ func Write(data interface{}, mType int) {
 	// 	Lable = string(byteArray)
 	// }
 
-	// switch mType {
-	// case Error:
-	// 	if Config.ErrorLine {
-	// 		fmt.Println(time.Now().Format("2006-01-02 15:04:05") + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
-	// 	}
-	// case Information:
-	// 	if Config.InformationLine {
-	// 		fmt.Println(FgGreen + time.Now().Format("2006-01-02 15:04:05") + " Information! " + Lable + Reset)
-	// 	}
-	// case Debug:
-	// 	if Config.DebugLine {
-	// 		fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Debug! " + Lable + Reset)
-	// 	}
-	// case Splash:
-	// 	fmt.Println(FgBlack + BgWhite + Lable + Reset)
-	// case Blank:
-	// 	fmt.Println(Lable)
-	// default:
-	// 	fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
-	// }
+	switch mType {
+	case Error:
+		bt, _ := json.Marshal(data)
+		common.PublishLog("issues.txt", string(bt))
+		// if Config.ErrorLine {
+		// 	fmt.Println(time.Now().Format("2006-01-02 15:04:05") + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
+		// }
+	case Information:
+		// if Config.InformationLine {
+		// 	fmt.Println(FgGreen + time.Now().Format("2006-01-02 15:04:05") + " Information! " + Lable + Reset)
+		// }
+	case Debug:
+		// if Config.DebugLine {
+		// 	fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Debug! " + Lable + Reset)
+		// }
+	case Splash:
+		//fmt.Println(FgBlack + BgWhite + Lable + Reset)
+	case Blank:
+		//fmt.Println(Lable)
+	default:
+		//fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
+	}
 
 	if currentPlugin != nil {
 		currentPlugin.Log(Lable, mType)
