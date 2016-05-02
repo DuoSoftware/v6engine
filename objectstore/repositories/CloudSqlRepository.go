@@ -14,7 +14,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
 	"strings"
-	//"time"
+	"time"
 )
 
 type CloudSqlRepository struct {
@@ -1138,9 +1138,9 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		var c *sql.DB
 		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-		c.SetMaxIdleConns(0)
+		c.SetMaxIdleConns(50)
 		c.SetMaxOpenConns(0)
-		c.SetConnMaxLifetime(0)
+		c.SetConnMaxLifetime(time.Duration(5) * time.Minute)
 		conn = c
 		connection[request.Controls.Namespace] = c
 	} else {
@@ -1150,10 +1150,9 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 			var c *sql.DB
 			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-			c.SetMaxIdleConns(0)
+			c.SetMaxIdleConns(50)
 			c.SetMaxOpenConns(0)
-			c.SetConnMaxLifetime(0)
-			//c.SetConnMaxLifetime(time.Duration(20) * time.Minute)
+			c.SetConnMaxLifetime(time.Duration(5) * time.Minute)
 			conn = c
 			connection[request.Controls.Namespace] = c
 		} else {
