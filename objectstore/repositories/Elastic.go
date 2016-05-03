@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"duov6.com/objectstore/connmanager"
+	//"duov6.com/objectstore/connmanager"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
 	"encoding/json"
@@ -687,20 +687,47 @@ func (repository ElasticRepository) getByCURL(host string, port string, path str
 	return
 }
 
-func (repository ElasticRepository) getConnection(request *messaging.ObjectRequest) (connection *elastigo.Conn) {
-	connInt := connmanager.Get("ELASTIC", request.Controls.Namespace)
-	if connInt != nil {
-		connection = connInt.(*elastigo.Conn)
-	} else {
-		host := request.Configuration.ServerConfiguration["ELASTIC"]["Host"]
-		port := request.Configuration.ServerConfiguration["ELASTIC"]["Port"]
-		request.Log("Establishing new connection for Elastic Search " + host + ":" + port)
+// func (repository ElasticRepository) getConnection(request *messaging.ObjectRequest) (connection *elastigo.Conn) {
+// 	connInt := connmanager.Get("ELASTIC", request.Controls.Namespace)
+// 	if connInt != nil {
+// 		connection = connInt.(*elastigo.Conn)
+// 	} else {
+// 		host := request.Configuration.ServerConfiguration["ELASTIC"]["Host"]
+// 		port := request.Configuration.ServerConfiguration["ELASTIC"]["Port"]
+// 		request.Log("Establishing new connection for Elastic Search " + host + ":" + port)
 
+// 		conn := elastigo.NewConn()
+// 		conn.SetHosts([]string{host})
+// 		conn.Port = port
+// 		connection = conn
+// 		connmanager.Set("ELASTIC", request.Controls.Namespace, connection)
+// 	}
+// 	return
+// }
+
+var ElasticConnections map[string]*elastigo.Conn
+
+func (repository ElasticRepository) getConnection(request *messaging.ObjectRequest) (connection *elastigo.Conn) {
+
+	if ElasticConnections == nil {
+		ElasticConnections = make(map[string]*elastigo.Conn)
+	}
+
+	host := request.Configuration.ServerConfiguration["ELASTIC"]["Host"]
+	port := request.Configuration.ServerConfiguration["ELASTIC"]["Port"]
+
+	pattern := host + ":" + port
+
+	if ElasticConnections[pattern] != nil {
+		connection = ElasticConnections[pattern]
+	} else {
 		conn := elastigo.NewConn()
 		conn.SetHosts([]string{host})
 		conn.Port = port
 		connection = conn
-		connmanager.Set("ELASTIC", request.Controls.Namespace, connection)
+		if ElasticConnections[pattern] != nil {
+			ElasticConnections[pattern] = connection
+		}
 	}
 	return
 }
