@@ -1145,6 +1145,8 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 	OpenLimit := 0
 	TTL := 5
 
+	poolPattern := url
+
 	if mysqlConf["IdleLimit"] != "" {
 		IdleLimit, err = strconv.Atoi(mysqlConf["IdleLimit"])
 		if err != nil {
@@ -1166,25 +1168,25 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 		}
 	}
 
-	if connection[request.Controls.Namespace] == nil {
+	if connection[poolPattern] == nil {
 		conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
 		if err != nil {
 			term.Write(err.Error(), term.Error)
 			return
 		}
-		connection[request.Controls.Namespace] = conn
+		connection[poolPattern] = conn
 	} else {
-		if connection[request.Controls.Namespace].Ping(); err != nil {
-			_ = connection[request.Controls.Namespace].Close()
-			connection[request.Controls.Namespace] = nil
+		if connection[poolPattern].Ping(); err != nil {
+			_ = connection[poolPattern].Close()
+			connection[poolPattern] = nil
 			conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
 			if err != nil {
 				term.Write(err.Error(), term.Error)
 				return
 			}
-			connection[request.Controls.Namespace] = conn
+			connection[poolPattern] = conn
 		} else {
-			conn = connection[request.Controls.Namespace]
+			conn = connection[poolPattern]
 		}
 	}
 	return conn, err
