@@ -1,9 +1,9 @@
 package repositories
 
 import (
+	"duov6.com/common"
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
-	"github.com/twinj/uuid"
 	"reflect"
 	"strconv"
 	"strings"
@@ -31,7 +31,7 @@ func FillControlHeaders(request *messaging.ObjectRequest) {
 	currentTime := getTime()
 	if request.Controls.Multiplicity == "single" {
 		controlObject := messaging.ControlHeaders{}
-		controlObject.Version = uuid.NewV1().String()
+		controlObject.Version = common.GetGUID()
 		controlObject.Namespace = request.Controls.Namespace
 		controlObject.Class = request.Controls.Class
 		controlObject.Tenant = "123"
@@ -41,7 +41,7 @@ func FillControlHeaders(request *messaging.ObjectRequest) {
 	} else {
 		for _, obj := range request.Body.Objects {
 			controlObject := messaging.ControlHeaders{}
-			controlObject.Version = uuid.NewV1().String()
+			controlObject.Version = common.GetGUID()
 			controlObject.Namespace = request.Controls.Namespace
 			controlObject.Class = request.Controls.Class
 			controlObject.Tenant = "123"
@@ -78,7 +78,7 @@ func getNoSqlKeyById(request *messaging.ObjectRequest, obj map[string]interface{
 func getNoSqlKeyByGUID(request *messaging.ObjectRequest) string {
 	namespace := request.Controls.Namespace
 	class := request.Controls.Class
-	key := namespace + "." + class + "." + uuid.NewV1().String()
+	key := namespace + "." + class + "." + common.GetGUID()
 	return key
 }
 

@@ -1033,23 +1033,25 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 	if len(alterColumns) != 0 {
 		alterQuery := "ALTER TABLE " + dbName + "." + class + " " + alterColumns
 		err = repository.executeNonQuery(conn, alterQuery)
-		//update Fulltext fields
-		fullTextQuery := "ALTER TABLE " + dbName + "." + class + " ADD FULLTEXT("
-		tableTypes := cacheItem
-
-		fullTextFields := ""
-
-		for field, fieldtype := range tableTypes {
-			if strings.EqualFold(fieldtype, "TEXT") {
-				fullTextFields += field + ","
-			}
+		if err != nil {
+			term.Write(err.Error(), term.Error)
 		}
+		//update Fulltext fields
+		// fullTextQuery := "ALTER TABLE " + dbName + "." + class + " ADD FULLTEXT("
+		// tableTypes := cacheItem
 
-		fullTextFields = strings.TrimSuffix(fullTextFields, ",")
-		fullTextQuery += fullTextFields
-		fullTextQuery += ");"
-		err = repository.executeNonQuery(conn, fullTextQuery)
+		// fullTextFields := ""
 
+		// for field, fieldtype := range tableTypes {
+		// 	if strings.EqualFold(fieldtype, "TEXT") {
+		// 		fullTextFields += field + ","
+		// 	}
+		// }
+
+		// fullTextFields = strings.TrimSuffix(fullTextFields, ",")
+		// fullTextQuery += fullTextFields
+		// fullTextQuery += ");"
+		// err = repository.executeNonQuery(conn, fullTextQuery)
 	}
 
 	return

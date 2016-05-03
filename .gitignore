@@ -22,3 +22,4 @@ serviceconsole/scheduler/scheduler.exe
 duonotifier/DuoNotifier.exe
 testpj/May2016/mysqlbench.exe
 objectstore/ObjectStore.exe~
+objectstore/Errors.log
