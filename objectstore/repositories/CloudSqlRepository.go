@@ -634,10 +634,12 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 				err := repository.executeNonQuery(conn, script)
 				if err != nil {
 					isOkay = false
+					term.Write(err.Error(), term.Error)
 				}
 			}
 		} else {
 			isOkay = false
+			term.Write(err.Error(), term.Error)
 		}
 	}
 
@@ -1133,34 +1135,67 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 	if connection == nil {
 		connection = make(map[string]*sql.DB)
 	}
+	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+
+	username := mysqlConf["Username"]
+	password := mysqlConf["Password"]
+	url := mysqlConf["Url"]
+	port := mysqlConf["Port"]
+	IdleLimit := -1
+	OpenLimit := 0
+	TTL := 5
+
+	if mysqlConf["IdleLimit"] != "" {
+		IdleLimit, err = strconv.Atoi(mysqlConf["IdleLimit"])
+		if err != nil {
+			term.Write(err.Error(), term.Error)
+		}
+	}
+
+	if mysqlConf["OpenLimit"] != "" {
+		OpenLimit, err = strconv.Atoi(mysqlConf["OpenLimit"])
+		if err != nil {
+			term.Write(err.Error(), term.Error)
+		}
+	}
+
+	if mysqlConf["TTL"] != "" {
+		TTL, err = strconv.Atoi(mysqlConf["TTL"])
+		if err != nil {
+			term.Write(err.Error(), term.Error)
+		}
+	}
 
 	if connection[request.Controls.Namespace] == nil {
-		var c *sql.DB
-		mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-		c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-		c.SetMaxIdleConns(50)
-		c.SetMaxOpenConns(0)
-		c.SetConnMaxLifetime(time.Duration(5) * time.Minute)
-		conn = c
-		connection[request.Controls.Namespace] = c
+		conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
+		if err != nil {
+			term.Write(err.Error(), term.Error)
+			return
+		}
+		connection[request.Controls.Namespace] = conn
 	} else {
 		if connection[request.Controls.Namespace].Ping(); err != nil {
 			_ = connection[request.Controls.Namespace].Close()
 			connection[request.Controls.Namespace] = nil
-			var c *sql.DB
-			mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-			c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-			c.SetMaxIdleConns(50)
-			c.SetMaxOpenConns(0)
-			c.SetConnMaxLifetime(time.Duration(5) * time.Minute)
-			conn = c
-			connection[request.Controls.Namespace] = c
+			conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
+			if err != nil {
+				term.Write(err.Error(), term.Error)
+				return
+			}
+			connection[request.Controls.Namespace] = conn
 		} else {
-			//term.Write("Using Cached Connection!", term.Information)
 			conn = connection[request.Controls.Namespace]
 		}
 	}
 	return conn, err
+}
+
+func (repository CloudSqlRepository) CreateConnection(username, password, url, port string, IdleLimit, OpenLimit, TTL int) (conn *sql.DB, err error) {
+	conn, err = sql.Open("mysql", username+":"+password+"@tcp("+url+":"+port+")/")
+	conn.SetMaxIdleConns(IdleLimit)
+	conn.SetMaxOpenConns(OpenLimit)
+	conn.SetConnMaxLifetime(time.Duration(TTL) * time.Minute)
+	return
 }
 
 // func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
