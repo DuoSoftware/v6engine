@@ -14,6 +14,8 @@ func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
+	fmt.Println(runtime.NumCPU())
+
 	arguments := os.Args[1:]
 	var IsLoggable bool
 	var IsJsonStackEnabled bool
