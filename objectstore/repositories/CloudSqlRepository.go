@@ -659,6 +659,8 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 
 	//execute insert queries
 	scripts, err := repository.getStoreScript(conn, request)
+
+	t1 := time.Now()
 	for x := 0; x < len(scripts); x++ {
 		script := scripts[x]
 		if err == nil {
@@ -674,9 +676,15 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 			term.Write(err.Error(), term.Error)
 		}
 	}
+	t2 := time.Now()
+	if len(scripts) > 0 {
+		fmt.Print("Time to Insert : ")
+		fmt.Println(t2.Sub(t1).Seconds())
+	}
 
 	//execute update queries
 	if updateQueryCloudSql != nil && len(updateQueryCloudSql) > 0 {
+		t3 := time.Now()
 		for x := 0; x < len(updateQueryCloudSql); x++ {
 			updateQuery := updateQueryCloudSql[x]
 			err := repository.executeNonQuery(conn, updateQuery)
@@ -685,6 +693,9 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 				isOkay = false
 			}
 		}
+		t4 := time.Now()
+		fmt.Print("Time to Update : ")
+		fmt.Println(t4.Sub(t3).Seconds())
 	}
 	//clear update array
 	updateQueryCloudSql = updateQueryCloudSql[:0]
@@ -704,6 +715,9 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 }
 
 func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, class string, id string, request *messaging.ObjectRequest) (obj map[string]interface{}) {
+
+	t1 := time.Now()
+
 	isCacheable := false
 	if request != nil {
 		if CheckRedisAvailability(request) {
@@ -734,6 +748,12 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 		query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = '" + id + "';"
 		obj, _ = repository.executeQueryOne(request, conn, query, nil)
 	}
+
+	t2 := time.Now()
+
+	fmt.Print("Time for Check If Record Available : ")
+	fmt.Println(t2.Sub(t1).Seconds())
+
 	return
 }
 
