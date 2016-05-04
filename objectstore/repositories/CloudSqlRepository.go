@@ -10,6 +10,7 @@ import (
 	"duov6.com/term"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
@@ -297,6 +298,9 @@ func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectReq
 
 	t3 := time.Now()
 	response = repository.queryStore(request)
+	if !response.IsSuccess && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+		response = repository.ReRun(request, conn, request.Body.Objects[0])
+	}
 	t4 := time.Now()
 	fmt.Print("Time For Query Store : ")
 	fmt.Println(t4.Sub(t3).Seconds())
@@ -337,11 +341,51 @@ func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectReque
 
 	t3 := time.Now()
 	response = repository.queryStore(request)
+	if !response.IsSuccess && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+		response = repository.ReRun(request, conn, request.Body.Object)
+	}
 	t4 := time.Now()
 	fmt.Print("Time For Query Store : ")
 	fmt.Println(t4.Sub(t3).Seconds())
 
 	response.Data = Data
+	return response
+}
+
+var CloudSqlSQLModeCheck map[string]string
+
+func (repository CloudSqlRepository) ReRun(request *messaging.ObjectRequest, conn *sql.DB, obj map[string]interface{}) RepositoryResponse {
+	var response RepositoryResponse
+	var err error
+	key := "CloudSqlSQLModeCheck." + request.Controls.Namespace + "." + request.Controls.Class
+
+	if CheckRedisAvailability(request) {
+		if !cache.ExistsKeyValue(request, key) {
+			request.Body.Parameters.Mode = "NOSQL"
+			repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
+			request.Body.Parameters.Mode = "SQL"
+			response = repository.queryStore(request)
+			err = cache.StoreKeyValue(request, key, "true")
+		}
+	} else {
+		if CloudSqlSQLModeCheck == nil {
+			CloudSqlSQLModeCheck = make(map[string]string)
+		}
+
+		if CloudSqlSQLModeCheck[key] != "true" {
+			request.Body.Parameters.Mode = "NOSQL"
+			repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
+			request.Body.Parameters.Mode = "SQL"
+			response = repository.queryStore(request)
+			CloudSqlSQLModeCheck[key] = "true"
+		}
+	}
+
+	if err != nil {
+		response.IsSuccess = false
+		response.Message = err.Error()
+	}
+
 	return response
 }
 
@@ -363,6 +407,9 @@ func (repository CloudSqlRepository) UpdateMultiple(request *messaging.ObjectReq
 
 	t3 := time.Now()
 	response = repository.queryStore(request)
+	if !response.IsSuccess && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+		response = repository.ReRun(request, conn, request.Body.Objects[0])
+	}
 	t4 := time.Now()
 	fmt.Print("Time For Query Store : ")
 	fmt.Println(t4.Sub(t3).Seconds())
@@ -388,6 +435,9 @@ func (repository CloudSqlRepository) UpdateSingle(request *messaging.ObjectReque
 
 	t3 := time.Now()
 	response = repository.queryStore(request)
+	if !response.IsSuccess && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+		response = repository.ReRun(request, conn, request.Body.Object)
+	}
 	t4 := time.Now()
 	fmt.Print("Time For Query Store : ")
 	fmt.Println(t4.Sub(t3).Seconds())
@@ -819,13 +869,45 @@ func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectReq
 	var updateArray []map[string]interface{}
 	var insertArray []map[string]interface{}
 
+	IntendedOperation := request.Controls.Operation
+	IsSQlMode := false
+
+	if strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+		IsSQlMode = true
+	}
+
+	// for _, obj := range records {
+	// 	currentObject := make(map[string]interface{})
+
+	// 	if !IsSQlMode && strings.EqualFold(IntendedOperation, "update") {
+	// 		currentObject = repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj), request)
+	// 	}
+
+	// 	if currentObject == nil || len(currentObject) == 0 {
+	// 		insertArray = append(insertArray, obj)
+	// 	} else {
+	// 		updateArray = append(updateArray, obj)
+	// 	}
+	// }
+
 	for _, obj := range records {
-		currentObject := repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj), request)
-		if currentObject == nil || len(currentObject) == 0 {
-			insertArray = append(insertArray, obj)
-		} else {
-			updateArray = append(updateArray, obj)
+		currentObject := make(map[string]interface{})
+
+		if !IsSQlMode {
+			currentObject = repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj), request)
+			if currentObject == nil || len(currentObject) == 0 {
+				insertArray = append(insertArray, obj)
+			} else {
+				updateArray = append(updateArray, obj)
+			}
+		} else { //SQL
+			if strings.EqualFold(IntendedOperation, "insert") {
+				insertArray = append(insertArray, obj)
+			} else {
+				updateArray = append(updateArray, obj)
+			}
 		}
+
 	}
 
 	//create update scripts
@@ -1180,14 +1262,18 @@ func (repository CloudSqlRepository) buildTableCache(request *messaging.ObjectRe
 }
 
 func (repository CloudSqlRepository) checkSchema(request *messaging.ObjectRequest, conn *sql.DB, namespace string, class string, obj map[string]interface{}) {
-	dbName := repository.getDatabaseName(namespace)
-	err := repository.checkAvailabilityDb(request, conn, dbName)
+	if strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+		//Do nothing for now
+	} else {
+		dbName := repository.getDatabaseName(namespace)
+		err := repository.checkAvailabilityDb(request, conn, dbName)
 
-	if err == nil {
-		err := repository.checkAvailabilityTable(request, conn, dbName, namespace, class, obj)
+		if err == nil {
+			err := repository.checkAvailabilityTable(request, conn, dbName, namespace, class, obj)
 
-		if err != nil {
-			term.Write(err.Error(), 1)
+			if err != nil {
+				term.Write(err.Error(), 1)
+			}
 		}
 	}
 }
@@ -1694,7 +1780,15 @@ func (repository CloudSqlRepository) executeQueryOne(request *messaging.ObjectRe
 // }
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
-	_, err = conn.Exec(query)
+	tokens := strings.Split(query[0:10], " ")
+	result, err := conn.Exec(query)
+	if err == nil {
+		val, _ := result.RowsAffected()
+		if val <= 0 && strings.EqualFold(tokens[0], "UPDATE") {
+			err = errors.New("No Rows Changed")
+		}
+	}
+
 	return
 }
 
