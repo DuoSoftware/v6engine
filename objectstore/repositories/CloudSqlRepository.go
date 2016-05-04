@@ -273,7 +273,11 @@ func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectReq
 		return response
 	}
 
+	t1 := time.Now()
 	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Objects[0])
+	t2 := time.Now()
+	fmt.Print("Time For Check Schema : ")
+	fmt.Println(t2.Sub(t1).Seconds())
 
 	var idData map[string]interface{}
 	idData = make(map[string]interface{})
@@ -291,7 +295,12 @@ func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectReq
 	idMap["ID"] = idData
 	DataMap[0] = idMap
 
+	t3 := time.Now()
 	response = repository.queryStore(request)
+	t4 := time.Now()
+	fmt.Print("Time For Query Store : ")
+	fmt.Println(t4.Sub(t3).Seconds())
+
 	response.Data = DataMap
 	return response
 }
@@ -307,7 +316,13 @@ func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectReque
 		return response
 	}
 
+	t1 := time.Now()
+
 	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Object)
+
+	t2 := time.Now()
+	fmt.Print("Time For Check Schema : ")
+	fmt.Println(t2.Sub(t1).Seconds())
 
 	id := repository.getRecordID(request, request.Body.Object)
 	request.Controls.Id = id
@@ -320,7 +335,12 @@ func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectReque
 	idData["ID"] = id
 	Data[0] = idData
 
+	t3 := time.Now()
 	response = repository.queryStore(request)
+	t4 := time.Now()
+	fmt.Print("Time For Query Store : ")
+	fmt.Println(t4.Sub(t3).Seconds())
+
 	response.Data = Data
 	return response
 }
@@ -335,10 +355,17 @@ func (repository CloudSqlRepository) UpdateMultiple(request *messaging.ObjectReq
 		response.Message = err.Error()
 		return response
 	}
-
+	t1 := time.Now()
 	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Objects[0])
+	t2 := time.Now()
+	fmt.Print("Time For Check Schema : ")
+	fmt.Println(t2.Sub(t1).Seconds())
 
+	t3 := time.Now()
 	response = repository.queryStore(request)
+	t4 := time.Now()
+	fmt.Print("Time For Query Store : ")
+	fmt.Println(t4.Sub(t3).Seconds())
 	return response
 }
 
@@ -353,9 +380,17 @@ func (repository CloudSqlRepository) UpdateSingle(request *messaging.ObjectReque
 		return response
 	}
 
+	t1 := time.Now()
 	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Object)
+	t2 := time.Now()
+	fmt.Print("Time For Check Schema : ")
+	fmt.Println(t2.Sub(t1).Seconds())
 
+	t3 := time.Now()
 	response = repository.queryStore(request)
+	t4 := time.Now()
+	fmt.Print("Time For Query Store : ")
+	fmt.Println(t4.Sub(t3).Seconds())
 	return response
 }
 
