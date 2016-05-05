@@ -4,6 +4,9 @@ import (
 	//"duov6.com/common"
 	"duov6.com/objectstore/configuration"
 	//"fmt"
+	"duov6.com/term"
+	"encoding/json"
+	"reflect"
 )
 
 type ObjectRequest struct {
@@ -16,8 +19,16 @@ type ObjectRequest struct {
 	MessageStack []string
 }
 
-func (o *ObjectRequest) Log(message string) {
+func (o *ObjectRequest) Log(value interface{}) {
+	var message string
 	if o.IsLogEnabled {
+		if reflect.TypeOf(value).String() == "string" {
+			message = value.(string)
+		} else {
+			byteArray, _ := json.Marshal(value)
+			message = string(byteArray)
+		}
+		term.Write(value, term.Error)
 		o.MessageStack = append(o.MessageStack, message)
 		//common.PublishLog("ObjectStoreLog.log", message)
 	}

@@ -7,7 +7,6 @@ import (
 	"duov6.com/objectstore/keygenerator"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
-	"duov6.com/term"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -83,7 +82,7 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 
 		formattedQuery, err := queryparser.GetCloudSQLQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class, parameters)
 		if err != nil {
-			term.Write(err.Error(), term.Error)
+			request.Log(err.Error())
 			response.IsSuccess = false
 			response.Message = err.Error()
 			return response
@@ -192,7 +191,7 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 		byteVal := cache.GetKeyValue(request, tableCacheRedisPattern)
 		err := json.Unmarshal(byteVal, &fieldsAndTypes)
 		if err != nil {
-			term.Write(err.Error(), term.Error)
+			request.Log(err.Error())
 			return
 		}
 
@@ -215,7 +214,7 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 		var mapArray []map[string]interface{}
 		err := json.Unmarshal(repoResponse.Body, &mapArray)
 		if err != nil {
-			term.Write(err.Error(), term.Error)
+			request.Log(err.Error())
 		} else {
 			for _, value := range mapArray {
 				if value["COLUMN_NAME"].(string) != "__osHeaders" && strings.EqualFold(value["DATA_TYPE"].(string), "TEXT") {
@@ -452,7 +451,7 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 		isError := false
 		for _, obj := range request.Body.Objects {
 			query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKeyById(request, obj))
-			err := repository.executeNonQuery(conn, query)
+			err := repository.executeNonQuery(conn, query, request)
 			if err != nil {
 				isError = true
 			}
@@ -478,7 +477,7 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 	conn, err := repository.getConnection(request)
 	if err == nil {
 		query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKey(request))
-		err := repository.executeNonQuery(conn, query)
+		err := repository.executeNonQuery(conn, query, request)
 		if err != nil {
 			response.IsSuccess = false
 			response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
@@ -508,7 +507,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		var mapArray []map[string]interface{}
 		err := json.Unmarshal(repoResponse.Body, &mapArray)
 		if err != nil {
-			term.Write(err.Error(), 1)
+			request.Log(err.Error())
 			repoResponse.Body = nil
 			return repoResponse
 		} else {
@@ -526,7 +525,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		var mapArray []map[string]interface{}
 		err := json.Unmarshal(repoResponse.Body, &mapArray)
 		if err != nil {
-			term.Write(err.Error(), 1)
+			request.Log(err.Error())
 			repoResponse.Body = nil
 			return repoResponse
 		} else {
@@ -554,7 +553,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		conn, err := repository.getConnection(request)
 		if err == nil {
 			query := "DROP TABLE " + domain + "." + request.Controls.Class
-			err := repository.executeNonQuery(conn, query)
+			err := repository.executeNonQuery(conn, query, request)
 			if err != nil {
 				response.IsSuccess = false
 				response.Message = "Error Dropping Table in CloudSQL Repository : " + err.Error()
@@ -580,7 +579,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		conn, err := repository.getConnection(request)
 		if err == nil {
 			query := "DROP SCHEMA " + domain
-			err := repository.executeNonQuery(conn, query)
+			err := repository.executeNonQuery(conn, query, request)
 			if err != nil {
 				response.IsSuccess = false
 				response.Message = "Error Dropping Table in CloudSQL Repository : " + err.Error()
@@ -715,15 +714,15 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 		script := scripts[x]
 		if err == nil {
 			if script != "" {
-				err := repository.executeNonQuery(conn, script)
+				err := repository.executeNonQuery(conn, script, request)
 				if err != nil {
 					isOkay = false
-					term.Write(err.Error(), term.Error)
+					request.Log(err.Error())
 				}
 			}
 		} else {
 			isOkay = false
-			term.Write(err.Error(), term.Error)
+			request.Log(err.Error())
 		}
 	}
 	t2 := time.Now()
@@ -737,9 +736,9 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 		t3 := time.Now()
 		for x := 0; x < len(updateQueryCloudSql); x++ {
 			updateQuery := updateQueryCloudSql[x]
-			err := repository.executeNonQuery(conn, updateQuery)
+			err := repository.executeNonQuery(conn, updateQuery, request)
 			if err != nil {
-				term.Write("Error! "+err.Error(), term.Error)
+				request.Log("Error! " + err.Error())
 				isOkay = false
 			}
 		}
@@ -785,13 +784,13 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 			} else {
 				err := cache.StoreOne(request, obj)
 				if err != nil {
-					term.Write(err.Error(), term.Error)
+					request.Log(err.Error())
 				}
 			}
 		} else {
 			err := json.Unmarshal(result, &obj)
 			if err != nil {
-				term.Write(err.Error(), term.Error)
+				request.Log(err.Error())
 			}
 		}
 	} else {
@@ -954,7 +953,7 @@ func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectReq
 				keyArray = append(keyArray, k)
 			}
 		}
-		//term.Write(keyArray)
+		//request.Log(keyArray)
 		for _, k := range keyArray {
 			v := obj[k]
 			valueList += ("," + repository.getSqlFieldValue(v))
@@ -1021,7 +1020,7 @@ func (repository CloudSqlRepository) getCreateScript(namespace string, class str
 
 	query += ")"
 
-	//term.Write(query)
+	//request.Log(query)
 	return query
 }
 
@@ -1049,8 +1048,8 @@ func (repository CloudSqlRepository) checkAvailabilityDb(request *messaging.Obje
 
 	if err == nil {
 		if dbResult["SCHEMA_NAME"] == nil {
-			repository.executeNonQuery(conn, "CREATE DATABASE IF NOT EXISTS "+dbName)
-			repository.executeNonQuery(conn, "create table "+dbName+".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);")
+			repository.executeNonQuery(conn, "CREATE DATABASE IF NOT EXISTS "+dbName, request)
+			repository.executeNonQuery(conn, "create table "+dbName+".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);", request)
 		}
 
 		if CheckRedisAvailability(request) {
@@ -1061,7 +1060,7 @@ func (repository CloudSqlRepository) checkAvailabilityDb(request *messaging.Obje
 			}
 		}
 	} else {
-		term.Write(err.Error(), 1)
+		request.Log(err.Error())
 	}
 
 	return
@@ -1080,12 +1079,12 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 			if err == nil {
 				if tableResult["Tables_in_"+dbName] == nil {
 					script := repository.getCreateScript(namespace, class, obj)
-					err = repository.executeNonQuery(conn, script)
+					err = repository.executeNonQuery(conn, script, request)
 					if err != nil {
 						return
 					} else {
 						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','0','" + common.GetGUID() + "')"
-						_ = repository.executeNonQuery(conn, recordForIDService)
+						_ = repository.executeNonQuery(conn, recordForIDService, request)
 						keygenerator.CreateNewKeyGenBundle(request)
 					}
 				}
@@ -1108,12 +1107,12 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 			if err == nil {
 				if tableResult["Tables_in_"+dbName] == nil {
 					script := repository.getCreateScript(namespace, class, obj)
-					err = repository.executeNonQuery(conn, script)
+					err = repository.executeNonQuery(conn, script, request)
 					if err != nil {
 						return
 					} else {
 						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','0','" + common.GetGUID() + "')"
-						_ = repository.executeNonQuery(conn, recordForIDService)
+						_ = repository.executeNonQuery(conn, recordForIDService, request)
 					}
 				}
 				if availableTables[dbName+"."+class] == nil || availableTables[dbName+"."+class] == false {
@@ -1140,7 +1139,7 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 			byteVal := cache.GetKeyValue(request, tableCachePattern)
 			err = json.Unmarshal(byteVal, &cacheItem)
 			if err != nil {
-				term.Write(err.Error(), term.Error)
+				request.Log(err.Error())
 				return
 			}
 		}
@@ -1169,9 +1168,9 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 	if len(alterColumns) != 0 && len(alterColumns) != len(obj) {
 
 		alterQuery := "ALTER TABLE " + dbName + "." + class + " " + alterColumns
-		err = repository.executeNonQuery(conn, alterQuery)
+		err = repository.executeNonQuery(conn, alterQuery, request)
 		if err != nil {
-			term.Write(err.Error(), term.Error)
+			request.Log(err.Error())
 		}
 		//update Fulltext fields
 		// fullTextQuery := "ALTER TABLE " + dbName + "." + class + " ADD FULLTEXT("
@@ -1201,7 +1200,7 @@ func (repository CloudSqlRepository) addColumnToTableCache(request *messaging.Ob
 		fieldsAndTypes := make(map[string]string)
 		err := json.Unmarshal(byteVal, &fieldsAndTypes)
 		if err != nil {
-			term.Write(err.Error(), term.Error)
+			request.Log(err.Error())
 			return
 		}
 
@@ -1209,7 +1208,7 @@ func (repository CloudSqlRepository) addColumnToTableCache(request *messaging.Ob
 
 		err = cache.StoreKeyValue(request, ("CloudSqlTableCache." + dbName + "." + request.Controls.Class), getStringByObject(fieldsAndTypes))
 		if err != nil {
-			term.Write(err.Error(), term.Error)
+			request.Log(err.Error())
 		}
 	} else {
 		dataMap := make(map[string]string)
@@ -1272,7 +1271,7 @@ func (repository CloudSqlRepository) checkSchema(request *messaging.ObjectReques
 			err := repository.checkAvailabilityTable(request, conn, dbName, namespace, class, obj)
 
 			if err != nil {
-				term.Write(err.Error(), 1)
+				request.Log(err.Error())
 			}
 		}
 	}
@@ -1304,28 +1303,28 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 	if mysqlConf["IdleLimit"] != "" {
 		IdleLimit, err = strconv.Atoi(mysqlConf["IdleLimit"])
 		if err != nil {
-			term.Write(err.Error(), term.Error)
+			request.Log(err.Error())
 		}
 	}
 
 	if mysqlConf["OpenLimit"] != "" {
 		OpenLimit, err = strconv.Atoi(mysqlConf["OpenLimit"])
 		if err != nil {
-			term.Write(err.Error(), term.Error)
+			request.Log(err.Error())
 		}
 	}
 
 	if mysqlConf["TTL"] != "" {
 		TTL, err = strconv.Atoi(mysqlConf["TTL"])
 		if err != nil {
-			term.Write(err.Error(), term.Error)
+			request.Log(err.Error())
 		}
 	}
 
 	if connection[poolPattern] == nil {
 		conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
 		if err != nil {
-			term.Write(err.Error(), term.Error)
+			request.Log(err.Error())
 			return
 		}
 		connection[poolPattern] = conn
@@ -1335,7 +1334,7 @@ func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequ
 			connection[poolPattern] = nil
 			conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
 			if err != nil {
-				term.Write(err.Error(), term.Error)
+				request.Log(err.Error())
 				return
 			}
 			connection[poolPattern] = conn
@@ -1408,7 +1407,7 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 
 	var strValue string
 
-	//term.Write(reflect.TypeOf(value))
+	//request.Log(reflect.TypeOf(value))
 	switch value.(type) {
 	case string:
 		strValue = "TEXT"
@@ -1469,7 +1468,7 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 // 	case "double":
 // 		fData, err := strconv.ParseFloat(tmp, 64)
 // 		if err != nil {
-// 			term.Write(err.Error(), 1)
+// 			request.Log(err.Error())
 // 			outData = tmp
 // 		} else {
 // 			outData = fData
@@ -1493,7 +1492,7 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 // 		// 	if err == nil {
 // 		// 		outData = m
 // 		// 	}else{
-// 		// 		term.Write(err.Error())
+// 		// 		request.Log(err.Error())
 // 		// 		outData = tmp
 // 		// 	}
 // 		// }else if (string(tmp[0]) == "["){
@@ -1501,7 +1500,7 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 // 		// 	if err == nil {
 // 		// 		outData = ml
 // 		// 	}else{
-// 		// 		term.Write(err.Error())
+// 		// 		request.Log(err.Error())
 // 		// 		outData = tmp
 // 		// 	}
 // 		// }else{
@@ -1552,7 +1551,6 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 	case "double":
 		fData, err := strconv.ParseFloat(tmp, 64)
 		if err != nil {
-			term.Write(err.Error(), 1)
 			outData = tmp
 		} else {
 			outData = fData
@@ -1573,7 +1571,6 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 	case "DOUBLE":
 		fData, err := strconv.ParseFloat(tmp, 64)
 		if err != nil {
-			term.Write(err.Error(), 1)
 			outData = tmp
 		} else {
 			outData = fData
@@ -1597,7 +1594,7 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 		// 	if err == nil {
 		// 		outData = m
 		// 	}else{
-		// 		term.Write(err.Error())
+		// 		request.Log(err.Error())
 		// 		outData = tmp
 		// 	}
 		// }else if (string(tmp[0]) == "["){
@@ -1605,7 +1602,7 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 		// 	if err == nil {
 		// 		outData = ml
 		// 	}else{
-		// 		term.Write(err.Error())
+		// 		request.Log(err.Error())
 		// 		outData = tmp
 		// 	}
 		// }else{
@@ -1635,7 +1632,6 @@ func (repository CloudSqlRepository) getInterfaceValue(tmp string) (outData inte
 		if err == nil {
 			outData = m
 		} else {
-			term.Write(err.Error(), 1)
 			outData = tmp
 		}
 	} else {
@@ -1662,7 +1658,7 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 				byteVal := cache.GetKeyValue(request, tableCachePattern)
 				err = json.Unmarshal(byteVal, &cacheItem)
 				if err != nil {
-					term.Write(err.Error(), term.Error)
+					request.Log(err.Error())
 					return
 				}
 			}
@@ -1755,23 +1751,23 @@ func (repository CloudSqlRepository) executeQueryOne(request *messaging.ObjectRe
 
 // func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
 
-// 	term.Write("Executing Non-Query : ", term.Debug)
+// 	request.Log("Executing Non-Query : ", term.Debug)
 // 	if len(query) > 1000 {
-// 		term.Write("Query Found but Too Long to STDOUT!", term.Debug)
+// 		request.Log("Query Found but Too Long to STDOUT!", term.Debug)
 // 	} else {
-// 		term.Write(query, term.Debug)
+// 		request.Log(query, term.Debug)
 // 	}
 
 // 	var stmt *sql.Stmt
 // 	stmt, err = conn.Prepare(query)
 // 	if err != nil {
-// 		term.Write(err.Error(), term.Debug)
+// 		request.Log(err.Error(), term.Debug)
 // 		return err
 // 	}
 // 	_, err = stmt.Exec()
 
 // 	if err != nil {
-// 		term.Write(err.Error(), term.Debug)
+// 		request.Log(err.Error(), term.Debug)
 // 		return err
 // 	}
 
@@ -1779,12 +1775,12 @@ func (repository CloudSqlRepository) executeQueryOne(request *messaging.ObjectRe
 // 	return
 // }
 
-func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
+func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string, request *messaging.ObjectRequest) (err error) {
 	tokens := strings.Split(query[0:10], " ")
 	result, err := conn.Exec(query)
 	if err == nil {
 		val, _ := result.RowsAffected()
-		if val <= 0 && strings.EqualFold(tokens[0], "UPDATE") {
+		if val <= 0 && strings.EqualFold(tokens[0], "UPDATE") && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
 			err = errors.New("No Rows Changed")
 		}
 	}
@@ -1824,7 +1820,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 				if len(tableResultMap) == 0 {
 					//Create new domainClassAttributes  table
 					createDomainAttrQuery := "create table " + domain + ".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);"
-					err := repository.executeNonQuery(session, createDomainAttrQuery)
+					err := repository.executeNonQuery(session, createDomainAttrQuery, request)
 					if err != nil {
 						returnID = "1"
 						repository.closeConnection(session)
@@ -1832,7 +1828,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					} else {
 						//insert record with count 1 and return
 						insertQuery := "INSERT INTO " + domain + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','1','" + common.GetGUID() + "')"
-						err = repository.executeNonQuery(session, insertQuery)
+						err = repository.executeNonQuery(session, insertQuery, request)
 						if err != nil {
 							returnID = "1"
 							repository.closeConnection(session)
@@ -1851,7 +1847,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 					if len(myMap) == 0 {
 						request.Log("New Class! New record for this class will be inserted")
 						insertNewClassQuery := "INSERT INTO " + domain + ".domainClassAttributes (class,maxCount,version) values ('" + strings.ToLower(request.Controls.Class) + "', '1', '" + common.GetGUID() + "');"
-						err := repository.executeNonQuery(session, insertNewClassQuery)
+						err := repository.executeNonQuery(session, insertNewClassQuery, request)
 						if err != nil {
 							returnID = ""
 							repository.closeConnection(session)
@@ -1868,7 +1864,7 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 						maxCount++
 						returnID = strconv.Itoa(maxCount)
 						updateQuery := "UPDATE " + domain + ".domainClassAttributes SET maxCount='" + returnID + "' WHERE class = '" + strings.ToLower(request.Controls.Class) + "' ;"
-						err = repository.executeNonQuery(session, updateQuery)
+						err = repository.executeNonQuery(session, updateQuery, request)
 						if err != nil {
 							returnID = ""
 							repository.closeConnection(session)
@@ -1888,8 +1884,8 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 func (repository CloudSqlRepository) closeConnection(conn *sql.DB) {
 	// err := conn.Close()
 	// if err != nil {
-	// 	term.Write(err.Error(), 1)
+	// 	request.Log(err.Error())
 	// } else {
-	// 	term.Write("Connection Closed!", 2)
+	// 	request.Log("Connection Closed!")
 	// }
 }
