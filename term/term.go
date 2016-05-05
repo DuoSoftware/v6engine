@@ -2,7 +2,6 @@ package term
 
 import (
 	"bufio"
-	"duov6.com/common"
 	"duov6.com/config"
 	"duov6.com/updater"
 	"encoding/json"
@@ -124,8 +123,6 @@ func Write(data interface{}, mType int) {
 
 	switch mType {
 	case Error:
-		bt, _ := json.Marshal(data)
-		common.PublishLog("Errors.log", string(bt))
 		// if Config.ErrorLine {
 		// 	fmt.Println(time.Now().Format("2006-01-02 15:04:05") + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
 		// }
