@@ -365,6 +365,8 @@ func (repository CloudSqlRepository) ReRun(request *messaging.ObjectRequest, con
 			request.Body.Parameters.Mode = "SQL"
 			response = repository.queryStore(request)
 			err = cache.StoreKeyValue(request, key, "true")
+		} else {
+			err = errors.New("Failed at DB!")
 		}
 	} else {
 		if CloudSqlSQLModeCheck == nil {
@@ -377,12 +379,17 @@ func (repository CloudSqlRepository) ReRun(request *messaging.ObjectRequest, con
 			request.Body.Parameters.Mode = "SQL"
 			response = repository.queryStore(request)
 			CloudSqlSQLModeCheck[key] = "true"
+		} else {
+			err = errors.New("Failed at DB!")
 		}
 	}
 
 	if err != nil {
 		response.IsSuccess = false
 		response.Message = err.Error()
+	} else {
+		response.IsSuccess = true
+		response.Message = "Successfully Completed!"
 	}
 
 	return response
