@@ -1782,6 +1782,8 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string,
 		val, _ := result.RowsAffected()
 		if val <= 0 && strings.EqualFold(tokens[0], "UPDATE") && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
 			err = errors.New("No Rows Changed")
+			request.Log("No Rows Changed!")
+			request.Log(query)
 		}
 	}
 
