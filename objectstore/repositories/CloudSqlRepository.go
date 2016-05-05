@@ -704,8 +704,6 @@ func (repository CloudSqlRepository) queryCommonOne(query string, request *messa
 	return repository.queryCommon(query, request, true)
 }
 
-var updateQueryCloudSql []string
-
 func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
 
@@ -739,10 +737,27 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 	}
 
 	//execute update queries
-	if updateQueryCloudSql != nil && len(updateQueryCloudSql) > 0 {
+	// if updateQueryCloudSql != nil && len(updateQueryCloudSql) > 0 {
+	// 	t3 := time.Now()
+	// 	for x := 0; x < len(updateQueryCloudSql); x++ {
+	// 		updateQuery := updateQueryCloudSql[x]
+	// 		err := repository.executeNonQuery(conn, updateQuery, request)
+	// 		if err != nil {
+	// 			request.Log("Error! " + err.Error())
+	// 			isOkay = false
+	// 		}
+	// 	}
+	// 	t4 := time.Now()
+	// 	fmt.Print("Time to Update : ")
+	// 	fmt.Println(t4.Sub(t3).Seconds())
+	// }
+	// updateQueryCloudSql = updateQueryCloudSql[:0]
+
+	if request.Extras["CloudSQLUpdateScripts"] != nil {
 		t3 := time.Now()
-		for x := 0; x < len(updateQueryCloudSql); x++ {
-			updateQuery := updateQueryCloudSql[x]
+		updateArray := request.Extras["CloudSQLUpdateScripts"].([]string)
+		for x := 0; x < len(updateArray); x++ {
+			updateQuery := updateArray[x]
 			err := repository.executeNonQuery(conn, updateQuery, request)
 			if err != nil {
 				request.Log("Error! " + err.Error())
@@ -753,8 +768,8 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 		fmt.Print("Time to Update : ")
 		fmt.Println(t4.Sub(t3).Seconds())
 	}
-	//clear update array
-	updateQueryCloudSql = updateQueryCloudSql[:0]
+
+	request.Extras["CloudSQLUpdateScripts"] = nil
 
 	if isOkay {
 		response.IsSuccess = true
@@ -874,6 +889,7 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
 	var updateArray []map[string]interface{}
 	var insertArray []map[string]interface{}
+	var updateScripts []string
 
 	IntendedOperation := request.Controls.Operation
 	IsSQlMode := false
@@ -930,7 +946,13 @@ func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectReq
 			updateValues += (k + "=" + repository.getSqlFieldValue(v))
 		}
 		Updatequery := ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";")
-		updateQueryCloudSql = append(updateQueryCloudSql, Updatequery)
+		//updateQueryCloudSql = append(updateQueryCloudSql, Updatequery)
+		updateScripts = append(updateScripts, Updatequery)
+
+	}
+
+	if len(updateScripts) > 0 {
+		request.Extras["CloudSQLUpdateScripts"] = updateScripts
 	}
 
 	//create insert scripts

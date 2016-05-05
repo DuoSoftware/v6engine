@@ -236,10 +236,13 @@ func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 		h.SaveUser(u, true)
 		var inputParams map[string]string
 		inputParams = make(map[string]string)
-		inputParams["@@email@@"] = u.EmailAddress
-		inputParams["@@name@@"] = u.Name
-		inputParams["@@password@@"] = passowrd
-		go email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "user_resetpassword", inputParams, nil, u.EmailAddress)
+		// inputParams["@@email@@"] = u.EmailAddress
+		// inputParams["@@name@@"] = u.Name
+		// inputParams["@@password@@"] = passowrd
+		// go email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "user_resetpassword", inputParams, nil, u.EmailAddress)
+		inputParams["@@CNAME@@"] = u.Name
+		inputParams["@@PASSWORD@@"] = passowrd
+		go email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "T_Email_FORGETPW", inputParams, nil, u.EmailAddress)
 		term.Write("E Mail Sent", term.Debug)
 		return true
 	}
