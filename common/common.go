@@ -159,3 +159,12 @@ func ComputeHmac256(message string, secret string) string {
 	h.Write([]byte(message))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
+
+func GetProcessorUsage() (value float64) {
+	if runtime.GOOS == "linux" {
+		value = GetCurrentCPUusage()
+	} else {
+		value = 0
+	}
+	return
+}

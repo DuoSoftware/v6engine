@@ -17,10 +17,14 @@ func UpdateCountsToDB() {
 	c := time.Tick(1 * time.Minute)
 	for _ = range c {
 		tickCount++
-		if tickCount == 30 {
-			tickCount = 0
-			fmt.Println("Executing KeyGen Sync Routine. ( Every Once 30 Minutes )")
-			UpdateKeysInDB()
+		if tickCount == 120 {
+			if common.GetProcessorUsage() < 20 {
+				tickCount = 0
+				fmt.Println("Executing KeyGen Sync Routine. ( Every Once 30 Minutes )")
+				UpdateKeysInDB()
+			} else {
+				tickCount = 60
+			}
 		}
 	}
 }

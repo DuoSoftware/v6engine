@@ -80,7 +80,7 @@ func startKeyFlusher(request *messaging.ObjectRequest) {
 }
 
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	versionData := "{\"name\": \"Objectstore\",\"version\": \"1.2.0-a\",\"Change Log\":\"Heavily Improved CloudSQL Repository!\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	versionData := "{\"name\": \"Objectstore\",\"version\": \"1.2.1-a\",\"Change Log\":\"Added Performance based sync method.\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
 	fmt.Fprintf(w, versionData)
 }
 
@@ -209,7 +209,7 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 	if isSuccess == false {
 		responseMessage = getQueryResponseString("Invalid Query Request", message, false, objectRequest.MessageStack, nil)
 	} else {
-		//startKeyFlusher(&objectRequest)
+		startKeyFlusher(&objectRequest)
 		dispatcher := processors.Dispatcher{}
 		var repResponse repositories.RepositoryResponse = dispatcher.Dispatch(&objectRequest)
 		isSuccess = repResponse.IsSuccess
