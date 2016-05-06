@@ -85,9 +85,9 @@ type User struct {
 	Password        string
 	ConfirmPassword string
 	Active          bool
-	UserName        string
-	MobileNo        string
-	OtherData       map[string]string
+	//UserName        string
+	//MobileNo        string
+	//OtherData       map[string]string
 }
 
 // A AuthConfig represents a authconfig for Configuration For Auth Service.
