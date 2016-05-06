@@ -113,7 +113,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		if !x {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(domain + " Is not autherized for signin."))
 			//A.Context.Request().
-			returnh
+			return
 		}
 
 		outCrt.ClientIP = A.Context.Request().RemoteAddr
