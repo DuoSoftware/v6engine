@@ -113,7 +113,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		if !x {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(domain + " Is not autherized for signin."))
 			//A.Context.Request().
-			return
+			returnh
 		}
 
 		outCrt.ClientIP = A.Context.Request().RemoteAddr
@@ -124,7 +124,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		outCrt.Name = u.Name
 		outCrt.SecurityToken = common.GetGUID()
 		outCrt.Domain = domain
-		outCrt.Username = u.UserName
+		outCrt.Username = u.EmailAddress
 		outCrt.Otherdata = make(map[string]string)
 		outCrt.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
 		bytes, _ := client.Go("ignore", domain, "scope").GetOne().ByUniqueKey(domain).Ok() // fetech user autherized
