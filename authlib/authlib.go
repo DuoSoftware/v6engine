@@ -3,6 +3,7 @@ package authlib
 import (
 	//"duov6.com/applib"
 	"duov6.com/common"
+	email "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
 	"duov6.com/objectstore/client"
 	"encoding/json"
@@ -123,7 +124,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		outCrt.Name = u.Name
 		outCrt.SecurityToken = common.GetGUID()
 		outCrt.Domain = domain
-		outCrt.Username = u.EmailAddress
+		outCrt.Username = u.UserName
 		outCrt.Otherdata = make(map[string]string)
 		outCrt.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
 		bytes, _ := client.Go("ignore", domain, "scope").GetOne().ByUniqueKey(domain).Ok() // fetech user autherized
@@ -138,7 +139,19 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		b, _ := json.Marshal(tlist)
 		outCrt.Otherdata["TenentsAccessible"] = strings.Replace(string(b[:]), "\"", "`", -1)
 		//outCrt = AuthCertificate{u.UserID, u.EmailAddress, u.Name, u.EmailAddress, securityToken, "http://192.168.0.58:9000/instaltionpath", "#0so0936#sdasd", "IPhere"}
+
 		h.AddSession(outCrt)
+		var inputParams map[string]string
+		inputParams = make(map[string]string)
+		inputParams["@@email@@"] = u.EmailAddress
+		inputParams["@@name@@"] = u.Name
+		inputParams["@@UserAgent@@"] = A.Context.Request().UserAgent()
+		inputParams["@@ClientIP@@"] = A.Context.Request().RemoteAddr
+		inputParams["@@Domain@@"] = domain
+		inputParams["@@SecurityToken@@"] = outCrt.SecurityToken
+		//Change activation status to true and save
+		//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
+		go email.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, u.EmailAddress)
 		return
 	} else {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Invalid user name password."))

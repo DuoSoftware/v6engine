@@ -311,38 +311,21 @@ func (h *TenantHandler) AddUserToTenant(u session.AuthCertificate, users []Invit
 }
 
 func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID string) bool {
-	/*
-		//t.
-		//for _, user := range users {
-		var inputParams map[string]string
-		inputParams = make(map[string]string)
-		inputParams["email"] = user.Email
-		inputParams["name"] = u.Name
-		inputParams["userID"] = u.UserID
-		inputParams["tenantID"] = Tenant
-
-		req := InviteUserRequest{}
-		req.UserID = user.UserID
-		req.TenantID = u.Domain
-		req.RequestToken = common.RandText(10)
-		req.Name = user.Name
-		req.FromUserID = u.UserID
-		req.FromName = u.Name
-		req.FromEmail = u.Email
-		req.Email = user.Email
-		req.SecurityLevel = "request"
-		inputParams["RequestToken"] = req.RequestToken
-		//h.AddUsersToTenant(t.TenantID, user.UserID, "admin")
-		client.Go("ignore", "com.duosoftware.tenant", "userrequest").StoreObject().WithKeyField("RequestToken").AndStoreOne(req).Ok()
-		email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, user.Email)
-		//}
-	*/
+	//h.
+	var t InviteUserRequest
+	t.UserID = u.UserID
+	t.TenantID = TenantID
+	t.SecurityLevel = "user"
+	t.RequestToken = common.RandText(5)
+	t.Name = u.Name
+	//t.FromUserID=
 	return true
 }
 
 func (h *TenantHandler) AcceptRequest(u session.AuthCertificate, securityLevel, RequestToken string, accept bool) bool {
 	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "userrequest").GetOne().ByUniqueKey(RequestToken).Ok()
 	var t InviteUserRequest
+
 	if err == "" {
 		err := json.Unmarshal(bytes, &t)
 		if err != nil || t.SecurityLevel == "" {
