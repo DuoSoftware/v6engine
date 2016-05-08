@@ -273,8 +273,6 @@ func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectReq
 		return response
 	}
 
-	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Objects[0])
-
 	var idData map[string]interface{}
 	idData = make(map[string]interface{})
 
@@ -284,15 +282,14 @@ func (repository CloudSqlRepository) InsertMultiple(request *messaging.ObjectReq
 		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
 	}
 
-	var DataMap []map[string]interface{}
-	DataMap = make([]map[string]interface{}, 1)
+	DataMap := make([]map[string]interface{}, 1)
 	var idMap map[string]interface{}
 	idMap = make(map[string]interface{})
 	idMap["ID"] = idData
 	DataMap[0] = idMap
 
 	response = repository.queryStore(request)
-	if !response.IsSuccess && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+	if !response.IsSuccess {
 		response = repository.ReRun(request, conn, request.Body.Objects[0])
 	}
 
@@ -311,69 +308,22 @@ func (repository CloudSqlRepository) InsertSingle(request *messaging.ObjectReque
 		return response
 	}
 
-	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Object)
-
 	id := repository.getRecordID(request, request.Body.Object)
 	request.Controls.Id = id
 	request.Body.Object[request.Body.Parameters.KeyProperty] = id
 
-	var Data []map[string]interface{}
-	Data = make([]map[string]interface{}, 1)
+	Data := make([]map[string]interface{}, 1)
 	var idData map[string]interface{}
 	idData = make(map[string]interface{})
 	idData["ID"] = id
 	Data[0] = idData
 
 	response = repository.queryStore(request)
-	if !response.IsSuccess && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+	if !response.IsSuccess {
 		response = repository.ReRun(request, conn, request.Body.Object)
 	}
 
 	response.Data = Data
-	return response
-}
-
-var CloudSqlSQLModeCheck map[string]string
-
-func (repository CloudSqlRepository) ReRun(request *messaging.ObjectRequest, conn *sql.DB, obj map[string]interface{}) RepositoryResponse {
-	var response RepositoryResponse
-	var err error
-	key := "CloudSqlSQLModeCheck." + request.Controls.Namespace + "." + request.Controls.Class
-
-	if CheckRedisAvailability(request) {
-		if !cache.ExistsKeyValue(request, key) {
-			request.Body.Parameters.Mode = "NOSQL"
-			repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
-			request.Body.Parameters.Mode = "SQL"
-			response = repository.queryStore(request)
-			err = cache.StoreKeyValue(request, key, "true")
-		} else {
-			err = errors.New("Failed at DB!")
-		}
-	} else {
-		if CloudSqlSQLModeCheck == nil {
-			CloudSqlSQLModeCheck = make(map[string]string)
-		}
-
-		if CloudSqlSQLModeCheck[key] != "true" {
-			request.Body.Parameters.Mode = "NOSQL"
-			repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
-			request.Body.Parameters.Mode = "SQL"
-			response = repository.queryStore(request)
-			CloudSqlSQLModeCheck[key] = "true"
-		} else {
-			err = errors.New("Failed at DB!")
-		}
-	}
-
-	if err != nil {
-		response.IsSuccess = false
-		response.Message = err.Error()
-	} else {
-		response.IsSuccess = true
-		response.Message = "Successfully Completed!"
-	}
-
 	return response
 }
 
@@ -388,10 +338,8 @@ func (repository CloudSqlRepository) UpdateMultiple(request *messaging.ObjectReq
 		return response
 	}
 
-	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Objects[0])
-
 	response = repository.queryStore(request)
-	if !response.IsSuccess && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+	if !response.IsSuccess {
 		response = repository.ReRun(request, conn, request.Body.Objects[0])
 	}
 
@@ -409,11 +357,59 @@ func (repository CloudSqlRepository) UpdateSingle(request *messaging.ObjectReque
 		return response
 	}
 
-	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, request.Body.Object)
-
 	response = repository.queryStore(request)
-	if !response.IsSuccess && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+	if !response.IsSuccess {
 		response = repository.ReRun(request, conn, request.Body.Object)
+	}
+
+	return response
+}
+
+var CloudSqlSQLModeCheck map[string]string
+
+func (repository CloudSqlRepository) ReRun(request *messaging.ObjectRequest, conn *sql.DB, obj map[string]interface{}) RepositoryResponse {
+	var response RepositoryResponse
+	var err error
+	key := "CloudSqlSQLModeCheck." + request.Controls.Namespace + "." + request.Controls.Class
+
+	if strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+		if CheckRedisAvailability(request) {
+			if !cache.ExistsKeyValue(request, key) {
+				request.Body.Parameters.Mode = "NOSQL"
+				repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
+				request.Body.Parameters.Mode = "SQL"
+				response = repository.queryStore(request)
+				err = cache.StoreKeyValue(request, key, "true")
+			} else {
+				err = errors.New("Failed at DB!")
+			}
+		} else {
+			if CloudSqlSQLModeCheck == nil {
+				CloudSqlSQLModeCheck = make(map[string]string)
+			}
+
+			if CloudSqlSQLModeCheck[key] != "true" {
+				request.Body.Parameters.Mode = "NOSQL"
+				repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
+				request.Body.Parameters.Mode = "SQL"
+				response = repository.queryStore(request)
+				CloudSqlSQLModeCheck[key] = "true"
+			} else {
+				err = errors.New("Failed at DB!")
+			}
+		}
+	} else {
+		repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
+		response = repository.queryStore(request)
+		return response
+	}
+
+	if err != nil {
+		response.IsSuccess = false
+		response.Message = err.Error()
+	} else {
+		response.IsSuccess = true
+		response.Message = "Successfully Completed!"
 	}
 
 	return response
@@ -429,7 +425,11 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 			query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKeyById(request, obj))
 			err := repository.executeNonQuery(conn, query, request)
 			if err != nil {
-				isError = true
+				if strings.Contains(err.Error(), "No Rows Changed") {
+					request.Log(getNoSqlKeyById(request, obj) + " : Already Deleted or No Record was Found!")
+				} else {
+					isError = true
+				}
 			}
 		}
 		if isError {
@@ -455,8 +455,13 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 		query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKey(request))
 		err := repository.executeNonQuery(conn, query, request)
 		if err != nil {
-			response.IsSuccess = false
-			response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
+			if strings.Contains(err.Error(), "No Rows Changed") {
+				response.IsSuccess = true
+				response.Message = "Already Deleted or No Record was Found!"
+			} else {
+				response.IsSuccess = false
+				response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
+			}
 		} else {
 			response.IsSuccess = true
 			response.Message = "Successfully Deleted from CloudSQL repository!"
@@ -699,23 +704,6 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 		}
 	}
 
-	//execute update queries
-	// if updateQueryCloudSql != nil && len(updateQueryCloudSql) > 0 {
-	// 	t3 := time.Now()
-	// 	for x := 0; x < len(updateQueryCloudSql); x++ {
-	// 		updateQuery := updateQueryCloudSql[x]
-	// 		err := repository.executeNonQuery(conn, updateQuery, request)
-	// 		if err != nil {
-	// 			request.Log("Error! " + err.Error())
-	// 			isOkay = false
-	// 		}
-	// 	}
-	// 	t4 := time.Now()
-	// 	fmt.Print("Time to Update : ")
-	// 	fmt.Println(t4.Sub(t3).Seconds())
-	// }
-	// updateQueryCloudSql = updateQueryCloudSql[:0]
-
 	if request.Extras["CloudSQLUpdateScripts"] != nil {
 		updateArray := request.Extras["CloudSQLUpdateScripts"].([]string)
 		for x := 0; x < len(updateArray); x++ {
@@ -783,28 +771,6 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messaging.ObjectRequest) (query []string, err error) {
 	namespace := request.Controls.Namespace
 	class := request.Controls.Class
-	// var schemaObj map[string]interface{}
-	// var allObjects []map[string]interface{}
-	// if request.Body.Object != nil {
-	// 	schemaObj = request.Body.Object
-	// 	allObjects = make([]map[string]interface{}, 1)
-	// 	allObjects[0] = schemaObj
-	// } else {
-	// 	if request.Body.Objects != nil {
-	// 		if len(request.Body.Objects) != 0 {
-	// 			schemaObj = request.Body.Objects[0]
-	// 			allObjects = request.Body.Objects
-	// 		} else {
-	// 			err = errors.New("No objects available to store")
-	// 			return
-	// 		}
-	// 	} else {
-	// 		err = errors.New("No objects available to store")
-	// 		return
-	// 	}
-	// }
-
-	//repository.checkSchema(request, conn, namespace, class, schemaObj)
 
 	if request.Body.Object != nil {
 		arr := make([]map[string]interface{}, 1)
@@ -850,20 +816,6 @@ func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectReq
 		IsSQlMode = true
 	}
 
-	// for _, obj := range records {
-	// 	currentObject := make(map[string]interface{})
-
-	// 	if !IsSQlMode && strings.EqualFold(IntendedOperation, "update") {
-	// 		currentObject = repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj), request)
-	// 	}
-
-	// 	if currentObject == nil || len(currentObject) == 0 {
-	// 		insertArray = append(insertArray, obj)
-	// 	} else {
-	// 		updateArray = append(updateArray, obj)
-	// 	}
-	// }
-
 	for _, obj := range records {
 		currentObject := make(map[string]interface{})
 
@@ -898,7 +850,6 @@ func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectReq
 			updateValues += (k + "=" + repository.getSqlFieldValue(v))
 		}
 		Updatequery := ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";")
-		//updateQueryCloudSql = append(updateQueryCloudSql, Updatequery)
 		updateScripts = append(updateScripts, Updatequery)
 
 	}
@@ -1334,15 +1285,6 @@ func (repository CloudSqlRepository) CreateConnection(username, password, url, p
 	return
 }
 
-// func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
-// 	_ = time.Now()
-// 	var c *sql.DB
-// 	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-// 	c, err = sql.Open("mysql", mysqlConf["Username"]+":"+mysqlConf["Password"]+"@tcp("+mysqlConf["Url"]+":"+mysqlConf["Port"]+")/")
-// 	conn = c
-// 	return conn, err
-// }
-
 func (repository CloudSqlRepository) getDatabaseName(namespace string) string {
 	return "_" + strings.ToLower(strings.Replace(namespace, ".", "", -1))
 }
@@ -1420,89 +1362,6 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 
 	return strValue
 }
-
-// func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{} {
-
-// 	if b == nil {
-// 		return nil
-// 	}
-
-// 	if len(b) == 0 {
-// 		return b
-// 	}
-
-// 	var outData interface{}
-// 	tmp := string(b)
-// 	switch t {
-// 	case "bit(1)":
-// 		if len(b) == 0 {
-// 			outData = false
-// 		} else {
-// 			if b[0] == 1 {
-// 				outData = true
-// 			} else {
-// 				outData = false
-// 			}
-// 		}
-
-// 		break
-// 	case "double":
-// 		fData, err := strconv.ParseFloat(tmp, 64)
-// 		if err != nil {
-// 			request.Log(err.Error())
-// 			outData = tmp
-// 		} else {
-// 			outData = fData
-// 		}
-// 		break
-// 	//case "text":
-// 	//case "blob":
-// 	default:
-// 		if len(tmp) == 4 {
-// 			if strings.ToLower(tmp) == "null" {
-// 				outData = nil
-// 				break
-// 			}
-// 		}
-
-// 		// var m map[string]interface{}
-// 		// var ml []map[string]interface{}
-
-// 		// if (string(tmp[0]) == "{"){
-// 		// 	err := json.Unmarshal([]byte(tmp), &m)
-// 		// 	if err == nil {
-// 		// 		outData = m
-// 		// 	}else{
-// 		// 		request.Log(err.Error())
-// 		// 		outData = tmp
-// 		// 	}
-// 		// }else if (string(tmp[0]) == "["){
-// 		// 	err := json.Unmarshal([]byte(tmp), &ml)
-// 		// 	if err == nil {
-// 		// 		outData = ml
-// 		// 	}else{
-// 		// 		request.Log(err.Error())
-// 		// 		outData = tmp
-// 		// 	}
-// 		// }else{
-// 		// 	outData = tmp
-// 		// }
-
-// 		if string(tmp[0]) == "^" {
-// 			byteData := []byte(tmp)
-// 			bdata := string(byteData[1:])
-// 			decData, _ := base64.StdEncoding.DecodeString(bdata)
-// 			outData = repository.getInterfaceValue(string(decData))
-
-// 		} else {
-// 			outData = repository.getInterfaceValue(tmp)
-// 		}
-
-// 		break
-// 	}
-
-// 	return outData
-// }
 
 func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{} {
 
@@ -1730,32 +1589,6 @@ func (repository CloudSqlRepository) executeQueryOne(request *messaging.ObjectRe
 	return
 }
 
-// func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string) (err error) {
-
-// 	request.Log("Executing Non-Query : ", term.Debug)
-// 	if len(query) > 1000 {
-// 		request.Log("Query Found but Too Long to STDOUT!", term.Debug)
-// 	} else {
-// 		request.Log(query, term.Debug)
-// 	}
-
-// 	var stmt *sql.Stmt
-// 	stmt, err = conn.Prepare(query)
-// 	if err != nil {
-// 		request.Log(err.Error(), term.Debug)
-// 		return err
-// 	}
-// 	_, err = stmt.Exec()
-
-// 	if err != nil {
-// 		request.Log(err.Error(), term.Debug)
-// 		return err
-// 	}
-
-// 	_ = stmt.Close()
-// 	return
-// }
-
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string, request *messaging.ObjectRequest) (err error) {
 	tokens := strings.Split(query[0:10], " ")
 	result, err := conn.Exec(query)
@@ -1765,7 +1598,12 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string,
 			err = errors.New("No Rows Changed")
 			request.Log("No Rows Changed!")
 			request.Log(query)
+		} else if val <= 0 && strings.EqualFold(tokens[0], "DELETE") {
+			err = errors.New("No Rows Changed. Already deleted!")
+			request.Log(err.Error())
 		}
+	} else {
+		request.Log(err.Error())
 	}
 
 	return
