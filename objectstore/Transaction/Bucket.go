@@ -11,7 +11,7 @@ import (
 )
 
 func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err error) {
-	client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
+	client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=60s&maxidle=60")
 	if err != nil {
 		return nil, err
 	}

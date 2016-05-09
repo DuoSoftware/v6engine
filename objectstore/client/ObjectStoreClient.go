@@ -44,10 +44,10 @@ func getSmoothFlowObjectRequest(headerToken string, headerNamespace string, head
 	configObject := configuration.SmoothFlowConfigDownloader{}.DownloadConfiguration(headerToken, headerNamespace, headerClass, parameters)
 	objectRequest.Configuration = configObject
 
-	objectRequest.IsLogEnabled = true
-	var initialSlice []string
-	initialSlice = make([]string, 0)
-	objectRequest.MessageStack = initialSlice
+	// objectRequest.IsLogEnabled = true
+	// var initialSlice []string
+	// initialSlice = make([]string, 0)
+	// objectRequest.MessageStack = initialSlice
 
 	var extraMap map[string]interface{}
 	extraMap = make(map[string]interface{})
@@ -67,10 +67,10 @@ func getObjectRequest(headerToken string, headerNamespace string, headerClass st
 	configObject := configuration.ConfigurationManager{}.Get(headerToken, headerNamespace, headerClass)
 	objectRequest.Configuration = configObject
 
-	objectRequest.IsLogEnabled = true
-	var initialSlice []string
-	initialSlice = make([]string, 0)
-	objectRequest.MessageStack = initialSlice
+	// objectRequest.IsLogEnabled = true
+	// var initialSlice []string
+	// initialSlice = make([]string, 0)
+	// objectRequest.MessageStack = initialSlice
 
 	//objectRequest.IsLogEnabled = false
 
@@ -94,10 +94,10 @@ func getObjectRequestExtra(headerToken string, headerNamespace string, headerCla
 	configObject := configuration.ConfigurationManager{}.Get(headerToken, headerNamespace, headerClass)
 	objectRequest.Configuration = configObject
 
-	objectRequest.IsLogEnabled = true
-	var initialSlice []string
-	initialSlice = make([]string, 0)
-	objectRequest.MessageStack = initialSlice
+	// objectRequest.IsLogEnabled = true
+	// var initialSlice []string
+	// initialSlice = make([]string, 0)
+	// objectRequest.MessageStack = initialSlice
 
 	//objectRequest.IsLogEnabled = false
 
