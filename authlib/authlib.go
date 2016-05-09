@@ -29,7 +29,7 @@ type Auth struct {
 	gorest.RestService
 	verify           gorest.EndPoint `method:"GET" path:"/" output:"string"`
 	login            gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
-	getLoginSessions gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]session.AuthCertificate"`
+	getLoginSessions gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
 	authorize        gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
 	getSession       gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
 	getSecret        gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
