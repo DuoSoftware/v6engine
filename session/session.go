@@ -79,7 +79,7 @@ func AutherizedUser(TenantID, UserID string) (bool, TenantAutherized) {
 
 func GetRunningSession(UserID string) []AuthCertificate {
 	var c []AuthCertificate
-	bytes, err := client.Go(key, "s.duosoftware.auth", "sessions").GetMany().BySearching("UserID:" + UserID).Ok()
+	bytes, err := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("UserID:" + UserID).Ok()
 	if err == "" {
 		if bytes != nil {
 			err := json.Unmarshal(bytes, &c)

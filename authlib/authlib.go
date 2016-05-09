@@ -10,6 +10,7 @@ import (
 	//"fmt"
 	//"golang.org/x/oauth2"
 	//"crypto/hmac"
+	"duov6.com/session"
 	"strconv"
 	"strings"
 	///"strings"
@@ -26,12 +27,13 @@ type AuthorizeAppData struct {
 
 type Auth struct {
 	gorest.RestService
-	verify      gorest.EndPoint `method:"GET" path:"/" output:"string"`
-	login       gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
-	authorize   gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
-	getSession  gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
-	getSecret   gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
-	getAuthCode gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
+	verify           gorest.EndPoint `method:"GET" path:"/" output:"string"`
+	login            gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
+	getLoginSessions gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]session.AuthCertificate"`
+	authorize        gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
+	getSession       gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
+	getSecret        gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
+	getAuthCode      gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
 	//Lasith's method - Don't Delete
 	//autherizeApp       gorest.EndPoint `method:"GET" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" output:"bool"`
 	autherizeApp       gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
@@ -59,6 +61,10 @@ func GetDataCaps(Domain, UserID string) string {
 func (A Auth) UserActivation(token string) bool {
 	h := newAuthHandler()
 	return h.UserActivation(token)
+}
+
+func (A Auth) GetLoginSessions(UserID string) []session.AuthCertificate {
+	return session.GetRunningSession(UserID)
 }
 
 func (A Auth) LogOut(SecurityToken string) bool {
