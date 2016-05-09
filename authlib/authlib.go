@@ -115,9 +115,11 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 			//A.Context.Request().
 			return
 		}
-
-		outCrt.ClientIP = A.Context.Request().RemoteAddr
-
+		if A.Context.Request().Header.Get("PHP") != "101" {
+			outCrt.ClientIP = A.Context.Request().RemoteAddr
+		} else {
+			outCrt.ClientIP = A.Context.Request().Header.Get("IP")
+		}
 		outCrt.DataCaps = GetDataCaps(domain, u.UserID)
 		outCrt.Email = u.EmailAddress
 		outCrt.UserID = u.UserID
