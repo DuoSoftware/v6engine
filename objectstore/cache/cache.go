@@ -161,3 +161,17 @@ func checkValidTenentClass(request *messaging.ObjectRequest) (status bool) {
 
 	return
 }
+
+//Transaction Usage
+
+func RPush(request *messaging.ObjectRequest, list string, value string) (err error) {
+	return
+}
+
+func StoreValue(request *messaging.ObjectRequest, key string, value string) (err error) {
+	return
+}
+
+func GetValue(request *messaging.ObjectRequest, key string) (value []byte) {
+	return
+}

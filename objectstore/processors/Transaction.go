@@ -2,20 +2,14 @@ package processors
 
 import (
 	"duov6.com/common"
+	"duov6.com/objectstore/Transaction"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
-	//"duov6.com/term"
-	//"fmt"
 )
 
 type TransactionDispatcher struct {
 }
-
-const (
-	Command   = 0
-	Operation = 1
-)
 
 func (t *TransactionDispatcher) DispatchTransaction(request *messaging.ObjectRequest) repositories.RepositoryResponse {
 	var outResponse repositories.RepositoryResponse
@@ -29,9 +23,9 @@ func (t *TransactionDispatcher) DispatchTransaction(request *messaging.ObjectReq
 
 func (t *TransactionDispatcher) GetRequestType(request *messaging.ObjectRequest) (reqType int) {
 	if request.Body.Parameters.TransactionID != "" {
-		reqType = Operation
+		reqType = Transaction.Operation
 	} else if request.Body.Transaction.Type != "" {
-		reqType = Command
+		reqType = Transaction.Command
 	}
 	return
 }

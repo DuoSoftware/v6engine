@@ -4,8 +4,6 @@ import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
-	"duov6.com/term"
-	//"fmt"
 	"strconv"
 )
 
@@ -20,11 +18,11 @@ func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.Rep
 	var outResponse repositories.RepositoryResponse
 
 	if transactionID != "" || transactionStruct.Type != "" {
-		term.Write("Transaction Request", term.Debug)
+		request.Log("Transaction Request")
 		var t TransactionDispatcher
 		outResponse = t.DispatchTransaction(request)
 	} else {
-		term.Write("Default Request", term.Debug)
+		request.Log("Default Request")
 		outResponse = d.ProcessDefaultDispatcher(request)
 	}
 	return outResponse
@@ -46,7 +44,7 @@ func (d *Dispatcher) ProcessDefaultDispatcher(request *messaging.ObjectRequest) 
 
 	if request.IsLogEnabled {
 		for index, element := range request.MessageStack {
-			term.Write("S-"+strconv.Itoa(index)+" : "+element, term.Debug)
+			request.Log("S-" + strconv.Itoa(index) + " : " + element)
 		}
 	}
 
