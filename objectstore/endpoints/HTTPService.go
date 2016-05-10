@@ -207,7 +207,7 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 	message, isSuccess := getObjectRequest(r, &objectRequest, params)
 
 	if isSuccess == false {
-		responseMessage = getQueryResponseString("Invalid Query Request", message, false, objectRequest.MessageStack, nil)
+		responseMessage = getQueryResponseString("Invalid Query Request", message, false, objectRequest.MessageStack, nil, messaging.TransactionResponse{})
 	} else {
 		startKeyFlusher(&objectRequest)
 		dispatcher := processors.Dispatcher{}
@@ -218,11 +218,11 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 			if repResponse.Body != nil {
 				responseMessage = string(repResponse.Body)
 			} else {
-				responseMessage = getQueryResponseString("Successfully completed request", repResponse.Message, isSuccess, objectRequest.MessageStack, repResponse.Data)
+				responseMessage = getQueryResponseString("Successfully completed request", repResponse.Message, isSuccess, objectRequest.MessageStack, repResponse.Data, repResponse.Transaction)
 			}
 
 		} else {
-			responseMessage = getQueryResponseString("Error occured while processing", repResponse.Message, isSuccess, objectRequest.MessageStack, nil)
+			responseMessage = getQueryResponseString("Error occured while processing", repResponse.Message, isSuccess, objectRequest.MessageStack, nil, messaging.TransactionResponse{})
 		}
 
 	}
@@ -230,10 +230,11 @@ func dispatchRequest(r *http.Request, params martini.Params) (responseMessage st
 	return
 }
 
-func getQueryResponseString(mainError string, reason string, isSuccess bool, messageStack []string, Data []map[string]interface{}) string {
+func getQueryResponseString(mainError string, reason string, isSuccess bool, messageStack []string, Data []map[string]interface{}, Transaction messaging.TransactionResponse) string {
 	response := messaging.ResponseBody{}
 	response.Data = Data
 	response.IsSuccess = isSuccess
+	response.Transaction = Transaction
 	response.Message = mainError + ":" + reason
 	if messageStack != nil {
 		response.Stack = messageStack

@@ -7,8 +7,6 @@ type Transaction struct {
 }
 
 type TransactionResponse struct {
-	IsSuccess     bool
-	Message       string
 	TransactionID string
 	Extras        map[string]interface{}
 }

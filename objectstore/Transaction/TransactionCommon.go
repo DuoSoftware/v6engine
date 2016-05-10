@@ -2,6 +2,7 @@ package Transaction
 
 import (
 	"duov6.com/common"
+	"duov6.com/objectstore/messaging"
 )
 
 func GetTransactionID() string {
@@ -13,7 +14,7 @@ func GetBucketName(id string) (name string) {
 	return
 }
 
-// func GetBlockEntryName(request *messaging.ObjectRequest, TransactionID string) (name string) {
-// 	name = "TransactionBlockEntry." + request.Controls.Namespace + "." + request.Controls.Class + "." + ".{" + TransactionID + "}"
-// 	return
-// }
+func GetBlockEntryName(request *messaging.ObjectRequest, TransactionID string) (name string) {
+	name = "TransactionBlockEntry." + request.Controls.Namespace + "." + request.Controls.Class + "." + ".{" + TransactionID + "}"
+	return
+}

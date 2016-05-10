@@ -10,20 +10,6 @@ import (
 )
 
 func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, isError bool, errorMessage string) {
-
-	// isError = false
-	// client, err := goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
-	// if err != nil {
-	// 	isError = true
-	// 	errorMessage = err.Error()
-	// 	request.Log("Error! Can't connect to server!")
-	// 	return nil, isError, errorMessage
-
-	// }
-	// if client == nil {
-	// 	return nil, true, "No REDIS Host Found!"
-	// }
-	// return
 	client, err := GetConnection(request)
 	if err != nil {
 		isError = true
