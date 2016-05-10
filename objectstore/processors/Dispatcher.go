@@ -25,6 +25,7 @@ func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.Rep
 		request.Log("Default Request")
 		outResponse = d.ProcessDefaultDispatcher(request)
 	}
+
 	return outResponse
 }
 

@@ -3,6 +3,7 @@ package Transaction
 import (
 	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/messaging"
+	"duov6.com/objectstore/repositories"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -14,8 +15,54 @@ const (
 	Operation = 1
 )
 
-func NewTransaction(request *messaging.ObjectRequest) (err error) {
-	transactionID := request.Body.Parameters.TransactionID
+func ExecuteCommand(request *messaging.ObjectRequest) repositories.RepositoryResponse {
+
+	var response repositories.RepositoryResponse
+
+	tranactionCommand := strings.ToUpper(request.Body.Transaction.Type)
+	var err error
+	switch tranactionCommand {
+	case "BEGIN":
+		TransactionID := NewTransaction(request)
+		if TransactionID != "" {
+			response.Transaction.TransactionID = TransactionID
+		} else {
+			err = errors.New("Error Creating New Transaction!")
+		}
+		break
+	case "COMMIT":
+		break
+	case "ROLLBACK":
+		break
+	}
+
+	if err != nil {
+		response.IsSuccess = false
+		response.Message = err.Error()
+	} else {
+		response.IsSuccess = true
+		response.Message = "Successfully Executed Transaction COMMAND!"
+	}
+
+	return response
+}
+
+func ExecuteOperation(request *messaging.ObjectRequest) repositories.RepositoryResponse {
+	var response repositories.RepositoryResponse
+	var err error
+	err = AppendTransaction(request)
+	if err != nil {
+		response.IsSuccess = false
+		response.Message = err.Error()
+	} else {
+		response.IsSuccess = true
+		response.Message = "Successfully Executed Transaction OPERATION!"
+	}
+	return response
+}
+
+func NewTransaction(request *messaging.ObjectRequest) (transactionID string) {
+	transactionID = request.Body.Parameters.TransactionID
 	transactionStruct := request.Body.Transaction
 
 	if transactionID == "" && strings.EqualFold(transactionStruct.Type, "BEGIN") {
@@ -26,10 +73,14 @@ func NewTransaction(request *messaging.ObjectRequest) (err error) {
 		metadata["TransactionID"] = transactionID
 
 		bucketValue, _ := json.Marshal(metadata)
-		err = cache.RPush(request, GetBucketName(transactionID), string(bucketValue))
+		err := cache.RPush(request, GetBucketName(transactionID), string(bucketValue))
+		if err != nil {
+			request.Log(err.Error())
+		}
 	} else {
-		err = errors.New("No Transaction Command Found!")
+		transactionID = ""
 	}
+
 	return
 }
 
