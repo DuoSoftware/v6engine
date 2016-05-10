@@ -13,8 +13,8 @@ import (
 )
 
 type AuthCertificate struct {
-	UserID, Username, Name, Email, SecurityToken, Domain, DataCaps, ClientIP string
-	Otherdata                                                                map[string]string
+	UserID, Username, Name, Email, SecurityToken, Domain, DataCaps, ClientIP, MainST string
+	Otherdata                                                                        map[string]string
 }
 
 type TenantAutherized struct {
@@ -112,10 +112,11 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 						x, _ := AutherizedUser(Domain, uList.UserID)
 						if x {
 							uList.Domain = strings.ToLower(Domain)
+							uList.MainST = uList.SecurityToken
 							uList.SecurityToken = common.GetGUID()
 							uList.Otherdata = make(map[string]string)
-							uList.Otherdata["unused"] = "sss"
-							AddSession(uList)
+							uList.Otherdata["unused"] = "abc"
+							//AddSession(uList)
 							return uList, ""
 						} else {
 							return c, Domain + " Session Cound not be Created "

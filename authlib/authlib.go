@@ -67,6 +67,10 @@ func (A Auth) GetLoginSessions(UserID string) []session.AuthCertificate {
 	return session.GetRunningSession(UserID)
 }
 
+/*func (A Auth) ForceLogout(UserID string) {
+
+}*/
+
 func (A Auth) LogOut(SecurityToken string) bool {
 	h := newAuthHandler()
 
