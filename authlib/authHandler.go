@@ -78,7 +78,7 @@ func (h *AuthHandler) GetUserGroups(UserID, Domain string) []map[string]interfac
 	return usergroups
 }*/
 func (a *AuthHandler) CanLogin(email, domain string) bool {
-	bytes, err := client.Go("ignore", "com.duosoftware.auth", "LoginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 	term.Write("CanLogin For Login "+email+" Domain "+domain, term.Debug)
 	if err == "" {
 		if bytes != nil {
@@ -108,11 +108,11 @@ func (a *AuthHandler) CanLogin(email, domain string) bool {
 }
 
 func (a *AuthHandler) RemoveAttemts(Attemt LoginAttemts) {
-	client.Go("ignore", "com.duosoftware.auth", "LoginAttemts").DeleteObject().WithKeyField("Email").AndDeleteObject(Attemt).Ok()
+	client.Go("ignore", "com.duosoftware.auth", "loginAttemts").DeleteObject().WithKeyField("Email").AndDeleteObject(Attemt).Ok()
 
 }
 func (a *AuthHandler) LogFailedAttemts(email, domain string) {
-	bytes, err := client.Go("ignore", "com.duosoftware.auth", "LoginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 	var uList LoginAttemts
 	uList.Email = email
 	uList.Domain = domain
@@ -133,7 +133,7 @@ func (a *AuthHandler) LogFailedAttemts(email, domain string) {
 	nowTime = nowTime.Add(3 * time.Minute)
 	uList.LastAttemttime = nowTime.Format("2006-01-02 15:04:05")
 	fmt.Println(uList)
-	client.Go("ignore", "com.duosoftware.auth", "LoginAttemts").StoreObject().WithKeyField("Email").AndStoreOne(uList).Ok()
+	client.Go("ignore", "com.duosoftware.auth", "loginAttemts").StoreObject().WithKeyField("Email").AndStoreOne(uList).Ok()
 
 }
 
