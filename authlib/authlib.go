@@ -111,6 +111,11 @@ func (A Auth) Verify() (output string) {
 
 func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) {
 	h := newAuthHandler()
+	if !h.CanLogin(username, domain) {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("User Account Locked."))
+		//A.Context.Request().
+		return
+	}
 	u, err := h.Login(username, password)
 
 	//if()
@@ -166,6 +171,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		go email.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, u.EmailAddress)
 		return
 	} else {
+		h.LogFailedAttemts(username, domain)
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Invalid user name password."))
 		//A.Context.Request().
 		return

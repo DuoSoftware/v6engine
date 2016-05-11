@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	//"fmt"
 	"strings"
+	"time"
 	//"time"
 )
 
@@ -31,6 +32,13 @@ func newAuthHandler() *AuthHandler {
 type ActivationEmail struct {
 	GUUserID string // GUUserID
 	Token    string // Token for the email actiavte form
+}
+
+type LoginAttemts struct {
+	Email          string
+	Domain         string
+	Count          int
+	LastAttemttime string
 }
 
 // AppAutherize Autherize the application for the user
@@ -69,6 +77,64 @@ func (h *AuthHandler) GetUserGroups(UserID, Domain string) []map[string]interfac
 	}
 	return usergroups
 }*/
+func (a *AuthHandler) CanLogin(email, domain string) bool {
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "LoginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
+	term.Write("CanLogin For Login "+email+" Domain "+domain, term.Debug)
+	if err == "" {
+		if bytes != nil {
+			var uList LoginAttemts
+			err := json.Unmarshal(bytes, &uList)
+			if err == nil {
+				if uList.Count >= 5 {
+					Ttime1, _ := time.Parse("2006-01-02 15:04:05", uList.LastAttemttime)
+					Ttime2 := time.Now().UTC()
+					difference := Ttime1.Sub(Ttime2)
+					minutesTime := difference.Minutes()
+					if minutesTime <= 0 {
+						a.RemoveAttemts(uList)
+						return true
+					} else {
+						return false
+					}
+				} else {
+					return true
+				}
+			}
+		}
+	} else {
+		term.Write("CanLogin Error "+err, term.Error)
+	}
+	return true
+}
+
+func (a *AuthHandler) RemoveAttemts(Attemt LoginAttemts) {
+	client.Go("ignore", "com.duosoftware.auth", "LoginAttemts").DeleteObject().WithKeyField("Email").AndDeleteObject(Attemt).Ok()
+
+}
+func (a *AuthHandler) LogFailedAttemts(email, domain string) {
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "LoginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
+	var uList LoginAttemts
+	uList.Email = email
+	uList.Domain = domain
+	uList.Count = 1
+	term.Write("CanLogin For Login "+email+" Domain "+domain, term.Debug)
+	if err == "" {
+		if bytes != nil {
+			var x LoginAttemts
+			err := json.Unmarshal(bytes, &uList)
+			if err == nil {
+				x.Count = x.Count + 1
+				//x.LastAttemttime = ""
+				uList = x
+			}
+		}
+	}
+	nowTime := time.Now().UTC()
+	nowTime = nowTime.Add(3 * time.Minute)
+	uList.LastAttemttime = nowTime.Format("2006-01-02 15:04:05")
+	client.Go("ignore", "com.duosoftware.auth", "LoginAttemts").StoreObject().WithKeyField("Email").AndStoreOne(uList).Ok()
+
+}
 
 // GetAuthCode helps to get the Code to authendicate and add wait for the authendications
 func (h *AuthHandler) GetAuthCode(ApplicationID, UserID, URI string) string {
