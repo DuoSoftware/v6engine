@@ -18,3 +18,13 @@ func GetBlockEntryName(request *messaging.ObjectRequest, TransactionID string) (
 	name = "TransactionBlockEntry." + request.Controls.Namespace + "." + request.Controls.Class + "." + ".{" + TransactionID + "}"
 	return
 }
+
+func GetSuccessBucketName(id string) (name string) {
+	name = "Transactions.SuccessList." + id
+	return
+}
+
+func GetInvertBucketName(id string) (name string) {
+	name = "Transactions.SuccessList." + id
+	return
+}
