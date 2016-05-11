@@ -112,7 +112,7 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 						x, _ := AutherizedUser(Domain, uList.UserID)
 						if x {
 							uList.Domain = strings.ToLower(Domain)
-							uList.MainST = uList.SecurityToken
+							uList.MainST = key
 							uList.SecurityToken = common.GetGUID()
 							uList.Otherdata = make(map[string]string)
 							uList.Otherdata["unused"] = "abc"
