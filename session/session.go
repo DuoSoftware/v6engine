@@ -91,6 +91,20 @@ func GetRunningSession(UserID string) []AuthCertificate {
 	return c
 }
 
+func GetChildSession(Key string) []AuthCertificate {
+	var c []AuthCertificate
+	bytes, err := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("MainST:" + Key).Ok()
+	if err == "" {
+		if bytes != nil {
+			err := json.Unmarshal(bytes, &c)
+			if err != nil {
+				term.Write("GetSession Error "+err.Error(), term.Error)
+			}
+		}
+	}
+	return c
+}
+
 func GetSession(key, Domain string) (AuthCertificate, string) {
 	bytes, err := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKey(key).Ok()
 	//bytes, err := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKeyCache(key, 3600).Ok()
