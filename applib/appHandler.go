@@ -17,7 +17,7 @@ func (app *Apphanler) Get(ApplicationID string, securityToken string) (App Appli
 	term.Write("Get  App  by ID"+ApplicationID, term.Debug)
 	m := make(map[string]interface{})
 	s, status := session.GetSession(securityToken, "Nil")
-	bytes, err := client.Go(securityToken, s.Domain, "application").GetOne().ByUniqueKeyCache(ApplicationID, 3600).Ok()
+	bytes, err := client.Go(securityToken, s.Domain, "application").GetOne().ByUniqueKey(ApplicationID).Ok()
 	//bytes, err := client.Go(securityToken, "com.duosoftware.application", "apps").GetOne().ByUniqueKey(ApplicationID).Ok()
 	var a Application
 	if err == "" {
