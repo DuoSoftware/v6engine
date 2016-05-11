@@ -25,7 +25,7 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 	port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
 	if RedisCacheConnection == nil {
 		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=60s&maxidle=60")
+		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/1?timeout=60s&maxidle=60")
 		if err != nil {
 			return nil, err
 		} else {
@@ -373,7 +373,7 @@ var RedisConnection *goredis.Redis
 
 func GetReusedRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err error) {
 	if RedisConnection == nil {
-		client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
+		client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/1?timeout=1s&maxidle=1")
 		if err != nil {
 			return nil, err
 		}
@@ -383,7 +383,7 @@ func GetReusedRedisConnection(request *messaging.ObjectRequest) (client *goredis
 	} else {
 		if err = RedisConnection.Ping(); err != nil {
 			RedisConnection = nil
-			client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
+			client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/1?timeout=1s&maxidle=1")
 			if err != nil {
 				return nil, err
 			}
@@ -395,5 +395,32 @@ func GetReusedRedisConnection(request *messaging.ObjectRequest) (client *goredis
 		}
 	}
 
+	return
+}
+
+func RPush(request *messaging.ObjectRequest, list string, value string) (err error) {
+	client, err := GetReusedRedisConnection(request)
+	if err != nil {
+		return
+	}
+	_, err = client.RPush(list, value)
+	return
+}
+
+func GetListLength(request *messaging.ObjectRequest, key string) (length int64) {
+	client, err := GetReusedRedisConnection(request)
+	if err != nil {
+		return
+	}
+	length, _ = client.LLen(key)
+	return
+}
+
+func LPop(request *messaging.ObjectRequest, key string) (result []byte, err error) {
+	client, err := GetReusedRedisConnection(request)
+	if err != nil {
+		return
+	}
+	result, err = client.LPop(key)
 	return
 }

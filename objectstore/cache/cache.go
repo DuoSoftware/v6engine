@@ -165,13 +165,25 @@ func checkValidTenentClass(request *messaging.ObjectRequest) (status bool) {
 //Transaction Usage
 
 func RPush(request *messaging.ObjectRequest, list string, value string) (err error) {
+	if CheckCacheAvailability(request) {
+		err = repositories.RPush(request, list, value)
+		if err != nil {
+			term.Write("Error Rpushing to List : "+err.Error(), term.Debug)
+		}
+	}
 	return
 }
 
-func StoreValue(request *messaging.ObjectRequest, key string, value string) (err error) {
+func LPop(request *messaging.ObjectRequest, key string) (result []byte, err error) {
+	if CheckCacheAvailability(request) {
+		result, err = repositories.LPop(request, key)
+	}
 	return
 }
 
-func GetValue(request *messaging.ObjectRequest, key string) (value []byte) {
+func GetListLength(request *messaging.ObjectRequest, key string) (length int64) {
+	if CheckCacheAvailability(request) {
+		length = repositories.GetListLength(request, key)
+	}
 	return
 }
