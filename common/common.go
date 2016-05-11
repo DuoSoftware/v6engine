@@ -42,6 +42,10 @@ func GetGUID() string {
 	}
 }
 
+func ErrorJson(message string) string {
+	return "{Error:true,Message:\"" + message + "\"}"
+}
+
 func GetHash(input string) string {
 	h := md5.New()
 	h.Write([]byte(input))

@@ -158,7 +158,7 @@ func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID, Secur
 	var uList AuthCode
 	err1 := json.Unmarshal(bytes, &uList)
 	term.Write(string(bytes[:]), term.Debug)
-	if err1 != nil {
+	if err1 == nil {
 
 		var appH applib.Apphanler
 		application, err := appH.Get(ApplicationID, SecurityToken)
