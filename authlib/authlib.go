@@ -79,7 +79,8 @@ func (A Auth) LogOut(SecurityToken string) bool {
 		h.LogOut(c)
 		return true
 	}
-	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Session or Application not exist."))
+
+	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Session or Application not exist.")))
 
 	return false
 }
@@ -87,6 +88,7 @@ func (A Auth) LogOut(SecurityToken string) bool {
 func (A Auth) ForgotPassword(EmailAddress, RequestCode string) bool {
 	h := newAuthHandler()
 	return h.ForgetPassword(EmailAddress)
+
 }
 
 func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
@@ -95,7 +97,7 @@ func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
 	if error == "" {
 		_, err := h.Login(user.Email, OldPassword)
 		if err != "" {
-			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Wrong Current Password."))
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Wrong Current Password.")))
 			return false
 		}
 		return h.ChangePassword(user, NewPassword)
@@ -112,7 +114,7 @@ func (A Auth) Verify() (output string) {
 func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) {
 	h := newAuthHandler()
 	if !h.CanLogin(username, domain) {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("User Account Locked."))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("User Account Locked.")))
 		//A.Context.Request().
 		return
 	}
@@ -126,7 +128,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		//th.Autherized(domain, user)
 		x, _ := th.AutherizedUser(domain, u.UserID)
 		if !x {
-			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(domain + " Is not autherized for signin."))
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(domain + " Is not autherized for signin.")))
 			//A.Context.Request().
 			return
 		}
@@ -172,7 +174,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		return
 	} else {
 		h.LogFailedAttemts(username, domain)
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Invalid user name password."))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Invalid user name password.")))
 		//A.Context.Request().
 		return
 	}
@@ -184,7 +186,7 @@ func (A Auth) GetUser(Email string) (outCrt User) {
 	if err == "" {
 		return
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("User Dose not exist."))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("User Dose not exist.")))
 		return
 	}
 }
@@ -214,7 +216,7 @@ func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 		a = c
 		return a
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Not Autherized Err:" + err))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Not Autherized Err:" + err)))
 		return
 	}
 
@@ -259,12 +261,12 @@ func (A Auth) Authorize(SecurityToken string, ApplicationID string) (a AuthCerti
 
 			//}
 		} else {
-			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application ID " + ApplicationID + " not Atherized"))
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Application ID " + ApplicationID + " not Atherized")))
 			return
 		}
 
 	}
-	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Session or Application not exist."))
+	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Session or Application not exist.")))
 
 	return
 }
@@ -276,7 +278,7 @@ func (A Auth) GetAuthCode(SecurityToken, ApplicationID, URI string) (authCode st
 		authCode = h.GetAuthCode(ApplicationID, c.UserID, URI)
 		return
 	}
-	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application Not exist."))
+	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Application Not exist.")))
 	return
 }
 
@@ -304,7 +306,7 @@ func (A Auth) GetScope(SecurityToken, Key, Value string) map[string]interface{} 
 	if err == "" {
 		return data
 	}
-	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Session or Application not exist."))
+	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Session or Application not exist.")))
 	return data
 }
 
@@ -354,12 +356,12 @@ func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, Applica
 
 		out, err := h.AutherizeApp(Code, ApplicationID, AppSecret, c.UserID, SecurityToken)
 		if err != "" {
-			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
 			return
 		}
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(strconv.FormatBool(out)))
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application Not exist."))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Application Not exist.")))
 	}
 }
 
@@ -374,7 +376,7 @@ func (A Auth) AddUser(u User) {
 		b, _ := json.Marshal(u)
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
 	}
 
 }
@@ -397,7 +399,7 @@ func (A Auth) RegisterTenantUser(u User) {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
 		}
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Incorrect."))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Security Token Incorrect.")))
 		//return
 	}
 
@@ -418,7 +420,7 @@ func (A Auth) CheckPassword(password string) bool {
 			return false
 		}
 	} else {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Security Token Incorrect."))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Security Token Incorrect.")))
 		return false
 	}
 

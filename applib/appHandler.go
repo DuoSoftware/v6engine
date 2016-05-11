@@ -16,12 +16,12 @@ type Apphanler struct {
 func (app *Apphanler) Get(ApplicationID string, securityToken string) (App Application, errMessage string) {
 	term.Write("Get  App  by ID"+ApplicationID, term.Debug)
 	m := make(map[string]interface{})
-	s, status := session.GetSession(securityToken, "Nil")
+	s, _ := session.GetSession(securityToken, "Nil")
 	bytes, err := client.Go(securityToken, s.Domain, "application").GetOne().ByUniqueKey(ApplicationID).Ok()
 	//bytes, err := client.Go(securityToken, "com.duosoftware.application", "apps").GetOne().ByUniqueKey(ApplicationID).Ok()
 	var a Application
 	if err == "" {
-		if bytes != nil || status == "error" {
+		if bytes != nil {
 			//var uList []Application
 			err := json.Unmarshal(bytes, &m)
 			if err == nil {
