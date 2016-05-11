@@ -10,7 +10,7 @@ import (
 	"duov6.com/objectstore/client"
 	"duov6.com/term"
 	"encoding/json"
-	//"fmt"
+	"fmt"
 	"strings"
 	"time"
 	//"time"
@@ -117,7 +117,7 @@ func (a *AuthHandler) LogFailedAttemts(email, domain string) {
 	uList.Email = email
 	uList.Domain = domain
 	uList.Count = 1
-	term.Write("CanLogin For Login "+email+" Domain "+domain, term.Debug)
+	term.Write("LogFailedAttemts For Login "+email+" Domain "+domain, term.Debug)
 	if err == "" {
 		if bytes != nil {
 			var x LoginAttemts
@@ -132,6 +132,7 @@ func (a *AuthHandler) LogFailedAttemts(email, domain string) {
 	nowTime := time.Now().UTC()
 	nowTime = nowTime.Add(3 * time.Minute)
 	uList.LastAttemttime = nowTime.Format("2006-01-02 15:04:05")
+	fmt.Println(uList)
 	client.Go("ignore", "com.duosoftware.auth", "LoginAttemts").StoreObject().WithKeyField("Email").AndStoreOne(uList).Ok()
 
 }
