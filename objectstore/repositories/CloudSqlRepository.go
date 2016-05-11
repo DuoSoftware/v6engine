@@ -1338,7 +1338,11 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 		strValue = "BIT"
 		break
 	case uint:
+		strValue = "INT (10)"
+		break
 	case int:
+		strValue = "INT (10)"
+		break
 	//case uintptr:
 	case uint8:
 	case uint16:
