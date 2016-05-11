@@ -197,13 +197,16 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 		//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
 		c.DataCaps = strings.Replace(string(bytes[:]), "\"", "`", -1)
 		payload := common.JWTPayload(a.Domain, c.SecurityToken, c.UserID, c.Email, c.Domain, bytes)
-		if c.Otherdata["JWT"] == "" {
+		if a.Otherdata["JWT"] == "" {
 			c.Otherdata = make(map[string]string)
 			c.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(a.Domain), payload)
 			c.Otherdata["Scope"] = strings.Replace(string(bytes[:]), "\"", "`", -1)
 			a.Otherdata["JWT"] = c.Otherdata["JWT"]
 			a.Otherdata["Scope"] = c.Otherdata["Scope"]
 			session.AddSession(a)
+		} else {
+			c.Otherdata = make(map[string]string)
+			c.Otherdata = a.Otherdata
 		}
 		//string(bytes[:])
 		return c, ""
