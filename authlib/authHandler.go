@@ -121,8 +121,10 @@ func (a *AuthHandler) LogFailedAttemts(email, domain string) {
 	if err == "" {
 		if bytes != nil {
 			var x LoginAttemts
-			err := json.Unmarshal(bytes, &uList)
+
+			err := json.Unmarshal(bytes, &x)
 			if err == nil {
+				fmt.Println(x)
 				x.Count = x.Count + 1
 				//x.LastAttemttime = ""
 				uList = x
