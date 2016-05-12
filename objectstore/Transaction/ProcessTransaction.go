@@ -7,7 +7,6 @@ import (
 	"duov6.com/objectstore/storageengines"
 	"encoding/json"
 	"errors"
-	"strconv"
 )
 
 func Execute(request *messaging.ObjectRequest) (err error) {
@@ -36,12 +35,11 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 			return
 		} else {
 			//execute
+			invertedRequests := GetInvertedRequests(pickedRequest)
 			response := ProcessDispatcher(pickedRequest)
 			//if success -> Push to success list, Create invert request and push to invert list
 			if response.IsSuccess {
 				_ = PushToSuccessList(pickedRequest, TransactionID)
-				//get inverted request
-				invertedRequests := GetInvertedRequests(pickedRequest)
 				_ = PushToInvertList(invertedRequests, TransactionID)
 			} else { //if false -> Start rollback process
 				err = StartRollBackProcess(request)
@@ -54,18 +52,9 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 }
 
 func ProcessDispatcher(request *messaging.ObjectRequest) repositories.RepositoryResponse {
-
 	var storageEngine storageengines.AbstractStorageEngine // request.StoreConfiguration.StorageEngine
 	storageEngine = storageengines.ReplicatedStorageEngine{}
-
 	var outResponse repositories.RepositoryResponse = storageEngine.Store(request)
-
-	if request.IsLogEnabled {
-		for index, element := range request.MessageStack {
-			request.Log("S-" + strconv.Itoa(index) + " : " + element)
-		}
-	}
-
 	return outResponse
 }
 

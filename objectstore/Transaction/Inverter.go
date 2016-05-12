@@ -5,7 +5,6 @@ import (
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
 	"encoding/json"
-	"strconv"
 	"strings"
 )
 
@@ -19,10 +18,13 @@ func GetInvertedRequests(request *messaging.ObjectRequest) (retRequests []*messa
 
 	switch originalOperation {
 	case "insert":
+		retRequests = GetInsertInverted(request)
 		break
 	case "update":
+		retRequests = GetInsertInverted(request)
 		break
 	case "delete":
+		retRequests = append(retRequests, GetDeleteInverted(request))
 		break
 	default:
 		//no change.. Append nothing!
@@ -54,11 +56,14 @@ func GetDeleteInverted(request *messaging.ObjectRequest) (retRequest *messaging.
 
 		response := ProcessRequest(&getRequest)
 
-		if response.IsSuccess {
+		if len(response.Body) > 4 {
 			var Object map[string]interface{}
 			_ = json.Unmarshal(response.Body, &Object)
 			deleteRequest.Body.Object = Object
+
+			retRequest = &deleteRequest
 		}
+
 	} else {
 		var allDeletes []map[string]interface{}
 		for _, singleDelete := range request.Body.Objects {
@@ -72,7 +77,7 @@ func GetDeleteInverted(request *messaging.ObjectRequest) (retRequest *messaging.
 
 			response := ProcessRequest(&getRequest)
 
-			if response.IsSuccess {
+			if len(response.Body) > 4 {
 				var Object map[string]interface{}
 				_ = json.Unmarshal(response.Body, &Object)
 				allDeletes = append(allDeletes, Object)
@@ -81,6 +86,65 @@ func GetDeleteInverted(request *messaging.ObjectRequest) (retRequest *messaging.
 
 		if allDeletes != nil {
 			deleteRequest.Body.Objects = allDeletes
+			retRequest = &deleteRequest
+		}
+	}
+
+	return
+}
+
+func GetInsertInverted(request *messaging.ObjectRequest) (retRequests []*messaging.ObjectRequest) {
+	pilotRequest := messaging.ObjectRequest{}
+	pilotRequest.Controls = request.Controls
+	pilotRequest.Configuration = request.Configuration
+	pilotRequest.Extras = request.Extras
+	pilotRequest.IsLogEnabled = false
+
+	if request.Body.Object != nil {
+		getRequest := messaging.ObjectRequest{}
+		getRequest.Controls = request.Controls
+		getRequest.Configuration = request.Configuration
+		getRequest.Extras = request.Extras
+		getRequest.IsLogEnabled = false
+		getRequest.Controls.Operation = "read-key"
+		getRequest.Controls.Id = request.Body.Object[request.Body.Parameters.KeyProperty].(string)
+
+		response := ProcessRequest(&getRequest)
+
+		if len(response.Body) > 4 {
+			var Object map[string]interface{}
+			_ = json.Unmarshal(response.Body, &Object)
+			pilotRequest.Controls.Operation = "insert"
+			pilotRequest.Body.Object = Object
+		} else {
+			pilotRequest.Controls.Operation = "delete"
+			pilotRequest.Body.Object = request.Body.Object
+		}
+
+		retRequests = append(retRequests, &pilotRequest)
+	} else {
+		for _, singleObject := range request.Body.Objects {
+			getRequest := messaging.ObjectRequest{}
+			getRequest.Controls = request.Controls
+			getRequest.Configuration = request.Configuration
+			getRequest.Extras = request.Extras
+			getRequest.IsLogEnabled = false
+			getRequest.Controls.Operation = "read-key"
+			getRequest.Controls.Id = singleObject[request.Body.Parameters.KeyProperty].(string)
+
+			response := ProcessRequest(&getRequest)
+
+			if len(response.Body) > 4 {
+				var Object map[string]interface{}
+				_ = json.Unmarshal(response.Body, &Object)
+				pilotRequest.Controls.Operation = "insert"
+				pilotRequest.Body.Object = Object
+			} else {
+				pilotRequest.Controls.Operation = "delete"
+				pilotRequest.Body.Object = singleObject
+			}
+
+			retRequests = append(retRequests, &pilotRequest)
 		}
 	}
 
@@ -88,17 +152,8 @@ func GetDeleteInverted(request *messaging.ObjectRequest) (retRequest *messaging.
 }
 
 func ProcessRequest(request *messaging.ObjectRequest) repositories.RepositoryResponse {
-
 	var storageEngine storageengines.AbstractStorageEngine // request.StoreConfiguration.StorageEngine
 	storageEngine = storageengines.ReplicatedStorageEngine{}
-
 	var outResponse repositories.RepositoryResponse = storageEngine.Store(request)
-
-	if request.IsLogEnabled {
-		for index, element := range request.MessageStack {
-			request.Log("S-" + strconv.Itoa(index) + " : " + element)
-		}
-	}
-
 	return outResponse
 }
