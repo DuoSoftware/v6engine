@@ -31,7 +31,7 @@ func ExecuteCommand(request *messaging.ObjectRequest) repositories.RepositoryRes
 		}
 		break
 	case "COMMIT":
-		err = Execute(request)
+		err = CommitTransaction(request)
 		break
 	case "ROLLBACK":
 		err = RollbackTransaction(request)
@@ -110,5 +110,6 @@ func AppendTransaction(request *messaging.ObjectRequest) (err error) {
 }
 
 func CommitTransaction(request *messaging.ObjectRequest) (err error) {
+	err = Execute(request)
 	return
 }

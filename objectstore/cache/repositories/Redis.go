@@ -416,11 +416,11 @@ func GetListLength(request *messaging.ObjectRequest, key string) (length int64) 
 	return
 }
 
-func LPop(request *messaging.ObjectRequest, key string) (result []byte, err error) {
+func RPop(request *messaging.ObjectRequest, key string) (result []byte, err error) {
 	client, err := GetReusedRedisConnection(request)
 	if err != nil {
 		return
 	}
-	result, err = client.LPop(key)
+	result, err = client.RPop(key)
 	return
 }
