@@ -7,7 +7,6 @@ import (
 	"duov6.com/objectstore/storageengines"
 	"encoding/json"
 	"errors"
-	"strconv"
 )
 
 func Execute(request *messaging.ObjectRequest) (err error) {
@@ -33,18 +32,23 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 		if err2 != nil {
 			//Rollback executed while executing last processs -> Execute rollback process
 			err = StartRollBackProcess(request)
+			if err != nil {
+				err = errors.New("Successfully Rolledback because Rollback was triggered!")
+			}
 			return
 		} else {
 			//execute
+			invertedRequests := GetInvertedRequests(pickedRequest)
 			response := ProcessDispatcher(pickedRequest)
 			//if success -> Push to success list, Create invert request and push to invert list
 			if response.IsSuccess {
 				_ = PushToSuccessList(pickedRequest, TransactionID)
-				//get inverted request
-				invertedRequests := GetInvertedRequests(pickedRequest)
 				_ = PushToInvertList(invertedRequests, TransactionID)
 			} else { //if false -> Start rollback process
 				err = StartRollBackProcess(request)
+				if err != nil {
+					err = errors.New("Successfully Rolledback because Rollback was triggered!")
+				}
 				return
 			}
 		}
@@ -54,30 +58,19 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 }
 
 func ProcessDispatcher(request *messaging.ObjectRequest) repositories.RepositoryResponse {
-
 	var storageEngine storageengines.AbstractStorageEngine // request.StoreConfiguration.StorageEngine
 	storageEngine = storageengines.ReplicatedStorageEngine{}
-
 	var outResponse repositories.RepositoryResponse = storageEngine.Store(request)
-
-	if request.IsLogEnabled {
-		for index, element := range request.MessageStack {
-			request.Log("S-" + strconv.Itoa(index) + " : " + element)
-		}
-	}
-
 	return outResponse
 }
 
 func GetTask(request *messaging.ObjectRequest) (retRequest *messaging.ObjectRequest, err error) {
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
 	var byteVal []byte
-	byteVal, err = cache.LPop(request, GetBucketName(TransactionID))
-
+	byteVal, err = cache.RPop(request, GetBucketName(TransactionID))
 	// if err != nil -> key has removed.. RollBack has been called
-
 	if err == nil {
-		err2 := json.Unmarshal(byteVal, &request)
+		err2 := json.Unmarshal(byteVal, &retRequest)
 		if err2 != nil {
 			request.Log(err2.Error())
 		}
@@ -88,7 +81,7 @@ func GetTask(request *messaging.ObjectRequest) (retRequest *messaging.ObjectRequ
 func GetInvertedTask(request *messaging.ObjectRequest) (retRequest *messaging.ObjectRequest, err error) {
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
 	var byteVal []byte
-	byteVal, err = cache.LPop(request, GetInvertBucketName(TransactionID))
+	byteVal, err = cache.RPop(request, GetInvertBucketName(TransactionID))
 
 	// if err != nil -> key has removed.. RollBack has been called
 
