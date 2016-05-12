@@ -11,9 +11,9 @@ import (
 	"duov6.com/term"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
-	//"time"
 )
 
 // A AuthHandler represents a Method collection for Auth
@@ -39,6 +39,7 @@ type LoginAttemts struct {
 	Domain         string
 	Count          int
 	LastAttemttime string
+	BlockUser      string
 }
 
 // AppAutherize Autherize the application for the user
@@ -77,7 +78,7 @@ func (h *AuthHandler) GetUserGroups(UserID, Domain string) []map[string]interfac
 	}
 	return usergroups
 }*/
-func (a *AuthHandler) CanLogin(email, domain string) bool {
+func (a *AuthHandler) CanLogin(email, domain string) (bool, string) {
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 	term.Write("CanLogin For Login "+email+" Domain "+domain, term.Debug)
 	if err == "" {
@@ -85,6 +86,9 @@ func (a *AuthHandler) CanLogin(email, domain string) bool {
 			var uList LoginAttemts
 			err := json.Unmarshal(bytes, &uList)
 			if err == nil {
+				if uList.BlockUser == "block" {
+					return false, "User is blocked by the adminstrator"
+				}
 				if uList.Count >= 5 {
 					Ttime1, _ := time.Parse("2006-01-02 15:04:05", uList.LastAttemttime)
 					Ttime2 := time.Now().UTC()
@@ -92,26 +96,28 @@ func (a *AuthHandler) CanLogin(email, domain string) bool {
 					minutesTime := difference.Minutes()
 					if minutesTime <= 0 {
 						a.RemoveAttemts(uList)
-						return true
+						return true, ""
 					} else {
-						return false
+						m := strconv.FormatFloat(difference.Minutes(), 'f', 6, 64)
+						s := strconv.FormatFloat(difference.Seconds(), 'f', 6, 64)
+						return false, "User account is locked till " + m + " Min and " + s + " Secs"
 					}
 				} else {
-					return true
+					return true, ""
 				}
 			}
 		}
 	} else {
 		term.Write("CanLogin Error "+err, term.Error)
 	}
-	return true
+	return true, ""
 }
 
 func (a *AuthHandler) RemoveAttemts(Attemt LoginAttemts) {
 	client.Go("ignore", "com.duosoftware.auth", "loginAttemts").DeleteObject().WithKeyField("Email").AndDeleteObject(Attemt).Ok()
 
 }
-func (a *AuthHandler) LogFailedAttemts(email, domain string) {
+func (a *AuthHandler) LogFailedAttemts(email, domain, blockstatus string) {
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 	var uList LoginAttemts
 	uList.Email = email

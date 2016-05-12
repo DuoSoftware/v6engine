@@ -113,8 +113,9 @@ func (A Auth) Verify() (output string) {
 
 func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) {
 	h := newAuthHandler()
-	if !h.CanLogin(username, domain) {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("User Account Locked.")))
+	c, msg := h.CanLogin(username, domain)
+	if !c {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(msg)))
 		//A.Context.Request().
 		return
 	}
@@ -165,7 +166,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		inputParams["@@email@@"] = u.EmailAddress
 		inputParams["@@name@@"] = u.Name
 		inputParams["@@UserAgent@@"] = A.Context.Request().UserAgent()
-		inputParams["@@ClientIP@@"] = A.Context.Request().RemoteAddr
+		inputParams["@@ClientIP@@"] = outCrt.ClientIP
 		inputParams["@@Domain@@"] = domain
 		inputParams["@@SecurityToken@@"] = outCrt.SecurityToken
 		//Change activation status to true and save
@@ -173,7 +174,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		go email.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, u.EmailAddress)
 		return
 	} else {
-		h.LogFailedAttemts(username, domain)
+		h.LogFailedAttemts(username, domain, "")
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Invalid user name password.")))
 		//A.Context.Request().
 		return
