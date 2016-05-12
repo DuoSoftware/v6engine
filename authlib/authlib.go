@@ -206,7 +206,7 @@ func (A Auth) ReleaseUser(email, b4 string) bool {
 			return true
 		}
 		if b4 == "block" {
-			h.LogFailedAttemts(email, "domain", "release")
+			//h.LogFailedAttemts(email, "domain", "release")
 			h.Release(email)
 			return true
 		}

@@ -129,9 +129,10 @@ func (a *AuthHandler) Release(email string) {
 }
 
 func (a *AuthHandler) RemoveAttemts(Attemt LoginAttemts) {
-	if Attemt.BlockUser != "block" {
-		client.Go("ignore", "com.duosoftware.auth", "loginAttemts").DeleteObject().WithKeyField("Email").AndDeleteObject(Attemt).Ok()
-	}
+	fmt.Println(Attemt)
+	//if Attemt.BlockUser != "block" {
+	client.Go("ignore", "com.duosoftware.auth", "loginAttemts").DeleteObject().WithKeyField("Email").AndDeleteObject(Attemt).Ok()
+	//}
 
 }
 
