@@ -1379,6 +1379,7 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 
 	var outData interface{}
 	tmp := string(b)
+	fmt.Println(t)
 	switch t {
 	case "bit(1)":
 		if len(b) == 0 {
