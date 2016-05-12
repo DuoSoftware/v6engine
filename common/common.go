@@ -43,7 +43,7 @@ func GetGUID() string {
 }
 
 func ErrorJson(message string) string {
-	return "{Error:true,Message:\"" + message + "\"}"
+	return "{\"Error\":true,\"Message\":\"" + message + "\"}"
 }
 
 func GetHash(input string) string {
