@@ -1379,7 +1379,7 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 
 	var outData interface{}
 	tmp := string(b)
-	fmt.Println(t)
+	fmt.Println("|" + t + "|")
 	switch t {
 	case "bit(1)":
 		if len(b) == 0 {
@@ -1417,7 +1417,7 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 			outData = fData
 		}
 		break
-	case "int (10)":
+	case "int(10)":
 		fData, err := strconv.Atoi(tmp)
 		if err != nil {
 			outData = tmp
@@ -1425,7 +1425,7 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 			outData = fData
 		}
 		break
-	case "INT (10)":
+	case "INT(10)":
 		fData, err := strconv.Atoi(tmp)
 		if err != nil {
 			outData = tmp
