@@ -208,8 +208,18 @@ func (h *AuthHandler) LogOut(a AuthCertificate) {
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().ByUniqueKey(a.SecurityToken)
 	client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(a).Ok()
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
+
 	term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
 	//return true
+}
+
+func (h *AuthHandler) LogoutClildSessions(SecurityToken string) {
+	s := session.GetChildSession(SecurityToken)
+	for _, a := range s {
+		client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(a).Ok()
+		term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
+		h.LogoutClildSessions(a.SecurityToken)
+	}
 }
 
 /*
