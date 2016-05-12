@@ -4,6 +4,7 @@ import (
 	"duov6.com/config"
 	"duov6.com/term"
 	"encoding/json"
+	"strconv"
 )
 
 var Config AuthConfig
@@ -49,9 +50,10 @@ func SetupConfig() {
 	Config.Smtpserver = term.Read("SMTP Server")
 	Config.Smtpusername = term.Read("SMTP Username")
 	Config.Smtppassword = term.Read("SMTP Password")
-	//Config. = term.Read("SMTP Username")
-
-	//Config.
+	s, _ := strconv.ParseInt(term.Read("Number of user login Attempts"), 10, 32)
+	x, _ := strconv.ParseInt(term.Read("Number of user login Sessions (0 to Any number of user logins)"), 10, 32)
+	Config.UserLoginTries = s
+	Config.NumberOFUserLogins = x
 	SetConfig(Config)
 
 }
@@ -92,15 +94,17 @@ type User struct {
 
 // A AuthConfig represents a authconfig for Configuration For Auth Service.
 type AuthConfig struct { // Auth Config
-	Cirtifcate    string // ssl cirtificate
-	PrivateKey    string // Private Key
-	Https_Enabled bool   // Https enabled or not
-	StoreID       string // Store ID
-	Smtpserver    string // Smptp Server Address
-	Smtpusername  string // SMTP Username
-	Smtppassword  string // SMTP password
-	UserName      string // UserName login to advanced service potal
-	Password      string // Password
+	Cirtifcate         string // ssl cirtificate
+	PrivateKey         string // Private Key
+	Https_Enabled      bool   // Https enabled or not
+	StoreID            string // Store ID
+	Smtpserver         string // Smptp Server Address
+	Smtpusername       string // SMTP Username
+	Smtppassword       string // SMTP password
+	UserName           string // UserName login to advanced service potal
+	Password           string // Password
+	NumberOFUserLogins int64
+	UserLoginTries     int64
 }
 
 // A AuthCode represents a authcode cirtificate to Application auth.

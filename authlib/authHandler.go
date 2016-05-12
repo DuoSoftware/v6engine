@@ -99,8 +99,8 @@ func (a *AuthHandler) CanLogin(email, domain string) (bool, string) {
 						return true, ""
 					} else {
 						m := strconv.FormatFloat(difference.Minutes(), 'f', 6, 64)
-						s := strconv.FormatFloat(difference.Seconds(), 'f', 6, 64)
-						return false, "User account is locked till " + m + " Min and " + s + " Secs"
+						//s := strconv.FormatFloat(difference.Seconds(), 'f', 6, 64)
+						return false, "User account is locked try again in " + m + " Minutes"
 					}
 				} else {
 					return true, ""
@@ -113,16 +113,35 @@ func (a *AuthHandler) CanLogin(email, domain string) (bool, string) {
 	return true, ""
 }
 
-func (a *AuthHandler) RemoveAttemts(Attemt LoginAttemts) {
-	client.Go("ignore", "com.duosoftware.auth", "loginAttemts").DeleteObject().WithKeyField("Email").AndDeleteObject(Attemt).Ok()
+func (a *AuthHandler) Release(email string) {
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
+	term.Write("CanLogin For Login "+email+" Domain ", term.Debug)
+	if err == "" {
+		if bytes != nil {
+			var uList LoginAttemts
+			err := json.Unmarshal(bytes, &uList)
+			if err == nil {
+				a.RemoveAttemts(uList)
+			}
+		}
+	}
 
 }
+
+func (a *AuthHandler) RemoveAttemts(Attemt LoginAttemts) {
+	if Attemt.BlockUser != "block" {
+		client.Go("ignore", "com.duosoftware.auth", "loginAttemts").DeleteObject().WithKeyField("Email").AndDeleteObject(Attemt).Ok()
+	}
+
+}
+
 func (a *AuthHandler) LogFailedAttemts(email, domain, blockstatus string) {
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 	var uList LoginAttemts
 	uList.Email = email
 	uList.Domain = domain
 	uList.Count = 1
+	uList.BlockUser = blockstatus
 	term.Write("LogFailedAttemts For Login "+email+" Domain "+domain, term.Debug)
 	if err == "" {
 		if bytes != nil {
@@ -137,6 +156,7 @@ func (a *AuthHandler) LogFailedAttemts(email, domain, blockstatus string) {
 			}
 		}
 	}
+
 	nowTime := time.Now().UTC()
 	nowTime = nowTime.Add(3 * time.Minute)
 	uList.LastAttemttime = nowTime.Format("2006-01-02 15:04:05")
@@ -208,8 +228,9 @@ func (h *AuthHandler) LogOut(a AuthCertificate) {
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().ByUniqueKey(a.SecurityToken)
 	client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(a).Ok()
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
-
+	h.LogoutClildSessions(a.SecurityToken)
 	term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
+	h.Release(a.Email)
 	//return true
 }
 

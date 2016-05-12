@@ -44,6 +44,8 @@ type Auth struct {
 	logOut             gorest.EndPoint `method:"GET" path:"/LogOut/{password:string}" output:"bool"`
 	checkPassword      gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
 	getUser            gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
+	blockUser          gorest.EndPoint `method:"GET" path:"/BlockUser/{Email:string}" output:"bool"`
+	releaseUser        gorest.EndPoint `method:"GET" path:"/ReleaseUser/{Email:string}/{b4:string}" output:"bool"`
 	getGUID            gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
 	forgotPassword     gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
 	changePassword     gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
@@ -159,7 +161,9 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		b, _ := json.Marshal(tlist)
 		outCrt.Otherdata["TenentsAccessible"] = strings.Replace(string(b[:]), "\"", "`", -1)
 		//outCrt = AuthCertificate{u.UserID, u.EmailAddress, u.Name, u.EmailAddress, securityToken, "http://192.168.0.58:9000/instaltionpath", "#0so0936#sdasd", "IPhere"}
-
+		if Config.NumberOFUserLogins != 0 {
+			h.LogFailedAttemts(username, domain, "login")
+		}
 		h.AddSession(outCrt)
 		var inputParams map[string]string
 		inputParams = make(map[string]string)
@@ -178,6 +182,38 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Invalid user name password.")))
 		//A.Context.Request().
 		return
+	}
+}
+
+func (A Auth) BlockUser(email string) bool {
+	_, error := session.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		h := newAuthHandler()
+		h.LogFailedAttemts(email, "domain", "block")
+		return true
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
+		return false
+	}
+}
+
+func (A Auth) ReleaseUser(email, b4 string) bool {
+	_, error := session.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		h := newAuthHandler()
+		if b4 == "login" {
+			h.Release(email)
+			return true
+		}
+		if b4 == "block" {
+			h.LogFailedAttemts(email, "domain", "release")
+			h.Release(email)
+			return true
+		}
+		return false
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
+		return false
 	}
 }
 
