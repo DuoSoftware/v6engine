@@ -147,8 +147,9 @@ func (a *AuthHandler) LogFailedAttemts(email, domain, blockstatus string) {
 	if err == "" {
 		if bytes != nil {
 			var x LoginAttemts
-
+			fmt.Println("Attem")
 			err := json.Unmarshal(bytes, &x)
+			fmt.Println(err)
 			if err == nil {
 				fmt.Println(x)
 				x.Count = x.Count + 1
