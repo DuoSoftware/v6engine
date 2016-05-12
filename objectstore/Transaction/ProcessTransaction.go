@@ -41,8 +41,8 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 			if response.IsSuccess {
 				_ = PushToSuccessList(pickedRequest, TransactionID)
 				//get inverted request
-				invertedRequest := GetInvertedRequest(pickedRequest)
-				_ = PushToInvertList(invertedRequest, TransactionID)
+				invertedRequests := GetInvertedRequests(pickedRequest)
+				_ = PushToInvertList(invertedRequests, TransactionID)
 			} else { //if false -> Start rollback process
 				err = StartRollBackProcess(request)
 				return
@@ -107,9 +107,12 @@ func PushToSuccessList(request *messaging.ObjectRequest, TransactionID string) (
 	return
 }
 
-func PushToInvertList(request *messaging.ObjectRequest, TransactionID string) (err error) {
-	bucketValue, err := json.Marshal(request)
-	err = cache.RPush(request, GetInvertBucketName(TransactionID), string(bucketValue))
+func PushToInvertList(request []*messaging.ObjectRequest, TransactionID string) (err error) {
+
+	for _, singleRequest := range request {
+		bucketValue, _ := json.Marshal(singleRequest)
+		err = cache.RPush(singleRequest, GetInvertBucketName(TransactionID), string(bucketValue))
+	}
 	return
 }
 
