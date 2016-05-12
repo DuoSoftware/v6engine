@@ -1400,6 +1400,38 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 			outData = fData
 		}
 		break
+	case "int":
+		fData, err := strconv.Atoi(tmp)
+		if err != nil {
+			outData = tmp
+		} else {
+			outData = fData
+		}
+		break
+	case "INT":
+		fData, err := strconv.Atoi(tmp)
+		if err != nil {
+			outData = tmp
+		} else {
+			outData = fData
+		}
+		break
+	case "int (10)":
+		fData, err := strconv.Atoi(tmp)
+		if err != nil {
+			outData = tmp
+		} else {
+			outData = fData
+		}
+		break
+	case "INT (10)":
+		fData, err := strconv.Atoi(tmp)
+		if err != nil {
+			outData = tmp
+		} else {
+			outData = fData
+		}
+		break
 	case "BIT":
 		if len(b) == 0 {
 			outData = false
