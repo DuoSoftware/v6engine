@@ -111,5 +111,13 @@ func AppendTransaction(request *messaging.ObjectRequest) (err error) {
 
 func CommitTransaction(request *messaging.ObjectRequest) (err error) {
 	err = Execute(request)
+	if err == nil {
+		TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
+		_ = cache.DeleteKey(request, GetBucketName(TransactionID))
+		_ = cache.DeleteKey(request, GetSuccessBucketName(TransactionID))
+		_ = cache.DeleteKey(request, GetInvertBucketName(TransactionID))
+	} else {
+		//Produce Commit Logs!
+	}
 	return
 }
