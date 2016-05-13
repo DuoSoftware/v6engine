@@ -78,7 +78,7 @@ func (A Auth) LogOut(SecurityToken string) bool {
 
 	c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
-		h.LogOut(c)
+		go h.LogOut(c)
 		return true
 	}
 
@@ -109,7 +109,7 @@ func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
 }
 
 func (A Auth) Verify() (output string) {
-	output = "{\"name\": \"DuoAuth\",\"version\": \"1.0.12-a\",\"Change Log\":\"Added doc cache!\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	output = "{\"name\": \"DuoAuth\",\"version\": \"6.0.13-a\",\"Change Log\":\"Added doc cache!\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
 	return
 }
 
