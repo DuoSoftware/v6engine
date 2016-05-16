@@ -72,10 +72,16 @@ func GetTask(request *messaging.ObjectRequest) (retRequest *messaging.ObjectRequ
 	byteVal, err = cache.LPop(request, GetBucketName(TransactionID))
 	// if err != nil -> key has removed. RollBack has been called
 	if err == nil {
+		if len(byteVal) <= 4 {
+			err = errors.New("Rollbacked!")
+			return nil, err
+		}
 		err2 := json.Unmarshal(byteVal, &retRequest)
 		if err2 != nil {
 			request.Log(err2.Error())
 		}
+	} else {
+		request.Log(err.Error())
 	}
 	return
 }
