@@ -407,6 +407,15 @@ func RPush(request *messaging.ObjectRequest, list string, value string) (err err
 	return
 }
 
+func LPush(request *messaging.ObjectRequest, list string, value string) (err error) {
+	client, err := GetReusedRedisConnection(request)
+	if err != nil {
+		return
+	}
+	_, err = client.LPush(list, value)
+	return
+}
+
 func GetListLength(request *messaging.ObjectRequest, key string) (length int64) {
 	client, err := GetReusedRedisConnection(request)
 	if err != nil {
@@ -422,5 +431,14 @@ func RPop(request *messaging.ObjectRequest, key string) (result []byte, err erro
 		return
 	}
 	result, err = client.RPop(key)
+	return
+}
+
+func LPop(request *messaging.ObjectRequest, key string) (result []byte, err error) {
+	client, err := GetReusedRedisConnection(request)
+	if err != nil {
+		return
+	}
+	result, err = client.LPop(key)
 	return
 }

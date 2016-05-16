@@ -13,6 +13,7 @@ func GetInvertedRequests(request *messaging.ObjectRequest) (retRequests []*messa
 	//if insert.. check if its there. get that record and store as an insert bcs its going to be updated.
 	//			  if not.. store as a delete.
 	//if update.. same as above.
+
 	originalOperation := strings.ToLower(request.Controls.Operation)
 
 	switch originalOperation {

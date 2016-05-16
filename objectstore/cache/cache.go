@@ -174,9 +174,26 @@ func RPush(request *messaging.ObjectRequest, list string, value string) (err err
 	return
 }
 
+func LPush(request *messaging.ObjectRequest, list string, value string) (err error) {
+	if CheckCacheAvailability(request) {
+		err = repositories.LPush(request, list, value)
+		if err != nil {
+			term.Write("Error Rpushing to List : "+err.Error(), term.Debug)
+		}
+	}
+	return
+}
+
 func RPop(request *messaging.ObjectRequest, key string) (result []byte, err error) {
 	if CheckCacheAvailability(request) {
 		result, err = repositories.RPop(request, key)
+	}
+	return
+}
+
+func LPop(request *messaging.ObjectRequest, key string) (result []byte, err error) {
+	if CheckCacheAvailability(request) {
+		result, err = repositories.LPop(request, key)
 	}
 	return
 }

@@ -1634,7 +1634,7 @@ func (repository CloudSqlRepository) executeQueryOne(request *messaging.ObjectRe
 }
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string, request *messaging.ObjectRequest) (err error) {
-	//request.Log(query)
+	request.Log(query)
 	tokens := strings.Split(query[0:10], " ")
 	result, err := conn.Exec(query)
 	if err == nil {

@@ -25,6 +25,6 @@ func GetSuccessBucketName(id string) (name string) {
 }
 
 func GetInvertBucketName(id string) (name string) {
-	name = "Transactions.SuccessList." + id
+	name = "Transactions.InvertList." + id
 	return
 }

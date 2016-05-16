@@ -27,6 +27,9 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 
 	var x int64
 
+	//pop first element and throw away
+	_, _ = cache.LPop(request, GetBucketName(TransactionID))
+
 	for x = 0; x < tasklength-1; x++ {
 		pickedRequest, err2 := GetTask(request)
 		if err2 != nil {
@@ -52,7 +55,6 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 				return
 			}
 		}
-
 	}
 	return
 }
@@ -67,8 +69,8 @@ func ProcessDispatcher(request *messaging.ObjectRequest) repositories.Repository
 func GetTask(request *messaging.ObjectRequest) (retRequest *messaging.ObjectRequest, err error) {
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
 	var byteVal []byte
-	byteVal, err = cache.RPop(request, GetBucketName(TransactionID))
-	// if err != nil -> key has removed.. RollBack has been called
+	byteVal, err = cache.LPop(request, GetBucketName(TransactionID))
+	// if err != nil -> key has removed. RollBack has been called
 	if err == nil {
 		err2 := json.Unmarshal(byteVal, &retRequest)
 		if err2 != nil {
@@ -81,12 +83,11 @@ func GetTask(request *messaging.ObjectRequest) (retRequest *messaging.ObjectRequ
 func GetInvertedTask(request *messaging.ObjectRequest) (retRequest *messaging.ObjectRequest, err error) {
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
 	var byteVal []byte
-	byteVal, err = cache.RPop(request, GetInvertBucketName(TransactionID))
+	byteVal, err = cache.LPop(request, GetInvertBucketName(TransactionID))
 
 	// if err != nil -> key has removed.. RollBack has been called
-
 	if err == nil {
-		err2 := json.Unmarshal(byteVal, &request)
+		err2 := json.Unmarshal(byteVal, &retRequest)
 		if err2 != nil {
 			request.Log(err2.Error())
 		}
@@ -110,7 +111,6 @@ func PushToInvertList(request []*messaging.ObjectRequest, TransactionID string) 
 }
 
 func StartRollBackProcess(request *messaging.ObjectRequest) (err error) {
-
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
 
 	tasklength := cache.GetListLength(request, GetInvertBucketName(TransactionID))
