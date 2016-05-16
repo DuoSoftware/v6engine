@@ -26,7 +26,6 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 	tasklength := cache.GetListLength(request, GetBucketName(TransactionID))
 
 	var x int64
-
 	//pop first element and throw away
 	_, _ = cache.LPop(request, GetBucketName(TransactionID))
 
@@ -108,7 +107,6 @@ func PushToSuccessList(request *messaging.ObjectRequest, TransactionID string) (
 }
 
 func PushToInvertList(request []*messaging.ObjectRequest, TransactionID string) (err error) {
-
 	for _, singleRequest := range request {
 		bucketValue, _ := json.Marshal(singleRequest)
 		err = cache.RPush(singleRequest, GetInvertBucketName(TransactionID), string(bucketValue))
@@ -118,7 +116,6 @@ func PushToInvertList(request []*messaging.ObjectRequest, TransactionID string) 
 
 func StartRollBackProcess(request *messaging.ObjectRequest) (err error) {
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
-
 	tasklength := cache.GetListLength(request, GetInvertBucketName(TransactionID))
 	isAllSuccess := true
 
