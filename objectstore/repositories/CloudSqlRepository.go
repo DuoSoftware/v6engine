@@ -1004,6 +1004,8 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 		availableTables = make(map[string]interface{})
 	}
 
+	isTableCreatedNow := false
+
 	if CheckRedisAvailability(request) {
 		if !cache.ExistsKeyValue(request, ("CloudSqlAvailableTables." + dbName + "." + class)) {
 			var tableResult map[string]interface{}
@@ -1015,6 +1017,7 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 					if err != nil {
 						return
 					} else {
+						isTableCreatedNow = true
 						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','0','" + common.GetGUID() + "')"
 						_ = repository.executeNonQuery(conn, recordForIDService, request)
 						keygenerator.CreateNewKeyGenBundle(request)
@@ -1043,6 +1046,7 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 					if err != nil {
 						return
 					} else {
+						isTableCreatedNow = true
 						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','0','" + common.GetGUID() + "')"
 						_ = repository.executeNonQuery(conn, recordForIDService, request)
 					}
@@ -1059,67 +1063,71 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 
 	err = repository.buildTableCache(request, conn, dbName, class)
 
-	alterColumns := ""
+	if !isTableCreatedNow {
+		alterColumns := ""
 
-	cacheItem := make(map[string]string)
+		cacheItem := make(map[string]string)
 
-	if CheckRedisAvailability(request) {
-		tableCachePattern := "CloudSqlTableCache." + dbName + "." + request.Controls.Class
+		if CheckRedisAvailability(request) {
+			tableCachePattern := "CloudSqlTableCache." + dbName + "." + request.Controls.Class
 
-		if IsTableCacheKeys := cache.ExistsKeyValue(request, tableCachePattern); IsTableCacheKeys {
+			if IsTableCacheKeys := cache.ExistsKeyValue(request, tableCachePattern); IsTableCacheKeys {
 
-			byteVal := cache.GetKeyValue(request, tableCachePattern)
-			err = json.Unmarshal(byteVal, &cacheItem)
+				byteVal := cache.GetKeyValue(request, tableCachePattern)
+				err = json.Unmarshal(byteVal, &cacheItem)
+				if err != nil {
+					request.Log(err.Error())
+					return
+				}
+			}
+
+		} else {
+			cacheItem = tableCache[dbName+"."+class]
+		}
+
+		isFirst := true
+		for k, v := range obj {
+			if !strings.EqualFold(k, "OriginalIndex") || !strings.EqualFold(k, "__osHeaders") {
+				_, ok := cacheItem[k]
+				if !ok {
+					if isFirst {
+						isFirst = false
+					} else {
+						alterColumns += ", "
+					}
+
+					alterColumns += ("ADD COLUMN " + k + " " + repository.golangToSql(v))
+					repository.addColumnToTableCache(request, dbName, class, k, repository.golangToSql(v))
+					cacheItem[k] = repository.golangToSql(v)
+				}
+			}
+		}
+
+		if len(alterColumns) != 0 && len(alterColumns) != len(obj) {
+
+			alterQuery := "ALTER TABLE " + dbName + "." + class + " " + alterColumns
+			err = repository.executeNonQuery(conn, alterQuery, request)
 			if err != nil {
 				request.Log(err.Error())
-				return
 			}
+			//update Fulltext fields
+			// fullTextQuery := "ALTER TABLE " + dbName + "." + class + " ADD FULLTEXT("
+			// tableTypes := cacheItem
+
+			// fullTextFields := ""
+
+			// for field, fieldtype := range tableTypes {
+			// 	if strings.EqualFold(fieldtype, "TEXT") {
+			// 		fullTextFields += field + ","
+			// 	}
+			// }
+
+			// fullTextFields = strings.TrimSuffix(fullTextFields, ",")
+			// fullTextQuery += fullTextFields
+			// fullTextQuery += ");"
+			// err = repository.executeNonQuery(conn, fullTextQuery)
 		}
-	} else {
-		cacheItem = tableCache[dbName+"."+class]
-	}
 
-	isFirst := true
-	for k, v := range obj {
-		if !strings.EqualFold(k, "OriginalIndex") || !strings.EqualFold(k, "__osHeaders") {
-			_, ok := cacheItem[k]
-			if !ok {
-				if isFirst {
-					isFirst = false
-				} else {
-					alterColumns += ", "
-				}
-
-				alterColumns += ("ADD COLUMN " + k + " " + repository.golangToSql(v))
-				repository.addColumnToTableCache(request, dbName, class, k, repository.golangToSql(v))
-				cacheItem[k] = repository.golangToSql(v)
-			}
-		}
-	}
-
-	if len(alterColumns) != 0 && len(alterColumns) != len(obj) {
-
-		alterQuery := "ALTER TABLE " + dbName + "." + class + " " + alterColumns
-		err = repository.executeNonQuery(conn, alterQuery, request)
-		if err != nil {
-			request.Log(err.Error())
-		}
-		//update Fulltext fields
-		// fullTextQuery := "ALTER TABLE " + dbName + "." + class + " ADD FULLTEXT("
-		// tableTypes := cacheItem
-
-		// fullTextFields := ""
-
-		// for field, fieldtype := range tableTypes {
-		// 	if strings.EqualFold(fieldtype, "TEXT") {
-		// 		fullTextFields += field + ","
-		// 	}
-		// }
-
-		// fullTextFields = strings.TrimSuffix(fullTextFields, ",")
-		// fullTextQuery += fullTextFields
-		// fullTextQuery += ");"
-		// err = repository.executeNonQuery(conn, fullTextQuery)
 	}
 
 	return
@@ -1626,6 +1634,7 @@ func (repository CloudSqlRepository) executeQueryOne(request *messaging.ObjectRe
 }
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string, request *messaging.ObjectRequest) (err error) {
+	//request.Log(query)
 	tokens := strings.Split(query[0:10], " ")
 	result, err := conn.Exec(query)
 	if err == nil {
@@ -1633,7 +1642,7 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string,
 		if val <= 0 && strings.EqualFold(tokens[0], "UPDATE") && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
 			err = errors.New("No Rows Changed")
 			request.Log("No Rows Changed!")
-			request.Log(query)
+			//request.Log(query)
 		} else if val <= 0 && strings.EqualFold(tokens[0], "DELETE") {
 			err = errors.New("No Rows Changed. Already deleted!")
 			request.Log(err.Error())
