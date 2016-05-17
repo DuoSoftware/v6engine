@@ -373,6 +373,8 @@ func (h *TenantHandler) AddUsersToTenant(TenantID, Name string, users, SecurityL
 		Activ.TenantID = TenantID
 		Activ.SecurityLevel = SecurityLevel
 		Activ.UserID = users
+		term.Write(Activ, term.Debug)
+		term.Write(t, term.Debug)
 		client.Go("ignore", "com.duosoftware.tenant", "authorized").StoreObject().WithKeyField("ID").AndStoreOne(Activ).Ok()
 		client.Go("ignore", "com.duosoftware.tenant", "users").StoreObject().WithKeyField("TenantID").AndStoreOne(t).Ok()
 		term.Write("Saved Tenant users"+t.TenantID, term.Debug)

@@ -296,7 +296,9 @@ func (h *AuthHandler) LogOut(a AuthCertificate) {
 	client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(a).Ok()
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 	h.LogoutClildSessions(a.SecurityToken)
-	h.LogLoginSessions(a.Email, a.Domain, -1)
+	if Config.NumberOFUserLogins != 0 {
+		h.LogLoginSessions(a.Email, a.Domain, -1)
+	}
 	term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
 	//h.Release(a.Email)
 	//return true
