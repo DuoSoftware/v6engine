@@ -357,6 +357,7 @@ func (h *TenantHandler) AddUsersToTenant(TenantID, Name string, users, SecurityL
 			t = TenantUsers{TenantID, []string{}}
 			t.TenantID = TenantID
 		} else {
+			term.Write(t, term.Debug)
 			for _, element := range t.Users {
 				if element == users {
 					term.Write("No Users yet assigied "+element+" user "+users, term.Debug)
