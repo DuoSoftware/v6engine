@@ -33,12 +33,6 @@ func GetConnection(request *messaging.ObjectRequest, database int) (client *gore
 	// 		database = 0
 	// }
 
-	fmt.Println("---------------------------")
-	fmt.Println(request.Controls.Namespace)
-	fmt.Println(request.Controls.Class)
-	fmt.Println(database)
-	fmt.Println("---------------------------")
-
 	if RedisCacheConnection[database] == nil {
 		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
 		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/" + strconv.Itoa(database) + "?timeout=60s&maxidle=60")
