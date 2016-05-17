@@ -162,7 +162,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		outCrt.Otherdata["TenentsAccessible"] = strings.Replace(string(b[:]), "\"", "`", -1)
 		//outCrt = AuthCertificate{u.UserID, u.EmailAddress, u.Name, u.EmailAddress, securityToken, "http://192.168.0.58:9000/instaltionpath", "#0so0936#sdasd", "IPhere"}
 		if Config.NumberOFUserLogins != 0 {
-			h.LogFailedAttemts(username, domain, "login")
+			h.LogLoginSessions(username, domain, 1)
 		}
 		h.AddSession(outCrt)
 		var inputParams map[string]string

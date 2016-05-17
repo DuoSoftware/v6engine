@@ -16,7 +16,7 @@ type TenantSvc struct {
 	getSampleTenantForm gorest.EndPoint `method:"GET" path:"/tenant/GetSampleTenantForm/" output:"Tenant"`
 	inviteUser          gorest.EndPoint `method:"POST" path:"/tenant/InviteUser/" postdata:"[]InviteUsers"`
 	createTenant        gorest.EndPoint `method:"POST" path:"/tenant/CreateTenant/" postdata:"Tenant"`
-	tenantUpgrade       gorest.EndPoint `method:"POST" path:"/tenant/TenantUpgrade/" postdata:"map[string]string"`
+	tenantUpgrade       gorest.EndPoint `method:"POST" path:"/tenant/TenantUpgrad/" postdata:"map[string]string"`
 	searchTenants       gorest.EndPoint `method:"GET" path:"/tenant/SearchTenants/{SearchString:string}/{pagesize:int}/{startPoint:int}" output:"[]Tenant"`
 	subciribe           gorest.EndPoint `method:"GET" path:"/tenant/Subciribe/{TenantID:string}" output:"bool"`
 	getUsers            gorest.EndPoint `method:"GET" path:"/tenant/GetUsers/{TenantID:string}" output:"[]string"`

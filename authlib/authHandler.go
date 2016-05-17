@@ -42,6 +42,12 @@ type LoginAttemts struct {
 	BlockUser      string
 }
 
+type LoginSessions struct {
+	Email  string
+	Domain string
+	Count  int64
+}
+
 // AppAutherize Autherize the application for the user
 func (h *AuthHandler) AppAutherize(ApplicationID, UserID string) bool {
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "atherized").GetOne().ByUniqueKey(ApplicationID + "-" + UserID).Ok() // fetech user autherized
@@ -79,6 +85,11 @@ func (h *AuthHandler) GetUserGroups(UserID, Domain string) []map[string]interfac
 	return usergroups
 }*/
 func (a *AuthHandler) CanLogin(email, domain string) (bool, string) {
+	o, m := a.CheckLoginConcurrency(email)
+	if !o {
+		return o, m
+	}
+
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 	term.Write("CanLogin For Login "+email+" Domain "+domain, term.Debug)
 	if err == "" {
@@ -110,6 +121,27 @@ func (a *AuthHandler) CanLogin(email, domain string) (bool, string) {
 	} else {
 		term.Write("CanLogin Error "+err, term.Error)
 	}
+	return true, ""
+}
+
+func (a *AuthHandler) CheckLoginConcurrency(email string) (bool, string) {
+	if Config.NumberOFUserLogins != 0 {
+		bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginsessions").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
+		term.Write("CanLogin For Login "+email+" Domain ", term.Debug)
+		if err == "" {
+			if bytes != nil {
+				var uList LoginSessions
+				err := json.Unmarshal(bytes, &uList)
+				if err == nil {
+					if uList.Count >= Config.NumberOFUserLogins {
+						return false, "Login Exceeeded please logout your sessions."
+					}
+				}
+			}
+		}
+
+	}
+
 	return true, ""
 }
 
@@ -165,6 +197,38 @@ func (a *AuthHandler) LogFailedAttemts(email, domain, blockstatus string) {
 	uList.LastAttemttime = nowTime.Format("2006-01-02 15:04:05")
 	fmt.Println(uList)
 	client.Go("ignore", "com.duosoftware.auth", "loginAttemts").StoreObject().WithKeyField("Email").AndStoreOne(uList).Ok()
+
+}
+
+func (a *AuthHandler) LogLoginSessions(email, domain string, item int64) {
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginsessions").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
+	var uList LoginSessions
+	uList.Email = email
+	uList.Domain = domain
+	uList.Count = item
+	//uList.BlockUser = blockstatus
+	term.Write("LogLoginSessions For Login "+email+" Domain "+domain, term.Debug)
+	if err == "" {
+		if bytes != nil {
+			var x LoginSessions
+			fmt.Println("Attem")
+			err := json.Unmarshal(bytes, &x)
+			fmt.Println(err)
+			fmt.Println(string(bytes))
+			if err == nil {
+				fmt.Println(x)
+				x.Count = x.Count + item
+				//x.LastAttemttime = ""
+				uList = x
+			}
+		}
+	}
+
+	//nowTime := time.Now().UTC()
+	//nowTime = nowTime.Add(3 * time.Minute)
+	//uList.LastAttemttime = nowTime.Format("2006-01-02 15:04:05")
+	fmt.Println(uList)
+	client.Go("ignore", "com.duosoftware.auth", "loginsessions").StoreObject().WithKeyField("Email").AndStoreOne(uList).Ok()
 
 }
 
@@ -232,8 +296,9 @@ func (h *AuthHandler) LogOut(a AuthCertificate) {
 	client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(a).Ok()
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 	h.LogoutClildSessions(a.SecurityToken)
+	h.LogLoginSessions(a.Email, a.Domain, -1)
 	term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
-	h.Release(a.Email)
+	//h.Release(a.Email)
 	//return true
 }
 
