@@ -7,9 +7,16 @@ import (
 	"strings"
 )
 
-func DeleteOne(request *messaging.ObjectRequest, data map[string]interface{}) (err error) {
+const (
+	Data        = 0
+	MetaData    = 1
+	IncrementID = 2
+	Transaction = 3
+)
+
+func DeleteOne(request *messaging.ObjectRequest, data map[string]interface{}, database int) (err error) {
 	if CheckCacheAvailability(request) {
-		err = repositories.RemoveOneRedis(request, data)
+		err = repositories.RemoveOneRedis(request, data, database)
 		if err != nil {
 			term.Write("Error deleting one Object : "+err.Error(), term.Debug)
 		}
@@ -17,9 +24,9 @@ func DeleteOne(request *messaging.ObjectRequest, data map[string]interface{}) (e
 	return
 }
 
-func DeleteMany(request *messaging.ObjectRequest, data []map[string]interface{}) (err error) {
+func DeleteMany(request *messaging.ObjectRequest, data []map[string]interface{}, database int) (err error) {
 	if CheckCacheAvailability(request) {
-		err = repositories.RemoveManyRedis(request, data)
+		err = repositories.RemoveManyRedis(request, data, database)
 		if err != nil {
 			term.Write("Error deleting many Objects : "+err.Error(), term.Debug)
 		}
@@ -27,30 +34,30 @@ func DeleteMany(request *messaging.ObjectRequest, data []map[string]interface{})
 	return
 }
 
-func Search(request *messaging.ObjectRequest) (body []byte) {
+func Search(request *messaging.ObjectRequest, database int) (body []byte) {
 	if CheckCacheAvailability(request) {
-		body = repositories.GetSearch(request)
+		body = repositories.GetSearch(request, database)
 	}
 	return
 }
 
-func Query(request *messaging.ObjectRequest) (body []byte) {
+func Query(request *messaging.ObjectRequest, database int) (body []byte) {
 	if CheckCacheAvailability(request) {
-		body = repositories.GetQuery(request)
+		body = repositories.GetQuery(request, database)
 	}
 	return
 }
 
-func GetByKey(request *messaging.ObjectRequest) (body []byte) {
+func GetByKey(request *messaging.ObjectRequest, database int) (body []byte) {
 	if CheckCacheAvailability(request) {
-		body = repositories.GetByKey(request)
+		body = repositories.GetByKey(request, database)
 	}
 	return
 }
 
-func StoreOne(request *messaging.ObjectRequest, data map[string]interface{}) (err error) {
+func StoreOne(request *messaging.ObjectRequest, data map[string]interface{}, database int) (err error) {
 	if CheckCacheAvailability(request) {
-		err = repositories.SetOneRedis(request, data)
+		err = repositories.SetOneRedis(request, data, database)
 		if err != nil {
 			term.Write("Error storing One Object to Cache : "+err.Error(), term.Debug)
 		}
@@ -58,9 +65,9 @@ func StoreOne(request *messaging.ObjectRequest, data map[string]interface{}) (er
 	return
 }
 
-func StoreKeyValue(request *messaging.ObjectRequest, key string, value string) (err error) {
+func StoreKeyValue(request *messaging.ObjectRequest, key string, value string, database int) (err error) {
 	if CheckCacheAvailability(request) {
-		err = repositories.StoreKeyValue(request, key, value)
+		err = repositories.StoreKeyValue(request, key, value, database)
 		if err != nil {
 			term.Write("Error storing One Key Value to Cache : "+err.Error(), term.Debug)
 		}
@@ -68,37 +75,37 @@ func StoreKeyValue(request *messaging.ObjectRequest, key string, value string) (
 	return
 }
 
-func GetKeyValue(request *messaging.ObjectRequest, key string) (value []byte) {
+func GetKeyValue(request *messaging.ObjectRequest, key string, database int) (value []byte) {
 	if CheckCacheAvailability(request) {
-		value = repositories.GetKeyValue(request, key)
+		value = repositories.GetKeyValue(request, key, database)
 	}
 	return
 }
 
-func ExistsKeyValue(request *messaging.ObjectRequest, key string) (status bool) {
+func ExistsKeyValue(request *messaging.ObjectRequest, key string, database int) (status bool) {
 	if CheckCacheAvailability(request) {
-		status = repositories.ExistsKeyValue(request, key)
+		status = repositories.ExistsKeyValue(request, key, database)
 	}
 	return
 }
 
-func GetKeyListPattern(request *messaging.ObjectRequest, pattern string) (value []string) {
+func GetKeyListPattern(request *messaging.ObjectRequest, pattern string, database int) (value []string) {
 	if CheckCacheAvailability(request) {
-		value = repositories.GetKeyListPattern(request, pattern)
+		value = repositories.GetKeyListPattern(request, pattern, database)
 	}
 	return
 }
 
-func DeleteKey(request *messaging.ObjectRequest, key string) (status bool) {
+func DeleteKey(request *messaging.ObjectRequest, key string, database int) (status bool) {
 	if CheckCacheAvailability(request) {
-		status = repositories.DeleteKey(request, key)
+		status = repositories.DeleteKey(request, key, database)
 	}
 	return
 }
 
-func StoreMany(request *messaging.ObjectRequest, data []map[string]interface{}) (err error) {
+func StoreMany(request *messaging.ObjectRequest, data []map[string]interface{}, database int) (err error) {
 	if CheckCacheAvailability(request) {
-		err = repositories.SetManyRedis(request, data)
+		err = repositories.SetManyRedis(request, data, database)
 		if err != nil {
 			term.Write("Error storing Many Objects to Cache : "+err.Error(), term.Debug)
 		}
@@ -106,9 +113,9 @@ func StoreMany(request *messaging.ObjectRequest, data []map[string]interface{}) 
 	return
 }
 
-func StoreResult(request *messaging.ObjectRequest, data interface{}) (err error) {
+func StoreResult(request *messaging.ObjectRequest, data interface{}, database int) (err error) {
 	if CheckCacheAvailability(request) {
-		err = repositories.SetResultRedis(request, data)
+		err = repositories.SetResultRedis(request, data, database)
 		if err != nil {
 			term.Write("Error storing Get Result to Cache : "+err.Error(), term.Debug)
 		}
@@ -116,9 +123,9 @@ func StoreResult(request *messaging.ObjectRequest, data interface{}) (err error)
 	return
 }
 
-func StoreQuery(request *messaging.ObjectRequest, data interface{}) (err error) {
+func StoreQuery(request *messaging.ObjectRequest, data interface{}, database int) (err error) {
 	if CheckCacheAvailability(request) {
-		err = repositories.SetQueryRedis(request, data)
+		err = repositories.SetQueryRedis(request, data, database)
 		if err != nil {
 			term.Write("Error storing Query Result to Cache : "+err.Error(), term.Debug)
 		}
@@ -164,9 +171,9 @@ func checkValidTenentClass(request *messaging.ObjectRequest) (status bool) {
 
 //Transaction Usage
 
-func RPush(request *messaging.ObjectRequest, list string, value string) (err error) {
+func RPush(request *messaging.ObjectRequest, list string, value string, database int) (err error) {
 	if CheckCacheAvailability(request) {
-		err = repositories.RPush(request, list, value)
+		err = repositories.RPush(request, list, value, database)
 		if err != nil {
 			term.Write("Error Rpushing to List : "+err.Error(), term.Debug)
 		}
@@ -174,9 +181,9 @@ func RPush(request *messaging.ObjectRequest, list string, value string) (err err
 	return
 }
 
-func LPush(request *messaging.ObjectRequest, list string, value string) (err error) {
+func LPush(request *messaging.ObjectRequest, list string, value string, database int) (err error) {
 	if CheckCacheAvailability(request) {
-		err = repositories.LPush(request, list, value)
+		err = repositories.LPush(request, list, value, database)
 		if err != nil {
 			term.Write("Error Rpushing to List : "+err.Error(), term.Debug)
 		}
@@ -184,23 +191,23 @@ func LPush(request *messaging.ObjectRequest, list string, value string) (err err
 	return
 }
 
-func RPop(request *messaging.ObjectRequest, key string) (result []byte, err error) {
+func RPop(request *messaging.ObjectRequest, key string, database int) (result []byte, err error) {
 	if CheckCacheAvailability(request) {
-		result, err = repositories.RPop(request, key)
+		result, err = repositories.RPop(request, key, database)
 	}
 	return
 }
 
-func LPop(request *messaging.ObjectRequest, key string) (result []byte, err error) {
+func LPop(request *messaging.ObjectRequest, key string, database int) (result []byte, err error) {
 	if CheckCacheAvailability(request) {
-		result, err = repositories.LPop(request, key)
+		result, err = repositories.LPop(request, key, database)
 	}
 	return
 }
 
-func GetListLength(request *messaging.ObjectRequest, key string) (length int64) {
+func GetListLength(request *messaging.ObjectRequest, key string, database int) (length int64) {
 	if CheckCacheAvailability(request) {
-		length = repositories.GetListLength(request, key)
+		length = repositories.GetListLength(request, key, database)
 	}
 	return
 }

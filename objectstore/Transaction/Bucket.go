@@ -75,7 +75,7 @@ func NewTransaction(request *messaging.ObjectRequest) (transactionID string) {
 		metadata["TransactionID"] = transactionID
 
 		bucketValue, _ := json.Marshal(metadata)
-		err := cache.RPush(request, GetBucketName(transactionID), string(bucketValue))
+		err := cache.RPush(request, GetBucketName(transactionID), string(bucketValue), cache.Transaction)
 		if err != nil {
 			request.Log(err.Error())
 		}
@@ -89,7 +89,7 @@ func NewTransaction(request *messaging.ObjectRequest) (transactionID string) {
 func RollbackTransaction(request *messaging.ObjectRequest) (err error) {
 	//delete transaction key
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
-	status := cache.DeleteKey(request, GetBucketName(TransactionID))
+	status := cache.DeleteKey(request, GetBucketName(TransactionID), cache.Transaction)
 	if !status {
 		err = errors.New("Couldn't Expire Transaction!")
 	}
@@ -102,7 +102,7 @@ func AppendTransaction(request *messaging.ObjectRequest) (err error) {
 
 	if transactionID != "" && transactionStruct.Type == "" {
 		bucketValue, _ := json.Marshal(request)
-		err = cache.RPush(request, GetBucketName(transactionID), string(bucketValue))
+		err = cache.RPush(request, GetBucketName(transactionID), string(bucketValue), cache.Transaction)
 	} else {
 		err = errors.New("No TransactionID Found!")
 	}
@@ -113,9 +113,9 @@ func CommitTransaction(request *messaging.ObjectRequest) (err error) {
 	err = Execute(request)
 	if err == nil {
 		TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
-		_ = cache.DeleteKey(request, GetBucketName(TransactionID))
-		_ = cache.DeleteKey(request, GetSuccessBucketName(TransactionID))
-		_ = cache.DeleteKey(request, GetInvertBucketName(TransactionID))
+		_ = cache.DeleteKey(request, GetBucketName(TransactionID), cache.Transaction)
+		_ = cache.DeleteKey(request, GetSuccessBucketName(TransactionID), cache.Transaction)
+		_ = cache.DeleteKey(request, GetInvertBucketName(TransactionID), cache.Transaction)
 	} else {
 		//Produce Commit Logs!
 	}

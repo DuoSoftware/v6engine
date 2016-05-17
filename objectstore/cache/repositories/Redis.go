@@ -9,8 +9,8 @@ import (
 	"strconv"
 )
 
-func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, isError bool, errorMessage string) {
-	client, err := GetConnection(request)
+func getRedisConnection(request *messaging.ObjectRequest, database int) (client *goredis.Redis, isError bool, errorMessage string) {
+	client, err := GetConnection(request, database)
 	if err != nil {
 		isError = true
 		errorMessage = err.Error()
@@ -18,46 +18,56 @@ func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis
 	return
 }
 
-var RedisCacheConnection *goredis.Redis
+var RedisCacheConnection []*goredis.Redis
 
-func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err error) {
+func GetConnection(request *messaging.ObjectRequest, database int) (client *goredis.Redis, err error) {
+
+	if RedisCacheConnection == nil {
+		RedisCacheConnection = make([]*goredis.Redis, 10)
+	}
+
 	host := request.Configuration.ServerConfiguration["REDIS"]["Host"]
 	port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
-	if RedisCacheConnection == nil {
+
+	// 	if database ==  {
+	// 		database = 0
+	// }
+
+	if RedisCacheConnection[database] == nil {
 		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=60s&maxidle=60")
+		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/" + strconv.Itoa(database) + "?timeout=60s&maxidle=60")
 		if err != nil {
 			return nil, err
 		} else {
 			if client == nil {
 				return nil, errors.New("Connection to REDIS Failed!")
 			}
-			RedisCacheConnection = client
+			RedisCacheConnection[database] = client
 		}
 
 	} else {
-		if err = RedisCacheConnection.Ping(); err != nil {
-			RedisCacheConnection = nil
+		if err = RedisCacheConnection[database].Ping(); err != nil {
+			RedisCacheConnection[database] = nil
 			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/0?timeout=60s&maxidle=60")
+			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/" + strconv.Itoa(database) + "?timeout=60s&maxidle=60")
 			if err != nil {
 				return nil, err
 			} else {
 				if client == nil {
 					return nil, errors.New("Connection to REDIS Failed!")
 				}
-				RedisCacheConnection = client
+				RedisCacheConnection[database] = client
 			}
 		} else {
-			client = RedisCacheConnection
+			client = RedisCacheConnection[database]
 		}
 	}
 
 	return
 }
 
-func GetByKey(request *messaging.ObjectRequest) (output []byte) {
-	client, isError, errorMessage := getRedisConnection(request)
+func GetByKey(request *messaging.ObjectRequest, database int) (output []byte) {
+	client, isError, errorMessage := getRedisConnection(request, database)
 
 	if isError == true {
 		term.Write(errorMessage, term.Debug)
@@ -81,8 +91,8 @@ func GetByKey(request *messaging.ObjectRequest) (output []byte) {
 	return
 }
 
-func GetSearch(request *messaging.ObjectRequest) (output []byte) {
-	client, isError, errorMessage := getRedisConnection(request)
+func GetSearch(request *messaging.ObjectRequest, database int) (output []byte) {
+	client, isError, errorMessage := getRedisConnection(request, database)
 
 	if isError == true {
 		term.Write(errorMessage, term.Debug)
@@ -106,8 +116,8 @@ func GetSearch(request *messaging.ObjectRequest) (output []byte) {
 	return
 }
 
-func GetQuery(request *messaging.ObjectRequest) (output []byte) {
-	client, isError, errorMessage := getRedisConnection(request)
+func GetQuery(request *messaging.ObjectRequest, database int) (output []byte) {
+	client, isError, errorMessage := getRedisConnection(request, database)
 
 	if isError == true {
 		term.Write(errorMessage, term.Debug)
@@ -131,8 +141,8 @@ func GetQuery(request *messaging.ObjectRequest) (output []byte) {
 	return
 }
 
-func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) (err error) {
-	client, isError, errorMessage := getRedisConnection(request)
+func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}, database int) (err error) {
+	client, isError, errorMessage := getRedisConnection(request, database)
 	if isError == true {
 		err = errors.New(errorMessage)
 	} else {
@@ -155,13 +165,13 @@ func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) 
 		//client.ClosePool()
 	}
 
-	_ = ResetSearchResultCache(request)
+	_ = ResetSearchResultCache(request, database)
 
 	return
 }
 
-func SetResultRedis(request *messaging.ObjectRequest, data interface{}) (err error) {
-	client, isError, errorMessage := getRedisConnection(request)
+func SetResultRedis(request *messaging.ObjectRequest, data interface{}, database int) (err error) {
+	client, isError, errorMessage := getRedisConnection(request, database)
 	if isError == true {
 		err = errors.New(errorMessage)
 	} else {
@@ -180,8 +190,8 @@ func SetResultRedis(request *messaging.ObjectRequest, data interface{}) (err err
 	return
 }
 
-func SetQueryRedis(request *messaging.ObjectRequest, data interface{}) (err error) {
-	client, isError, errorMessage := getRedisConnection(request)
+func SetQueryRedis(request *messaging.ObjectRequest, data interface{}, database int) (err error) {
+	client, isError, errorMessage := getRedisConnection(request, database)
 	if isError == true {
 		err = errors.New(errorMessage)
 	} else {
@@ -200,8 +210,8 @@ func SetQueryRedis(request *messaging.ObjectRequest, data interface{}) (err erro
 	return
 }
 
-func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{}) (err error) {
-	client, isError, errorMessage := getRedisConnection(request)
+func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{}, database int) (err error) {
+	client, isError, errorMessage := getRedisConnection(request, database)
 	if isError == true {
 		err = errors.New(errorMessage)
 	} else if request.Body.Parameters.KeyProperty != "" {
@@ -223,22 +233,17 @@ func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{
 		//client.ClosePool()
 	}
 
-	_ = ResetSearchResultCache(request)
+	_ = ResetSearchResultCache(request, database)
 
 	return
 }
 
-func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{}) (err error) {
+func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{}, database int) (err error) {
 
-	client, isError, errorMessage := getRedisConnection(request)
+	client, isError, errorMessage := getRedisConnection(request, database)
 	if isError == true {
 		err = errors.New(errorMessage)
 	} else {
-
-		term.Write("------------", term.Debug)
-		term.Write(request.Body.Parameters.KeyProperty, term.Debug)
-		term.Write(request, term.Debug)
-		term.Write("------------", term.Debug)
 
 		key := ""
 		if request.Body.Parameters.KeyProperty == "" || request.Controls.Id != "" {
@@ -253,13 +258,13 @@ func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{
 		//client.ClosePool()
 	}
 
-	_ = ResetSearchResultCache(request)
+	_ = ResetSearchResultCache(request, database)
 
 	return
 }
 
-func RemoveManyRedis(request *messaging.ObjectRequest, data []map[string]interface{}) (err error) {
-	client, isError, errorMessage := getRedisConnection(request)
+func RemoveManyRedis(request *messaging.ObjectRequest, data []map[string]interface{}, database int) (err error) {
+	client, isError, errorMessage := getRedisConnection(request, database)
 	if isError == true {
 		err = errors.New(errorMessage)
 	} else if request.Body.Parameters.KeyProperty != "" {
@@ -272,13 +277,13 @@ func RemoveManyRedis(request *messaging.ObjectRequest, data []map[string]interfa
 		//client.ClosePool()
 	}
 
-	_ = ResetSearchResultCache(request)
+	_ = ResetSearchResultCache(request, database)
 
 	return
 }
 
-func ResetSearchResultCache(request *messaging.ObjectRequest) (err error) {
-	client, isError, errorMessage := getRedisConnection(request)
+func ResetSearchResultCache(request *messaging.ObjectRequest, database int) (err error) {
+	client, isError, errorMessage := getRedisConnection(request, database)
 	if isError == true {
 		err = errors.New(errorMessage)
 	} else {
@@ -321,8 +326,8 @@ func ResetSearchResultCache(request *messaging.ObjectRequest) (err error) {
 	return err
 }
 
-func StoreKeyValue(request *messaging.ObjectRequest, key string, value string) (err error) {
-	client, err := GetReusedRedisConnection(request)
+func StoreKeyValue(request *messaging.ObjectRequest, key string, value string, database int) (err error) {
+	client, err := GetConnection(request, database)
 	if err != nil {
 		return
 	}
@@ -330,8 +335,8 @@ func StoreKeyValue(request *messaging.ObjectRequest, key string, value string) (
 	return
 }
 
-func GetKeyValue(request *messaging.ObjectRequest, key string) (value []byte) {
-	client, err := GetReusedRedisConnection(request)
+func GetKeyValue(request *messaging.ObjectRequest, key string, database int) (value []byte) {
+	client, err := GetConnection(request, database)
 	if err != nil {
 		return
 	}
@@ -339,8 +344,8 @@ func GetKeyValue(request *messaging.ObjectRequest, key string) (value []byte) {
 	return
 }
 
-func GetKeyListPattern(request *messaging.ObjectRequest, key string) (value []string) {
-	client, err := GetReusedRedisConnection(request)
+func GetKeyListPattern(request *messaging.ObjectRequest, key string, database int) (value []string) {
+	client, err := GetConnection(request, database)
 	if err != nil {
 		return
 	}
@@ -351,8 +356,8 @@ func GetKeyListPattern(request *messaging.ObjectRequest, key string) (value []st
 	return
 }
 
-func ExistsKeyValue(request *messaging.ObjectRequest, key string) (status bool) {
-	client, err := GetReusedRedisConnection(request)
+func ExistsKeyValue(request *messaging.ObjectRequest, key string, database int) (status bool) {
+	client, err := GetConnection(request, database)
 	if err != nil {
 		return
 	}
@@ -360,8 +365,8 @@ func ExistsKeyValue(request *messaging.ObjectRequest, key string) (status bool) 
 	return
 }
 
-func DeleteKey(request *messaging.ObjectRequest, key string) (status bool) {
-	client, err := GetReusedRedisConnection(request)
+func DeleteKey(request *messaging.ObjectRequest, key string, database int) (status bool) {
+	client, err := GetConnection(request, database)
 	if err != nil {
 		return
 	}
@@ -369,37 +374,8 @@ func DeleteKey(request *messaging.ObjectRequest, key string) (status bool) {
 	return
 }
 
-var RedisConnection *goredis.Redis
-
-func GetReusedRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err error) {
-	if RedisConnection == nil {
-		client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
-		if err != nil {
-			return nil, err
-		}
-		if client == nil {
-			return nil, errors.New("Connection to REDIS Failed!")
-		}
-	} else {
-		if err = RedisConnection.Ping(); err != nil {
-			RedisConnection = nil
-			client, err = goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=1s&maxidle=1")
-			if err != nil {
-				return nil, err
-			}
-			if client == nil {
-				return nil, errors.New("Connection to REDIS Failed!")
-			}
-		} else {
-			client = RedisConnection
-		}
-	}
-
-	return
-}
-
-func RPush(request *messaging.ObjectRequest, list string, value string) (err error) {
-	client, err := GetReusedRedisConnection(request)
+func RPush(request *messaging.ObjectRequest, list string, value string, database int) (err error) {
+	client, err := GetConnection(request, database)
 	if err != nil {
 		return
 	}
@@ -407,8 +383,8 @@ func RPush(request *messaging.ObjectRequest, list string, value string) (err err
 	return
 }
 
-func LPush(request *messaging.ObjectRequest, list string, value string) (err error) {
-	client, err := GetReusedRedisConnection(request)
+func LPush(request *messaging.ObjectRequest, list string, value string, database int) (err error) {
+	client, err := GetConnection(request, database)
 	if err != nil {
 		return
 	}
@@ -416,8 +392,8 @@ func LPush(request *messaging.ObjectRequest, list string, value string) (err err
 	return
 }
 
-func GetListLength(request *messaging.ObjectRequest, key string) (length int64) {
-	client, err := GetReusedRedisConnection(request)
+func GetListLength(request *messaging.ObjectRequest, key string, database int) (length int64) {
+	client, err := GetConnection(request, database)
 	if err != nil {
 		return
 	}
@@ -425,8 +401,8 @@ func GetListLength(request *messaging.ObjectRequest, key string) (length int64) 
 	return
 }
 
-func RPop(request *messaging.ObjectRequest, key string) (result []byte, err error) {
-	client, err := GetReusedRedisConnection(request)
+func RPop(request *messaging.ObjectRequest, key string, database int) (result []byte, err error) {
+	client, err := GetConnection(request, database)
 	if err != nil {
 		return
 	}
@@ -434,8 +410,8 @@ func RPop(request *messaging.ObjectRequest, key string) (result []byte, err erro
 	return
 }
 
-func LPop(request *messaging.ObjectRequest, key string) (result []byte, err error) {
-	client, err := GetReusedRedisConnection(request)
+func LPop(request *messaging.ObjectRequest, key string, database int) (result []byte, err error) {
+	client, err := GetConnection(request, database)
 	if err != nil {
 		return
 	}
