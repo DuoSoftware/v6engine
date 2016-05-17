@@ -186,9 +186,9 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 		IsRedis = true
 	}
 
-	if IsRedis && cache.ExistsKeyValue(request, tableCacheRedisPattern) {
+	if IsRedis && cache.ExistsKeyValue(request, tableCacheRedisPattern, cache.MetaData) {
 
-		byteVal := cache.GetKeyValue(request, tableCacheRedisPattern)
+		byteVal := cache.GetKeyValue(request, tableCacheRedisPattern, cache.MetaData)
 		err := json.Unmarshal(byteVal, &fieldsAndTypes)
 		if err != nil {
 			request.Log(err.Error())
@@ -374,12 +374,12 @@ func (repository CloudSqlRepository) ReRun(request *messaging.ObjectRequest, con
 
 	if strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
 		if CheckRedisAvailability(request) {
-			if !cache.ExistsKeyValue(request, key) {
+			if !cache.ExistsKeyValue(request, key, cache.MetaData) {
 				request.Body.Parameters.Mode = "NOSQL"
 				repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
 				request.Body.Parameters.Mode = "SQL"
 				response = repository.queryStore(request)
-				err = cache.StoreKeyValue(request, key, "true")
+				err = cache.StoreKeyValue(request, key, "true", cache.MetaData)
 			} else {
 				err = errors.New("Failed at DB!")
 			}
@@ -541,8 +541,8 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			} else {
 				//Delete Class from availableTables and tablecache
 				if CheckRedisAvailability(request) {
-					_ = cache.DeleteKey(request, ("CloudSqlTableCache." + domain + "." + request.Controls.Class))
-					_ = cache.DeleteKey(request, ("CloudSqlAvailableTables." + domain + "." + request.Controls.Class))
+					_ = cache.DeleteKey(request, ("CloudSqlTableCache." + domain + "." + request.Controls.Class), cache.MetaData)
+					_ = cache.DeleteKey(request, ("CloudSqlAvailableTables." + domain + "." + request.Controls.Class), cache.MetaData)
 				} else {
 					delete(availableTables, (domain + "." + request.Controls.Class))
 					delete(tableCache, (domain + "." + request.Controls.Class))
@@ -567,18 +567,18 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			} else {
 				if CheckRedisAvailability(request) {
 
-					_ = cache.DeleteKey(request, ("CloudSqlTableCache." + domain + "." + request.Controls.Class))
+					_ = cache.DeleteKey(request, ("CloudSqlTableCache." + domain + "." + request.Controls.Class), cache.MetaData)
 
 					var availableTablesKeys []string
 					availableTablesPattern := "CloudSqlAvailableTables." + domain + ".*"
-					availableTablesKeys = cache.GetKeyListPattern(request, availableTablesPattern)
+					availableTablesKeys = cache.GetKeyListPattern(request, availableTablesPattern, cache.MetaData)
 					if len(availableTablesKeys) > 0 {
 						for _, name := range availableTablesKeys {
-							_ = cache.DeleteKey(request, name)
+							_ = cache.DeleteKey(request, name, cache.MetaData)
 						}
 					}
 
-					_ = cache.DeleteKey(request, ("CloudSqlAvailableDbs." + domain))
+					_ = cache.DeleteKey(request, ("CloudSqlAvailableDbs." + domain), cache.MetaData)
 
 				} else {
 					//Delete Namespace from availableDbs
@@ -742,14 +742,14 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 	}
 
 	if isCacheable {
-		result := cache.GetByKey(request)
+		result := cache.GetByKey(request, cache.Data)
 		if result == nil {
 			query := "SELECT * FROM " + repository.getDatabaseName(namespace) + "." + class + " WHERE __os_id = '" + id + "';"
 			obj, _ = repository.executeQueryOne(request, conn, query, nil)
 			if obj == nil || len(obj) == 0 {
 				//Data not available.
 			} else {
-				err := cache.StoreOne(request, obj)
+				err := cache.StoreOne(request, obj, cache.Data)
 				if err != nil {
 					request.Log(err.Error())
 				}
@@ -966,7 +966,7 @@ func (repository CloudSqlRepository) checkAvailabilityDb(request *messaging.Obje
 	}
 
 	if CheckRedisAvailability(request) {
-		if cache.ExistsKeyValue(request, ("CloudSqlAvailableDbs." + dbName)) {
+		if cache.ExistsKeyValue(request, ("CloudSqlAvailableDbs." + dbName), cache.MetaData) {
 			return
 		}
 	} else {
@@ -985,7 +985,7 @@ func (repository CloudSqlRepository) checkAvailabilityDb(request *messaging.Obje
 		}
 
 		if CheckRedisAvailability(request) {
-			err = cache.StoreKeyValue(request, ("CloudSqlAvailableDbs." + dbName), "true")
+			err = cache.StoreKeyValue(request, ("CloudSqlAvailableDbs." + dbName), "true", cache.MetaData)
 		} else {
 			if availableDbs[dbName] == nil {
 				availableDbs[dbName] = true
@@ -1007,7 +1007,7 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 	isTableCreatedNow := false
 
 	if CheckRedisAvailability(request) {
-		if !cache.ExistsKeyValue(request, ("CloudSqlAvailableTables." + dbName + "." + class)) {
+		if !cache.ExistsKeyValue(request, ("CloudSqlAvailableTables." + dbName + "." + class), cache.MetaData) {
 			var tableResult map[string]interface{}
 			tableResult, err = repository.executeQueryOne(request, conn, "SHOW TABLES FROM "+dbName+" LIKE \""+class+"\"", nil)
 			if err == nil {
@@ -1024,7 +1024,7 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 					}
 				}
 				if CheckRedisAvailability(request) {
-					err = cache.StoreKeyValue(request, ("CloudSqlAvailableTables." + dbName + "." + class), "true")
+					err = cache.StoreKeyValue(request, ("CloudSqlAvailableTables." + dbName + "." + class), "true", cache.MetaData)
 				} else {
 					if availableTables[dbName+"."+class] == nil || availableTables[dbName+"."+class] == false {
 						availableTables[dbName+"."+class] = true
@@ -1071,9 +1071,9 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 		if CheckRedisAvailability(request) {
 			tableCachePattern := "CloudSqlTableCache." + dbName + "." + request.Controls.Class
 
-			if IsTableCacheKeys := cache.ExistsKeyValue(request, tableCachePattern); IsTableCacheKeys {
+			if IsTableCacheKeys := cache.ExistsKeyValue(request, tableCachePattern, cache.MetaData); IsTableCacheKeys {
 
-				byteVal := cache.GetKeyValue(request, tableCachePattern)
+				byteVal := cache.GetKeyValue(request, tableCachePattern, cache.MetaData)
 				err = json.Unmarshal(byteVal, &cacheItem)
 				if err != nil {
 					request.Log(err.Error())
@@ -1136,7 +1136,7 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 func (repository CloudSqlRepository) addColumnToTableCache(request *messaging.ObjectRequest, dbName string, class string, field string, datatype string) {
 	if CheckRedisAvailability(request) {
 
-		byteVal := cache.GetKeyValue(request, ("CloudSqlTableCache." + dbName + "." + request.Controls.Class))
+		byteVal := cache.GetKeyValue(request, ("CloudSqlTableCache." + dbName + "." + request.Controls.Class), cache.MetaData)
 		fieldsAndTypes := make(map[string]string)
 		err := json.Unmarshal(byteVal, &fieldsAndTypes)
 		if err != nil {
@@ -1146,7 +1146,7 @@ func (repository CloudSqlRepository) addColumnToTableCache(request *messaging.Ob
 
 		fieldsAndTypes[field] = datatype
 
-		err = cache.StoreKeyValue(request, ("CloudSqlTableCache." + dbName + "." + request.Controls.Class), getStringByObject(fieldsAndTypes))
+		err = cache.StoreKeyValue(request, ("CloudSqlTableCache." + dbName + "." + request.Controls.Class), getStringByObject(fieldsAndTypes), cache.MetaData)
 		if err != nil {
 			request.Log(err.Error())
 		}
@@ -1182,7 +1182,7 @@ func (repository CloudSqlRepository) buildTableCache(request *messaging.ObjectRe
 		}
 	} else {
 		tableCachePattern := ("CloudSqlTableCache." + dbName + "." + request.Controls.Class)
-		IsTableCacheKeys := cache.ExistsKeyValue(request, tableCachePattern)
+		IsTableCacheKeys := cache.ExistsKeyValue(request, tableCachePattern, cache.MetaData)
 		if !IsTableCacheKeys {
 			var exResult []map[string]interface{}
 			exResult, err := repository.executeQueryMany(request, conn, "EXPLAIN "+dbName+"."+class, nil)
@@ -1192,7 +1192,7 @@ func (repository CloudSqlRepository) buildTableCache(request *messaging.ObjectRe
 				for _, cRow := range exResult {
 					fieldsAndTypes[cRow["Field"].(string)] = cRow["Type"].(string)
 				}
-				err = cache.StoreKeyValue(request, key, getStringByObject(fieldsAndTypes))
+				err = cache.StoreKeyValue(request, key, getStringByObject(fieldsAndTypes), cache.MetaData)
 			}
 		}
 	}
@@ -1537,9 +1537,9 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 		if CheckRedisAvailability(request) {
 			tableCachePattern := "CloudSqlTableCache." + tableName.(string)
 
-			if IsTableCacheKeys := cache.ExistsKeyValue(request, tableCachePattern); IsTableCacheKeys {
+			if IsTableCacheKeys := cache.ExistsKeyValue(request, tableCachePattern, cache.MetaData); IsTableCacheKeys {
 
-				byteVal := cache.GetKeyValue(request, tableCachePattern)
+				byteVal := cache.GetKeyValue(request, tableCachePattern, cache.MetaData)
 				err = json.Unmarshal(byteVal, &cacheItem)
 				if err != nil {
 					request.Log(err.Error())

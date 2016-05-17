@@ -12,7 +12,7 @@ import (
 func Execute(request *messaging.ObjectRequest) (err error) {
 	//Get Length of List
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
-	if cache.ExistsKeyValue(request, GetBucketName(TransactionID)) && cache.GetListLength(request, GetBucketName(TransactionID)) > 1 {
+	if cache.ExistsKeyValue(request, GetBucketName(TransactionID), cache.Transaction) && cache.GetListLength(request, GetBucketName(TransactionID), cache.Transaction) > 1 {
 		err = StartProcess(request)
 	} else {
 		err = errors.New("Transaction either already Rolledback or no transaction items found!")
@@ -23,11 +23,11 @@ func Execute(request *messaging.ObjectRequest) (err error) {
 func StartProcess(request *messaging.ObjectRequest) (err error) {
 	//GetTask
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
-	tasklength := cache.GetListLength(request, GetBucketName(TransactionID))
+	tasklength := cache.GetListLength(request, GetBucketName(TransactionID), cache.Transaction)
 
 	var x int64
 	//pop first element and throw away
-	_, _ = cache.LPop(request, GetBucketName(TransactionID))
+	_, _ = cache.LPop(request, GetBucketName(TransactionID), cache.Transaction)
 
 	for x = 0; x < tasklength-1; x++ {
 		pickedRequest, err2 := GetTask(request)
@@ -68,7 +68,7 @@ func ProcessDispatcher(request *messaging.ObjectRequest) repositories.Repository
 func GetTask(request *messaging.ObjectRequest) (retRequest *messaging.ObjectRequest, err error) {
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
 	var byteVal []byte
-	byteVal, err = cache.LPop(request, GetBucketName(TransactionID))
+	byteVal, err = cache.LPop(request, GetBucketName(TransactionID), cache.Transaction)
 	// if err != nil -> key has removed. RollBack has been called
 	if err == nil {
 		if len(byteVal) <= 4 {
@@ -88,7 +88,7 @@ func GetTask(request *messaging.ObjectRequest) (retRequest *messaging.ObjectRequ
 func GetInvertedTask(request *messaging.ObjectRequest) (retRequest *messaging.ObjectRequest, err error) {
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
 	var byteVal []byte
-	byteVal, err = cache.LPop(request, GetInvertBucketName(TransactionID))
+	byteVal, err = cache.LPop(request, GetInvertBucketName(TransactionID), cache.Transaction)
 
 	// if err != nil -> key has removed.. RollBack has been called
 	if err == nil {
@@ -102,21 +102,21 @@ func GetInvertedTask(request *messaging.ObjectRequest) (retRequest *messaging.Ob
 
 func PushToSuccessList(request *messaging.ObjectRequest, TransactionID string) (err error) {
 	bucketValue, err := json.Marshal(request)
-	err = cache.RPush(request, GetSuccessBucketName(TransactionID), string(bucketValue))
+	err = cache.RPush(request, GetSuccessBucketName(TransactionID), string(bucketValue), cache.Transaction)
 	return
 }
 
 func PushToInvertList(request []*messaging.ObjectRequest, TransactionID string) (err error) {
 	for _, singleRequest := range request {
 		bucketValue, _ := json.Marshal(singleRequest)
-		err = cache.RPush(singleRequest, GetInvertBucketName(TransactionID), string(bucketValue))
+		err = cache.RPush(singleRequest, GetInvertBucketName(TransactionID), string(bucketValue), cache.Transaction)
 	}
 	return
 }
 
 func StartRollBackProcess(request *messaging.ObjectRequest) (err error) {
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
-	tasklength := cache.GetListLength(request, GetInvertBucketName(TransactionID))
+	tasklength := cache.GetListLength(request, GetInvertBucketName(TransactionID), cache.Transaction)
 	isAllSuccess := true
 
 	var x int64

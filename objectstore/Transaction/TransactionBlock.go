@@ -9,26 +9,26 @@ import (
 
 func AppendBlockEntry(request *messaging.ObjectRequest, TransactionID string) (err error) {
 	entry := GetBlockEntryName(request, TransactionID)
-	if cache.ExistsKeyValue(request, entry) {
+	if cache.ExistsKeyValue(request, entry, cache.Transaction) {
 		var data []interface{}
-		byteValue := cache.GetKeyValue(request, entry)
+		byteValue := cache.GetKeyValue(request, entry, cache.Transaction)
 		err = json.Unmarshal(byteValue, &data)
 		data = append(data, request)
 		byteValue = nil
 		byteValue, err = json.Marshal(data)
-		err = cache.StoreKeyValue(request, entry, string(byteValue))
+		err = cache.StoreKeyValue(request, entry, string(byteValue), cache.Transaction)
 	} else {
 		var data []interface{}
 		data = append(data, request)
 		byteValue, _ := json.Marshal(data)
-		err = cache.StoreKeyValue(request, entry, string(byteValue))
+		err = cache.StoreKeyValue(request, entry, string(byteValue), cache.Transaction)
 	}
 	return
 }
 
 func DeleteBlockEntry(request *messaging.ObjectRequest, TransactionID string) (err error) {
 	entry := GetBlockEntryName(request, TransactionID)
-	status := cache.DeleteKey(request, entry)
+	status := cache.DeleteKey(request, entry, cache.Transaction)
 	if !status {
 		err = errors.New("Delete Failed!")
 	}
