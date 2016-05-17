@@ -359,6 +359,7 @@ func (h *TenantHandler) AddUsersToTenant(TenantID, Name string, users, SecurityL
 		} else {
 			for _, element := range t.Users {
 				if element == users {
+					term.Write("No Users yet assigied "+element+" user "+users, term.Debug)
 					return t
 				}
 			}
@@ -380,6 +381,7 @@ func (h *TenantHandler) AddUsersToTenant(TenantID, Name string, users, SecurityL
 		term.Write("Saved Tenant users"+t.TenantID, term.Debug)
 		return t
 	} else {
+		term.Write("Error "+err+" user "+users, term.Debug)
 		return t
 	}
 }
