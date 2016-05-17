@@ -134,6 +134,8 @@ func Write(data interface{}, mType int) {
 		// if Config.DebugLine {
 		// 	fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Debug! " + Lable + Reset)
 		// }
+		//fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Debug!")
+		fmt.Println(data)
 	case Splash:
 		//fmt.Println(FgBlack + BgWhite + Lable + Reset)
 	case Blank:
