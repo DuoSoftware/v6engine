@@ -360,6 +360,7 @@ func (repository CloudSqlRepository) UpdateMultiple(request *messaging.ObjectReq
 		response = repository.ReRun(request, conn, request.Body.Objects[0])
 	}
 
+	response.Data = DataMap
 	return response
 }
 
