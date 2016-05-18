@@ -224,7 +224,8 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 		}
 	}
 
-	/*query = "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE Concat("
+	//Non Indexed Queries
+	query = "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE Concat("
 
 	//Make Argument Array
 	fullTextArguments := ""
@@ -237,27 +238,28 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 	queryParam := request.Body.Query.Parameters
 	queryParam = strings.TrimPrefix(queryParam, "*")
 	queryParam = strings.TrimSuffix(queryParam, "*")
-	query += fullTextArguments + ") LIKE '%" + queryParam + "%' "*/
+	query += fullTextArguments + ") LIKE '%" + queryParam + "%' "
+
 	//Indexed Queries
-	queryParam := request.Body.Query.Parameters
-	queryParam = strings.TrimPrefix(queryParam, "*")
-	queryParam = strings.TrimSuffix(queryParam, "*")
+	// queryParam := request.Body.Query.Parameters
+	// queryParam = strings.TrimPrefix(queryParam, "*")
+	// queryParam = strings.TrimSuffix(queryParam, "*")
 
-	query = "SELECT * FROM " + domain + "." + request.Controls.Class + " WHERE MATCH ("
+	// query = "SELECT * FROM " + domain + "." + request.Controls.Class + " WHERE MATCH ("
 
-	argumentCount := 0
-	fullTextArguments := ""
-	for _, field := range fieldNames {
-		if argumentCount < 16 {
-			fullTextArguments += field + ","
-		} else {
-			break
-		}
-		argumentCount += 1
-	}
-	fullTextArguments = strings.TrimSuffix(fullTextArguments, ",")
-	query += fullTextArguments + ") AGAINST ('" + queryParam
-	query += "*' IN BOOLEAN MODE);"
+	// argumentCount := 0
+	// fullTextArguments := ""
+	// for _, field := range fieldNames {
+	// 	if argumentCount < 16 {
+	// 		fullTextArguments += field + ","
+	// 	} else {
+	// 		break
+	// 	}
+	// 	argumentCount += 1
+	// }
+	// fullTextArguments = strings.TrimSuffix(fullTextArguments, ",")
+	// query += fullTextArguments + ") AGAINST ('" + queryParam
+	// query += "*' IN BOOLEAN MODE);"
 
 	return
 }
@@ -338,6 +340,21 @@ func (repository CloudSqlRepository) UpdateMultiple(request *messaging.ObjectReq
 		return response
 	}
 
+	var idData map[string]interface{}
+	idData = make(map[string]interface{})
+
+	for index, obj := range request.Body.Objects {
+		id := repository.getRecordID(request, obj)
+		idData[strconv.Itoa(index)] = id
+		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
+	}
+
+	DataMap := make([]map[string]interface{}, 1)
+	var idMap map[string]interface{}
+	idMap = make(map[string]interface{})
+	idMap["ID"] = idData
+	DataMap[0] = idMap
+
 	response = repository.queryStore(request)
 	if !response.IsSuccess {
 		response = repository.ReRun(request, conn, request.Body.Objects[0])
@@ -357,10 +374,22 @@ func (repository CloudSqlRepository) UpdateSingle(request *messaging.ObjectReque
 		return response
 	}
 
+	id := repository.getRecordID(request, request.Body.Object)
+	request.Controls.Id = id
+	request.Body.Object[request.Body.Parameters.KeyProperty] = id
+
+	Data := make([]map[string]interface{}, 1)
+	var idData map[string]interface{}
+	idData = make(map[string]interface{})
+	idData["ID"] = id
+	Data[0] = idData
+
 	response = repository.queryStore(request)
 	if !response.IsSuccess {
 		response = repository.ReRun(request, conn, request.Body.Object)
 	}
+
+	response.Data = Data
 
 	return response
 }
