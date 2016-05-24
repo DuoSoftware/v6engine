@@ -177,6 +177,8 @@ func (t *ScheduleTable) GetTimeFromString(timestamp string) time.Time {
 	}
 
 	newTime := time.Date(year, monthTime, date, hour, min, 0, 0, time.UTC)
+
+	//newTime, _ := time.Parse("200601021504", timestamp)
 	return newTime
 }
 
