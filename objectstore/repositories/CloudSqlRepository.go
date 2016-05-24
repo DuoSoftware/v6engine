@@ -1641,7 +1641,7 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 			cacheItem = tableCache[tName]
 		}
 	}
-
+	fmt.Println("--------------------   Type Debug ------------------------")
 	for rows.Next() {
 
 		for i, _ := range columns {
@@ -1664,6 +1664,7 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 					t, ok := cacheItem[col]
 					if ok {
 						v = repository.sqlToGolang(b, t)
+						fmt.Println(t)
 					}
 				}
 
@@ -1684,6 +1685,8 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 		}
 		tableMap = append(tableMap, rowMap)
 	}
+
+	fmt.Println("--------------------   Debug End  ------------------------")
 
 	return
 }
