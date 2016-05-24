@@ -1555,6 +1555,7 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 	tType := strings.ToLower(t)
 
 	if strings.Contains(tType, "bit") {
+		fmt.Println(" ^ Boolean!")
 		if len(b) == 0 {
 			outData = false
 		} else {
