@@ -1553,7 +1553,7 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 	tmp := string(b)
 
 	tType := strings.ToLower(t)
-
+	fmt.Println("|" + t + "|" + tType + "|")
 	if strings.Contains(tType, "bit") {
 		fmt.Println(" ^ Boolean!")
 		if len(b) == 0 {
@@ -1665,7 +1665,6 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 					t, ok := cacheItem[col]
 					if ok {
 						v = repository.sqlToGolang(b, t)
-						fmt.Println(t)
 					}
 				}
 
