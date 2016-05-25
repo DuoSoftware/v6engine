@@ -11,6 +11,7 @@ import (
 	//"golang.org/x/oauth2"
 	//"crypto/hmac"
 	"duov6.com/session"
+	"duov6.com/term"
 	"strconv"
 	"strings"
 	///"strings"
@@ -388,6 +389,7 @@ func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, Applica
 		for key, value := range object.Object {
 			data[key] = value
 		}
+		term.Write(data, term.Debug)
 		client.Go("ignore", c.Domain, "scope").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
 		//insert to Objectstore ends here
 
