@@ -378,7 +378,8 @@ func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, Applica
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
-
+		term.Write("AutherizeApp ---------------------------", term.Debug)
+		term.Write(object, term.Debug)
 		//Insert Object To Objectore
 		id := common.GetHash(ApplicationID + c.UserID)
 		data := make(map[string]interface{})
@@ -387,12 +388,13 @@ func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, Applica
 		data["ApplicationID"] = ApplicationID
 		//data["email"] = c.UserID
 		for key, value := range object.Object {
+			term.Write(value, term.Debug)
 			data[key] = value
 		}
 		term.Write(data, term.Debug)
 		client.Go("ignore", c.Domain, "scope").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
 		//insert to Objectstore ends here
-
+		term.Write("AutherizeApp ---------------------------", term.Debug)
 		out, err := h.AutherizeApp(Code, ApplicationID, AppSecret, c.UserID, SecurityToken)
 		if err != "" {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
