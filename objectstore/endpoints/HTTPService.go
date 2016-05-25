@@ -17,7 +17,6 @@ import (
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 type HTTPService struct {
@@ -145,42 +144,13 @@ func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request
 	exe := FileServer.FileManager{}
 	fileResponse := exe.Store(&sendRequest)
 	if fileResponse.IsSuccess == true {
-		fmt.Fprintf(w, ":File uploaded successfully!")
+		fmt.Fprintf(w, " : File uploaded successfully!")
 	} else {
 		fmt.Fprintf(w, "Aborted")
 	}
 }
 
 func handleRequest(params martini.Params, res http.ResponseWriter, req *http.Request) { // res and req are injected by Martini
-
-	// Start setting up Content-Types
-	if checkIfFile(params) == "NAF" {
-		// NAF = Not A File.
-		res.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	} else if checkIfFile(params) == "txt" {
-		res.Header().Set("Content-Type", "text/txt")
-	} else if checkIfFile(params) == "docx" {
-		res.Header().Set("Content-Type", "document/word")
-	} else if checkIfFile(params) == "xlsx" {
-		res.Header().Set("Content-Type", "document/excel")
-	} else if checkIfFile(params) == "pptx" {
-		res.Header().Set("Content-Type", "document/powerpoint")
-	} else if checkIfFile(params) == "png" {
-		res.Header().Set("Content-Type", "image/png")
-	} else if checkIfFile(params) == "jpg" {
-		res.Header().Set("Content-Type", "image/jpg")
-	} else if checkIfFile(params) == "gif" {
-		res.Header().Set("Content-Type", "image/gif")
-	} else if checkIfFile(params) == "wav" {
-		res.Header().Set("Content-Type", "audio/wav")
-	} else if checkIfFile(params) == "mp3" {
-		res.Header().Set("Content-Type", "audio/mp3")
-	} else if checkIfFile(params) == "wmv" {
-		res.Header().Set("Content-Type", "audio/wmv")
-	} else {
-		res.Header().Set("Content-Type", "text/other")
-	}
-	// End setting up Content-Types
 
 	responseMessage, isSuccess := dispatchRequest(req, params)
 
@@ -359,21 +329,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 						//isLoggable = true
 						if isLoggable {
 							fmt.Println("---------------------------- REQUEST BODY -----------------------------------")
-
-							if len(rb) > 2000 {
-								fmt.Println("Request Found but Too Long to STDOUT!")
-							} else {
-								fmt.Println("Primary Key : " + requestBody.Parameters.KeyProperty)
-								fmt.Print("Query : ")
-								fmt.Println(requestBody.Query)
-								fmt.Print("Special : ")
-								fmt.Println(requestBody.Special)
-								fmt.Print("Single Object : ")
-								fmt.Println(requestBody.Object)
-								fmt.Print("Multiple Objects : ")
-								fmt.Println(requestBody.Objects)
-							}
-
+							fmt.Println(string(rb))
 							fmt.Println("-----------------------------------------------------------------------------")
 						}
 						objectRequest.Body = requestBody
@@ -465,17 +421,5 @@ func validateSecurityToken(token string, domain string) (isValidated bool, cert 
 		isValidated = false
 	}
 
-	return
-}
-
-func checkIfFile(params martini.Params) (fileType string) {
-	//Check if this a file and RETURN the file type
-	var tempArray []string
-	tempArray = strings.Split(params["id"], ".")
-	if len(tempArray) > 1 {
-		fileType = tempArray[len(tempArray)-1]
-	} else {
-		fileType = "NAF"
-	}
 	return
 }
