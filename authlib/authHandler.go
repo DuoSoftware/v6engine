@@ -557,7 +557,11 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 			if err == nil {
 				//fmt.Println(uList)
 				if uList.Password == common.GetHash(password) && strings.ToLower(uList.EmailAddress) == strings.ToLower(email) {
-					return uList, ""
+					if uList.Active {
+						return uList, ""
+					} else {
+						return user, "User is not Active."
+					}
 				} else {
 					term.Write("password incorrect", term.Error)
 				}
