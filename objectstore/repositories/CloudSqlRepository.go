@@ -1553,9 +1553,9 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 	tmp := string(b)
 
 	tType := strings.ToLower(t)
-	fmt.Println("|" + t + "|" + tType + "|")
+	//fmt.Println("|" + t + "|" + tType + "|")
 	if strings.Contains(tType, "bit") {
-		fmt.Println(" ^ Boolean!")
+		//fmt.Println(" ^ Boolean!")
 		if len(b) == 0 {
 			outData = false
 		} else {
@@ -1610,7 +1610,14 @@ func (repository CloudSqlRepository) getInterfaceValue(tmp string) (outData inte
 			outData = tmp
 		}
 	} else {
-		outData = tmp
+		//outData = tmp
+		if tmp == "\u0000" {
+			outData = false
+		} else if tmp == "\u0001" {
+			outData = true
+		} else {
+			outData = tmp
+		}
 	}
 	return
 }
@@ -1642,7 +1649,7 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 			cacheItem = tableCache[tName]
 		}
 	}
-	fmt.Println("--------------------   Type Debug ------------------------")
+	//fmt.Println("--------------------   Type Debug ------------------------")
 	for rows.Next() {
 
 		for i, _ := range columns {
@@ -1686,7 +1693,7 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 		tableMap = append(tableMap, rowMap)
 	}
 
-	fmt.Println("--------------------   Debug End  ------------------------")
+	//fmt.Println("--------------------   Debug End  ------------------------")
 
 	return
 }
