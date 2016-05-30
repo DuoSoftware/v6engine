@@ -46,6 +46,10 @@ func ErrorJson(message string) string {
 	return "{\"Error\":true,\"Message\":\"" + message + "\"}"
 }
 
+func MsgJson(message string) string {
+	return "{\"Error\":false,\"Message\":\"" + message + "\"}"
+}
+
 func GetHash(input string) string {
 	h := md5.New()
 	h.Write([]byte(input))
