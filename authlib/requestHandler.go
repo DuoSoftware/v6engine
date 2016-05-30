@@ -18,7 +18,11 @@ func (r *requestHandler) GenerateRequestCode(o map[string]string) string {
 	nowTime = nowTime.Add(5 * time.Minute)
 	o["expairyTime"] = nowTime.Format("2006-01-02 15:04:05")
 	term.Write(o, term.Debug)
-	client.Go("ignore", "com.duosoftware.auth", "requestcodes").StoreObject().WithKeyField("id").AndStoreOne(o).Ok()
+	data := make(map[string]interface{})
+	for key, value := range o {
+		data[key] = value
+	}
+	client.Go("ignore", "com.duosoftware.auth", "requestcodes").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
 	return o["id"]
 }
 
