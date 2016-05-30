@@ -65,8 +65,9 @@ func (t *ScheduleTable) InsertObject(obj map[string]interface{}) {
 		currentTableRow := t.GetRow(timestamp)
 		newObjs := append(currentTableRow.Objects, obj)
 		currentTableRow.Objects = newObjs
+		t.Delete(timestamp)
+		t.AddRow(currentTableRow)
 	} else {
-
 		currentTableRow := TableRow{Timestamp: timestamp, Objects: make([]map[string]interface{}, 1)}
 		currentTableRow.Objects[0] = obj
 		//t.Rows = append(t.Rows, currentTableRow)
@@ -121,22 +122,51 @@ func (t *ScheduleTable) Delete(timestamp string) {
 // 	return nil
 // }
 
-func (t *ScheduleTable) GetForExecution(timestamp string) *TableRow {
+//working version of earlier. dont delete
+// func (t *ScheduleTable) GetForExecution(timestamp string) *TableRow {
+// 	fmt.Println("Executing Dispatcher::GetForExecution Method!")
+
+// 	for _, row := range t.Rows {
+// 		if strings.Contains(row.Timestamp, timestamp) {
+// 			return &row
+// 		}
+
+// 		rowTime := t.GetTimeFromString(row.Timestamp)
+// 		nowTime := t.GetTimeFromString(timestamp)
+
+// 		if rowTime.Before(nowTime) {
+// 			fmt.Println("Before")
+// 			return &row
+// 		}
+// 	}
+
+// 	return nil
+// }
+
+func (t *ScheduleTable) GetForExecution(timestamp string) []TableRow {
 	fmt.Println("Executing Dispatcher::GetForExecution Method!")
+
+	var tableRowArray []TableRow
+
 	for _, row := range t.Rows {
 		if strings.Contains(row.Timestamp, timestamp) {
-			return &row
+			tableRowArray = append(tableRowArray, row)
+			t.Delete(row.Timestamp)
+			//return &row
 		}
 
 		rowTime := t.GetTimeFromString(row.Timestamp)
 		nowTime := t.GetTimeFromString(timestamp)
 
 		if rowTime.Before(nowTime) {
-			return &row
+			fmt.Println("Adding older objects to executing list....")
+			//return &row
+			tableRowArray = append(tableRowArray, row)
+			t.Delete(row.Timestamp)
 		}
 	}
 
-	return nil
+	return tableRowArray
 }
 
 func (t *ScheduleTable) GetTimeFromString(timestamp string) time.Time {
@@ -177,6 +207,8 @@ func (t *ScheduleTable) GetTimeFromString(timestamp string) time.Time {
 	}
 
 	newTime := time.Date(year, monthTime, date, hour, min, 0, 0, time.UTC)
+
+	//newTime, _ := time.Parse("200601021504", timestamp)
 	return newTime
 }
 
@@ -203,13 +235,17 @@ func (d *Dispatcher) TriggerTimer() {
 	fmt.Println("Executing Dispatcher::TriggerTimer Method!")
 	currenttime := time.Now().Local()
 	x := currenttime.Format("200601021504")
-	tableRow := d.ScheduleTable.GetForExecution(x)
-	if tableRow != nil {
+
+	tableRows := d.ScheduleTable.GetForExecution(x)
+
+	if len(tableRows) > 0 {
 		//dispatchObjectToRabbitMQ(tableRow.Objects)
-		for _, obj := range tableRow.Objects {
-			dispatchToTaskQueue(obj)
+		for _, tableSingleRow := range tableRows {
+			for _, obj := range tableSingleRow.Objects {
+				dispatchToTaskQueue(obj)
+			}
 		}
-		d.ScheduleTable.Delete(tableRow.Timestamp)
+		//d.ScheduleTable.Delete(tableRow.Timestamp)
 	} else {
 		fmt.Println("No Objects To Execute at : " + x)
 		if len(d.ScheduleTable.Rows) > 0 {
@@ -224,8 +260,8 @@ func dispatchToTaskQueue(object map[string]interface{}) {
 	byteArray, _ := json.Marshal(object)
 	settings := common.GetSettings()
 	url := settings["SVC_TQ_URL"]
-	fmt.Println(url)
 	//url = "http://localhost:6000/aa/bb"
+	fmt.Println(url)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(byteArray))
 	client := &http.Client{}
 	resp, err := client.Do(req)
