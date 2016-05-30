@@ -19,7 +19,7 @@ func (repository RedisRepository) GetRepositoryName() string {
 func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, isError bool, errorMessage string) {
 
 	isError = false
-	client, err := goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/0?timeout=10s&maxidle=1")
+	client, err := goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/4?timeout=60s&maxidle=60")
 	if err != nil {
 		isError = true
 		errorMessage = err.Error()
@@ -121,7 +121,7 @@ func (repository RedisRepository) GetQuery(request *messaging.ObjectRequest) Rep
 	switch queryType {
 	case "Query":
 		if request.Body.Query.Parameters != "*" {
-			request.Log("Support for SQL Query not implemented in Cassandra Db repository")
+			request.Log("Support for SQL Query not implemented in REDIS repository")
 			return getDefaultNotImplemented()
 		} else {
 			return repository.GetAll(request)
@@ -317,26 +317,17 @@ func (repository RedisRepository) DeleteMultiple(request *messaging.ObjectReques
 
 		for _, object := range request.Body.Objects {
 			key := getNoSqlKeyById(request, object)
-			reply, err := client.ExecuteCommand("DEL", key)
-			err2 := reply.OKValue()
-			if err != nil {
+			status, err := client.Expire(key, 0)
+			if !status {
 				isError = true
-				errorMessage = err.Error()
-				response.IsSuccess = false
-				request.Log("Error deleting object in Redis!" + err2.Error())
-				response.GetErrorResponse("Error deleting object in Redis!" + err2.Error())
-				break
-			} else {
-				response.IsSuccess = true
-				response.Message = "Successfully deleted multiple objects in Redis"
-				request.Log("Successfully deleted all objects in Redis!")
+				request.Log("Error deleting object in Redis!" + err.Error())
 			}
 		}
 
 		if isError == true {
 			response.IsSuccess = false
-			request.Log("Error deleting multiple objects in Redis : " + errorMessage)
-			response.GetErrorResponse("Error deleting multiple objects in Redis" + errorMessage)
+			request.Log("Error deleting All multiple objects in Redis, some deletions failed! : " + errorMessage)
+			response.GetErrorResponse("Error deleting All multiple objects in Redis, some deletions failed!" + errorMessage)
 		} else {
 			response.IsSuccess = true
 			response.Message = "Successfully deleted multiple objects in Redis"
@@ -364,12 +355,11 @@ func (repository RedisRepository) DeleteSingle(request *messaging.ObjectRequest)
 			response.GetErrorResponse("Error deleting one object in Redis" + err.Error())
 		}
 		if isAvailable {
-			reply, err := client.ExecuteCommand("DEL", key)
-			err2 := reply.OKValue()
-			if err != nil {
+			status, err := client.Expire(key, 0)
+			if !status {
 				response.IsSuccess = false
-				request.Log("Error deleting object in Redis!" + err2.Error())
-				response.GetErrorResponse("Error deleting object in Redis!" + err2.Error())
+				request.Log("Error deleting object in Redis!" + err.Error())
+				response.GetErrorResponse("Error deleting object in Redis!" + err.Error())
 			} else {
 				response.IsSuccess = true
 				request.Log("Successfully deleted object in Redis!")

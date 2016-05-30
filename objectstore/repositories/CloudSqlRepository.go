@@ -1405,6 +1405,140 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 	return strValue
 }
 
+// func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{} {
+
+// 	if b == nil {
+// 		return nil
+// 	}
+
+// 	if len(b) == 0 {
+// 		return b
+// 	}
+
+// 	var outData interface{}
+// 	tmp := string(b)
+// 	switch t {
+// 	case "bit(1)":
+// 		if len(b) == 0 {
+// 			outData = false
+// 		} else {
+// 			if b[0] == 1 {
+// 				outData = true
+// 			} else {
+// 				outData = false
+// 			}
+// 		}
+
+// 		break
+// 	case "double":
+// 		fData, err := strconv.ParseFloat(tmp, 64)
+// 		if err != nil {
+// 			outData = tmp
+// 		} else {
+// 			outData = fData
+// 		}
+// 		break
+// 	case "int":
+// 		fData, err := strconv.Atoi(tmp)
+// 		if err != nil {
+// 			outData = tmp
+// 		} else {
+// 			outData = fData
+// 		}
+// 		break
+// 	case "INT":
+// 		fData, err := strconv.Atoi(tmp)
+// 		if err != nil {
+// 			outData = tmp
+// 		} else {
+// 			outData = fData
+// 		}
+// 		break
+// 	case "int(10)":
+// 		fData, err := strconv.Atoi(tmp)
+// 		if err != nil {
+// 			outData = tmp
+// 		} else {
+// 			outData = fData
+// 		}
+// 		break
+// 	case "INT(10)":
+// 		fData, err := strconv.Atoi(tmp)
+// 		if err != nil {
+// 			outData = tmp
+// 		} else {
+// 			outData = fData
+// 		}
+// 		break
+// 	case "BIT":
+// 		if len(b) == 0 {
+// 			outData = false
+// 		} else {
+// 			if b[0] == 1 {
+// 				outData = true
+// 			} else {
+// 				outData = false
+// 			}
+// 		}
+
+// 		break
+// 	case "DOUBLE":
+// 		fData, err := strconv.ParseFloat(tmp, 64)
+// 		if err != nil {
+// 			outData = tmp
+// 		} else {
+// 			outData = fData
+// 		}
+// 		break
+// 	//case "text":
+// 	//case "blob":
+// 	default:
+// 		if len(tmp) == 4 {
+// 			if strings.ToLower(tmp) == "null" {
+// 				outData = nil
+// 				break
+// 			}
+// 		}
+
+// 		// var m map[string]interface{}
+// 		// var ml []map[string]interface{}
+
+// 		// if (string(tmp[0]) == "{"){
+// 		// 	err := json.Unmarshal([]byte(tmp), &m)
+// 		// 	if err == nil {
+// 		// 		outData = m
+// 		// 	}else{
+// 		// 		request.Log(err.Error())
+// 		// 		outData = tmp
+// 		// 	}
+// 		// }else if (string(tmp[0]) == "["){
+// 		// 	err := json.Unmarshal([]byte(tmp), &ml)
+// 		// 	if err == nil {
+// 		// 		outData = ml
+// 		// 	}else{
+// 		// 		request.Log(err.Error())
+// 		// 		outData = tmp
+// 		// 	}
+// 		// }else{
+// 		// 	outData = tmp
+// 		// }
+
+// 		if string(tmp[0]) == "^" {
+// 			byteData := []byte(tmp)
+// 			bdata := string(byteData[1:])
+// 			decData, _ := base64.StdEncoding.DecodeString(bdata)
+// 			outData = repository.getInterfaceValue(string(decData))
+
+// 		} else {
+// 			outData = repository.getInterfaceValue(tmp)
+// 		}
+
+// 		break
+// 	}
+
+// 	return outData
+// }
+
 func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{} {
 
 	if b == nil {
@@ -1417,8 +1551,11 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 
 	var outData interface{}
 	tmp := string(b)
-	switch t {
-	case "bit(1)":
+
+	tType := strings.ToLower(t)
+	//fmt.Println("|" + t + "|" + tType + "|")
+	if strings.Contains(tType, "bit") {
+		//fmt.Println(" ^ Boolean!")
 		if len(b) == 0 {
 			outData = false
 		} else {
@@ -1428,112 +1565,36 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 				outData = false
 			}
 		}
-
-		break
-	case "double":
+	} else if strings.Contains(tType, "double") {
 		fData, err := strconv.ParseFloat(tmp, 64)
 		if err != nil {
 			outData = tmp
 		} else {
 			outData = fData
 		}
-		break
-	case "int":
+	} else if strings.Contains(tType, "int") {
 		fData, err := strconv.Atoi(tmp)
 		if err != nil {
 			outData = tmp
 		} else {
 			outData = fData
 		}
-		break
-	case "INT":
-		fData, err := strconv.Atoi(tmp)
-		if err != nil {
-			outData = tmp
-		} else {
-			outData = fData
-		}
-		break
-	case "int(10)":
-		fData, err := strconv.Atoi(tmp)
-		if err != nil {
-			outData = tmp
-		} else {
-			outData = fData
-		}
-		break
-	case "INT(10)":
-		fData, err := strconv.Atoi(tmp)
-		if err != nil {
-			outData = tmp
-		} else {
-			outData = fData
-		}
-		break
-	case "BIT":
-		if len(b) == 0 {
-			outData = false
-		} else {
-			if b[0] == 1 {
-				outData = true
-			} else {
-				outData = false
-			}
-		}
-
-		break
-	case "DOUBLE":
-		fData, err := strconv.ParseFloat(tmp, 64)
-		if err != nil {
-			outData = tmp
-		} else {
-			outData = fData
-		}
-		break
-	//case "text":
-	//case "blob":
-	default:
+	} else {
 		if len(tmp) == 4 {
 			if strings.ToLower(tmp) == "null" {
 				outData = nil
-				break
+				return outData
 			}
 		}
-
-		// var m map[string]interface{}
-		// var ml []map[string]interface{}
-
-		// if (string(tmp[0]) == "{"){
-		// 	err := json.Unmarshal([]byte(tmp), &m)
-		// 	if err == nil {
-		// 		outData = m
-		// 	}else{
-		// 		request.Log(err.Error())
-		// 		outData = tmp
-		// 	}
-		// }else if (string(tmp[0]) == "["){
-		// 	err := json.Unmarshal([]byte(tmp), &ml)
-		// 	if err == nil {
-		// 		outData = ml
-		// 	}else{
-		// 		request.Log(err.Error())
-		// 		outData = tmp
-		// 	}
-		// }else{
-		// 	outData = tmp
-		// }
 
 		if string(tmp[0]) == "^" {
 			byteData := []byte(tmp)
 			bdata := string(byteData[1:])
 			decData, _ := base64.StdEncoding.DecodeString(bdata)
 			outData = repository.getInterfaceValue(string(decData))
-
 		} else {
 			outData = repository.getInterfaceValue(tmp)
 		}
-
-		break
 	}
 
 	return outData
@@ -1549,7 +1610,14 @@ func (repository CloudSqlRepository) getInterfaceValue(tmp string) (outData inte
 			outData = tmp
 		}
 	} else {
-		outData = tmp
+		//outData = tmp
+		if tmp == "\u0000" {
+			outData = false
+		} else if tmp == "\u0001" {
+			outData = true
+		} else {
+			outData = tmp
+		}
 	}
 	return
 }
@@ -1581,7 +1649,7 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 			cacheItem = tableCache[tName]
 		}
 	}
-
+	//fmt.Println("--------------------   Type Debug ------------------------")
 	for rows.Next() {
 
 		for i, _ := range columns {
@@ -1624,6 +1692,8 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 		}
 		tableMap = append(tableMap, rowMap)
 	}
+
+	//fmt.Println("--------------------   Debug End  ------------------------")
 
 	return
 }

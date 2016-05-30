@@ -43,6 +43,7 @@ func (d *Downloader) DownloadObjects() {
 	}
 	if len(rawBytes) > 4 {
 		fmt.Println("Objects Found for Scheduled Execution : ")
+		fmt.Println(string(rawBytes))
 		d.DeleteFromObjectStore(rawBytes, namespace, class)
 		d.executeObjects(rawBytes)
 	}
@@ -53,9 +54,11 @@ func (d *Downloader) StartDownloadTimer() { //call downloadObjects every 15 minu
 	settings := common.GetSettings()
 	Timeout, _ := strconv.Atoi(settings["SCHEDULE_CHECK_TIMEOUT"])
 
+	//first time run
+	d.Dispatcher.TriggerTimer()
+
 	c := time.Tick(time.Duration(Timeout/Timeout) * time.Minute /*Minute*/)
 	for now := range c {
-		fmt.Println("PING")
 		_ = now
 		d.DownloadTicks++
 		d.Dispatcher.TriggerTimer()
@@ -89,7 +92,7 @@ func (d *Downloader) StartDownloadTimer() { //call downloadObjects every 15 minu
 
 func (d *Downloader) executeObjects(raw []byte) {
 	fmt.Println("Executing Downloader::executeObjects Method!")
-	unmarshall := make([]map[string]interface{}, 0)
+	var unmarshall []map[string]interface{}
 	err := json.Unmarshal(raw, &unmarshall)
 
 	if err != nil {

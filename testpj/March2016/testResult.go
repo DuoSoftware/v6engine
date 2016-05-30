@@ -7,6 +7,7 @@ import (
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -36,6 +37,8 @@ func statusHandlder(params martini.Params, w http.ResponseWriter, r *http.Reques
 
 func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Post Request!")
+	fmt.Println(time.Now())
+	fmt.Println("-------------------------------------------------------")
 
 	var requestBody map[string]interface{}
 
