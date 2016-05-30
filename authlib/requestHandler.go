@@ -66,5 +66,5 @@ func (r *requestHandler) GetRequestCode(requestCode string) (map[string]string, 
 
 func (r *requestHandler) Remove(o map[string]interface{}) {
 	term.Write(o, term.Debug)
-	client.Go("ignore", "com.duosoftware.auth", "requestcodes").DeleteObject().WithKeyField("id").AndDeleteObject(o).Ok()
+	client.Go("ignore", "com.duosoftware.auth", "requestcodes").DeleteObject().WithKeyField("id").AndDeleteOne(o).Ok()
 }
