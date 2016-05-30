@@ -527,9 +527,11 @@ func (h *AuthHandler) UserActivation(token string) bool {
 			inputParams["@@email@@"] = u.EmailAddress
 			inputParams["@@name@@"] = u.Name
 			//Change activation status to true and save
+
 			term.Write(u, term.Debug)
 			u.Active = true
-			h.SaveUser(u, true)
+			client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
+			//h.SaveUser(u, true)
 			term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
 			go email.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
 
