@@ -48,7 +48,7 @@ func (r *requestHandler) GetRequestCode(requestCode string) (map[string]string, 
 				difference := Ttime1.Sub(Ttime2)
 				minutesTime := difference.Minutes()
 				if minutesTime <= 0 {
-					r.Remove(o)
+					r.Remove(data)
 					return o, "Expired."
 				} else {
 					return o, ""
@@ -64,6 +64,6 @@ func (r *requestHandler) GetRequestCode(requestCode string) (map[string]string, 
 	return o, "Error Finding And processing."
 }
 
-func (r *requestHandler) Remove(o map[string]string) {
+func (r *requestHandler) Remove(o map[string]interface{}) {
 	client.Go("ignore", "com.duosoftware.auth", "requestcodes").DeleteObject().WithKeyField("id").AndDeleteObject(o).Ok()
 }
