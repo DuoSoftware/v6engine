@@ -215,7 +215,11 @@ func (A Auth) NoPasswordLogin(OTP string) (outCrt AuthCertificate) {
 		inputParams["@@ClientIP@@"] = outCrt.ClientIP
 		inputParams["@@Domain@@"] = o["Domain"]
 		inputParams["@@SecurityToken@@"] = outCrt.SecurityToken
-		//r.Remove(o)
+		data := make(map[string]interface{})
+		for key, value := range o {
+			data[key] = value
+		}
+		r.Remove(data)
 		//Change activation status to true and save
 		//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
 		go email.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, o["Email"])
