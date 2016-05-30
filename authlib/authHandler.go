@@ -535,6 +535,8 @@ func (h *AuthHandler) UserActivation(token string) bool {
 
 			return true
 
+		} else {
+			term.Write(err, term.Debug)
 		}
 
 	} else {
