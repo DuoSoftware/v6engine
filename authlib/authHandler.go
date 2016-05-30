@@ -623,8 +623,8 @@ func (h *AuthHandler) GetUser(email string) (User, string) {
 			var uList User
 			err := json.Unmarshal(bytes, &uList)
 			if err == nil {
-				uList.Password = "-------------"
-				uList.ConfirmPassword = "-------------"
+				//uList.Password = "-------------"
+				//uList.ConfirmPassword = "-------------"
 				return uList, ""
 			} else {
 				if err != nil {
