@@ -4,6 +4,7 @@ import (
 	"duov6.com/FileServer"
 	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
+	"duov6.com/common"
 	"duov6.com/objectstore/backup"
 	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/keygenerator"
@@ -17,6 +18,8 @@ import (
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
+	"runtime"
+	"strconv"
 )
 
 type HTTPService struct {
@@ -79,7 +82,9 @@ func startKeyFlusher(request *messaging.ObjectRequest) {
 }
 
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	versionData := "{\"name\": \"Objectstore\",\"version\": \"1.2.7-a\",\"Change Log\":\"Applied a fix!\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	cpuUsage := strconv.FormatFloat(common.GetProcessorUsage(), 'E', -1, 64)
+	cpuCount := strconv.Itoa(runtime.NumCPU())
+	versionData := "{\"Name\": \"Objectstore\",\"Version\": \"1.2.7-a\",\"Change Log\":\"Updated with perfomance stats!\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \"" + cpuUsage + "\",\"CPU Cores\": \"" + cpuCount + "\"}}"
 	fmt.Fprintf(w, versionData)
 }
 
