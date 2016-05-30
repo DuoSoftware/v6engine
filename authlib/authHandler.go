@@ -511,7 +511,7 @@ func (h *AuthHandler) SaveUser(u User, update bool) (User, string) {
 
 // UserActivation Helps to activate the users
 func (h *AuthHandler) UserActivation(token string) bool {
-	bytes, err := client.Go("ignore", "com.duosoftware.com", "activation").GetOne().ByUniqueKey(token).Ok()
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "activation").GetOne().ByUniqueKey(token).Ok()
 	if err == "" {
 		var uList ActivationEmail
 		err := json.Unmarshal(bytes, &uList)
