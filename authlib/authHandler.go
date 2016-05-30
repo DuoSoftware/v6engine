@@ -522,14 +522,20 @@ func (h *AuthHandler) UserActivation(token string) bool {
 				return false
 			} else {
 				//uList[0].GUUserID
-				var u User
+
+				//var u User
+				u, _ := h.GetUserByID(uList.GUUserID)
 				var inputParams map[string]string
 				inputParams = make(map[string]string)
 				inputParams["@@email@@"] = u.EmailAddress
 				inputParams["@@name@@"] = u.Name
 				//Change activation status to true and save
+				term.Write(u, term.Debug)
+				u.Active = true
+				h.SaveUser(u, true)
 				term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
 				go email.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
+
 				return true
 			}
 		}
@@ -574,6 +580,33 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 	} else {
 		term.Write("Login  user  Error "+err, term.Error)
 	}
+	return user, "Error Validating user"
+}
+
+func (h *AuthHandler) GetUserByID(UserID string) (User, string) {
+	term.Write("Login  user  UID"+UserID, term.Debug)
+	//term.Write(Config.UserName, term.Debug)
+	//email = strings.ToLower(email)
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().BySearching("UserID:" + UserID).Ok()
+	var user User
+	if err == "" {
+		if bytes != nil {
+			var uList User
+			err := json.Unmarshal(bytes, &uList)
+			if err == nil {
+				//uList.Password = "-------------"
+				//uList.ConfirmPassword = "-------------"
+				return uList, ""
+			} else {
+				if err != nil {
+					term.Write("Login  user Error "+err.Error(), term.Error)
+				}
+			}
+		}
+	} else {
+		term.Write("Login  user  Error "+err, term.Error)
+	}
+
 	return user, "Error Validating user"
 }
 
