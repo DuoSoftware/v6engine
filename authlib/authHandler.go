@@ -521,7 +521,7 @@ func (h *AuthHandler) UserActivation(token string) bool {
 			//uList[0].GUUserID
 
 			//var u User
-			u, _ := h.GetUserByID(uList.GUUserID)
+			u, _ := h.GetUser(uList.GUUserID)
 			var inputParams map[string]string
 			inputParams = make(map[string]string)
 			inputParams["@@email@@"] = u.EmailAddress
