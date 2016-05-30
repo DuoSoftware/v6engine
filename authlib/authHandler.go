@@ -515,29 +515,26 @@ func (h *AuthHandler) UserActivation(token string) bool {
 	if err == "" {
 		var uList ActivationEmail
 		err := json.Unmarshal(bytes, &uList)
-		if err == nil || bytes == nil {
+		if err == nil {
 			//new user
-			if err != nil {
-				term.Write("Token Not Found", term.Debug)
-				return false
-			} else {
-				//uList[0].GUUserID
 
-				//var u User
-				u, _ := h.GetUserByID(uList.GUUserID)
-				var inputParams map[string]string
-				inputParams = make(map[string]string)
-				inputParams["@@email@@"] = u.EmailAddress
-				inputParams["@@name@@"] = u.Name
-				//Change activation status to true and save
-				term.Write(u, term.Debug)
-				u.Active = true
-				h.SaveUser(u, true)
-				term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-				go email.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
+			//uList[0].GUUserID
 
-				return true
-			}
+			//var u User
+			u, _ := h.GetUserByID(uList.GUUserID)
+			var inputParams map[string]string
+			inputParams = make(map[string]string)
+			inputParams["@@email@@"] = u.EmailAddress
+			inputParams["@@name@@"] = u.Name
+			//Change activation status to true and save
+			term.Write(u, term.Debug)
+			u.Active = true
+			h.SaveUser(u, true)
+			term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
+			go email.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
+
+			return true
+
 		}
 
 	} else {
