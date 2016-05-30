@@ -539,6 +539,7 @@ func (h *AuthHandler) UserActivation(token string) bool {
 
 	} else {
 		term.Write("Activation Fail ", term.Debug)
+		term.Write(err, term.Debug)
 		return false
 
 	}
