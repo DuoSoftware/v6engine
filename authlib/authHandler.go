@@ -537,6 +537,7 @@ func (h *AuthHandler) UserActivation(token string) bool {
 
 		} else {
 			term.Write(err, term.Debug)
+			term.Write(string(bytes), term.Debug)
 		}
 
 	} else {
