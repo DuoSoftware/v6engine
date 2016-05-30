@@ -41,6 +41,8 @@ func GetConfig() ServiceConfig {
 }
 
 func main() {
+	//runRestFul()
+	//term.Read("Lable")
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	cebadapter.Attach("DuoAuth", func(s bool) {

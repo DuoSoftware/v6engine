@@ -31,7 +31,7 @@ type Auth struct {
 	verify           gorest.EndPoint `method:"GET" path:"/" output:"string"`
 	login            gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
 	noPasswordLogin  gorest.EndPoint `method:"GET" path:"/NoPasswordLogin/{OTP:string}" output:"AuthCertificate"`
-	loginOTP         gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}"`
+	loginOTP         gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}" output:"string"`
 	getLoginSessions gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
 	authorize        gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
 	getSession       gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
@@ -226,13 +226,13 @@ func (A Auth) NoPasswordLogin(OTP string) (outCrt AuthCertificate) {
 	}
 }
 
-func (A Auth) LoginOTP(username, password, domain string) {
+func (A Auth) LoginOTP(username, password, domain string) string {
 	h := newAuthHandler()
 	c, msg := h.CanLogin(username, domain)
 	if !c {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(msg)))
 		//A.Context.Request().
-		return
+		return common.ErrorJson(msg)
 	}
 	u, err := h.Login(username, password)
 
@@ -247,7 +247,7 @@ func (A Auth) LoginOTP(username, password, domain string) {
 		if !x {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(domain + " Is not autherized for signin.")))
 			//A.Context.Request().
-			return
+			return common.ErrorJson(domain + " Is not autherized for signin.")
 		}
 		o := make(map[string]string)
 
@@ -296,12 +296,12 @@ func (A Auth) LoginOTP(username, password, domain string) {
 		//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
 		go email.Send("ignore", "One time password for user login.", "com.duosoftware.auth", "email", "user_otp", inputParams, nil, u.EmailAddress)
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.MsgJson("One time password sent.")))
-		return
+		return common.MsgJson("One time password sent.")
 	} else {
 		h.LogFailedAttemts(username, domain, "")
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Invalid user name password.")))
 		//A.Context.Request().
-		return
+		return common.ErrorJson("Invalid user name password.")
 	}
 }
 
