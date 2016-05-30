@@ -49,7 +49,7 @@ func (r *requestHandler) GetRequestCode(requestCode string) (map[string]string, 
 				minutesTime := difference.Minutes()
 				if minutesTime <= 0 {
 					r.Remove(data)
-					return o, "Expired."
+					return o, "Password expired."
 				} else {
 					return o, ""
 				}
@@ -61,7 +61,7 @@ func (r *requestHandler) GetRequestCode(requestCode string) (map[string]string, 
 		term.Write("GetRequestCode err "+err, term.Error)
 	}
 
-	return o, "Error Finding And processing."
+	return o, "One time password is incorrect."
 }
 
 func (r *requestHandler) Remove(o map[string]interface{}) {
