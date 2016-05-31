@@ -119,7 +119,7 @@ func (A Auth) Verify() (output string) {
 
 func (A Auth) ArbiterAutherize(object map[string]string) {
 	var outCrt AuthCertificate
-	issue := object["Authority"]
+	issue := object["authority"]
 	th := TenantHandler{}
 	//th.Autherized(domain, user)
 
@@ -127,7 +127,7 @@ func (A Auth) ArbiterAutherize(object map[string]string) {
 	case "auth0":
 		ah := auth0{}
 		c, err := ah.RegisterToken(object)
-		if err == "" {
+		if err != "" {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
 			return
 		} else {
