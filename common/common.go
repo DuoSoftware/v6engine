@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -143,10 +144,10 @@ func JWTPayload(issu, securitytoken, userid, email, domain string, b []byte) map
 	scope := make(map[string]interface{})
 	json.Unmarshal(b, &scope)
 	payload["iss"] = issu
-	payload["st"] = securitytoken
-	payload["uid"] = userid
-	payload["eml"] = email
-	payload["dmn"] = domain
+	payload["aud"] = securitytoken
+	payload["sub"] = "dwauth|" + userid
+	//payload["eml"] = email
+	payload["iss"] = domain
 	payload["scope"] = scope
 	return payload
 }
@@ -159,6 +160,26 @@ func Jwt(secret string, payload map[string]interface{}) string {
 	b2, _ := json.Marshal(payload)
 	other := base64.StdEncoding.EncodeToString(b) + "." + base64.StdEncoding.EncodeToString(b2)
 	return other + "." + ComputeHmac256(other, secret)
+}
+
+func JwtUnload(key string) map[string]interface{} {
+	jwt := make(map[string]interface{})
+	array := strings.Split(key, ".")
+	if len(array) != 3 {
+		return jwt
+	}
+	str := array[1]
+	data, _ := base64.StdEncoding.DecodeString(str)
+	strJwt := string(data)
+	if len(strJwt) != (strings.LastIndex(strJwt, "}") + 1) {
+		strJwt += "}"
+	}
+	err1 := json.Unmarshal([]byte(strJwt), &jwt)
+	if err1 != nil {
+		fmt.Println("jwt Error decoding " + strJwt)
+		fmt.Println(err1)
+	}
+	return jwt
 }
 
 func ComputeHmac256(message string, secret string) string {

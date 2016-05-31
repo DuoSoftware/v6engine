@@ -116,6 +116,68 @@ func (A Auth) Verify() (output string) {
 	return
 }
 
+func (A Auth) ArbiterAutherize(object map[string]string) (outCrt AuthCertificate) {
+	issue := object["Authority"]
+	th := TenantHandler{}
+	//th.Autherized(domain, user)
+
+	switch issue {
+	case "auth0":
+		ah := auth0{}
+		c, err := ah.RegisterToken(object)
+		if err == "" {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
+			return
+		} else {
+			outCrt = c
+		}
+		break
+	default:
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Unautherized Arbiter Form.")))
+		return
+		break
+	}
+	x, _ := th.AutherizedUser(outCrt.Domain, outCrt.UserID)
+	if !x {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(outCrt.Domain + " Is not autherized for signin.")))
+		//A.Context.Request().
+		return
+	}
+	if A.Context.Request().Header.Get("PHP") != "101" {
+		outCrt.ClientIP = A.Context.Request().RemoteAddr
+	} else {
+		outCrt.ClientIP = A.Context.Request().Header.Get("IP")
+	}
+	h := AuthHandler{}
+	outCrt.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
+	bytes, _ := client.Go("ignore", outCrt.Domain, "scope").GetOne().ByUniqueKey(outCrt.Domain).Ok() // fetech user autherized
+	//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
+	outCrt.DataCaps = string(bytes[:])
+	payload := common.JWTPayload(outCrt.Domain, outCrt.SecurityToken, outCrt.UserID, outCrt.Email, outCrt.Domain, bytes)
+	outCrt.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(outCrt.Domain), payload)
+	outCrt.Otherdata["Scope"] = strings.Replace(string(bytes[:]), "\"", "`", -1)
+	//outCrt.Otherdata["Tempkey"] = "No"
+	//th := TenantHandler{}
+	tlist := th.GetTenantsForUser(outCrt.UserID)
+	b, _ := json.Marshal(tlist)
+	outCrt.Otherdata["TenentsAccessible"] = strings.Replace(string(b[:]), "\"", "`", -1)
+
+	h.AddSession(outCrt)
+	var inputParams map[string]string
+	inputParams = make(map[string]string)
+	inputParams["@@email@@"] = outCrt.Email
+	inputParams["@@name@@"] = outCrt.Name
+	inputParams["@@UserAgent@@"] = A.Context.Request().UserAgent()
+	inputParams["@@ClientIP@@"] = outCrt.ClientIP
+	inputParams["@@Domain@@"] = outCrt.Domain
+	inputParams["@@SecurityToken@@"] = outCrt.SecurityToken
+	//Change activation status to true and save
+	//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
+	go email.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, outCrt.Email)
+	return
+
+}
+
 func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) {
 	h := newAuthHandler()
 	c, msg := h.CanLogin(username, domain)
