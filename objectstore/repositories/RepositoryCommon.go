@@ -4,6 +4,7 @@ import (
 	"duov6.com/common"
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -83,14 +84,19 @@ func getNoSqlKeyByGUID(request *messaging.ObjectRequest) string {
 }
 
 func getStringByObject(obj interface{}) string {
-
+	fmt.Println("********************************************************")
+	value := ""
 	result, err := json.Marshal(obj)
 
 	if err == nil {
-		return string(result)
+		fmt.Println("Successfully Created String Object for interface object")
+		value = string(result)
 	} else {
-		return "{}"
+		fmt.Println(err.Error())
+		value = "{}"
 	}
+	fmt.Println("********************************************************")
+	return value
 }
 
 func getByteByValue(input interface{}) (value []byte) {

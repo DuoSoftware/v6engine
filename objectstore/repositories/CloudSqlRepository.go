@@ -689,7 +689,7 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 		dbName := repository.getDatabaseName(request.Controls.Namespace)
 		err = repository.buildTableCache(request, conn, dbName, request.Controls.Class)
 		if err != nil {
-
+			request.Log(err.Error())
 		}
 
 		var obj interface{}
@@ -1249,6 +1249,22 @@ func (repository CloudSqlRepository) buildTableCache(request *messaging.ObjectRe
 				}
 				err = cache.StoreKeyValue(request, key, getStringByObject(fieldsAndTypes), cache.MetaData)
 			}
+		} else {
+			cacheItem := make(map[string]string)
+			byteVal := cache.GetKeyValue(request, tableCachePattern, cache.MetaData)
+			err = json.Unmarshal(byteVal, &cacheItem)
+			if err != nil || len(cacheItem) == 0 {
+				var exResult []map[string]interface{}
+				exResult, err := repository.executeQueryMany(request, conn, "EXPLAIN "+dbName+"."+class, nil)
+				if err == nil {
+					fieldsAndTypes := make(map[string]string)
+					key := "CloudSqlTableCache." + dbName + "." + request.Controls.Class
+					for _, cRow := range exResult {
+						fieldsAndTypes[cRow["Field"].(string)] = cRow["Type"].(string)
+					}
+					err = cache.StoreKeyValue(request, key, getStringByObject(fieldsAndTypes), cache.MetaData)
+				}
+			}
 		}
 	}
 
@@ -1576,7 +1592,6 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 
 	var outData interface{}
 	tmp := string(b)
-
 	tType := strings.ToLower(t)
 	//fmt.Println("|" + t + "|" + tType + "|")
 	if strings.Contains(tType, "bit") {
@@ -1605,8 +1620,6 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 			outData = fData
 		}
 	} else {
-		fmt.Println(t)
-		fmt.Println(string(b))
 		if len(tmp) == 4 {
 			if strings.ToLower(tmp) == "null" {
 				outData = nil
@@ -1676,9 +1689,9 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 			cacheItem = tableCache[tName]
 		}
 	}
-	fmt.Println("--------------------   Type Debug ------------------------")
+	fmt.Println("--------------------   Data Table Types ------------------------")
 	fmt.Println(cacheItem)
-	fmt.Println("--------------------   Debug End  ------------------------")
+	fmt.Println("----------------------------  End  -----------------------------")
 
 	for rows.Next() {
 
