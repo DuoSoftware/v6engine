@@ -508,10 +508,11 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 
 	response := RepositoryResponse{}
 	queryType := request.Body.Special.Type
+	queryType = strings.ToLower(queryType)
 	domain := repository.getDatabaseName(request.Controls.Namespace)
 
 	switch queryType {
-	case "getFields":
+	case "getfields":
 		request.Log("Starting GET-FIELDS sub routine!")
 		query := "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + domain + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
 		repoResponse := repository.queryCommonMany(query, request)
@@ -529,7 +530,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			repoResponse.Body, _ = json.Marshal(valueArray)
 			return repoResponse
 		}
-	case "getClasses":
+	case "getclasses":
 		request.Log("Starting GET-CLASSES sub routine")
 		query := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + domain + "';"
 		repoResponse := repository.queryCommonMany(query, request)
@@ -547,11 +548,11 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			repoResponse.Body, _ = json.Marshal(valueArray)
 			return repoResponse
 		}
-	case "getNamespaces":
+	case "getnamespaces":
 		request.Log("Starting GET-NAMESPACES sub routine")
 		query := "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME != 'information_schema' AND SCHEMA_NAME !='mysql' AND SCHEMA_NAME !='performance_schema';"
 		return repository.queryCommonMany(query, request)
-	case "getSelected":
+	case "getselected":
 		fieldNames := strings.Split(strings.TrimSpace(request.Body.Special.Parameters), " ")
 		query := "select " + fieldNames[0]
 		for x := 1; x < len(fieldNames); x++ {
@@ -559,7 +560,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		}
 		query += " from " + domain + "." + request.Controls.Class
 		return repository.queryCommonMany(query, request)
-	case "DropClass":
+	case "dropclass":
 		request.Log("Starting Delete-Class sub routine")
 		conn, err := repository.getConnection(request)
 		if err == nil {
@@ -585,7 +586,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			response.Message = "Connection Failed to CloudSQL Server"
 		}
 		repository.closeConnection(conn)
-	case "DropNamespace":
+	case "dropnamespace":
 		request.Log("Starting Delete-Database sub routine")
 		conn, err := repository.getConnection(request)
 		if err == nil {
@@ -629,7 +630,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			response.Message = "Connection Failed to CloudSQL Server"
 		}
 		repository.closeConnection(conn)
-	case "FlushCache":
+	case "flushcache":
 		if CheckRedisAvailability(request) {
 			keygenerator.FlushCache(request)
 		} else {
@@ -640,6 +641,30 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 
 		response.IsSuccess = true
 		response.Message = "Cache Cleared successfully!"
+	case "idservice":
+		IsPattern := request.Body.Special.Extras["IsPattern"].(bool)
+		idServiceCommand := strings.ToLower(request.Body.Special.Extras["Command"].(string))
+
+		switch idServiceCommand {
+		case "getid":
+			if IsPattern {
+				//pattern code goes here
+			} else {
+				//Get ID and Return
+				if CheckRedisAvailability(request) {
+					_ = keygenerator.GetIncrementID(request, "CLOUDSQL")
+					response.IsSuccess = true
+					response.Message = "Successfully Completed!"
+				} else {
+					response.IsSuccess = false
+					response.Message = "REDIS not Available!"
+				}
+			}
+		case "setid":
+			response.IsSuccess = false
+			response.Message = "Set ID in ID Service is not yet implemented!"
+		default:
+		}
 	default:
 		return repository.GetAll(request)
 
@@ -1580,6 +1605,8 @@ func (repository CloudSqlRepository) sqlToGolang(b []byte, t string) interface{}
 			outData = fData
 		}
 	} else {
+		fmt.Println(t)
+		fmt.Println(string(b))
 		if len(tmp) == 4 {
 			if strings.ToLower(tmp) == "null" {
 				outData = nil
@@ -1649,7 +1676,10 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 			cacheItem = tableCache[tName]
 		}
 	}
-	//fmt.Println("--------------------   Type Debug ------------------------")
+	fmt.Println("--------------------   Type Debug ------------------------")
+	fmt.Println(cacheItem)
+	fmt.Println("--------------------   Debug End  ------------------------")
+
 	for rows.Next() {
 
 		for i, _ := range columns {
@@ -1692,8 +1722,6 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 		}
 		tableMap = append(tableMap, rowMap)
 	}
-
-	//fmt.Println("--------------------   Debug End  ------------------------")
 
 	return
 }
