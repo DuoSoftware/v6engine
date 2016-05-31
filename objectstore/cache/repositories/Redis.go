@@ -251,11 +251,11 @@ func RemoveOneRedis(request *messaging.ObjectRequest, data map[string]interface{
 		} else {
 			key = getNoSqlKeyById(request, data)
 		}
-		reply, _ := client.ExecuteCommand("DEL", key)
+		//reply, _ := client.ExecuteCommand("DEL", key)
 
-		_ = reply.OKValue()
+		//_ = reply.OKValue()
 
-		//client.ClosePool()
+		_, err = client.Expire(key, 0)
 	}
 
 	_ = ResetSearchResultCache(request, database)
@@ -270,8 +270,9 @@ func RemoveManyRedis(request *messaging.ObjectRequest, data []map[string]interfa
 	} else if request.Body.Parameters.KeyProperty != "" {
 		for _, obj := range data {
 			key := getNoSqlKeyById(request, obj)
-			reply, _ := client.ExecuteCommand("DEL", key)
-			_ = reply.OKValue()
+			//reply, _ := client.ExecuteCommand("DEL", key)
+			//_ = reply.OKValue()
+			_, err = client.Expire(key, 0)
 		}
 
 		//client.ClosePool()
@@ -294,8 +295,9 @@ func ResetSearchResultCache(request *messaging.ObjectRequest, database int) (err
 
 		if keySet, err := client.Keys(pattern); err == nil {
 			for _, keyValue := range keySet {
-				reply, err := client.ExecuteCommand("DEL", keyValue)
-				err = reply.OKValue()
+				//reply, err := client.ExecuteCommand("DEL", keyValue)
+				//err = reply.OKValue()
+				_, err = client.Expire(keyValue, 0)
 				if err != nil {
 					//client.ClosePool()
 					return err
@@ -307,8 +309,9 @@ func ResetSearchResultCache(request *messaging.ObjectRequest, database int) (err
 
 		if keySet, err := client.Keys(queryPattern); err == nil {
 			for _, keyValue := range keySet {
-				reply, err := client.ExecuteCommand("DEL", keyValue)
-				err = reply.OKValue()
+				//reply, err := client.ExecuteCommand("DEL", keyValue)
+				//err = reply.OKValue()
+				_, err = client.Expire(keyValue, 0)
 				if err != nil {
 					//client.ClosePool()
 					return err
