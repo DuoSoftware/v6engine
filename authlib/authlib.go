@@ -52,6 +52,7 @@ type Auth struct {
 	getGUID            gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
 	forgotPassword     gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
 	changePassword     gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
+	arbiterAutherize   gorest.EndPoint `method:"POST" path:"/ArbiterAutherize/" postdata:"map[string]string"`
 }
 
 func GetClientIP() string {
@@ -116,7 +117,8 @@ func (A Auth) Verify() (output string) {
 	return
 }
 
-func (A Auth) ArbiterAutherize(object map[string]string) (outCrt AuthCertificate) {
+func (A Auth) ArbiterAutherize(object map[string]string) {
+	var outCrt AuthCertificate
 	issue := object["Authority"]
 	th := TenantHandler{}
 	//th.Autherized(domain, user)
@@ -174,6 +176,8 @@ func (A Auth) ArbiterAutherize(object map[string]string) (outCrt AuthCertificate
 	//Change activation status to true and save
 	//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
 	go email.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, outCrt.Email)
+	f, _ := json.Marshal(outCrt)
+	A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(f)
 	return
 
 }
