@@ -23,12 +23,13 @@ func (m *DeleteModifier) ByUniqueKey(key string) *DeleteModifier {
 }
 
 func (m *DeleteModifier) AndDeleteObject(obj interface{}) *DeleteModifier {
-	m.Request.Controls.Operation = "delete"
-	m.Request.Controls.Multiplicity = "single"
-	bodyMap := structs.Map(obj)
-	key := bodyMap[m.Request.Body.Parameters.KeyProperty].(string)
-	m.Request.Controls.Id = key
-	return m
+	// m.Request.Controls.Operation = "delete"
+	// m.Request.Controls.Multiplicity = "single"
+	// bodyMap := structs.Map(obj)
+	// key := bodyMap[m.Request.Body.Parameters.KeyProperty].(string)
+	// m.Request.Controls.Id = key
+	//return m
+	return m.AndDeleteOne(obj)
 }
 
 func (m *DeleteModifier) AndDeleteOne(obj interface{}) *DeleteModifier {
