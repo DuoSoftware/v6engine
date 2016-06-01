@@ -305,7 +305,7 @@ func (h *TenantHandler) AddUserToTenant(u session.AuthCertificate, users []Invit
 		//h.AddUsersToTenant(t.TenantID, user.UserID, "admin")
 		client.Go("ignore", "com.duosoftware.tenant", "userrequest").StoreObject().WithKeyField("RequestToken").AndStoreOne(req).Ok()
 		//email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, user.Email)
-		email.Send("ignore", "Tenent User Allocation Notification!", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, nil, user.Email)
+		go email.Send("ignore", "Tenent User Allocation Notification!", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, nil, user.Email)
 
 	}
 }

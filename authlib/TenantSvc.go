@@ -1,6 +1,7 @@
 package authlib
 
 import (
+	emailclient "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
 	"duov6.com/session"
 	"encoding/json"
@@ -151,27 +152,31 @@ func (T TenantSvc) AddUser(email, level string) bool {
 		if err == "" {
 
 			th := TenantHandler{}
-			//_, p := th.Autherized(user.Domain, user)
-			///<<<<<<< HEAD
-			//if p.SecurityLevel == "admin" {
 			t := th.GetTenant(user.Domain)
 			th.AddUsersToTenant(user.Domain, t.Name, a.UserID, level)
 			return true
-			//} else {
-			//T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Need to have Admin access to tenant to add user"))
-			//return false
-			//=======
-			//	if p.SecurityLevel == "admin" {
-			//t := th.GetTenant(user.Domain)
-			//th.AddUsersToTenant(user.Domain, t.Name, a.UserID, level)
-			//return true
-			//	} else {
-			//		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Need to have Admin access to tenant to add user"))
-			//	return false
-			//>>>>>>> 8640744d9bbc878ab906dfd110cdaa51d5a6a325
-			//}
 
 		} else {
+			tmp := tempRequestGenerator{}
+			o := make(map[string]string)
+			o["process"] = "tenant_invitation"
+			o["email"] = email
+			o["invitedUserID"] = user.UserID
+			o["name"] = user.Name
+			o["domain"] = user.Domain
+			o["fromuseremail"] = user.Email
+
+			code := tmp.GenerateRequestCode(o)
+			var inputParams map[string]string
+			inputParams = make(map[string]string)
+			inputParams["@@EMAIL@@"] = email
+			inputParams["@@INVEMAIL@@"] = user.Email
+			inputParams["@@NAME@@"] = user.Name
+			inputParams["@@DOMAIN@@"] = user.Domain
+			inputParams["@@CODE@@"] = code
+
+			go emailclient.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
+			//go email.Send("ignore", "Invitation to register !", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
 			return false
 		}
 	} else {
