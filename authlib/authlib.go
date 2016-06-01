@@ -52,7 +52,7 @@ type Auth struct {
 	getGUID            gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
 	forgotPassword     gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
 	changePassword     gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
-	arbiterAutherize   gorest.EndPoint `method:"POST" path:"/ArbiterAutherize/" postdata:"map[string]string"`
+	arbiterAuthorize   gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
 }
 
 func GetClientIP() string {
@@ -117,7 +117,7 @@ func (A Auth) Verify() (output string) {
 	return
 }
 
-func (A Auth) ArbiterAutherize(object map[string]string) {
+func (A Auth) ArbiterAuthorize(object map[string]string) {
 	var outCrt AuthCertificate
 	issue := object["authority"]
 	th := TenantHandler{}

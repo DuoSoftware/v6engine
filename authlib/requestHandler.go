@@ -13,7 +13,7 @@ type requestHandler struct {
 }
 
 func (r *requestHandler) GenerateRequestCode(o map[string]string) string {
-	o["id"] = common.RandText(5)
+	o["id"] = common.RandText(6)
 	nowTime := time.Now().UTC()
 	nowTime = nowTime.Add(5 * time.Minute)
 	o["expairyTime"] = nowTime.Format("2006-01-02 15:04:05")
