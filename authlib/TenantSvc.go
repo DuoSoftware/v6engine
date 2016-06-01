@@ -177,7 +177,7 @@ func (T TenantSvc) AddUser(email, level string) bool {
 
 			go emailclient.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
 			//go email.Send("ignore", "Invitation to register !", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
-			return false
+			return true
 		}
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
