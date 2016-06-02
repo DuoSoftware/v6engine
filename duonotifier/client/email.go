@@ -61,8 +61,20 @@ func gethost() (url string) {
 	return
 }
 
+func getFrom() (url string) {
+	content, err := ioutil.ReadFile("settings.config")
+	if err == nil {
+		object := make(map[string]interface{})
+		_ = json.Unmarshal(content, &object)
+		url = object["From"].(string)
+	} else {
+		url = "DuoWorld.com <mail-noreply@duoworld.com>"
+	}
+	return
+}
+
 func getEmailJsonDoc(subject string, domain string, templateId string, defaultParams map[string]string, customParams map[string]string, recieverEmail string) (json string) {
-	json = "{\"type\":\"email\",\"to\":\"" + recieverEmail + "\",\"subject\":\"" + subject + "\",\"from\":\"DuoWorld.com <mail-noreply@duoworld.com>\",\"Namespace\": \"" + domain + "\",\"TemplateID\": \"" + templateId + "\",\"DefaultParams\": {" + getStringByMap(defaultParams) + "},\"CustomParams\": {" + getStringByMap(customParams) + "}}"
+	json = "{\"type\":\"email\",\"to\":\"" + recieverEmail + "\",\"subject\":\"" + subject + "\",\"from\":\"" + getFrom() + "\",\"Namespace\": \"" + domain + "\",\"TemplateID\": \"" + templateId + "\",\"DefaultParams\": {" + getStringByMap(defaultParams) + "},\"CustomParams\": {" + getStringByMap(customParams) + "}}"
 	return
 }
 
