@@ -84,18 +84,18 @@ func getNoSqlKeyByGUID(request *messaging.ObjectRequest) string {
 }
 
 func getStringByObject(obj interface{}) string {
-	fmt.Println("********************************************************")
+	//fmt.Println("********************************************************")
 	value := ""
 	result, err := json.Marshal(obj)
 
 	if err == nil {
-		fmt.Println("Successfully Created String Object for interface object")
+		//	fmt.Println("Successfully Created String Object for interface object")
 		value = string(result)
 	} else {
 		fmt.Println(err.Error())
 		value = "{}"
 	}
-	fmt.Println("********************************************************")
+	//fmt.Println("********************************************************")
 	return value
 }
 

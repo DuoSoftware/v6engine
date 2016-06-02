@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -642,17 +643,54 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		response.IsSuccess = true
 		response.Message = "Cache Cleared successfully!"
 	case "idservice":
-		IsPattern := request.Body.Special.Extras["IsPattern"].(bool)
-		idServiceCommand := strings.ToLower(request.Body.Special.Extras["Command"].(string))
+		var IsPattern bool
+		var idServiceCommand string
+
+		if request.Body.Special.Extras["IsPattern"] != nil {
+			IsPattern = request.Body.Special.Extras["IsPattern"].(bool)
+		}
+
+		if request.Body.Special.Extras["Command"] != nil {
+			idServiceCommand = strings.ToLower(request.Body.Special.Extras["Command"].(string))
+		}
 
 		switch idServiceCommand {
 		case "getid":
 			if IsPattern {
 				//pattern code goes here
+				classname := request.Controls.Class
+				classLowered := strings.ToLower(classname)
+
+				isIndexFound := false
+				index := 0
+
+				for x := 0; x < len(classname); x++ {
+					_, err := strconv.Atoi(string(classname[x]))
+
+					if err == nil {
+						if !isIndexFound {
+							match, _ := regexp.MatchString("([a-z]+)", classLowered[x:])
+							if !match {
+								index = x
+								isIndexFound = true
+							}
+						}
+					}
+				}
+
+				prefix := classname[:index]
+				valueInString := classname[index:]
+				var value int
+				value, _ = strconv.Atoi(valueInString)
+
+				fmt.Println(prefix)
+				fmt.Println(value)
+
 			} else {
 				//Get ID and Return
 				if CheckRedisAvailability(request) {
-					_ = keygenerator.GetIncrementID(request, "CLOUDSQL")
+					id := keygenerator.GetIncrementID(request, "CLOUDSQL")
+					response.Body = []byte(id)
 					response.IsSuccess = true
 					response.Message = "Successfully Completed!"
 				} else {
@@ -660,9 +698,9 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 					response.Message = "REDIS not Available!"
 				}
 			}
-		case "setid":
+		case "readid":
 			response.IsSuccess = false
-			response.Message = "Set ID in ID Service is not yet implemented!"
+			response.Message = "Read ID in ID Service is not yet implemented!"
 		default:
 		}
 	default:
@@ -1689,9 +1727,9 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 			cacheItem = tableCache[tName]
 		}
 	}
-	fmt.Println("--------------------   Data Table Types ------------------------")
-	fmt.Println(cacheItem)
-	fmt.Println("----------------------------  End  -----------------------------")
+	//fmt.Println("--------------------   Data Table Types ------------------------")
+	//fmt.Println(cacheItem)
+	//fmt.Println("----------------------------  End  -----------------------------")
 
 	for rows.Next() {
 
