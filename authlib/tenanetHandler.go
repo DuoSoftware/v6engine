@@ -3,7 +3,7 @@ package authlib
 import (
 	"duov6.com/common"
 	//"duov6.com/email"
-	email "duov6.com/duonotifier/client"
+	notifier "duov6.com/duonotifier/client"
 	"duov6.com/objectstore/client"
 	"duov6.com/session"
 	"duov6.com/term"
@@ -86,8 +86,8 @@ func (h *TenantHandler) CreateTenant(t Tenant, user session.AuthCertificate, upd
 			inputParams["@@tenantID@@"] = t.TenantID
 			inputParams["@@tenantName@@"] = t.Name
 			h.AddUsersToTenant(t.TenantID, t.Name, user.UserID, "admin")
-			go email.Send("ignore", "Tenent Creation Notification!", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, nil, user.Email)
-			//email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, user.Email)
+			go notifier.Send("ignore", "Tenent Creation Notification!", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, nil, user.Email)
+			//notifier.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, user.Email)
 			client.Go("ignore", "com.duosoftware.tenant", "tenants").StoreObject().WithKeyField("TenantID").AndStoreOne(t).Ok()
 		} else {
 			if update {
@@ -138,8 +138,8 @@ func (h *TenantHandler) UpgradPackage(user session.AuthCertificate, Otherdata ma
 			inputParams["@@tenantName@@"] = t.Name
 			t.OtherData = Otherdata
 			//h.AddUsersToTenant(t.TenantID, t.Name, user.UserID, "admin")
-			go email.Send("ignore", "Tenent Upgrade Notification!", "com.duosoftware.auth", "tenant", "tenant_upgrade", inputParams, nil, user.Email)
-			//email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, user.Email)
+			go notifier.Send("ignore", "Tenent Upgrade Notification!", "com.duosoftware.auth", "tenant", "tenant_upgrade", inputParams, nil, user.Email)
+			//notifier.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, user.Email)
 			client.Go("ignore", "com.duosoftware.tenant", "tenants").StoreObject().WithKeyField("TenantID").AndStoreOne(t).Ok()
 			return t, ""
 		} else {
@@ -304,8 +304,8 @@ func (h *TenantHandler) AddUserToTenant(u session.AuthCertificate, users []Invit
 
 		//h.AddUsersToTenant(t.TenantID, user.UserID, "admin")
 		client.Go("ignore", "com.duosoftware.tenant", "userrequest").StoreObject().WithKeyField("RequestToken").AndStoreOne(req).Ok()
-		//email.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, user.Email)
-		go email.Send("ignore", "Tenent User Allocation Notification!", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, nil, user.Email)
+		//notifier.Send("ignore", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, user.Email)
+		go notifier.Send("ignore", "Tenent User Allocation Notification!", "com.duosoftware.auth", "tenant", "tenant_request", inputParams, nil, user.Email)
 
 	}
 }

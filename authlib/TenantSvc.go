@@ -1,7 +1,7 @@
 package authlib
 
 import (
-	emailclient "duov6.com/duonotifier/client"
+	notifier "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
 	"duov6.com/session"
 	"encoding/json"
@@ -175,7 +175,7 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			inputParams["@@DOMAIN@@"] = user.Domain
 			inputParams["@@CODE@@"] = code
 
-			go emailclient.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
+			go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
 			//go email.Send("ignore", "Invitation to register !", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
 			return true
 		}
