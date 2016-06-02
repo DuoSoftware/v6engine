@@ -683,8 +683,11 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 				var value int
 				value, _ = strconv.Atoi(valueInString)
 
+				lengthOfValue := len(valueInString)
+
 				fmt.Println(prefix)
 				fmt.Println(value)
+				fmt.Println(lengthOfValue)
 
 			} else {
 				//Get ID and Return

@@ -4,7 +4,7 @@ import (
 	"duov6.com/applib"
 	"duov6.com/common"
 	//"duov6.com/email"
-	email "duov6.com/duonotifier/client"
+	notifier "duov6.com/duonotifier/client"
 	"duov6.com/session"
 	//"duov6.com/config"
 	"duov6.com/objectstore/client"
@@ -426,7 +426,7 @@ func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 		// go email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "user_resetpassword", inputParams, nil, u.EmailAddress)
 		inputParams["@@CNAME@@"] = u.Name
 		inputParams["@@PASSWORD@@"] = passowrd
-		go email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "T_Email_FORGETPW", inputParams, nil, u.EmailAddress)
+		go notifier.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "T_Email_FORGETPW", inputParams, nil, u.EmailAddress)
 		term.Write("E Mail Sent", term.Debug)
 		return true
 	}
@@ -477,7 +477,7 @@ func (h *AuthHandler) SaveUser(u User, update bool) (User, string) {
 			inputParams["@@CEMAIL@@"] = u.EmailAddress
 			inputParams["@@CNAME@@"] = u.Name
 			inputParams["@@CODE@@"] = Activ.Token
-			go email.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "T_Email_Verification", inputParams, nil, u.EmailAddress)
+			go notifier.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "T_Email_Verification", inputParams, nil, u.EmailAddress)
 			term.Write("E Mail Sent", term.Debug)
 			client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
 			term.Write("Activation stored", term.Debug)
@@ -533,7 +533,7 @@ func (h *AuthHandler) UserActivation(token string) bool {
 			client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
 			//h.SaveUser(u, true)
 			term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-			go email.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
+			go notifier.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
 
 			return true
 
@@ -553,6 +553,10 @@ func (h *AuthHandler) UserActivation(token string) bool {
 
 // Login helps to authedicate the users
 func (h *AuthHandler) Login(email, password string) (User, string) {
+	temp := make(map[string]string)
+	temp["@@CNAME@@"] = "Prasad"
+	temp["@@VCODE@@"] = "1234"
+	go notifier.SendSMS("securityToken", "com.duosoftware.auth", "users", "T_SMS_ebanks_verification", temp, nil, "94716336491")
 	term.Write("Login  user  email"+email, term.Debug)
 	term.Write(Config.UserName, term.Debug)
 	email = strings.ToLower(email)
