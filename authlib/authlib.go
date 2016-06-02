@@ -248,7 +248,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		return
 	} else {
 		h.LogFailedAttemts(username, domain, "")
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Invalid user name password.")))
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
 		//A.Context.Request().
 		return
 	}

@@ -569,10 +569,10 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 					if uList.Active {
 						return uList, ""
 					} else {
-						return user, "User is not Active."
+						return user, "Email Address is not varified."
 					}
 				} else {
-					term.Write("password incorrect", term.Error)
+					term.Write("Username password incorrect", term.Error)
 				}
 			} else {
 				if err != nil {
@@ -583,7 +583,7 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 	} else {
 		term.Write("Login  user  Error "+err, term.Error)
 	}
-	return user, "Error Validating user"
+	return user, "Username password incorrect"
 }
 
 func (h *AuthHandler) GetUserByID(UserID string) (User, string) {
