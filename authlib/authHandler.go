@@ -553,10 +553,6 @@ func (h *AuthHandler) UserActivation(token string) bool {
 
 // Login helps to authedicate the users
 func (h *AuthHandler) Login(email, password string) (User, string) {
-	temp := make(map[string]string)
-	temp["@@CNAME@@"] = "Prasad"
-	temp["@@VCODE@@"] = "1234"
-	go notifier.SendSMS("securityToken", "com.duosoftware.auth", "users", "T_SMS_ebanks_verification", temp, nil, "94716336491")
 	term.Write("Login  user  email"+email, term.Debug)
 	term.Write(Config.UserName, term.Debug)
 	email = strings.ToLower(email)
