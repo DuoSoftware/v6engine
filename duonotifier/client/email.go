@@ -12,7 +12,7 @@ import (
 
 func Send(securityToken string, subject string, domain string, class string, templateId string, defaultParams map[string]string, customParams map[string]string, recieverEmail string) messaging.NotifierResponse {
 	var response messaging.NotifierResponse
-	JSON_Document := getJsonDoc(subject, domain, templateId, defaultParams, customParams, recieverEmail)
+	JSON_Document := getEmailJsonDoc(subject, domain, templateId, defaultParams, customParams, recieverEmail)
 
 	url := "http://" + gethost() + ":3500/command/notification"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(JSON_Document)))
@@ -31,6 +31,27 @@ func Send(securityToken string, subject string, domain string, class string, tem
 	return response
 }
 
+func SendSMS(securityToken string, domain string, class string, templateId string, defaultParams map[string]string, customParams map[string]string, recieverNumber string) messaging.NotifierResponse {
+	var response messaging.NotifierResponse
+	JSON_Document := getSMSJsonDoc(domain, templateId, defaultParams, customParams, recieverNumber)
+
+	url := "http://" + gethost() + ":3500/command/notification"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(JSON_Document)))
+	req.Header.Set("securityToken", securityToken)
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	_, err = client.Do(req)
+	if err != nil {
+		//fmt.Println(err.Error())
+		response.IsSuccess = false
+		response.Message = "SMS sending Failed!"
+	} else {
+		response.IsSuccess = true
+		response.Message = "SMS sending Successful!"
+	}
+	return response
+}
+
 func gethost() (url string) {
 	content, _ := ioutil.ReadFile("agent.config")
 	object := make(map[string]interface{})
@@ -40,8 +61,25 @@ func gethost() (url string) {
 	return
 }
 
-func getJsonDoc(subject string, domain string, templateId string, defaultParams map[string]string, customParams map[string]string, recieverEmail string) (json string) {
-	json = "{\"type\":\"email\",\"to\":\"" + recieverEmail + "\",\"subject\":\"" + subject + "\",\"from\":\"DuoWorld.com <mail-noreply@duoworld.com>\",\"Namespace\": \"" + domain + "\",\"TemplateID\": \"" + templateId + "\",\"DefaultParams\": {" + getStringByMap(defaultParams) + "},\"CustomParams\": {" + getStringByMap(customParams) + "}}"
+func getFrom() (url string) {
+	content, err := ioutil.ReadFile("settings.config")
+	if err == nil {
+		object := make(map[string]interface{})
+		_ = json.Unmarshal(content, &object)
+		url = object["From"].(string)
+	} else {
+		url = "DuoWorld.com <mail-noreply@duoworld.com>"
+	}
+	return
+}
+
+func getEmailJsonDoc(subject string, domain string, templateId string, defaultParams map[string]string, customParams map[string]string, recieverEmail string) (json string) {
+	json = "{\"type\":\"email\",\"to\":\"" + recieverEmail + "\",\"subject\":\"" + subject + "\",\"from\":\"" + getFrom() + "\",\"Namespace\": \"" + domain + "\",\"TemplateID\": \"" + templateId + "\",\"DefaultParams\": {" + getStringByMap(defaultParams) + "},\"CustomParams\": {" + getStringByMap(customParams) + "}}"
+	return
+}
+
+func getSMSJsonDoc(domain string, templateId string, defaultParams map[string]string, customParams map[string]string, recieverNumber string) (json string) {
+	json = "{\"type\":\"sms\",\"number\":\"" + recieverNumber + "\",\"Namespace\": \"" + domain + "\",\"TemplateID\": \"" + templateId + "\",\"DefaultParams\": {" + getStringByMap(defaultParams) + "},\"CustomParams\": {" + getStringByMap(customParams) + "}}"
 	return
 }
 
