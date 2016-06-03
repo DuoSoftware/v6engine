@@ -192,7 +192,7 @@ func GetEmailSubject(EmailTemplateId, tenant string) (subject string) {
 		subject = "NIL"
 	} else {
 		data := make(map[string]interface{})
-		err := json.Unmarshal(bytes, &bytes)
+		err := json.Unmarshal(bytes, &data)
 		if err != nil {
 			fmt.Println(err.Error())
 			subject = "NIL"
@@ -206,7 +206,7 @@ func GetEmailSubject(EmailTemplateId, tenant string) (subject string) {
 }
 
 func GetPhoneNumber(recieverEmail, tenant string) (phone string) {
-	bytes, _ := client.Go("securityToken", tenant, "profile").GetOne().BySearching("Email:yoyo@yoyo.com").Ok()
+	bytes, _ := client.Go("securityToken", tenant, "profile").GetOne().BySearching("Email:" + recieverEmail).Ok()
 	if bytes == nil || len(bytes) <= 4 {
 		fmt.Println("No Phone Number Found!")
 		phone = ""
