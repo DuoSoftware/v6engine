@@ -43,6 +43,8 @@ func Notify(securityToken, EmailTemplateId, SmsTemplateId, recieverEmail string,
 		number := GetPhoneNumber(recieverEmail, domain)
 		if number != "" {
 			SMS_JSON_Document = getSMSJsonDoc(domain, SmsTemplateId, defaultParams, customParams, number)
+		} else {
+			isSms = false
 		}
 	}
 
@@ -58,7 +60,7 @@ func Notify(securityToken, EmailTemplateId, SmsTemplateId, recieverEmail string,
 	} else if !isSms && !isEmail {
 		JSON_Document = ""
 		response.IsSuccess = false
-		response.Message = "Notification sending Failed!"
+		response.Message = "Notification sending Failed because neither SMS or EMAIL data available!"
 		return response
 	}
 
