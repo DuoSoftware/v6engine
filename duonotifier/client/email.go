@@ -156,7 +156,6 @@ func getSMSJsonDoc(domain, templateId string, defaultParams map[string]string, c
 
 func Get_SMS_EMAIL_JSON_Document_(emailDoc, smsDoc string) (json string) {
 	json = "{\"type\": \"email,sms\"," + emailDoc + "," + smsDoc + "}"
-	fmt.Println(json)
 	return
 }
 
@@ -199,7 +198,6 @@ func GetEmailSubject(EmailTemplateId, tenant string) (subject string) {
 			fmt.Println(err.Error())
 			subject = "NIL"
 		} else {
-			fmt.Println(data)
 			subject = data["Title"].(string)
 		}
 	}
@@ -220,7 +218,6 @@ func GetPhoneNumber(recieverEmail, tenant string) (phone string) {
 			fmt.Println(err.Error())
 			phone = ""
 		} else {
-			fmt.Println(data)
 			phone = data[0]["PhoneNumber"].(string)
 		}
 	}
