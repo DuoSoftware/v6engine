@@ -13,7 +13,6 @@ import (
 
 func Notify(securityToken, EmailTemplateId, SmsTemplateId, recieverEmail string, defaultParams map[string]string, customParams map[string]string) messaging.NotifierResponse {
 	var response messaging.NotifierResponse
-
 	isSms := false
 	isEmail := false
 
