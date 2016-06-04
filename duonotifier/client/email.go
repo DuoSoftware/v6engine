@@ -11,18 +11,13 @@ import (
 	"strings"
 )
 
-func Notify(securityToken, EmailTemplateId, SmsTemplateId, recieverEmail string, defaultParams map[string]string, customParams map[string]string) messaging.NotifierResponse {
+func Notify(securityToken, TemplateID, recieverEmail string, defaultParams map[string]string, customParams map[string]string) messaging.NotifierResponse {
 	var response messaging.NotifierResponse
-	isSms := false
-	isEmail := false
+	isSms := true
+	isEmail := true
 
-	if EmailTemplateId != "" {
-		isEmail = true
-	}
-
-	if SmsTemplateId != "" {
-		isSms = true
-	}
+	EmailTemplateId := "T_Email_" + TemplateID
+	SmsTemplateId := "T_SMS_" + TemplateID
 
 	var JSON_Document string
 	var SMS_JSON_Document string
@@ -50,7 +45,7 @@ func Notify(securityToken, EmailTemplateId, SmsTemplateId, recieverEmail string,
 
 	if isSms && isEmail {
 		//both
-		JSON_Document = Get_SMS_EMAIL_JSON_Document_(EMAIL_JSON_Document, SMS_JSON_Document)
+		JSON_Document = Get_SMS_EMAIL_JSON_Document(EMAIL_JSON_Document, SMS_JSON_Document)
 	} else if isSms && !isEmail {
 		//sms only
 		JSON_Document = SMS_JSON_Document
@@ -154,7 +149,7 @@ func getSMSJsonDoc(domain, templateId string, defaultParams map[string]string, c
 	return
 }
 
-func Get_SMS_EMAIL_JSON_Document_(emailDoc, smsDoc string) (json string) {
+func Get_SMS_EMAIL_JSON_Document(emailDoc, smsDoc string) (json string) {
 	json = "{\"type\": \"email,sms\"," + emailDoc + "," + smsDoc + "}"
 	return
 }
