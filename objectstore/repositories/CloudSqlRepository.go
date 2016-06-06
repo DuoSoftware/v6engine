@@ -677,16 +677,17 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 				var value int
 				value, _ = strconv.Atoi(valueInString)
 
-				for x := 0; x < len(request.Controls.Class); x++ {
-					if (len(prefix) + len(strconv.Itoa(value))) < len(request.Controls.Class) {
-						prefix += "0"
-					} else {
-						break
-					}
-				}
-
 				if CheckRedisAvailability(request) {
 					id := keygenerator.GetIncrementID(request, "CLOUDSQL", value)
+
+					for x := 0; x < len(request.Controls.Class); x++ {
+						if (len(prefix) + len(id)) < len(request.Controls.Class) {
+							prefix += "0"
+						} else {
+							break
+						}
+					}
+
 					id = prefix + id
 					response.Body = []byte(id)
 					response.IsSuccess = true
@@ -715,16 +716,17 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 				var value int
 				value, _ = strconv.Atoi(valueInString)
 
-				for x := 0; x < len(request.Controls.Class); x++ {
-					if (len(prefix) + len(strconv.Itoa(value))) < len(request.Controls.Class) {
-						prefix += "0"
-					} else {
-						break
-					}
-				}
-
 				if CheckRedisAvailability(request) {
 					id := keygenerator.GetTentativeID(request, "CLOUDSQL", value)
+
+					for x := 0; x < len(request.Controls.Class); x++ {
+						if (len(prefix) + len(id)) < len(request.Controls.Class) {
+							prefix += "0"
+						} else {
+							break
+						}
+					}
+
 					id = prefix + id
 					response.Body = []byte(id)
 					response.IsSuccess = true
