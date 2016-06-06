@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -646,53 +645,61 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		var IsPattern bool
 		var idServiceCommand string
 
-		if request.Body.Special.Extras["IsPattern"] != nil {
-			IsPattern = request.Body.Special.Extras["IsPattern"].(bool)
+		if request.Body.Special.Extras["Pattern"] != nil {
+			IsPattern = request.Body.Special.Extras["Pattern"].(bool)
 		}
 
 		if request.Body.Special.Extras["Command"] != nil {
 			idServiceCommand = strings.ToLower(request.Body.Special.Extras["Command"].(string))
 		}
 
+		conn, err := repository.getConnection(request)
+		if err != nil {
+			request.Log(err.Error())
+			response.IsSuccess = false
+			response.Message = "Connection Error! : " + err.Error()
+			return response
+		}
+
+		err = repository.checkAvailabilityDb(request, conn, domain)
+		if err != nil {
+			request.Log(err.Error())
+			response.IsSuccess = false
+			response.Message = "Database Error! : " + err.Error()
+			return response
+		}
+
 		switch idServiceCommand {
 		case "getid":
 			if IsPattern {
 				//pattern code goes here
-				classname := request.Controls.Class
-				classLowered := strings.ToLower(classname)
-
-				isIndexFound := false
-				index := 0
-
-				for x := 0; x < len(classname); x++ {
-					_, err := strconv.Atoi(string(classname[x]))
-
-					if err == nil {
-						if !isIndexFound {
-							match, _ := regexp.MatchString("([a-z]+)", classLowered[x:])
-							if !match {
-								index = x
-								isIndexFound = true
-							}
-						}
-					}
-				}
-
-				prefix := classname[:index]
-				valueInString := classname[index:]
+				prefix, valueInString := keygenerator.GetPatternAttributes(request)
 				var value int
 				value, _ = strconv.Atoi(valueInString)
 
-				lengthOfValue := len(valueInString)
+				for x := 0; x < len(request.Controls.Class); x++ {
+					if (len(prefix) + len(strconv.Itoa(value))) < len(request.Controls.Class) {
+						prefix += "0"
+					} else {
+						break
+					}
+				}
 
-				fmt.Println(prefix)
-				fmt.Println(value)
-				fmt.Println(lengthOfValue)
+				if CheckRedisAvailability(request) {
+					id := keygenerator.GetIncrementID(request, "CLOUDSQL", value)
+					id = prefix + id
+					response.Body = []byte(id)
+					response.IsSuccess = true
+					response.Message = "Successfully Completed!"
+				} else {
+					response.IsSuccess = false
+					response.Message = "REDIS not Available!"
+				}
 
 			} else {
 				//Get ID and Return
 				if CheckRedisAvailability(request) {
-					id := keygenerator.GetIncrementID(request, "CLOUDSQL")
+					id := keygenerator.GetIncrementID(request, "CLOUDSQL", 0)
 					response.Body = []byte(id)
 					response.IsSuccess = true
 					response.Message = "Successfully Completed!"
@@ -702,8 +709,43 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 				}
 			}
 		case "readid":
-			response.IsSuccess = false
-			response.Message = "Read ID in ID Service is not yet implemented!"
+			if IsPattern {
+				//pattern code goes here
+				prefix, valueInString := keygenerator.GetPatternAttributes(request)
+				var value int
+				value, _ = strconv.Atoi(valueInString)
+
+				for x := 0; x < len(request.Controls.Class); x++ {
+					if (len(prefix) + len(strconv.Itoa(value))) < len(request.Controls.Class) {
+						prefix += "0"
+					} else {
+						break
+					}
+				}
+
+				if CheckRedisAvailability(request) {
+					id := keygenerator.GetTentativeID(request, "CLOUDSQL", value)
+					id = prefix + id
+					response.Body = []byte(id)
+					response.IsSuccess = true
+					response.Message = "Successfully Completed!"
+				} else {
+					response.IsSuccess = false
+					response.Message = "REDIS not Available!"
+				}
+
+			} else {
+				//Get ID and Return
+				if CheckRedisAvailability(request) {
+					id := keygenerator.GetTentativeID(request, "CLOUDSQL", 0)
+					response.Body = []byte(id)
+					response.IsSuccess = true
+					response.Message = "Successfully Completed!"
+				} else {
+					response.IsSuccess = false
+					response.Message = "REDIS not Available!"
+				}
+			}
 		default:
 		}
 	default:
@@ -1730,9 +1772,6 @@ func (repository CloudSqlRepository) rowsToMap(request *messaging.ObjectRequest,
 			cacheItem = tableCache[tName]
 		}
 	}
-	//fmt.Println("--------------------   Data Table Types ------------------------")
-	//fmt.Println(cacheItem)
-	//fmt.Println("----------------------------  End  -----------------------------")
 
 	for rows.Next() {
 
@@ -1837,7 +1876,6 @@ func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string,
 }
 
 func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
-	domain := repository.getDatabaseName(request.Controls.Namespace)
 	isGUIDKey := false
 	isAutoIncrementId := false //else MANUAL key from the user
 
@@ -1854,74 +1892,10 @@ func (repository CloudSqlRepository) getRecordID(request *messaging.ObjectReques
 		returnID = common.GetGUID()
 	} else if isAutoIncrementId {
 		if CheckRedisAvailability(request) {
-			return keygenerator.GetIncrementID(request, "CLOUDSQL")
+			returnID = keygenerator.GetIncrementID(request, "CLOUDSQL", 0)
 		} else {
-			session, isError := repository.getConnection(request)
-			if isError != nil {
-				returnID = ""
-				repository.closeConnection(session)
-				return
-			} else {
-				//Reading maxCount from DB
-				checkTableQuery := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + domain + "' AND TABLE_NAME='domainClassAttributes';"
-				tableResultMap, _ := repository.executeQueryOne(request, session, checkTableQuery, request.Controls.Class)
-				if len(tableResultMap) == 0 {
-					//Create new domainClassAttributes  table
-					createDomainAttrQuery := "create table " + domain + ".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);"
-					err := repository.executeNonQuery(session, createDomainAttrQuery, request)
-					if err != nil {
-						returnID = "1"
-						repository.closeConnection(session)
-						return
-					} else {
-						//insert record with count 1 and return
-						insertQuery := "INSERT INTO " + domain + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','1','" + common.GetGUID() + "')"
-						err = repository.executeNonQuery(session, insertQuery, request)
-						if err != nil {
-							returnID = "1"
-							repository.closeConnection(session)
-							return
-						} else {
-							returnID = "1"
-							repository.closeConnection(session)
-							return
-						}
-					}
-				} else {
-					//This is a new Class.. Create New entry
-					readQuery := "SELECT maxCount FROM " + domain + ".domainClassAttributes where class = '" + strings.ToLower(request.Controls.Class) + "';"
-					myMap, _ := repository.executeQueryOne(request, session, readQuery, (domain + ".domainClassAttributes"))
-
-					if len(myMap) == 0 {
-						request.Log("New Class! New record for this class will be inserted")
-						insertNewClassQuery := "INSERT INTO " + domain + ".domainClassAttributes (class,maxCount,version) values ('" + strings.ToLower(request.Controls.Class) + "', '1', '" + common.GetGUID() + "');"
-						err := repository.executeNonQuery(session, insertNewClassQuery, request)
-						if err != nil {
-							returnID = ""
-							repository.closeConnection(session)
-							return
-						} else {
-							returnID = "1"
-							repository.closeConnection(session)
-							return
-						}
-					} else {
-						//Inrement one and UPDATE
-						maxCount := 0
-						maxCount, err := strconv.Atoi(myMap["maxCount"].(string))
-						maxCount++
-						returnID = strconv.Itoa(maxCount)
-						updateQuery := "UPDATE " + domain + ".domainClassAttributes SET maxCount='" + returnID + "' WHERE class = '" + strings.ToLower(request.Controls.Class) + "' ;"
-						err = repository.executeNonQuery(session, updateQuery, request)
-						if err != nil {
-							returnID = ""
-							repository.closeConnection(session)
-							return
-						}
-					}
-				}
-			}
-			repository.closeConnection(session)
+			request.Log("WARNING! : Returning GUID since REDIS not available and not concurrent safe!")
+			returnID = common.GetGUID()
 		}
 	} else {
 		returnID = obj[request.Body.Parameters.KeyProperty].(string)
