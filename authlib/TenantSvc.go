@@ -175,7 +175,8 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			inputParams["@@DOMAIN@@"] = user.Domain
 			inputParams["@@CODE@@"] = code
 
-			go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
+			//go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
+			go notifier.Notify("ignore", "tenant_invitation", email, inputParams, nil)
 			//go email.Send("ignore", "Invitation to register !", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
 			return true
 		}
