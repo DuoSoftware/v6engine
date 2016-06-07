@@ -30,14 +30,13 @@ func (driver CloudSql) VerifyMaxValueDB(request *messaging.ObjectRequest, amount
 		return
 	} else {
 		db := driver.getDatabaseName(request.Controls.Namespace)
-		class := strings.ToLower(request.Controls.Class)
-
-		readQuery := "SELECT maxCount FROM " + db + ".domainClassAttributes where class = '" + class + "';"
+		class := request.Controls.Class
+		readQuery := "SELECT maxCount FROM " + db + ".domainClassAttributes where __os_id = '" + getDomainClassAttributesKey(request) + "';"
 		myMap, _ := driver.executeQueryOne(session, readQuery, (db + ".domainClassAttributes"))
 
 		if len(myMap) == 0 {
 			maxValue = strconv.Itoa(amount + 1)
-			insertNewClassQuery := "INSERT INTO " + db + ".domainClassAttributes (class,maxCount,version) values ('" + class + "', '" + maxValue + "', '" + common.GetGUID() + "');"
+			insertNewClassQuery := "INSERT INTO " + db + ".domainClassAttributes (__os_id, class,maxCount,version) values ('" + getDomainClassAttributesKey(request) + "','" + class + "', '" + maxValue + "', '" + common.GetGUID() + "');"
 			err := driver.executeNonQuery(session, insertNewClassQuery)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -50,7 +49,7 @@ func (driver CloudSql) VerifyMaxValueDB(request *messaging.ObjectRequest, amount
 				maxCount += 1
 			}
 			maxValue = strconv.Itoa(maxCount)
-			updateQuery := "UPDATE " + db + ".domainClassAttributes SET maxCount='" + maxValue + "' WHERE class = '" + class + "' ;"
+			updateQuery := "UPDATE " + db + ".domainClassAttributes SET maxCount='" + maxValue + "' WHERE __os_id = '" + getDomainClassAttributesKey(request) + "' ;"
 			err = driver.executeNonQuery(session, updateQuery)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -78,7 +77,7 @@ func (driver CloudSql) VerifyDBAvailability(conn *sql.DB, database string) {
 }
 
 func (driver CloudSql) VerifyTableAvailability(conn *sql.DB, database string, class string) {
-	createDomainAttrQuery := "create table " + database + ".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);"
+	createDomainAttrQuery := "create table " + database + ".domainClassAttributes (__os_id VARCHAR(255), class text, maxCount text, version text);"
 	err := driver.executeNonQuery(conn, createDomainAttrQuery)
 	if err != nil {
 		fmt.Println(err.Error())

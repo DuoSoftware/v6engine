@@ -1121,7 +1121,7 @@ func (repository CloudSqlRepository) checkAvailabilityDb(request *messaging.Obje
 	if err == nil {
 		if dbResult["SCHEMA_NAME"] == nil {
 			repository.executeNonQuery(conn, "CREATE DATABASE IF NOT EXISTS "+dbName, request)
-			repository.executeNonQuery(conn, "create table "+dbName+".domainClassAttributes ( class VARCHAR(255) primary key, maxCount text, version text);", request)
+			repository.executeNonQuery(conn, "create table "+dbName+".domainClassAttributes ( __os_id VARCHAR(255) primary key, class text, maxCount text, version text);", request)
 		}
 
 		if CheckRedisAvailability(request) {
@@ -1158,7 +1158,7 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 						return
 					} else {
 						isTableCreatedNow = true
-						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','0','" + common.GetGUID() + "')"
+						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (__os_id, class, maxCount,version) VALUES ('" + getDomainClassAttributesKey(request) + "','" + request.Controls.Class + "','0','" + common.GetGUID() + "')"
 						_ = repository.executeNonQuery(conn, recordForIDService, request)
 						keygenerator.CreateNewKeyGenBundle(request)
 					}
@@ -1187,7 +1187,7 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 						return
 					} else {
 						isTableCreatedNow = true
-						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (class, maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "','0','" + common.GetGUID() + "')"
+						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (__os_id, class, maxCount,version) VALUES ('" + getDomainClassAttributesKey(request) + "','" + request.Controls.Class + "','0','" + common.GetGUID() + "')"
 						_ = repository.executeNonQuery(conn, recordForIDService, request)
 					}
 				}

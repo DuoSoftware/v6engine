@@ -83,6 +83,11 @@ func getNoSqlKeyByGUID(request *messaging.ObjectRequest) string {
 	return key
 }
 
+func getDomainClassAttributesKey(request *messaging.ObjectRequest) (key string) {
+	key = request.Controls.Namespace + ".domainClassAttributes." + request.Controls.Class
+	return
+}
+
 func getStringByObject(obj interface{}) string {
 	//fmt.Println("********************************************************")
 	value := ""
