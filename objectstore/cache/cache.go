@@ -10,7 +10,7 @@ import (
 const (
 	Data        = 0
 	MetaData    = 1
-	IncrementID = 2
+	IncrementID = 5
 	Transaction = 3
 )
 
@@ -210,4 +210,8 @@ func GetListLength(request *messaging.ObjectRequest, key string, database int) (
 		length = repositories.GetListLength(request, key, database)
 	}
 	return
+}
+
+func FlushCache(request *messaging.ObjectRequest) {
+	repositories.Flush(request)
 }

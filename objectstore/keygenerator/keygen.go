@@ -402,18 +402,6 @@ func CreateNewKeyGenBundle(request *messaging.ObjectRequest) {
 	}
 }
 
-func FlushCache(request *messaging.ObjectRequest) {
-	client, err := GetConnection(request)
-	if err != nil {
-		RedisConnection = nil
-		RedisConnectionTCP = nil
-		fmt.Println(err.Error())
-		return
-	}
-
-	_ = client.FlushAll()
-}
-
 //support functions
 
 func GetPatternAttributes(request *messaging.ObjectRequest) (prefix, value string) {

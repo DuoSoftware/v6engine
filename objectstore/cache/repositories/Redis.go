@@ -421,3 +421,15 @@ func LPop(request *messaging.ObjectRequest, key string, database int) (result []
 	result, err = client.LPop(key)
 	return
 }
+
+func Flush(request *messaging.ObjectRequest) {
+
+	for x := 0; x < 5; x++ {
+		client, err := GetConnection(request, x)
+		if err != nil {
+			return
+		}
+		_ = client.FlushDB()
+	}
+
+}

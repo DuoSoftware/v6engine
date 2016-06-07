@@ -632,7 +632,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		repository.closeConnection(conn)
 	case "flushcache":
 		if CheckRedisAvailability(request) {
-			keygenerator.FlushCache(request)
+			cache.FlushCache(request)
 		} else {
 			tableCache = make(map[string]map[string]string)
 			availableDbs = make(map[string]interface{})
