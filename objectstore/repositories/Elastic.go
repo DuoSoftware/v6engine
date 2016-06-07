@@ -1,13 +1,12 @@
 package repositories
 
 import (
-	//"duov6.com/objectstore/connmanager"
+	"duov6.com/common"
+	"duov6.com/objectstore/keygenerator"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
-	"encoding/json"
-	//"fmt"
-	"duov6.com/common"
 	"duov6.com/term"
+	"encoding/json"
 	"github.com/mattbaird/elastigo/lib"
 	"io/ioutil"
 	"net/http"
@@ -733,7 +732,6 @@ func (repository ElasticRepository) getConnection(request *messaging.ObjectReque
 }
 
 func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
-	conn := repository.getConnection(request)
 	isAutoIncrementing := false
 	isRandomKeyID := false
 
@@ -746,49 +744,11 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 	if isRandomKeyID {
 		returnID = common.GetGUID()
 	} else if isAutoIncrementing {
-		key := request.Controls.Class
-		data, err := conn.Get(request.Controls.Namespace, "domainClassAttributes", key, nil)
-		maxCount := ""
-
-		if err != nil {
-			request.Log("No record Found. This is a NEW record. Inserting new attribute value")
-			var newRecord map[string]interface{}
-			newRecord = make(map[string]interface{})
-			newRecord["class"] = request.Controls.Class
-			newRecord["maxCount"] = "1"
-			newRecord["version"] = common.GetGUID()
-			_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", key, nil, newRecord)
-
-			if err != nil {
-				return common.GetGUID()
-			} else {
-				return "1"
-			}
-
+		if CheckRedisAvailability(request) {
+			returnID = keygenerator.GetIncrementID(request, "ELASTIC", 0)
 		} else {
-			var currentMap map[string]interface{}
-			currentMap = make(map[string]interface{})
-			byteData, err := data.Source.MarshalJSON()
-			if err != nil {
-				return common.GetGUID()
-			}
-			json.Unmarshal(byteData, &currentMap)
-			maxCount = currentMap["maxCount"].(string)
-			tempCount, err := strconv.Atoi(maxCount)
-			maxCount = strconv.Itoa(tempCount + 1)
-
-			//Update Table
-			var newRecord map[string]interface{}
-			newRecord = make(map[string]interface{})
-			newRecord["class"] = request.Controls.Class
-			newRecord["maxCount"] = maxCount
-			newRecord["version"] = common.GetGUID()
-			_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", request.Controls.Class, nil, newRecord)
-			if err != nil {
-				return common.GetGUID()
-			} else {
-				return maxCount
-			}
+			request.Log("WARNING! : Returning GUID since REDIS not available and not concurrent safe!")
+			returnID = common.GetGUID()
 		}
 	} else {
 		return obj[request.Body.Parameters.KeyProperty].(string)
