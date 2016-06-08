@@ -10,6 +10,7 @@ import (
 	"github.com/twinj/uuid"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -67,26 +68,40 @@ func getTime() (retTime string) {
 func (m *StoreModifier) AndStoreMany(objs []interface{}) *StoreModifier {
 	m.Request.Controls.Multiplicity = "multiple"
 
-	s := reflect.ValueOf(objs)
 	var interfaceList []map[string]interface{}
-	interfaceList = make([]map[string]interface{}, s.Len())
-
-	for i := 0; i < s.Len(); i++ {
-		obj := s.Index(i).Interface()
-		v := reflect.ValueOf(obj)
-		k := v.Kind()
-		fmt.Println("KIND : ", k)
-		var newMap map[string]interface{}
-
-		if k != reflect.Map {
-			newMap = structs.Map(obj)
-		} else {
-			newMap = obj.(map[string]interface{})
+	if strings.Contains(reflect.TypeOf(objs).String(), "map") {
+		interfaceList = make([]map[string]interface{}, len(objs))
+		for _, obj := range objs {
+			interfaceList = append(interfaceList, obj.(map[string]interface{}))
 		}
+	} else {
+		s := reflect.ValueOf(objs)
 
-		interfaceList[i] = newMap
+		interfaceList = make([]map[string]interface{}, s.Len())
+
+		for i := 0; i < s.Len(); i++ {
+			obj := s.Index(i).Interface()
+			v := reflect.ValueOf(obj)
+			k := v.Kind()
+			fmt.Println("KIND : ", k)
+			var newMap map[string]interface{}
+
+			if k != reflect.Map {
+				newMap = structs.Map(obj)
+			} else {
+				newMap = obj.(map[string]interface{})
+			}
+
+			interfaceList[i] = newMap
+		}
 	}
 	m.Request.Body.Objects = interfaceList
+	return m
+}
+
+func (m *StoreModifier) AndStoreManyObjects(objs []map[string]interface{}) *StoreModifier {
+	m.Request.Controls.Multiplicity = "multiple"
+	m.Request.Body.Objects = objs
 	return m
 }
 

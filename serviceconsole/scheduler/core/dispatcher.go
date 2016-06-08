@@ -91,7 +91,6 @@ func (t *ScheduleTable) Contains(timestamp string) bool {
 		}
 	}
 	return false
-
 }
 
 func (t *ScheduleTable) Delete(timestamp string) {
@@ -107,7 +106,6 @@ func (t *ScheduleTable) Delete(timestamp string) {
 	if removeIndex != -1 {
 		t.Rows = append(t.Rows[:removeIndex], t.Rows[removeIndex+1:]...)
 	}
-
 }
 
 //Original Method... Don't Delete
