@@ -1,0 +1,20 @@
+2016-06-10 @ 15:56:22  Default Request
+2016-06-10 @ 15:56:22  Starting replicated storage engine
+2016-06-10 @ 15:56:22  Getting settings for multiple delete
+2016-06-10 @ 15:56:22  DELETE FROM _comduosoftwareauth.activation WHERE __os_id = "com.duosoftware.auth.activation.CGcYexOwxG"
+2016-06-10 @ 15:56:22  S-0 : Default Request
+2016-06-10 @ 15:56:22  S-1 : Starting replicated storage engine
+2016-06-10 @ 15:56:22  S-2 : Getting settings for multiple delete
+2016-06-10 @ 15:56:22  S-3 : DELETE FROM _comduosoftwareauth.activation WHERE __os_id = "com.duosoftware.auth.activation.CGcYexOwxG"
+2016-06-10 @ 16:16:08  Default Request
+2016-06-10 @ 16:16:08  Starting replicated storage engine
+2016-06-10 @ 16:16:08  Getting settings for multiple delete
+2016-06-10 @ 16:16:08  DELETE FROM _comduosoftwareauth.activation WHERE __os_id = "com.duosoftware.auth.activation.huehuehue"
+2016-06-10 @ 16:16:08  No Rows Changed. Already deleted!
+2016-06-10 @ 16:16:08  com.duosoftware.auth.activation.huehuehue : Already Deleted or No Record was Found!
+2016-06-10 @ 16:16:08  S-0 : Default Request
+2016-06-10 @ 16:16:08  S-1 : Starting replicated storage engine
+2016-06-10 @ 16:16:08  S-2 : Getting settings for multiple delete
+2016-06-10 @ 16:16:08  S-3 : DELETE FROM _comduosoftwareauth.activation WHERE __os_id = "com.duosoftware.auth.activation.huehuehue"
+2016-06-10 @ 16:16:08  S-4 : No Rows Changed. Already deleted!
+2016-06-10 @ 16:16:08  S-5 : com.duosoftware.auth.activation.huehuehue : Already Deleted or No Record was Found!

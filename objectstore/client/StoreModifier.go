@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/fatih/structs"
 	//"strconv"
+	"errors"
 	"github.com/twinj/uuid"
 	"reflect"
 	"strconv"
@@ -111,7 +112,7 @@ func (m *StoreModifier) AndStoreMapInterface(objs []map[string]interface{}) *Sto
 	return m
 }
 
-func (m *StoreModifier) Ok() {
+func (m *StoreModifier) Ok() (err error) {
 	if m.Request.Controls.Multiplicity == "single" {
 		m.Request.Controls.Id = m.Request.Body.Object[m.Request.Body.Parameters.KeyProperty].(string)
 	}
@@ -122,7 +123,15 @@ func (m *StoreModifier) Ok() {
 
 	response := dispatcher.Dispatch(m.Request)
 
-	fmt.Println(response.IsSuccess)
+	if !response.IsSuccess {
+		if response.Message == "" {
+			err = errors.New("Error Storing Object! : Undefined Error!")
+		} else {
+			err = errors.New(response.Message)
+		}
+	}
+
+	return
 }
 
 func (m *StoreModifier) FileOk() repositories.RepositoryResponse {
@@ -136,6 +145,7 @@ func (m *StoreModifier) FileOk() repositories.RepositoryResponse {
 
 	return response
 }
+
 func NewStoreModifier(request *messaging.ObjectRequest) *StoreModifier {
 	modifier := StoreModifier{Request: request}
 	modifier.Request = request
