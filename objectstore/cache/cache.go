@@ -103,6 +103,13 @@ func DeleteKey(request *messaging.ObjectRequest, key string, database int) (stat
 	return
 }
 
+func DeletePattern(request *messaging.ObjectRequest, pattern string, database int) (status bool) {
+	if CheckCacheAvailability(request) {
+		status = repositories.DeletePattern(request, pattern, database)
+	}
+	return
+}
+
 func StoreMany(request *messaging.ObjectRequest, data []map[string]interface{}, database int) (err error) {
 	if CheckCacheAvailability(request) {
 		err = repositories.SetManyRedis(request, data, database)

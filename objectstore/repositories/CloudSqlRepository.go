@@ -108,6 +108,7 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 	skip := "0"
 	take := "100"
 	isFullTextSearch := false
+
 	if request.Extras["skip"] != nil {
 		skip = request.Extras["skip"].(string)
 	}
@@ -574,6 +575,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 				if CheckRedisAvailability(request) {
 					_ = cache.DeleteKey(request, ("CloudSqlTableCache." + domain + "." + request.Controls.Class), cache.MetaData)
 					_ = cache.DeleteKey(request, ("CloudSqlAvailableTables." + domain + "." + request.Controls.Class), cache.MetaData)
+					_ = cache.DeletePattern(request, (domain + "." + request.Controls.Class + "*"), cache.Data)
 				} else {
 					delete(availableTables, (domain + "." + request.Controls.Class))
 					delete(tableCache, (domain + "." + request.Controls.Class))
@@ -608,8 +610,8 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 							_ = cache.DeleteKey(request, name, cache.MetaData)
 						}
 					}
-
 					_ = cache.DeleteKey(request, ("CloudSqlAvailableDbs." + domain), cache.MetaData)
+					_ = cache.DeletePattern(request, (domain + "*"), cache.Data)
 
 				} else {
 					//Delete Namespace from availableDbs
