@@ -1321,6 +1321,19 @@ func (repository CloudSqlRepository) buildTableCache(request *messaging.ObjectRe
 					tableCache[dbName+"."+class] = newMap
 				}
 			}
+		} else {
+			if len(tableCache[dbName+"."+class]) == 0 {
+				var exResult []map[string]interface{}
+				exResult, err = repository.executeQueryMany(request, conn, "EXPLAIN "+dbName+"."+class, nil)
+				if err == nil {
+					newMap := make(map[string]string)
+					for _, cRow := range exResult {
+						newMap[cRow["Field"].(string)] = cRow["Type"].(string)
+					}
+					tableCache[dbName+"."+class] = newMap
+
+				}
+			}
 		}
 	} else {
 		tableCachePattern := ("CloudSqlTableCache." + dbName + "." + request.Controls.Class)
