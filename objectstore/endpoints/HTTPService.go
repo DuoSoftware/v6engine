@@ -85,7 +85,7 @@ func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Reques
 	// cpuUsage := strconv.FormatFloat(common.GetProcessorUsage(), 'E', -1, 64)
 	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
 	cpuCount := strconv.Itoa(runtime.NumCPU())
-	versionData := "{\"Name\": \"Objectstore\",\"Version\": \"1.2.9-a\",\"Change Log\":\"Fix for non redis based objectstore!\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
+	versionData := "{\"Name\": \"Objectstore\",\"Version\": \"1.3.0-a\",\"Change Log\":\"Removed GoClient!\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
 	fmt.Fprintf(w, versionData)
 }
 
