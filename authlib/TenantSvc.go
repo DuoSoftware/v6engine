@@ -12,7 +12,7 @@ type TenantSvc struct {
 	gorest.RestService
 	autherized          gorest.EndPoint `method:"GET" path:"/tenant/Autherized/{TenantID:string}" output:"TenantAutherized"`
 	getTenant           gorest.EndPoint `method:"GET" path:"/tenant/GetTenant/{TenantID:string}" output:"Tenant"`
-	acceptRequest       gorest.EndPoint `method:"GET" path:"/tenant/AcceptRequest/{securityLevel:string}/{RequestToken:string}/{accept:bool}" output:"bool"`
+	acceptRequest       gorest.EndPoint `method:"GET" path:"/tenant/AcceptRequest/{email:string}/{RequestToken:string}" output:"bool"`
 	getTenants          gorest.EndPoint `method:"GET" path:"/tenant/GetTenants/{securityToken:string}" output:"[]TenantMinimum"`
 	getSampleTenantForm gorest.EndPoint `method:"GET" path:"/tenant/GetSampleTenantForm/" output:"Tenant"`
 	inviteUser          gorest.EndPoint `method:"POST" path:"/tenant/InviteUser/" postdata:"[]InviteUsers"`
