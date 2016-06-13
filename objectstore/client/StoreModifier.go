@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"github.com/fatih/structs"
 	//"strconv"
+	"duov6.com/common"
 	"errors"
-	"github.com/twinj/uuid"
 	"reflect"
 	"strconv"
 	"strings"
@@ -38,32 +38,10 @@ func (m *StoreModifier) AndStoreOne(obj interface{}) *StoreModifier {
 	} else {
 		bodyMap = v.Interface().(map[string]interface{})
 	}
-	//fmt.Println("SDFASDFASDF")
-	//fmt.Println("CONVERTED " , bodyMap)
 
 	m.Request.Body.Object = bodyMap
-	controlObject := messaging.ControlHeaders{}
-	controlObject.Version = uuid.NewV1().String()
-	controlObject.Namespace = m.Request.Controls.Namespace
-	controlObject.Class = m.Request.Controls.Class
-	controlObject.Tenant = "123"
-	controlObject.LastUdated = getTime()
-	m.Request.Body.Object["__osHeaders"] = controlObject
+	m.FillControlHeaders(m.Request)
 	return m
-}
-
-func getTime() (retTime string) {
-	currentTime := time.Now().Local()
-	year := strconv.Itoa(currentTime.Year())
-	month := strconv.Itoa(int(currentTime.Month()))
-	day := strconv.Itoa(currentTime.Day())
-	hour := strconv.Itoa(currentTime.Hour())
-	minute := strconv.Itoa(currentTime.Minute())
-	second := strconv.Itoa(currentTime.Second())
-
-	retTime = (year + "-" + month + "-" + day + "T" + hour + ":" + minute + ":" + second)
-
-	return
 }
 
 func (m *StoreModifier) AndStoreMany(objs []interface{}) *StoreModifier {
@@ -92,11 +70,11 @@ func (m *StoreModifier) AndStoreMany(objs []interface{}) *StoreModifier {
 			} else {
 				newMap = obj.(map[string]interface{})
 			}
-
 			interfaceList[i] = newMap
 		}
 	}
 	m.Request.Body.Objects = interfaceList
+	m.FillControlHeaders(m.Request)
 	return m
 }
 
@@ -160,4 +138,42 @@ func NewStoreModifierWithOperation(request *messaging.ObjectRequest, operation s
 	modifier.Request.Controls.Operation = operation
 	modifier.Request.Body = messaging.RequestBody{}
 	return &modifier
+}
+
+func (m *StoreModifier) FillControlHeaders(request *messaging.ObjectRequest) {
+	currentTime := getTime()
+	if request.Controls.Multiplicity == "single" {
+		controlObject := messaging.ControlHeaders{}
+		controlObject.Version = common.GetGUID()
+		controlObject.Namespace = request.Controls.Namespace
+		controlObject.Class = request.Controls.Class
+		controlObject.Tenant = "123"
+		controlObject.LastUdated = currentTime
+
+		request.Body.Object["__osHeaders"] = controlObject
+	} else {
+		for _, obj := range request.Body.Objects {
+			controlObject := messaging.ControlHeaders{}
+			controlObject.Version = common.GetGUID()
+			controlObject.Namespace = request.Controls.Namespace
+			controlObject.Class = request.Controls.Class
+			controlObject.Tenant = "123"
+			controlObject.LastUdated = currentTime
+			obj["__osHeaders"] = controlObject
+		}
+	}
+}
+
+func getTime() (retTime string) {
+	currentTime := time.Now().Local()
+	year := strconv.Itoa(currentTime.Year())
+	month := strconv.Itoa(int(currentTime.Month()))
+	day := strconv.Itoa(currentTime.Day())
+	hour := strconv.Itoa(currentTime.Hour())
+	minute := strconv.Itoa(currentTime.Minute())
+	second := strconv.Itoa(currentTime.Second())
+
+	retTime = (year + "-" + month + "-" + day + "T" + hour + ":" + minute + ":" + second)
+
+	return
 }

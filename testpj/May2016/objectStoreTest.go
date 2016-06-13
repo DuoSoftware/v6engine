@@ -3,7 +3,7 @@ package main
 import (
 	"duov6.com/cebadapter"
 	//"duov6.com/common"
-	client "duov6.com/objectstore/goclient"
+	client "duov6.com/objectstore/client"
 	"fmt"
 )
 
@@ -40,20 +40,29 @@ func send() {
 
 	Activ := make(map[string]interface{})
 	Activ["GUUserID"] = "1234"
-	Activ["Token"] = "huehuehue"
+	Activ["Token"] = "huehuehue2"
+
+	Activ1 := make(map[string]interface{})
+	Activ1["GUUserID"] = "1234"
+	Activ1["Token"] = "huehuehue1"
 	// gg := make([]ActivationEmail, 1)
 	// gg[0] = Activ
 
-	gg := make([]map[string]interface{}, 1)
+	gg := make([]map[string]interface{}, 2)
 	gg[0] = Activ
+	gg[1] = Activ1
 
 	b := make([]interface{}, len(gg))
 	for i := range gg {
 		b[i] = gg[i]
 	}
 
-	//client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
-	client.Go("ignore", "com.duosoftware.auth", "activation").DeleteObject().WithKeyField("Token").AndDeleteMany(b).Ok()
+	fmt.Println("999999")
+	fmt.Println(b)
+
+	client.Go("ignore", "wp", "gg").StoreObject().WithKeyField("Token").AndStoreMany(b).Ok()
+	//client.Go("ignore", "wp", "gg").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
+	//client.Go("ignore", "com.duosoftware.auth", "activation").DeleteObject().WithKeyField("Token").AndDeleteMany(b).Ok()
 }
 
 type ActivationEmail struct {
