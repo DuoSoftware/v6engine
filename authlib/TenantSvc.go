@@ -158,6 +158,7 @@ func (T TenantSvc) AddUser(email, level string) bool {
 
 		} else {
 			tmp := tempRequestGenerator{}
+			th := TenantHandler{}
 			t := th.GetTenant(user.Domain)
 			o := make(map[string]string)
 			o["process"] = "tenant_invitation"
@@ -224,21 +225,16 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 	//user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	//if error == "" {
 	tmp := tempRequestGenerator{}
-	o := make(map[string]string)
-	o["process"] = "tenant_invitation"
-	o["email"] = email
-	o["invitedUserID"] = user.UserID
-	o["name"] = user.Name
-	o["domain"] = user.Domain
-	o["fromuseremail"] = user.Email
-	tmp.GetRequestCode(RequestToken)
+
+	o, _ := tmp.GetRequestCode(RequestToken)
 	th := TenantHandler{}
 	switch o["process"] {
 	case "tenant_invitation":
 		auth := AuthHandler{}
 		a, err := auth.GetUser(o["email"])
 		if err == "" {
-			return th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
+			th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
+			return true
 		} else {
 			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Email not registered."))
 			return false
@@ -253,6 +249,8 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 	//} else {
 
 	//}
+	T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Unatherized token"))
+	return false
 }
 
 func (T TenantSvc) GetTenants(securityToken string) []TenantMinimum {
