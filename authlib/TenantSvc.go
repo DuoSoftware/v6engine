@@ -158,6 +158,7 @@ func (T TenantSvc) AddUser(email, level string) bool {
 
 		} else {
 			tmp := tempRequestGenerator{}
+			t := th.GetTenant(user.Domain)
 			o := make(map[string]string)
 			o["process"] = "tenant_invitation"
 			o["email"] = email
@@ -165,7 +166,9 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			o["name"] = user.Name
 			o["domain"] = user.Domain
 			o["fromuseremail"] = user.Email
-
+			o["tname"] = t.Name
+			o["level"] = level
+			//o["userid"] = a.UserID
 			code := tmp.GenerateRequestCode(o)
 			var inputParams map[string]string
 			inputParams = make(map[string]string)
@@ -215,16 +218,40 @@ func (T TenantSvc) RemoveUser(email string) bool {
 	}
 }
 
-func (T TenantSvc) AcceptRequest(securityLevel, RequestToken string, accept bool) bool {
+func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 	//fmt.Println(T.Context.Request().Header.Get("Securitytoken"))
-	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
-	if error == "" {
-		th := TenantHandler{}
-		return th.AcceptRequest(user, securityLevel, RequestToken, accept)
-	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+	//user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	//if error == "" {
+	tmp := tempRequestGenerator{}
+	o := make(map[string]string)
+	o["process"] = "tenant_invitation"
+	o["email"] = email
+	o["invitedUserID"] = user.UserID
+	o["name"] = user.Name
+	o["domain"] = user.Domain
+	o["fromuseremail"] = user.Email
+	tmp.GetRequestCode(RequestToken)
+	th := TenantHandler{}
+	switch o["process"] {
+	case "tenant_invitation":
+		auth := AuthHandler{}
+		a, err := auth.GetUser(o["email"])
+		if err == "" {
+			return th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
+		} else {
+			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Email not registered."))
+			return false
+		}
+		break
+	default:
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Unatherized token"))
 		return false
+		break
 	}
+	//return th.AcceptRequest(user, securityLevel, RequestToken, accept)
+	//} else {
+
+	//}
 }
 
 func (T TenantSvc) GetTenants(securityToken string) []TenantMinimum {
