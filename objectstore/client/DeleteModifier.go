@@ -7,6 +7,7 @@ import (
 	"github.com/fatih/structs"
 	//"strconv"
 	//"fmt"
+	"errors"
 	"reflect"
 	"strings"
 )
@@ -23,12 +24,6 @@ func (m *DeleteModifier) ByUniqueKey(key string) *DeleteModifier {
 }
 
 func (m *DeleteModifier) AndDeleteObject(obj interface{}) *DeleteModifier {
-	// m.Request.Controls.Operation = "delete"
-	// m.Request.Controls.Multiplicity = "single"
-	// bodyMap := structs.Map(obj)
-	// key := bodyMap[m.Request.Body.Parameters.KeyProperty].(string)
-	// m.Request.Controls.Id = key
-	//return m
 	return m.AndDeleteOne(obj)
 }
 
@@ -82,10 +77,17 @@ func (m *DeleteModifier) WithKeyField(field string) *DeleteModifier {
 	return m
 }
 
-func (m *DeleteModifier) Ok() {
+func (m *DeleteModifier) Ok() (err error) {
 	dispatcher := processors.Dispatcher{}
-	//var repResponse repositories.RepositoryResponse = dispatcher.Dispatch(m.Request)
-	dispatcher.Dispatch(m.Request)
+	response := dispatcher.Dispatch(m.Request)
+
+	if !response.IsSuccess {
+		if response.Message == "" {
+			err = errors.New("Error Deleting Object! : Undefined Error!")
+		} else {
+			err = errors.New(response.Message)
+		}
+	}
 	return
 }
 

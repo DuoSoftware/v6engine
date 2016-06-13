@@ -4,7 +4,7 @@ import (
 	"duov6.com/FileServer/messaging"
 	"duov6.com/common"
 	"duov6.com/objectstore/client"
-	goclient "duov6.com/objectstore/goclient"
+	goclient "duov6.com/objectstore/client"
 	"duov6.com/objectstore/repositories"
 	"encoding/json"
 	"fmt"

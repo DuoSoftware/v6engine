@@ -175,7 +175,8 @@ func (A Auth) ArbiterAuthorize(object map[string]string) {
 	inputParams["@@SecurityToken@@"] = outCrt.SecurityToken
 	//Change activation status to true and save
 	//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-	go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, outCrt.Email)
+	//go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, outCrt.Email)
+	go notifier.Notify("ignore", "user_login", outCrt.Email, inputParams, nil)
 	f, _ := json.Marshal(outCrt)
 	A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(f)
 	return
@@ -244,7 +245,8 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		inputParams["@@SecurityToken@@"] = outCrt.SecurityToken
 		//Change activation status to true and save
 		//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-		go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, u.EmailAddress)
+		//go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, u.EmailAddress)
+		go notifier.Notify("ignore", "user_login", u.EmailAddress, inputParams, nil)
 		return
 	} else {
 		h.LogFailedAttemts(username, domain, "")
@@ -288,7 +290,8 @@ func (A Auth) NoPasswordLogin(OTP string) (outCrt AuthCertificate) {
 		r.Remove(data)
 		//Change activation status to true and save
 		//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-		go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, o["Email"])
+		//go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, o["Email"])
+		go notifier.Notify("ignore", "user_login", o["Email"], inputParams, nil)
 		return
 	} else {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
@@ -364,7 +367,8 @@ func (A Auth) LoginOTP(username, password, domain string) string {
 		inputParams["@@Code@@"] = code
 		//Change activation status to true and save
 		//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-		go notifier.Send("ignore", "One time password for user login.", "com.duosoftware.auth", "email", "user_otp", inputParams, nil, u.EmailAddress)
+		//go notifier.Send("ignore", "One time password for user login.", "com.duosoftware.auth", "email", "user_otp", inputParams, nil, u.EmailAddress)
+		go notifier.Notify("ignore", "user_otp", u.EmailAddress, inputParams, nil)
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.MsgJson("One time password sent.")))
 		return common.MsgJson("One time password sent.")
 	} else {

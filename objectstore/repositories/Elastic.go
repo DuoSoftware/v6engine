@@ -1,13 +1,13 @@
 package repositories
 
 import (
-	//"duov6.com/objectstore/connmanager"
+	"duov6.com/common"
+	"duov6.com/objectstore/cache"
+	"duov6.com/objectstore/keygenerator"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/queryparser"
-	"encoding/json"
-	//"fmt"
-	"duov6.com/common"
 	"duov6.com/term"
+	"encoding/json"
 	"github.com/mattbaird/elastigo/lib"
 	"io/ioutil"
 	"net/http"
@@ -381,10 +381,10 @@ func (repository ElasticRepository) DeleteSingle(request *messaging.ObjectReques
 func (repository ElasticRepository) Special(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
 	request.Log("Starting SPECIAL!")
-	queryType := request.Body.Special.Type
+	queryType := strings.ToLower(request.Body.Special.Type)
 
 	switch queryType {
-	case "getFields":
+	case "getfields":
 		request.Log("Starting GET-FIELDS sub routine!")
 		fieldsInByte := repository.executeGetFields(request)
 		if fieldsInByte != nil {
@@ -397,7 +397,7 @@ func (repository ElasticRepository) Special(request *messaging.ObjectRequest) Re
 			errorMessage := response.Message
 			response.GetErrorResponse(errorMessage)
 		}
-	case "getClasses":
+	case "getclasses":
 		request.Log("Starting GET-CLASSES sub routine")
 		fieldsInByte := repository.executeGetClasses(request)
 		if fieldsInByte != nil {
@@ -410,7 +410,7 @@ func (repository ElasticRepository) Special(request *messaging.ObjectRequest) Re
 			errorMessage := response.Message
 			response.GetErrorResponse(errorMessage)
 		}
-	case "getNamespaces":
+	case "getnamespaces":
 		request.Log("Starting GET-NAMESPACES sub routine")
 		fieldsInByte := repository.executeGetNamespaces(request)
 		if fieldsInByte != nil {
@@ -423,7 +423,7 @@ func (repository ElasticRepository) Special(request *messaging.ObjectRequest) Re
 			errorMessage := response.Message
 			response.GetErrorResponse(errorMessage)
 		}
-	case "getSelected":
+	case "getselected":
 		request.Log("Starting GET-SELECTED_FIELDS sub routine")
 		fieldsInByte := repository.executeGetSelectedFields(request)
 		if fieldsInByte != nil {
@@ -436,7 +436,7 @@ func (repository ElasticRepository) Special(request *messaging.ObjectRequest) Re
 			errorMessage := response.Message
 			response.GetErrorResponse(errorMessage)
 		}
-	case "DropClass":
+	case "dropclass":
 		request.Log("Starting Drop-Class sub routine")
 		err := repository.executeDropClass(request)
 		if err != nil {
@@ -446,7 +446,7 @@ func (repository ElasticRepository) Special(request *messaging.ObjectRequest) Re
 			response.IsSuccess = true
 			response.Message = "Aborted! Successful deleting Class!"
 		}
-	case "DropNamespace":
+	case "dropnamespace":
 		request.Log("Starting Drop-Namespace sub routine")
 		err := repository.executeDropNamespace(request)
 		if err != nil {
@@ -455,6 +455,104 @@ func (repository ElasticRepository) Special(request *messaging.ObjectRequest) Re
 		} else {
 			response.IsSuccess = true
 			response.Message = "Successfully deleted Namespace!"
+		}
+	case "flushcache":
+		if CheckRedisAvailability(request) {
+			cache.FlushCache(request)
+		}
+		response.IsSuccess = true
+		response.Message = "Cache Cleared successfully!"
+	case "idservice":
+		var IsPattern bool
+		var idServiceCommand string
+
+		if request.Body.Special.Extras["Pattern"] != nil {
+			IsPattern = request.Body.Special.Extras["Pattern"].(bool)
+		}
+
+		if request.Body.Special.Extras["Command"] != nil {
+			idServiceCommand = strings.ToLower(request.Body.Special.Extras["Command"].(string))
+		}
+
+		switch idServiceCommand {
+		case "getid":
+			if IsPattern {
+				//pattern code goes here
+				prefix, valueInString := keygenerator.GetPatternAttributes(request)
+				var value int
+				value, _ = strconv.Atoi(valueInString)
+
+				if CheckRedisAvailability(request) {
+					id := keygenerator.GetIncrementID(request, "ELASTIC", value)
+
+					for x := 0; x < len(request.Controls.Class); x++ {
+						if (len(prefix) + len(id)) < len(request.Controls.Class) {
+							prefix += "0"
+						} else {
+							break
+						}
+					}
+
+					id = prefix + id
+					response.Body = []byte(id)
+					response.IsSuccess = true
+					response.Message = "Successfully Completed!"
+				} else {
+					response.IsSuccess = false
+					response.Message = "REDIS not Available!"
+				}
+
+			} else {
+				//Get ID and Return
+				if CheckRedisAvailability(request) {
+					id := keygenerator.GetIncrementID(request, "ELASTIC", 0)
+					response.Body = []byte(id)
+					response.IsSuccess = true
+					response.Message = "Successfully Completed!"
+				} else {
+					response.IsSuccess = false
+					response.Message = "REDIS not Available!"
+				}
+			}
+		case "readid":
+			if IsPattern {
+				//pattern code goes here
+				prefix, valueInString := keygenerator.GetPatternAttributes(request)
+				var value int
+				value, _ = strconv.Atoi(valueInString)
+
+				if CheckRedisAvailability(request) {
+					id := keygenerator.GetTentativeID(request, "ELASTIC", value)
+
+					for x := 0; x < len(request.Controls.Class); x++ {
+						if (len(prefix) + len(id)) < len(request.Controls.Class) {
+							prefix += "0"
+						} else {
+							break
+						}
+					}
+
+					id = prefix + id
+					response.Body = []byte(id)
+					response.IsSuccess = true
+					response.Message = "Successfully Completed!"
+				} else {
+					response.IsSuccess = false
+					response.Message = "REDIS not Available!"
+				}
+
+			} else {
+				//Get ID and Return
+				if CheckRedisAvailability(request) {
+					id := keygenerator.GetTentativeID(request, "ELASTIC", 0)
+					response.Body = []byte(id)
+					response.IsSuccess = true
+					response.Message = "Successfully Completed!"
+				} else {
+					response.IsSuccess = false
+					response.Message = "REDIS not Available!"
+				}
+			}
 		}
 	default:
 		return repository.search(request, request.Body.Special.Parameters)
@@ -733,7 +831,6 @@ func (repository ElasticRepository) getConnection(request *messaging.ObjectReque
 }
 
 func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
-	conn := repository.getConnection(request)
 	isAutoIncrementing := false
 	isRandomKeyID := false
 
@@ -746,49 +843,11 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 	if isRandomKeyID {
 		returnID = common.GetGUID()
 	} else if isAutoIncrementing {
-		key := request.Controls.Class
-		data, err := conn.Get(request.Controls.Namespace, "domainClassAttributes", key, nil)
-		maxCount := ""
-
-		if err != nil {
-			request.Log("No record Found. This is a NEW record. Inserting new attribute value")
-			var newRecord map[string]interface{}
-			newRecord = make(map[string]interface{})
-			newRecord["class"] = request.Controls.Class
-			newRecord["maxCount"] = "1"
-			newRecord["version"] = common.GetGUID()
-			_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", key, nil, newRecord)
-
-			if err != nil {
-				return common.GetGUID()
-			} else {
-				return "1"
-			}
-
+		if CheckRedisAvailability(request) {
+			returnID = keygenerator.GetIncrementID(request, "ELASTIC", 0)
 		} else {
-			var currentMap map[string]interface{}
-			currentMap = make(map[string]interface{})
-			byteData, err := data.Source.MarshalJSON()
-			if err != nil {
-				return common.GetGUID()
-			}
-			json.Unmarshal(byteData, &currentMap)
-			maxCount = currentMap["maxCount"].(string)
-			tempCount, err := strconv.Atoi(maxCount)
-			maxCount = strconv.Itoa(tempCount + 1)
-
-			//Update Table
-			var newRecord map[string]interface{}
-			newRecord = make(map[string]interface{})
-			newRecord["class"] = request.Controls.Class
-			newRecord["maxCount"] = maxCount
-			newRecord["version"] = common.GetGUID()
-			_, err = conn.Index(request.Controls.Namespace, "domainClassAttributes", request.Controls.Class, nil, newRecord)
-			if err != nil {
-				return common.GetGUID()
-			} else {
-				return maxCount
-			}
+			request.Log("WARNING! : Returning GUID since REDIS not available and not concurrent safe!")
+			returnID = common.GetGUID()
 		}
 	} else {
 		return obj[request.Body.Parameters.KeyProperty].(string)

@@ -377,6 +377,19 @@ func DeleteKey(request *messaging.ObjectRequest, key string, database int) (stat
 	return
 }
 
+func DeletePattern(request *messaging.ObjectRequest, pattern string, database int) (status bool) {
+	keys := GetKeyListPattern(request, pattern, database)
+	client, err := GetConnection(request, database)
+	if err != nil {
+		return
+	}
+	for _, key := range keys {
+		_, _ = client.Expire(key, 0)
+	}
+	status = true
+	return
+}
+
 func RPush(request *messaging.ObjectRequest, list string, value string, database int) (err error) {
 	client, err := GetConnection(request, database)
 	if err != nil {
@@ -420,4 +433,16 @@ func LPop(request *messaging.ObjectRequest, key string, database int) (result []
 	}
 	result, err = client.LPop(key)
 	return
+}
+
+func Flush(request *messaging.ObjectRequest) {
+
+	for x := 0; x < 5; x++ {
+		client, err := GetConnection(request, x)
+		if err != nil {
+			return
+		}
+		_ = client.FlushDB()
+	}
+
 }

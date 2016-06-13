@@ -10,7 +10,7 @@ import (
 const (
 	Data        = 0
 	MetaData    = 1
-	IncrementID = 2
+	IncrementID = 5
 	Transaction = 3
 )
 
@@ -99,6 +99,13 @@ func GetKeyListPattern(request *messaging.ObjectRequest, pattern string, databas
 func DeleteKey(request *messaging.ObjectRequest, key string, database int) (status bool) {
 	if CheckCacheAvailability(request) {
 		status = repositories.DeleteKey(request, key, database)
+	}
+	return
+}
+
+func DeletePattern(request *messaging.ObjectRequest, pattern string, database int) (status bool) {
+	if CheckCacheAvailability(request) {
+		status = repositories.DeletePattern(request, pattern, database)
 	}
 	return
 }
@@ -210,4 +217,8 @@ func GetListLength(request *messaging.ObjectRequest, key string, database int) (
 		length = repositories.GetListLength(request, key, database)
 	}
 	return
+}
+
+func FlushCache(request *messaging.ObjectRequest) {
+	repositories.Flush(request)
 }

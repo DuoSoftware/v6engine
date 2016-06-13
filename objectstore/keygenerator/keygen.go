@@ -8,7 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/xuyu/goredis"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -29,7 +31,7 @@ func UpdateCountsToDB() {
 	}
 }
 
-func GetIncrementID(request *messaging.ObjectRequest, repository string) (key string) {
+func GetIncrementID(request *messaging.ObjectRequest, repository string, amount int) (key string) {
 	client, err := GetConnection(request)
 	if err != nil {
 		RedisConnection = nil
@@ -37,13 +39,26 @@ func GetIncrementID(request *messaging.ObjectRequest, repository string) (key st
 		key = common.GetGUID()
 		fmt.Println(err.Error() + " Returning an Unique GUID : " + key)
 	} else {
-		key = ExecuteKeyGenProcess(client, request, repository)
+		key = ExecuteKeyGenProcess(client, request, repository, amount)
 	}
 
 	return
 }
 
-func ExecuteKeyGenProcess(client *goredis.Redis, request *messaging.ObjectRequest, repository string) (key string) {
+func GetTentativeID(request *messaging.ObjectRequest, repository string, amount int) (key string) {
+	client, err := GetConnection(request)
+	if err != nil {
+		RedisConnection = nil
+		RedisConnectionTCP = nil
+		key = common.GetGUID()
+		fmt.Println(err.Error() + " Returning an Unique GUID : " + key)
+	} else {
+		key = ExecuteKeyGenProcessForReading(client, request, repository, amount)
+	}
+	return
+}
+
+func ExecuteKeyGenProcess(client *goredis.Redis, request *messaging.ObjectRequest, repository string, amount int) (key string) {
 	if status := CheckForKeyGen(request, client); status {
 		//Key Available in Database
 		// if isLock := CheckKeyGenLock(request, client); isLock {
@@ -62,7 +77,7 @@ func ExecuteKeyGenProcess(client *goredis.Redis, request *messaging.ObjectReques
 	} else {
 		if IsLockKey := CheckKeyGenLock(request, client); !IsLockKey {
 			LockKeyGen(request, client)
-			max := VerifyMaxFromDB(request, repository, 0)
+			max := VerifyMaxFromDB(request, repository, amount)
 			SetKeyGenKey(request, client, max)
 			UnlockKeyGen(request, client)
 			//SetKeyGenTime(request, client)
@@ -73,6 +88,45 @@ func ExecuteKeyGenProcess(client *goredis.Redis, request *messaging.ObjectReques
 				if isLock := CheckKeyGenLock(request, client); !isLock {
 					// Lock is Over
 					key = GetKeyGenKey(request, client)
+					//SetKeyGenTime(request, client)
+					return
+				}
+			}
+		}
+	}
+	return
+}
+
+func ExecuteKeyGenProcessForReading(client *goredis.Redis, request *messaging.ObjectRequest, repository string, amount int) (key string) {
+	if status := CheckForKeyGen(request, client); status {
+		//Key Available in Database
+		// if isLock := CheckKeyGenLock(request, client); isLock {
+		// 	for true {
+		// 		if isLock = CheckKeyGenLock(request, client); !isLock {
+		// 			// Lock is Over
+		// 			key = GetKeyGenKey(request, client)
+		// 			SetKeyGenTime(request, client)
+		// 			return
+		// 		}
+		// 	}
+		// } else {
+		key = ReadKeyGenKey(request, client)
+		//SetKeyGenTime(request, client)
+		//	}
+	} else {
+		if IsLockKey := CheckKeyGenLock(request, client); !IsLockKey {
+			LockKeyGen(request, client)
+			max := VerifyMaxFromDB(request, repository, amount)
+			SetKeyGenKey(request, client, max)
+			UnlockKeyGen(request, client)
+			//SetKeyGenTime(request, client)
+			key = max
+		} else {
+			for true {
+				time.Sleep(1)
+				if isLock := CheckKeyGenLock(request, client); !isLock {
+					// Lock is Over
+					key = ReadKeyGenKey(request, client)
 					//SetKeyGenTime(request, client)
 					return
 				}
@@ -97,10 +151,12 @@ func VerifyMaxFromDB(request *messaging.ObjectRequest, repository string, count 
 	fmt.Println("Syncing " + request.Controls.Namespace + ".DomainClassAttributes - " + repository)
 	switch repository {
 	case "CLOUDSQL":
-		var sqlDriver drivers.CloudSql
-		max = sqlDriver.VerifyMaxValueDB(request, count)
+		var driver drivers.CloudSql
+		max = driver.VerifyMaxValueDB(request, count)
 		break
 	case "ELASTIC":
+		var driver drivers.ElasticSearch
+		max = driver.VerifyMaxValueDB(request, count)
 		break
 	default:
 		fmt.Println("Error! No such Repository : " + repository + " exists!")
@@ -346,14 +402,30 @@ func CreateNewKeyGenBundle(request *messaging.ObjectRequest) {
 	}
 }
 
-func FlushCache(request *messaging.ObjectRequest) {
-	client, err := GetConnection(request)
-	if err != nil {
-		RedisConnection = nil
-		RedisConnectionTCP = nil
-		fmt.Println(err.Error())
-		return
+//support functions
+
+func GetPatternAttributes(request *messaging.ObjectRequest) (prefix, value string) {
+	classname := request.Controls.Class
+	classLowered := strings.ToLower(classname)
+
+	isIndexFound := false
+	index := 0
+
+	for x := 0; x < len(classname); x++ {
+		_, err := strconv.Atoi(string(classname[x]))
+
+		if err == nil {
+			if !isIndexFound {
+				match, _ := regexp.MatchString("([a-z]+)", classLowered[x:])
+				if !match {
+					index = x
+					isIndexFound = true
+				}
+			}
+		}
 	}
 
-	_ = client.FlushAll()
+	prefix = classname[:index]
+	value = classname[index:]
+	return
 }
