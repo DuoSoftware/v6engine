@@ -885,9 +885,9 @@ func (repository CloudSqlRepository) Test(request *messaging.ObjectRequest) {
 func (repository CloudSqlRepository) queryCommon(query string, request *messaging.ObjectRequest, isOne bool) RepositoryResponse {
 	response := RepositoryResponse{}
 
-	fmt.Println("*****************************************************")
-	fmt.Println(query)
-	fmt.Println("*****************************************************")
+	// fmt.Println("*****************************************************")
+	// fmt.Println(query)
+	// fmt.Println("*****************************************************")
 
 	conn, err := repository.getConnection(request)
 	if err == nil {
