@@ -4,6 +4,7 @@ import (
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
 	"duov6.com/session"
+	"duov6.com/term"
 	"encoding/json"
 	//"fmt"
 )
@@ -228,6 +229,8 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 
 	o, _ := tmp.GetRequestCode(RequestToken)
 	th := TenantHandler{}
+	term.Write(o, term.Debug)
+	term.Write(o["process"], term.Debug)
 	switch o["process"] {
 	case "tenant_invitation":
 		auth := AuthHandler{}
