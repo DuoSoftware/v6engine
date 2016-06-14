@@ -37,6 +37,7 @@ func (r *tempRequestGenerator) GetRequestCode(requestCode string) (map[string]st
 			err := json.Unmarshal(bytes, &data)
 			if err == nil {
 				for key, value := range data {
+					term.Write("GetRequestCode "+requestCode+"  "+key, term.Debug)
 					if str, ok := value.(string); ok {
 						/* act on str */
 						o[key] = str
