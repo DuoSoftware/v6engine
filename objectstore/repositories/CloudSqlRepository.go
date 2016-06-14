@@ -178,90 +178,117 @@ func (repository CloudSqlRepository) getFullTextSearchQuery(request *messaging.O
 
 	domain := repository.getDatabaseName(request.Controls.Namespace)
 
-	fieldsAndTypes := make(map[string]string)
+	indexedFields := repository.getFullTextIndexes(request)
 
-	tableCacheRedisPattern := "CloudSqlTableCache." + domain + "." + request.Controls.Class
+	if len(indexedFields) > 0 {
+		//Indexed Queries
+		queryParam := request.Body.Query.Parameters
+		queryParam = strings.TrimPrefix(queryParam, "*")
+		queryParam = strings.TrimSuffix(queryParam, "*")
 
-	IsRedis := false
-	if CheckRedisAvailability(request) {
-		IsRedis = true
-	}
+		query = "SELECT * FROM " + domain + "." + request.Controls.Class + " WHERE MATCH ("
 
-	if IsRedis && cache.ExistsKeyValue(request, tableCacheRedisPattern, cache.MetaData) {
-
-		byteVal := cache.GetKeyValue(request, tableCacheRedisPattern, cache.MetaData)
-		err := json.Unmarshal(byteVal, &fieldsAndTypes)
-		if err != nil {
-			request.Log(err.Error())
-			return
-		}
-
-		for name, typee := range fieldsAndTypes {
-			if strings.EqualFold(typee, "TEXT") {
-				fieldNames = append(fieldNames, name)
+		argumentCount := 0
+		fullTextArguments := ""
+		for _, field := range indexedFields {
+			if argumentCount < 16 {
+				fullTextArguments += field + ","
+			} else {
+				break
 			}
+			argumentCount += 1
 		}
-	} else if tableCache[domain+"."+request.Controls.Class] != nil {
-		//Available in Table Cache
-		for name, fieldType := range tableCache[domain+"."+request.Controls.Class] {
-			if name != "__osHeaders" && strings.EqualFold(fieldType, "TEXT") {
-				fieldNames = append(fieldNames, name)
-			}
-		}
+		fullTextArguments = strings.TrimSuffix(fullTextArguments, ",")
+		query += fullTextArguments + ") AGAINST ('" + queryParam
+		query += "*' IN BOOLEAN MODE);"
 	} else {
-		//Get From Db
-		query := "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + domain + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
-		repoResponse := repository.queryCommonMany(query, request)
-		var mapArray []map[string]interface{}
-		err := json.Unmarshal(repoResponse.Body, &mapArray)
-		if err != nil {
-			request.Log(err.Error())
+
+		fieldsAndTypes := make(map[string]string)
+
+		tableCacheRedisPattern := "CloudSqlTableCache." + domain + "." + request.Controls.Class
+
+		IsRedis := false
+		if CheckRedisAvailability(request) {
+			IsRedis = true
+		}
+
+		if IsRedis && cache.ExistsKeyValue(request, tableCacheRedisPattern, cache.MetaData) {
+
+			byteVal := cache.GetKeyValue(request, tableCacheRedisPattern, cache.MetaData)
+			err := json.Unmarshal(byteVal, &fieldsAndTypes)
+			if err != nil {
+				request.Log(err.Error())
+				return
+			}
+
+			for name, typee := range fieldsAndTypes {
+				if strings.EqualFold(typee, "TEXT") {
+					fieldNames = append(fieldNames, name)
+				}
+			}
+		} else if tableCache[domain+"."+request.Controls.Class] != nil {
+			//Available in Table Cache
+			for name, fieldType := range tableCache[domain+"."+request.Controls.Class] {
+				if name != "__osHeaders" && strings.EqualFold(fieldType, "TEXT") {
+					fieldNames = append(fieldNames, name)
+				}
+			}
 		} else {
-			for _, value := range mapArray {
-				if value["COLUMN_NAME"].(string) != "__osHeaders" && strings.EqualFold(value["DATA_TYPE"].(string), "TEXT") {
-					fieldNames = append(fieldNames, value["COLUMN_NAME"].(string))
+			//Get From Db
+			query := "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + domain + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
+			repoResponse := repository.queryCommonMany(query, request)
+			var mapArray []map[string]interface{}
+			err := json.Unmarshal(repoResponse.Body, &mapArray)
+			if err != nil {
+				request.Log(err.Error())
+			} else {
+				for _, value := range mapArray {
+					if value["COLUMN_NAME"].(string) != "__osHeaders" && strings.EqualFold(value["DATA_TYPE"].(string), "TEXT") {
+						fieldNames = append(fieldNames, value["COLUMN_NAME"].(string))
+					}
 				}
 			}
 		}
+
+		//Non Indexed Queries
+		query = "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE Concat("
+
+		//Make Argument Array
+		fullTextArguments := ""
+		for _, field := range fieldNames {
+			fullTextArguments += "IFNULL(" + field + ",''), '',"
+		}
+
+		fullTextArguments = fullTextArguments[:(len(fullTextArguments) - 5)]
+
+		queryParam := request.Body.Query.Parameters
+		queryParam = strings.TrimPrefix(queryParam, "*")
+		queryParam = strings.TrimSuffix(queryParam, "*")
+		query += fullTextArguments + ") LIKE '%" + queryParam + "%' "
+	}
+	return
+}
+
+func (repository CloudSqlRepository) getFullTextIndexes(request *messaging.ObjectRequest) (fieldnames []string) {
+
+	conn, err := repository.getConnection(request)
+	if err != nil {
+		request.Log(err.Error())
+		return
 	}
 
-	//Non Indexed Queries
-	query = "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE Concat("
+	domain := repository.getDatabaseName(request.Controls.Class)
+	getIndexesQuery := "show index from " + domain + "." + request.Controls.Class + " where Index_type = 'FULLTEXT'"
 
-	//Make Argument Array
-	fullTextArguments := ""
-	for _, field := range fieldNames {
-		fullTextArguments += "IFNULL(" + field + ",''), '',"
+	indexResult, err := repository.executeQueryMany(request, conn, getIndexesQuery, "")
+	if err != nil {
+		request.Log(err.Error())
+	} else {
+		for _, obj := range indexResult {
+			keyName := obj["Column_name"].(string)
+			fieldnames = append(fieldnames, keyName)
+		}
 	}
-
-	fullTextArguments = fullTextArguments[:(len(fullTextArguments) - 5)]
-
-	queryParam := request.Body.Query.Parameters
-	queryParam = strings.TrimPrefix(queryParam, "*")
-	queryParam = strings.TrimSuffix(queryParam, "*")
-	query += fullTextArguments + ") LIKE '%" + queryParam + "%' "
-
-	//Indexed Queries
-	// queryParam := request.Body.Query.Parameters
-	// queryParam = strings.TrimPrefix(queryParam, "*")
-	// queryParam = strings.TrimSuffix(queryParam, "*")
-
-	// query = "SELECT * FROM " + domain + "." + request.Controls.Class + " WHERE MATCH ("
-
-	// argumentCount := 0
-	// fullTextArguments := ""
-	// for _, field := range fieldNames {
-	// 	if argumentCount < 16 {
-	// 		fullTextArguments += field + ","
-	// 	} else {
-	// 		break
-	// 	}
-	// 	argumentCount += 1
-	// }
-	// fullTextArguments = strings.TrimSuffix(fullTextArguments, ",")
-	// query += fullTextArguments + ") AGAINST ('" + queryParam
-	// query += "*' IN BOOLEAN MODE);"
-
 	return
 }
 
@@ -783,9 +810,65 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 				}
 			}
 		default:
+			response.IsSuccess = false
+			response.Message = "No Such Command is facilitated!"
+		}
+	case "fulltextsearch":
+		var FTH_command string
+
+		if request.Body.Special.Extras["Command"] != nil {
+			FTH_command = strings.ToLower(request.Body.Special.Extras["Command"].(string))
+		}
+
+		conn, err := repository.getConnection(request)
+		if err != nil {
+			response.IsSuccess = false
+			response.Message = err.Error()
+			return response
+		}
+
+		switch FTH_command {
+		case "reset":
+			getIndexesQuery := "show index from " + domain + "." + request.Controls.Class + " where Index_type = 'FULLTEXT'"
+
+			indexResult, err := repository.executeQueryMany(request, conn, getIndexesQuery, "")
+			if err != nil {
+				request.Log(err.Error())
+			} else {
+				executedList := ""
+				for _, obj := range indexResult {
+					keyName := obj["Key_name"].(string)
+					if !strings.Contains(executedList, keyName) {
+						alterQuery := "ALTER TABLE " + domain + "." + request.Controls.Class + " DROP INDEX " + keyName
+						_ = repository.executeNonQuery(conn, alterQuery, request)
+						executedList += " " + keyName
+					}
+				}
+			}
+			response.IsSuccess = true
+			response.Message = "Successfully dropped Full Text Indexes!"
+		case "index":
+			fieldNames := strings.Split(strings.TrimSpace(request.Body.Special.Parameters), " ")
+			alterQuery := "ALTER TABLE " + domain + "." + request.Controls.Class + " ADD FULLTEXT(" + fieldNames[0]
+			for x := 1; x < len(fieldNames); x++ {
+				alterQuery += ", " + fieldNames[x]
+			}
+			alterQuery += ");"
+			err = repository.executeNonQuery(conn, alterQuery, request)
+			if err != nil {
+				response.IsSuccess = false
+				response.Message = err.Error()
+			} else {
+				response.IsSuccess = true
+				response.Message = "Successfully added Full Text Indexes!"
+			}
+		default:
+			response.IsSuccess = false
+			response.Message = "No Such Command is facilitated!"
 		}
 	default:
-		return repository.GetAll(request)
+		response.IsSuccess = false
+		response.Message = "No such Special Type is Implemented!"
 
 	}
 
