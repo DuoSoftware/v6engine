@@ -515,22 +515,40 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 	switch queryType {
 	case "getfields":
 		request.Log("Starting GET-FIELDS sub routine!")
-		query := "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + domain + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
+		//query := "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + domain + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
+		query := "EXPLAIN " + domain + "." + request.Controls.Class + ";"
+		var resultSet []map[string]interface{}
 		repoResponse := repository.queryCommonMany(query, request)
-		var mapArray []map[string]interface{}
-		err := json.Unmarshal(repoResponse.Body, &mapArray)
+		err := json.Unmarshal(repoResponse.Body, &resultSet)
 		if err != nil {
-			request.Log(err.Error())
-			repoResponse.Body = nil
-			return repoResponse
+			response.IsSuccess = false
+			response.Message = err.Error()
 		} else {
-			valueArray := make([]string, len(mapArray))
-			for index, value := range mapArray {
-				valueArray[index] = value["COLUMN_NAME"].(string)
+			for x := 0; x < len(resultSet); x++ {
+				delete(resultSet[x], "Default")
+				delete(resultSet[x], "Extra")
+				delete(resultSet[x], "Key")
+				delete(resultSet[x], "Null")
 			}
-			repoResponse.Body, _ = json.Marshal(valueArray)
-			return repoResponse
+			response.IsSuccess = true
+			byteArray, _ := json.Marshal(resultSet)
+			response.Body = byteArray
 		}
+		return response
+		// var mapArray []map[string]interface{}
+		// err := json.Unmarshal(repoResponse.Body, &mapArray)
+		// if err != nil {
+		// 	request.Log(err.Error())
+		// 	repoResponse.Body = nil
+		// 	return repoResponse
+		// } else {
+		// 	valueArray := make([]string, len(mapArray))
+		// 	for index, value := range mapArray {
+		// 		valueArray[index] = value["COLUMN_NAME"].(string)
+		// 	}
+		// 	repoResponse.Body, _ = json.Marshal(valueArray)
+		// 	return repoResponse
+		// }
 	case "getclasses":
 		request.Log("Starting GET-CLASSES sub routine")
 		query := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + domain + "';"
@@ -552,7 +570,21 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 	case "getnamespaces":
 		request.Log("Starting GET-NAMESPACES sub routine")
 		query := "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME != 'information_schema' AND SCHEMA_NAME !='mysql' AND SCHEMA_NAME !='performance_schema';"
-		return repository.queryCommonMany(query, request)
+		result := repository.queryCommonMany(query, request)
+		var resultSet []map[string]interface{}
+		if err := json.Unmarshal(result.Body, &resultSet); err != nil {
+			response.IsSuccess = false
+			response.Message = err.Error()
+		} else {
+			response.IsSuccess = true
+			var resultArray []string
+			for _, singleDB := range resultSet {
+				resultArray = append(resultArray, singleDB["SCHEMA_NAME"].(string))
+			}
+			byteArray, _ := json.Marshal(resultArray)
+			response.Body = byteArray
+		}
+		return response
 	case "getselected":
 		fieldNames := strings.Split(strings.TrimSpace(request.Body.Special.Parameters), " ")
 		query := "select " + fieldNames[0]
