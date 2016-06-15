@@ -36,8 +36,10 @@ func statusHandlder(params martini.Params, w http.ResponseWriter, r *http.Reques
 }
 
 func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	fmt.Println("-------------------------------------------------------")
 	fmt.Println("Post Request!")
 	fmt.Println(time.Now())
+	fmt.Println(r.Header)
 	fmt.Println("-------------------------------------------------------")
 
 	var requestBody map[string]interface{}

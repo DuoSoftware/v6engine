@@ -45,17 +45,22 @@ func SendRequest(JSON []byte, url string, token string) (err error, response str
 	fmt.Println(string(JSON))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(JSON))
 	req.Header.Set("securityToken", token)
+	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	var body []byte
+
+	if err == nil {
+		body, _ = ioutil.ReadAll(resp.Body)
+	}
 
 	if resp.StatusCode != 200 {
 		err = errors.New(string(body))
 		return
 	}
+
 	fmt.Println(resp.Status)
-	fmt.Println(body)
 	response = string(body)
 	defer resp.Body.Close()
 	return
@@ -74,7 +79,8 @@ func main() {
 	inputData["status"] = "1"
 	inputData["createdUser"] = "1"
 	inputData["createdDate"] = "1"
-	inputData["URL"] = "http://cloudcharge.com/services/duosoftware.payment.service/payment/makePayment"
+	//inputData["URL"] = "http://cloudcharge.com/services/duosoftware.payment.service/payment/makePayment"
+	inputData["URL"] = "http://localhost:8080/scheduler/huehuehue"
 	inputData["securityToken"] = "78d2a5c15ea3254f273e437f49f2f3c9"
 
 	Invoke(inputData)
