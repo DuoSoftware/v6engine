@@ -64,9 +64,29 @@ func getSearchResultKey(request *messaging.ObjectRequest) string {
 }
 
 func getQueryResultKey(request *messaging.ObjectRequest) string {
-	query := strings.Replace(request.Body.Query.Parameters, " ", "", -1)
+	query := request.Body.Query.Parameters
 	namespace := request.Controls.Namespace
 	class := request.Controls.Class
+
+	skip := "0"
+	take := "1000000"
+
+	if request.Extras["skip"].(string) != "" {
+		skip = request.Extras["skip"].(string)
+	}
+
+	if request.Extras["take"].(string) != "" {
+		take = request.Extras["take"].(string)
+	}
+
+	queryPart := " limit " + take
+	queryPart += " offset " + skip + " "
+
+	query = strings.Replace(query, ";", "", -1)
+	query += queryPart + ";"
+
+	query = strings.Replace(query, " ", "", -1)
+
 	url := namespace + ":" + class + ":Query:" + query
 	return url
 }

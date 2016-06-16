@@ -89,6 +89,7 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 		}
 
 		query := formattedQuery
+		fmt.Println("Formatted Query : " + query)
 		response = repository.queryCommonMany(query, request)
 	} else {
 		response = repository.GetAll(request)
@@ -885,9 +886,7 @@ func (repository CloudSqlRepository) Test(request *messaging.ObjectRequest) {
 func (repository CloudSqlRepository) queryCommon(query string, request *messaging.ObjectRequest, isOne bool) RepositoryResponse {
 	response := RepositoryResponse{}
 
-	// fmt.Println("*****************************************************")
-	// fmt.Println(query)
-	// fmt.Println("*****************************************************")
+	fmt.Println("Query Common Query : " + query)
 
 	conn, err := repository.getConnection(request)
 	if err == nil {

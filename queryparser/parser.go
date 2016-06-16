@@ -83,8 +83,6 @@ func getQuery(queryString string, repository string, namespace string, class str
 			return queryResult, err
 		}
 
-		fmt.Println("Prepared Query : " + preparedQuery)
-
 		//Create Query map from the normalized query
 		queryStruct := analyzer.GetQueryMaps(preparedQuery)
 		// fmt.Println("------------------")
