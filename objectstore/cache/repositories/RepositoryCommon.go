@@ -71,12 +71,16 @@ func getQueryResultKey(request *messaging.ObjectRequest) string {
 	skip := "0"
 	take := "1000000"
 
-	if request.Extras["skip"].(string) != "" {
-		skip = request.Extras["skip"].(string)
+	if request.Extras["skip"] != nil {
+		if request.Extras["skip"].(string) != "" {
+			skip = request.Extras["skip"].(string)
+		}
 	}
 
-	if request.Extras["take"].(string) != "" {
-		take = request.Extras["take"].(string)
+	if request.Extras["take"] != nil {
+		if request.Extras["take"].(string) != "" {
+			take = request.Extras["take"].(string)
+		}
 	}
 
 	queryPart := " limit " + take

@@ -17,12 +17,16 @@ func (repository CloudSQL) GetQuery(request structs.RepoRequest) structs.RepoRes
 	skip := "0"
 	take := "1000000"
 
-	if request.Parameters["skip"].(string) != "" {
-		skip = request.Parameters["skip"].(string)
+	if request.Parameters["skip"] != nil {
+		if request.Parameters["skip"].(string) != "" {
+			skip = request.Parameters["skip"].(string)
+		}
 	}
 
-	if request.Parameters["take"].(string) != "" {
-		take = request.Parameters["take"].(string)
+	if request.Parameters["take"] != nil {
+		if request.Parameters["take"].(string) != "" {
+			take = request.Parameters["take"].(string)
+		}
 	}
 
 	queryPart := " limit " + take
