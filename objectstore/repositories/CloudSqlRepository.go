@@ -1065,9 +1065,13 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 }
 
 func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
-	var updateArray []map[string]interface{}
-	var insertArray []map[string]interface{}
-	var updateScripts []string
+	// var updateArray []map[string]interface{}
+	// var insertArray []map[string]interface{}
+	// var updateScripts []string
+
+	updateArray := make([]map[string]interface{}, 0)
+	insertArray := make([]map[string]interface{}, 0)
+	updateScripts := make([]string, 0)
 
 	IntendedOperation := request.Controls.Operation
 	IsSQlMode := false
@@ -1271,7 +1275,8 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 			var tableResult map[string]interface{}
 			tableResult, err = repository.executeQueryOne(request, conn, "SHOW TABLES FROM "+dbName+" LIKE \""+class+"\"", nil)
 			if err == nil {
-				if tableResult["Tables_in_"+dbName] == nil {
+				//if tableResult["Tables_in_"+dbName] == nil {
+				if len(tableResult) == 0 {
 					script := repository.getCreateScript(namespace, class, obj)
 					err = repository.executeNonQuery(conn, script, request)
 					if err != nil {
@@ -1370,22 +1375,6 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 			if err != nil {
 				request.Log(err.Error())
 			}
-			//update Fulltext fields
-			// fullTextQuery := "ALTER TABLE " + dbName + "." + class + " ADD FULLTEXT("
-			// tableTypes := cacheItem
-
-			// fullTextFields := ""
-
-			// for field, fieldtype := range tableTypes {
-			// 	if strings.EqualFold(fieldtype, "TEXT") {
-			// 		fullTextFields += field + ","
-			// 	}
-			// }
-
-			// fullTextFields = strings.TrimSuffix(fullTextFields, ",")
-			// fullTextQuery += fullTextFields
-			// fullTextQuery += ");"
-			// err = repository.executeNonQuery(conn, fullTextQuery)
 		}
 
 	}
