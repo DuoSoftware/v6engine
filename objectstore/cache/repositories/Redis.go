@@ -446,3 +446,12 @@ func Flush(request *messaging.ObjectRequest) {
 	}
 
 }
+
+func LRange(request *messaging.ObjectRequest, key string, database, start, end int) (result []string, err error) {
+	client, err := GetConnection(request, database)
+	if err != nil {
+		return
+	}
+	result, err = client.LRange(key, start, end)
+	return
+}

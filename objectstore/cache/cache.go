@@ -222,3 +222,10 @@ func GetListLength(request *messaging.ObjectRequest, key string, database int) (
 func FlushCache(request *messaging.ObjectRequest) {
 	repositories.Flush(request)
 }
+
+func LRange(request *messaging.ObjectRequest, key string, database, start, end int) (result []string, err error) {
+	if CheckCacheAvailability(request) {
+		result, err = repositories.LRange(request, key, database, start, end)
+	}
+	return
+}

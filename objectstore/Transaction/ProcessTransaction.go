@@ -7,6 +7,7 @@ import (
 	"duov6.com/objectstore/storageengines"
 	"encoding/json"
 	"errors"
+	//"fmt"
 )
 
 func Execute(request *messaging.ObjectRequest) (err error) {
@@ -46,7 +47,10 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 			if response.IsSuccess {
 				_ = PushToSuccessList(pickedRequest, TransactionID)
 				_ = PushToInvertList(invertedRequests, TransactionID)
+				//update log
+				UpdateLogStatus(int(x), TransactionID, "TRUE")
 			} else { //if false -> Start rollback process
+				UpdateLogStatus(int(x), TransactionID, "FALSE")
 				err = StartRollBackProcess(request)
 				if err != nil {
 					err = errors.New("Successfully Rolledback because Rollback was triggered!")
