@@ -860,6 +860,72 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			response.IsSuccess = false
 			response.Message = "No Such Command is facilitated!"
 		}
+	case "uniqueindex":
+		var UIC_command string
+
+		if request.Body.Special.Extras["Command"] != nil {
+			UIC_command = strings.ToLower(request.Body.Special.Extras["Command"].(string))
+		}
+
+		conn, err := repository.getConnection(request)
+		if err != nil {
+			response.IsSuccess = false
+			response.Message = err.Error()
+			return response
+		}
+
+		switch UIC_command {
+		case "reset":
+			getIndexesQuery := "show index from " + domain + "." + request.Controls.Class + " where Index_type = 'BTREE' AND Key_name != 'PRIMARY';"
+
+			indexResult, err := repository.executeQueryMany(request, conn, getIndexesQuery, "")
+			if err != nil {
+				request.Log(err.Error())
+			} else {
+				executedList := ""
+				for _, obj := range indexResult {
+					keyName := obj["Key_name"].(string)
+					if !strings.Contains(executedList, keyName) {
+						alterQuery := "ALTER TABLE " + domain + "." + request.Controls.Class + " DROP INDEX " + keyName
+						_ = repository.executeNonQuery(conn, alterQuery, request)
+						executedList += " " + keyName
+					}
+				}
+			}
+			response.IsSuccess = true
+			response.Message = "Successfully dropped UNIQUE Key Indexes!"
+		case "index":
+			indexNames := strings.Split(strings.TrimSpace(request.Body.Special.Parameters), " ")
+			for _, singleName := range indexNames {
+				indexID := common.GetGUID()
+				alterQuery := "CREATE UNIQUE INDEX " + indexID + " ON " + domain + "." + request.Controls.Class + " (" + singleName + ");"
+				err = repository.executeNonQuery(conn, alterQuery, request)
+				if err != nil {
+					//1170 - Non defined key length for indexable field
+					if strings.Contains(err.Error(), "BLOB/TEXT") {
+						modifyQuery := "ALTER TABLE " + domain + "." + request.Controls.Class + " MODIFY COLUMN " + singleName + " varchar(255);"
+						err = repository.executeNonQuery(conn, modifyQuery, request)
+						if err != nil {
+							request.Log(err.Error())
+						} else {
+							err = repository.executeNonQuery(conn, alterQuery, request)
+							if err != nil {
+								request.Log(err.Error())
+							}
+						}
+					} else {
+						request.Log(err.Error())
+					}
+				} else {
+					response.IsSuccess = true
+					response.Message = "Successfully added UNIQUE Indexes!"
+				}
+			}
+		default:
+			response.IsSuccess = false
+			response.Message = "No Such Command is facilitated!"
+		}
+
 	default:
 		response.IsSuccess = false
 		response.Message = "No such Special Type is Implemented!"
