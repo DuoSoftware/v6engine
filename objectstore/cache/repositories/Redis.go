@@ -157,6 +157,7 @@ func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}, 
 
 		value := getStringByObject(data)
 		err = client.Set(key, value, ttl, 0, false, false)
+		//err = client.Set(key, value, 0, 0, false, false)
 
 		if err != nil {
 			term.Write("Inserted One Record to Cache!", term.Debug)
@@ -221,6 +222,8 @@ func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{
 			key := getNoSqlKeyById(request, obj)
 			value := getStringByObject(obj)
 			err = client.Set(key, value, ttl, 0, false, false)
+			//err = client.Set(key, value, 0, 0, false, false)
+
 			if err != nil {
 				//client.ClosePool()
 				return
