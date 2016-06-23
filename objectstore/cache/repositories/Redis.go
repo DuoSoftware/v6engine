@@ -437,7 +437,7 @@ func LPop(request *messaging.ObjectRequest, key string, database int) (result []
 
 func Flush(request *messaging.ObjectRequest) {
 
-	for x := 0; x < 5; x++ {
+	for x := 0; x < 3; x++ {
 		client, err := GetConnection(request, x)
 		if err != nil {
 			return

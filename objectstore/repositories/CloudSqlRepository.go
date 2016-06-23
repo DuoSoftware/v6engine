@@ -429,37 +429,52 @@ var CloudSqlSQLModeCheck map[string]string
 func (repository CloudSqlRepository) ReRun(request *messaging.ObjectRequest, conn *sql.DB, obj map[string]interface{}) RepositoryResponse {
 	var response RepositoryResponse
 	var err error
-	key := "CloudSqlSQLModeCheck." + request.Controls.Namespace + "." + request.Controls.Class
 
 	if strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
 		if CheckRedisAvailability(request) {
-			if !cache.ExistsKeyValue(request, key, cache.MetaData) {
+			request.Body.Parameters.Mode = "NOSQL"
+			repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
+			request.Body.Parameters.Mode = "SQL"
+			response = repository.queryStore(request)
+			if !response.IsSuccess {
+				cache.FlushCache(request)
 				request.Body.Parameters.Mode = "NOSQL"
 				repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
 				request.Body.Parameters.Mode = "SQL"
 				response = repository.queryStore(request)
-				err = cache.StoreKeyValue(request, key, "true", cache.MetaData)
-			} else {
-				err = errors.New("Failed at DB!")
 			}
 		} else {
-			if CloudSqlSQLModeCheck == nil {
-				CloudSqlSQLModeCheck = make(map[string]string)
-			}
+			request.Body.Parameters.Mode = "NOSQL"
+			repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
+			request.Body.Parameters.Mode = "SQL"
+			response = repository.queryStore(request)
 
-			if CloudSqlSQLModeCheck[key] != "true" {
+			if !response.IsSuccess {
+				tableCache = make(map[string]map[string]string)
+				availableDbs = make(map[string]interface{})
+				availableTables = make(map[string]interface{})
 				request.Body.Parameters.Mode = "NOSQL"
 				repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
 				request.Body.Parameters.Mode = "SQL"
 				response = repository.queryStore(request)
-				CloudSqlSQLModeCheck[key] = "true"
-			} else {
-				err = errors.New("Failed at DB!")
 			}
 		}
 	} else {
 		repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
 		response = repository.queryStore(request)
+		if !response.IsSuccess {
+			if CheckRedisAvailability(request) {
+				cache.FlushCache(request)
+				repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
+				response = repository.queryStore(request)
+			} else {
+				tableCache = make(map[string]map[string]string)
+				availableDbs = make(map[string]interface{})
+				availableTables = make(map[string]interface{})
+				repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
+				response = repository.queryStore(request)
+			}
+		}
 		return response
 	}
 
@@ -699,6 +714,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			tableCache = make(map[string]map[string]string)
 			availableDbs = make(map[string]interface{})
 			availableTables = make(map[string]interface{})
+			CloudSqlSQLModeCheck = make(map[string]string)
 		}
 
 		response.IsSuccess = true
