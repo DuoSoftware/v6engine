@@ -1040,13 +1040,17 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 			insertScript := repository.getSingleObjectInsertQuery(request, domain, class, obj, conn)
 			err := repository.executeNonQuery(conn, insertScript, request)
 			if err != nil {
-				updateScript := repository.getSingleObjectUpdateQuery(request, domain, class, obj, conn)
-				err := repository.executeNonQuery(conn, updateScript, request)
-				if err != nil {
-					isOkay = false
-					request.Log(err.Error())
+				if !strings.Contains(err.Error(), "specified twice") {
+					updateScript := repository.getSingleObjectUpdateQuery(request, domain, class, obj, conn)
+					err := repository.executeNonQuery(conn, updateScript, request)
+					if err != nil {
+						isOkay = false
+						request.Log(err.Error())
+					} else {
+						isOkay = true
+					}
 				} else {
-					isOkay = true
+					isOkay = false
 				}
 			} else {
 				isOkay = true
