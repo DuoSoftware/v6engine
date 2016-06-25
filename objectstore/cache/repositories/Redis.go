@@ -29,12 +29,7 @@ func GetConnection(request *messaging.ObjectRequest, database int) (client *gore
 	host := request.Configuration.ServerConfiguration["REDIS"]["Host"]
 	port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
 
-	// 	if database ==  {
-	// 		database = 0
-	// }
-
 	if RedisCacheConnection[database] == nil {
-		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
 		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/" + strconv.Itoa(database) + "?timeout=60s&maxidle=60")
 		if err != nil {
 			return nil, err
@@ -48,7 +43,6 @@ func GetConnection(request *messaging.ObjectRequest, database int) (client *gore
 	} else {
 		if err = RedisCacheConnection[database].Ping(); err != nil {
 			RedisCacheConnection[database] = nil
-			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
 			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/" + strconv.Itoa(database) + "?timeout=60s&maxidle=60")
 			if err != nil {
 				return nil, err
@@ -273,8 +267,6 @@ func RemoveManyRedis(request *messaging.ObjectRequest, data []map[string]interfa
 	} else if request.Body.Parameters.KeyProperty != "" {
 		for _, obj := range data {
 			key := getNoSqlKeyById(request, obj)
-			//reply, _ := client.ExecuteCommand("DEL", key)
-			//_ = reply.OKValue()
 			_, err = client.Expire(key, 0)
 		}
 
@@ -298,8 +290,6 @@ func ResetSearchResultCache(request *messaging.ObjectRequest, database int) (err
 
 		if keySet, err := client.Keys(pattern); err == nil {
 			for _, keyValue := range keySet {
-				//reply, err := client.ExecuteCommand("DEL", keyValue)
-				//err = reply.OKValue()
 				_, err = client.Expire(keyValue, 0)
 				if err != nil {
 					//client.ClosePool()
