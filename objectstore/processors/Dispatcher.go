@@ -4,7 +4,6 @@ import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
-	"strconv"
 )
 
 type Dispatcher struct {
@@ -48,11 +47,12 @@ func (d *Dispatcher) ProcessDefaultDispatcher(request *messaging.ObjectRequest) 
 
 	var outResponse repositories.RepositoryResponse = storageEngine.Store(request)
 
-	if request.IsLogEnabled {
-		for index, element := range request.MessageStack {
-			request.Log("S-" + strconv.Itoa(index) + " : " + element)
-		}
-	}
+	//Commented here because need to fmt is when executing. Saving for future references.
+	// if request.IsLogEnabled {
+	// 	for index, element := range request.MessageStack {
+	// 		request.Log("S-" + strconv.Itoa(index) + " : " + element)
+	// 	}
+	// }
 
 	return outResponse
 }
