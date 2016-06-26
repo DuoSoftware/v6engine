@@ -1,7 +1,6 @@
 package messaging
 
 import (
-	"duov6.com/common"
 	"duov6.com/objectstore/configuration"
 	"encoding/json"
 	"fmt"
@@ -32,9 +31,9 @@ func (o *ObjectRequest) Log(value interface{}) {
 		message = string(byteArray)
 	}
 
+	o.MessageStack = append(o.MessageStack, message)
+
 	if o.IsLogEnabled {
-		o.MessageStack = append(o.MessageStack, message)
 		fmt.Println(value)
-		common.PublishLog("ObjectStoreLog.log", message)
 	}
 }

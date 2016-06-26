@@ -1,9 +1,12 @@
 package processors
 
 import (
+	"duov6.com/common"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
+	"encoding/json"
+	"strconv"
 )
 
 type Dispatcher struct {
@@ -39,7 +42,6 @@ func (d *Dispatcher) ProcessDefaultDispatcher(request *messaging.ObjectRequest) 
 
 	switch request.Configuration.StorageEngine {
 	case "REPLICATED":
-		request.Log("Starting replicated storage engine")
 		storageEngine = storageengines.ReplicatedStorageEngine{}
 	case "SINGLE":
 		storageEngine = storageengines.SingleStorageEngine{}
@@ -47,12 +49,18 @@ func (d *Dispatcher) ProcessDefaultDispatcher(request *messaging.ObjectRequest) 
 
 	var outResponse repositories.RepositoryResponse = storageEngine.Store(request)
 
-	//Commented here because need to fmt is when executing. Saving for future references.
-	// if request.IsLogEnabled {
-	// 	for index, element := range request.MessageStack {
-	// 		request.Log("S-" + strconv.Itoa(index) + " : " + element)
-	// 	}
-	// }
+	if request.IsLogEnabled || !outResponse.IsSuccess {
+		url := "/" + request.Controls.Namespace + "/" + request.Controls.Class
+		fileBody := "------------------- Default Request -------------------\r\n"
+		fileBody += "URL : " + url + "\r\n"
+		requestInBytes, _ := json.Marshal(request.Body)
+		fileBody += "Request Body : " + string(requestInBytes) + "\r\n"
+		for index, element := range request.MessageStack {
+			fileBody += "S-" + strconv.Itoa(index) + " : " + element + "\r\n"
+		}
+
+		common.PublishLog("ObjectStoreLog.log", fileBody)
+	}
 
 	return outResponse
 }
