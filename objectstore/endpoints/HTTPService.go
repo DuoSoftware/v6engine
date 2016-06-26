@@ -6,6 +6,7 @@ import (
 	"duov6.com/authlib"
 	"duov6.com/common"
 	"duov6.com/objectstore/backup"
+	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/configuration"
 	"duov6.com/objectstore/keygenerator"
 	"duov6.com/objectstore/messaging"
@@ -64,6 +65,12 @@ func (h *HTTPService) Start(isLogEnabled bool, isJsonStackEnabled bool) {
 	//DELETE
 	m.Delete("/:namespace/:class", handleRequest)
 
+	//Get All Error Post Logs
+	m.Get("/ErrorLogs", logHandler)
+
+	//Flush Cache
+	m.Get("/ClearCache", cacheHandler)
+
 	//5.1 silverlight access
 	// m.Get("/crossdomain.xml", Crossdomain)
 	// m.Get("/clientaccesspolicy.xml", Clientaccesspolicy)
@@ -79,6 +86,46 @@ func startKeyFlusher(request *messaging.ObjectRequest) {
 			go keygenerator.UpdateCountsToDB()
 		}
 	}
+}
+
+func logHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	objectRequest := messaging.ObjectRequest{}
+	paramMap := make(map[string]interface{})
+	objectRequest.Extras = paramMap
+	_, _ = getObjectRequest(r, &objectRequest, params)
+
+	message := ""
+	if params["class"] == "" {
+		if CheckRedisAvailability(&objectRequest) {
+			keyArray := cache.GetKeyListPattern(&objectRequest, "*", cache.Log)
+			keyArrayInBytes, _ := json.Marshal(keyArray)
+			message = string(keyArrayInBytes)
+		} else {
+			message = "Error! REDIS not configured in this server!"
+		}
+	} else {
+		message = string(cache.GetKeyValue(&objectRequest, params["class"], cache.Log))
+	}
+
+	fmt.Fprintf(w, message)
+}
+
+func cacheHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	params["namespace"] = "ignore"
+	params["class"] = "ignore"
+	objectRequest := messaging.ObjectRequest{}
+	paramMap := make(map[string]interface{})
+	objectRequest.Extras = paramMap
+	_, _ = getObjectRequest(r, &objectRequest, params)
+	message := ""
+
+	if CheckRedisAvailability(&objectRequest) {
+		cache.FlushCache(&objectRequest)
+		message = "REDIS cache was successfully cleared!"
+	} else {
+		message = "Error! REDIS not configured in this server!"
+	}
+	fmt.Fprintf(w, message)
 }
 
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
@@ -157,6 +204,11 @@ func uploadHandler(params martini.Params, w http.ResponseWriter, r *http.Request
 }
 
 func handleRequest(params martini.Params, res http.ResponseWriter, req *http.Request) { // res and req are injected by Martini
+
+	if params["namespace"] == "ErrorLogs" {
+		logHandler(params, res, req)
+		return
+	}
 
 	responseMessage, isSuccess := dispatchRequest(req, params)
 
@@ -432,5 +484,13 @@ func validateSecurityToken(token string, domain string) (isValidated bool, cert 
 		isValidated = false
 	}
 
+	return
+}
+
+func CheckRedisAvailability(request *messaging.ObjectRequest) (status bool) {
+	status = true
+	if request.Configuration.ServerConfiguration["REDIS"] == nil {
+		status = false
+	}
 	return
 }

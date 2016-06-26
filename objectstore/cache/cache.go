@@ -10,6 +10,7 @@ import (
 const (
 	Data        = 0
 	MetaData    = 1
+	Log         = 8
 	IncrementID = 5
 	Transaction = 3
 )

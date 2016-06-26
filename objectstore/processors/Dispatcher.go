@@ -2,10 +2,12 @@ package processors
 
 import (
 	"duov6.com/common"
+	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
 	"encoding/json"
+	"fmt"
 	"strconv"
 )
 
@@ -60,7 +62,32 @@ func (d *Dispatcher) ProcessDefaultDispatcher(request *messaging.ObjectRequest) 
 		}
 
 		common.PublishLog("ObjectStoreLog.log", fileBody)
+
+		if d.CheckRedisAvailability(request) && !outResponse.IsSuccess {
+			if request.Controls.Operation == "insert" || request.Controls.Operation == "update" {
+				_ = cache.StoreKeyValue(request, d.GetKeyNameForLog(request), fileBody, cache.Log)
+			}
+		}
+
 	}
 
 	return outResponse
+}
+
+func (d *Dispatcher) GetKeyNameForLog(request *messaging.ObjectRequest) (val string) {
+	if request.Controls.Multiplicity == "single" {
+		val = "ErrorSinglePostLog." + request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
+	} else {
+		val = "ErrorMultiplePostLog." + request.Controls.Namespace + "." + request.Controls.Class + "." + common.GetGUID()
+	}
+	fmt.Println(val)
+	return
+}
+
+func (d *Dispatcher) CheckRedisAvailability(request *messaging.ObjectRequest) (status bool) {
+	status = true
+	if request.Configuration.ServerConfiguration["REDIS"] == nil {
+		status = false
+	}
+	return
 }
