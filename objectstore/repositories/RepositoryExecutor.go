@@ -14,18 +14,12 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		if request.Controls.Multiplicity == "single" {
 			response = repository.InsertSingle(request)
 			if response.IsSuccess {
-				// if errCache := cache.StoreOne(request, request.Body.Object, cache.Data); errCache != nil {
-				// 	term.Write(errCache.Error(), term.Debug)
-				// }
-				//go cache.StoreOne(request, request.Body.Object, cache.Data)
+				PushSingleMapToCache(request, request.Body.Object)
 			}
 		} else {
 			response = repository.InsertMultiple(request)
 			if response.IsSuccess {
-				// if errCache := cache.StoreMany(request, request.Body.Objects, cache.Data); errCache != nil {
-				// 	term.Write(errCache.Error(), term.Debug)
-				// }
-				//go cache.StoreMany(request, request.Body.Objects, cache.Data)
+				PushMultipleMapToCache(request, request.Body.Objects)
 			}
 		}
 
@@ -112,18 +106,12 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		if request.Controls.Multiplicity == "single" {
 			response = repository.UpdateSingle(request)
 			if response.IsSuccess {
-				// if errCache := cache.StoreOne(request, request.Body.Object, cache.Data); errCache != nil {
-				// 	term.Write(errCache.Error(), term.Debug)
-				// }
-				//go cache.StoreOne(request, request.Body.Object, cache.Data)
+				PushSingleMapToCache(request, request.Body.Object)
 			}
 		} else {
 			response = repository.UpdateMultiple(request)
 			if response.IsSuccess {
-				// if errCache := cache.StoreMany(request, request.Body.Objects, cache.Data); errCache != nil {
-				// 	term.Write(errCache.Error(), term.Debug)
-				// }
-				//go cache.StoreMany(request, request.Body.Objects, cache.Data)
+				PushMultipleMapToCache(request, request.Body.Objects)
 			}
 		}
 	case "delete":
@@ -147,4 +135,36 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 	}
 
 	return
+}
+
+func CheckCacheable(request *messaging.ObjectRequest) (status bool) {
+	status = false
+	if request.Extras["IsCached"] == nil {
+		status = true
+	}
+	return
+}
+
+func RevertCacheable(request *messaging.ObjectRequest) {
+	request.Extras["IsCached"] = true
+}
+
+func PushSingleMapToCache(request *messaging.ObjectRequest, obj map[string]interface{}) {
+	if CheckCacheable(request) {
+		RevertCacheable(request)
+		if cache.GetIncrValue(request, ("RequestCounter."+request.Controls.Namespace+"."+request.Controls.Class), cache.RequestCounter) < 1000 {
+			go cache.StoreOne(request, obj, cache.Data)
+		}
+	}
+}
+
+func PushMultipleMapToCache(request *messaging.ObjectRequest, objs []map[string]interface{}) {
+	if len(objs) == 1 {
+		if CheckCacheable(request) {
+			RevertCacheable(request)
+			if cache.GetIncrValue(request, ("RequestCounter."+request.Controls.Namespace+"."+request.Controls.Class), cache.RequestCounter) < 1000 {
+				go cache.StoreMany(request, objs, cache.Data)
+			}
+		}
+	}
 }

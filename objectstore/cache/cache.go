@@ -8,11 +8,12 @@ import (
 )
 
 const (
-	Data        = 0
-	MetaData    = 1
-	Log         = 8
-	IncrementID = 5
-	Transaction = 3
+	Data           = 0
+	MetaData       = 1
+	Transaction    = 3
+	IncrementID    = 5
+	RequestCounter = 6
+	Log            = 8
 )
 
 func DeleteOne(request *messaging.ObjectRequest, data map[string]interface{}, database int) (err error) {
@@ -227,6 +228,13 @@ func FlushCache(request *messaging.ObjectRequest) {
 func LRange(request *messaging.ObjectRequest, key string, database, start, end int) (result []string, err error) {
 	if CheckCacheAvailability(request) {
 		result, err = repositories.LRange(request, key, database, start, end)
+	}
+	return
+}
+
+func GetIncrValue(request *messaging.ObjectRequest, key string, database int) (val int64) {
+	if CheckCacheAvailability(request) {
+		val = repositories.GetIncrValue(request, key, database)
 	}
 	return
 }

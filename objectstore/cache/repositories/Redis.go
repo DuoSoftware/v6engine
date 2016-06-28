@@ -23,7 +23,7 @@ var RedisCacheConnection []*goredis.Redis
 func GetConnection(request *messaging.ObjectRequest, database int) (client *goredis.Redis, err error) {
 
 	if RedisCacheConnection == nil {
-		RedisCacheConnection = make([]*goredis.Redis, 10)
+		RedisCacheConnection = make([]*goredis.Redis, 16)
 	}
 
 	host := request.Configuration.ServerConfiguration["REDIS"]["Host"]
@@ -446,5 +446,15 @@ func LRange(request *messaging.ObjectRequest, key string, database, start, end i
 		return
 	}
 	result, err = client.LRange(key, start, end)
+	return
+}
+
+func GetIncrValue(request *messaging.ObjectRequest, key string, database int) (val int64) {
+	client, err := GetConnection(request, database)
+	if err != nil {
+		return
+	}
+	val, _ = client.Incr(key)
+	_, _ = client.Expire(key, 300)
 	return
 }
