@@ -68,7 +68,10 @@ func (d *Dispatcher) ProcessDefaultDispatcher(request *messaging.ObjectRequest) 
 				_ = cache.StoreKeyValue(request, d.GetKeyNameForLog(request), fileBody, cache.Log)
 			}
 		}
+	}
 
+	if !request.IsLogEnabled {
+		request.MessageStack = make([]string, 0)
 	}
 
 	return outResponse

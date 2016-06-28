@@ -17,7 +17,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 				// if errCache := cache.StoreOne(request, request.Body.Object, cache.Data); errCache != nil {
 				// 	term.Write(errCache.Error(), term.Debug)
 				// }
-				go cache.StoreOne(request, request.Body.Object, cache.Data)
+				//go cache.StoreOne(request, request.Body.Object, cache.Data)
 			}
 		} else {
 			response = repository.InsertMultiple(request)
@@ -25,7 +25,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 				// if errCache := cache.StoreMany(request, request.Body.Objects, cache.Data); errCache != nil {
 				// 	term.Write(errCache.Error(), term.Debug)
 				// }
-				go cache.StoreMany(request, request.Body.Objects, cache.Data)
+				//go cache.StoreMany(request, request.Body.Objects, cache.Data)
 			}
 		}
 
@@ -115,7 +115,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 				// if errCache := cache.StoreOne(request, request.Body.Object, cache.Data); errCache != nil {
 				// 	term.Write(errCache.Error(), term.Debug)
 				// }
-				go cache.StoreOne(request, request.Body.Object, cache.Data)
+				//go cache.StoreOne(request, request.Body.Object, cache.Data)
 			}
 		} else {
 			response = repository.UpdateMultiple(request)
@@ -123,7 +123,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 				// if errCache := cache.StoreMany(request, request.Body.Objects, cache.Data); errCache != nil {
 				// 	term.Write(errCache.Error(), term.Debug)
 				// }
-				cache.StoreMany(request, request.Body.Objects, cache.Data)
+				//go cache.StoreMany(request, request.Body.Objects, cache.Data)
 			}
 		}
 	case "delete":
