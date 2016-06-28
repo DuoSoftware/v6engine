@@ -14,16 +14,18 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		if request.Controls.Multiplicity == "single" {
 			response = repository.InsertSingle(request)
 			if response.IsSuccess {
-				if errCache := cache.StoreOne(request, request.Body.Object, cache.Data); errCache != nil {
-					term.Write(errCache.Error(), term.Debug)
-				}
+				// if errCache := cache.StoreOne(request, request.Body.Object, cache.Data); errCache != nil {
+				// 	term.Write(errCache.Error(), term.Debug)
+				// }
+				go cache.StoreOne(request, request.Body.Object, cache.Data)
 			}
 		} else {
 			response = repository.InsertMultiple(request)
 			if response.IsSuccess {
-				if errCache := cache.StoreMany(request, request.Body.Objects, cache.Data); errCache != nil {
-					term.Write(errCache.Error(), term.Debug)
-				}
+				// if errCache := cache.StoreMany(request, request.Body.Objects, cache.Data); errCache != nil {
+				// 	term.Write(errCache.Error(), term.Debug)
+				// }
+				go cache.StoreMany(request, request.Body.Objects, cache.Data)
 			}
 		}
 
@@ -110,16 +112,18 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		if request.Controls.Multiplicity == "single" {
 			response = repository.UpdateSingle(request)
 			if response.IsSuccess {
-				if errCache := cache.StoreOne(request, request.Body.Object, cache.Data); errCache != nil {
-					term.Write(errCache.Error(), term.Debug)
-				}
+				// if errCache := cache.StoreOne(request, request.Body.Object, cache.Data); errCache != nil {
+				// 	term.Write(errCache.Error(), term.Debug)
+				// }
+				go cache.StoreOne(request, request.Body.Object, cache.Data)
 			}
 		} else {
 			response = repository.UpdateMultiple(request)
 			if response.IsSuccess {
-				if errCache := cache.StoreMany(request, request.Body.Objects, cache.Data); errCache != nil {
-					term.Write(errCache.Error(), term.Debug)
-				}
+				// if errCache := cache.StoreMany(request, request.Body.Objects, cache.Data); errCache != nil {
+				// 	term.Write(errCache.Error(), term.Debug)
+				// }
+				cache.StoreMany(request, request.Body.Objects, cache.Data)
 			}
 		}
 	case "delete":
