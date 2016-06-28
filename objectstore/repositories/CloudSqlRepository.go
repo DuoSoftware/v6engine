@@ -896,6 +896,8 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			response.Message = "Successfully dropped UNIQUE Key Indexes!"
 		case "index":
 			indexNames := strings.Split(strings.TrimSpace(request.Body.Special.Parameters), " ")
+			isAllDone := true
+
 			for _, singleName := range indexNames {
 				indexID := common.GetGUID()
 				alterQuery := "CREATE UNIQUE INDEX " + indexID + " ON " + domain + "." + request.Controls.Class + " (" + singleName + ");"
@@ -911,15 +913,21 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 							err = repository.executeNonQuery(conn, alterQuery, request)
 							if err != nil {
 								request.Log(err.Error())
+								isAllDone = false
 							}
 						}
 					} else {
 						request.Log(err.Error())
 					}
-				} else {
-					response.IsSuccess = true
-					response.Message = "Successfully added UNIQUE Indexes!"
 				}
+			}
+
+			if isAllDone {
+				response.IsSuccess = true
+				response.Message = "Successfully added UNIQUE Indexes!"
+			} else {
+				response.IsSuccess = false
+				response.Message = "Creating UNIQUE Indexes Failed!"
 			}
 		default:
 			response.IsSuccess = false
