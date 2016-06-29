@@ -144,8 +144,19 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 
 		fieldName = strings.TrimSpace(fieldName)
 		fieldValue = strings.TrimSpace(fieldValue)
-
-		query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "'"
+		if strings.HasPrefix(fieldValue, "*") && strings.HasSuffix(fieldValue, "*") {
+			fieldValue = strings.TrimSuffix(fieldValue, "*")
+			fieldValue = strings.TrimPrefix(fieldValue, "*")
+			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + " LIKE '%" + fieldValue + "%'"
+		} else if strings.HasPrefix(fieldValue, "*") {
+			fieldValue = strings.TrimPrefix(fieldValue, "*")
+			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + " LIKE '%" + fieldValue + "'"
+		} else if strings.HasSuffix(fieldValue, "*") {
+			fieldValue = strings.TrimSuffix(fieldValue, "*")
+			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + " LIKE '" + fieldValue + "%'"
+		} else {
+			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "'"
+		}
 	} else {
 		if request.Body.Query.Parameters == "" || request.Body.Query.Parameters == "*" {
 			//Get All Query
