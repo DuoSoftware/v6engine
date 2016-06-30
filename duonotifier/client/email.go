@@ -136,14 +136,6 @@ func getFrom() (url string) {
 	} else {
 		url = "DuoWorld.com <mail-noreply@duoworld.com>"
 	}
-	fmt.Println("--------------------")
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println(string(content))
-	}
-	fmt.Println(url)
-	fmt.Println("--------------------")
 	return
 }
 
