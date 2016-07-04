@@ -1,14 +1,11 @@
 package Transaction
 
 import (
-	"bytes"
+	"duov6.com/common"
 	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strconv"
 	"time"
 )
@@ -55,7 +52,9 @@ func TLog(request *messaging.ObjectRequest, TransactionID string) {
 		if err != nil {
 			fmt.Println(err.Error())
 		} else {
-			Post("localhost", "logs", "TransactionLogs", convertedObj)
+			headers := make(map[string]string)
+			headers["securityToken"] = "123"
+			common.HTTP_POST("http://localhost:3000/logs/TransactionLogs", headers, convertedObj, true)
 		}
 	}
 }
@@ -87,28 +86,6 @@ type Query struct {
 	Parameters string
 }
 
-func Post(domain, namespace, class string, JSON_DATA []byte) (err error, body []byte) {
-
-	securityToken := "ignore"
-	url := "http://" + domain + ":3000/" + namespace + "/" + class + "?securityToken=" + securityToken
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(JSON_DATA))
-	// req.Header.Set("securityToken", securityToken)
-	// req.Header.Set("log", log)
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		err = errors.New("Connection Failed!")
-	} else {
-		body, _ = ioutil.ReadAll(resp.Body)
-		if resp.StatusCode != 200 {
-			err = errors.New(string(body))
-		}
-	}
-	defer resp.Body.Close()
-	return
-}
-
 func UpdateLogStatus(StepNo int, TransactionID string, value string) {
 	//get matching records
 	QueryObject := make(map[string]interface{})
@@ -117,7 +94,9 @@ func UpdateLogStatus(StepNo int, TransactionID string, value string) {
 	QueryStruct.Parameters = "SELECT * from TransactionLogs WHERE StepNo='" + strconv.Itoa(StepNo) + "' AND TransactionID='" + TransactionID + "';"
 	QueryObject["Query"] = QueryStruct
 	queryBody, _ := json.Marshal(QueryObject)
-	err, byteBody := Post("localhost", "logs", "TransactionLogs", queryBody)
+	headers := make(map[string]string)
+	headers["securityToken"] = "123"
+	err, byteBody := common.HTTP_POST("http://localhost:3000/logs/TransactionLogs", headers, queryBody, true)
 	if err != nil {
 		fmt.Println("Error : " + err.Error())
 	} else {
@@ -138,7 +117,9 @@ func UpdateLogStatus(StepNo int, TransactionID string, value string) {
 		if err != nil {
 			fmt.Println(err.Error())
 		} else {
-			Post("localhost", "logs", "TransactionLogs", convertedObj)
+			headers := make(map[string]string)
+			headers["securityToken"] = "123"
+			common.HTTP_POST("http://localhost:3000/logs/TransactionLogs", headers, convertedObj, true)
 		}
 
 	}
