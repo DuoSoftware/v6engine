@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	fmt.Println(common.GetHash("abc"))
+	fmt.Println(common.GetHash("123"))
 }

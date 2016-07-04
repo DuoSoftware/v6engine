@@ -68,6 +68,8 @@ func (h *HTTPService) Start(isLogEnabled bool, isJsonStackEnabled bool) {
 	//Get All Error Post Logs
 	m.Get("/ErrorLogs", logHandler)
 
+	m.Get("/SyncRedisKeys", syncHandler)
+
 	//Flush Cache
 	m.Get("/ClearCache", cacheHandler)
 
@@ -86,6 +88,12 @@ func startKeyFlusher(request *messaging.ObjectRequest) {
 			go keygenerator.UpdateCountsToDB()
 		}
 	}
+}
+
+func syncHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+
+	keygenerator.UpdateKeysInDB()
+	fmt.Fprintf(w, "Syncing Redis Keys!")
 }
 
 func logHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
