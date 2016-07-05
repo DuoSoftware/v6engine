@@ -985,9 +985,13 @@ func (repository CloudSqlRepository) Test(request *messaging.ObjectRequest) {
 }
 
 func (repository CloudSqlRepository) ClearCache(request *messaging.ObjectRequest) {
-	tableCache = make(map[string]map[string]string)
-	availableDbs = make(map[string]interface{})
-	availableTables = make(map[string]interface{})
+	if CheckRedisAvailability(request) {
+		cache.FlushCache(request)
+	} else {
+		tableCache = make(map[string]map[string]string)
+		availableDbs = make(map[string]interface{})
+		availableTables = make(map[string]interface{})
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
