@@ -67,9 +67,8 @@ func (h *HTTPService) Start(isLogEnabled bool, isJsonStackEnabled bool) {
 
 	//Get All Error Post Logs
 	m.Get("/ErrorLogs", logHandler)
-
+	//Sync Increment Keys with DomainClassAttributes
 	m.Get("/SyncRedisKeys", syncHandler)
-
 	//Flush Cache
 	m.Get("/ClearCache", cacheHandler)
 
@@ -91,7 +90,6 @@ func startKeyFlusher(request *messaging.ObjectRequest) {
 }
 
 func syncHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-
 	keygenerator.UpdateKeysInDB()
 	fmt.Fprintf(w, "Syncing Redis Keys!")
 }
@@ -131,13 +129,30 @@ func cacheHandler(params martini.Params, w http.ResponseWriter, r *http.Request)
 		cache.FlushCache(&objectRequest)
 		message = "REDIS cache was successfully cleared!"
 	} else {
-		message = "Error! REDIS not configured in this server!"
+		mongoRepo := repositories.Create("MONGO")
+		mongoRepo.ClearCache(&objectRequest)
+
+		cassandraRepo := repositories.Create("CASSANDRA")
+		cassandraRepo.ClearCache(&objectRequest)
+
+		hiveRepo := repositories.Create("HIVE")
+		hiveRepo.ClearCache(&objectRequest)
+
+		postgresRepo := repositories.Create("POSTGRES")
+		postgresRepo.ClearCache(&objectRequest)
+
+		mssqlRepo := repositories.Create("MSSQL")
+		mssqlRepo.ClearCache(&objectRequest)
+
+		cloudsqlRepo := repositories.Create("CLOUDSQL")
+		cloudsqlRepo.ClearCache(&objectRequest)
+
+		message = "REDIS not configured in this server. Available In-Memory Data structures cleared!"
 	}
 	fmt.Fprintf(w, message)
 }
 
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	// cpuUsage := strconv.FormatFloat(common.GetProcessorUsage(), 'E', -1, 64)
 	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
 	cpuCount := strconv.Itoa(runtime.NumCPU())
 	versionData := "{\"Name\": \"Objectstore\",\"Version\": \"1.3.2-a\",\"Change Log\":\"Added HTTP based ID updation service!\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
