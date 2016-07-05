@@ -1198,6 +1198,9 @@ func (repository HiveRepository) sqlToGolang(key string, value string) interface
 
 }
 
+func (repository HiveRepository) ClearCache(request *messaging.ObjectRequest) {
+}
+
 //............... OLD CODE - PLEASE DON'T REMOVE-----------------
 
 /*

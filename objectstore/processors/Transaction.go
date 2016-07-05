@@ -13,13 +13,6 @@ type TransactionDispatcher struct {
 
 func (t *TransactionDispatcher) DispatchTransaction(request *messaging.ObjectRequest) repositories.RepositoryResponse {
 	var outResponse repositories.RepositoryResponse
-
-	//Fake Logic!
-	// var storageEngine storageengines.AbstractStorageEngine
-	// storageEngine = storageengines.ReplicatedStorageEngine{}
-	// outResponse = storageEngine.Store(request)
-	// return outResponse
-
 	outResponse = t.ExecuteTransaction(request)
 	return outResponse
 }

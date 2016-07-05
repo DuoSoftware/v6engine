@@ -1140,3 +1140,6 @@ func (repository PostgresRepository) executeNonQuery(conn *sql.DB, query string)
 	_ = stmt.Close()
 	return
 }
+
+func (repository PostgresRepository) ClearCache(request *messaging.ObjectRequest) {
+}

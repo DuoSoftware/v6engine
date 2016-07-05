@@ -899,3 +899,6 @@ func (repository GoogleBigTableRepository) executeDropClass(request *messaging.O
 	}
 	return
 }
+
+func (repository GoogleBigTableRepository) ClearCache(request *messaging.ObjectRequest) {
+}

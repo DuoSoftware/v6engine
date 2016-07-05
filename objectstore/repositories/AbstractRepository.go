@@ -18,4 +18,5 @@ type AbstractRepository interface {
 	Special(request *messaging.ObjectRequest) RepositoryResponse
 	GetRepositoryName() string
 	Test(request *messaging.ObjectRequest)
+	ClearCache(request *messaging.ObjectRequest)
 }

@@ -478,3 +478,6 @@ func getRedisRecordID(request *messaging.ObjectRequest, obj map[string]interface
 
 	return
 }
+
+func (repository RedisRepository) ClearCache(request *messaging.ObjectRequest) {
+}

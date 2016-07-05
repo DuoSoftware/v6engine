@@ -1216,3 +1216,6 @@ func createCassandraTable(request *messaging.ObjectRequest, session *gocql.Sessi
 
 	return
 }
+
+func (repository CassandraRepository) ClearCache(request *messaging.ObjectRequest) {
+}

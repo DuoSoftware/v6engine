@@ -983,3 +983,6 @@ func (repository GoogleDataStoreRepository) executeGetSelected(request *messagin
 	}
 	return
 }
+
+func (repository GoogleDataStoreRepository) ClearCache(request *messaging.ObjectRequest) {
+}

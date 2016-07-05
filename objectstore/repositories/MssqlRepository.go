@@ -1883,3 +1883,6 @@ func getMssqlDataType(item interface{}) (datatype string) {
 	}
 	return datatype
 }
+
+func (repository MssqlRepository) ClearCache(request *messaging.ObjectRequest) {
+}

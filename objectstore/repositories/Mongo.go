@@ -711,3 +711,6 @@ func executeMongoGetSelectedFields(request *messaging.ObjectRequest) (returnByte
 	}
 	return
 }
+
+func (repository MongoRepository) ClearCache(request *messaging.ObjectRequest) {
+}

@@ -19,8 +19,83 @@ import (
 type CloudSqlRepository struct {
 }
 
+var availableDbs map[string]interface{}
+var availableTables map[string]interface{}
+var tableCache map[string]map[string]string
+var connection map[string]*sql.DB
+
 func (repository CloudSqlRepository) GetRepositoryName() string {
 	return "CloudSQL"
+}
+
+func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
+
+	if connection == nil {
+		connection = make(map[string]*sql.DB)
+	}
+	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+
+	username := mysqlConf["Username"]
+	password := mysqlConf["Password"]
+	url := mysqlConf["Url"]
+	port := mysqlConf["Port"]
+	IdleLimit := -1
+	OpenLimit := 0
+	TTL := 5
+
+	poolPattern := url
+
+	if mysqlConf["IdleLimit"] != "" {
+		IdleLimit, err = strconv.Atoi(mysqlConf["IdleLimit"])
+		if err != nil {
+			request.Log(err.Error())
+		}
+	}
+
+	if mysqlConf["OpenLimit"] != "" {
+		OpenLimit, err = strconv.Atoi(mysqlConf["OpenLimit"])
+		if err != nil {
+			request.Log(err.Error())
+		}
+	}
+
+	if mysqlConf["TTL"] != "" {
+		TTL, err = strconv.Atoi(mysqlConf["TTL"])
+		if err != nil {
+			request.Log(err.Error())
+		}
+	}
+
+	if connection[poolPattern] == nil {
+		conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
+		if err != nil {
+			request.Log(err.Error())
+			return
+		}
+		connection[poolPattern] = conn
+	} else {
+		if connection[poolPattern].Ping(); err != nil {
+			_ = connection[poolPattern].Close()
+			connection[poolPattern] = nil
+			conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
+			if err != nil {
+				request.Log(err.Error())
+				return
+			}
+			connection[poolPattern] = conn
+		} else {
+			conn = connection[poolPattern]
+		}
+	}
+	return conn, err
+}
+
+func (repository CloudSqlRepository) CreateConnection(username, password, url, port string, IdleLimit, OpenLimit, TTL int) (conn *sql.DB, err error) {
+	conn, err = sql.Open("mysql", username+":"+password+"@tcp("+url+":"+port+")/")
+	conn.SetMaxIdleConns(IdleLimit)
+	conn.SetMaxOpenConns(OpenLimit)
+	conn.SetConnMaxLifetime(time.Duration(TTL) * time.Minute)
+	return
 }
 
 func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
@@ -907,7 +982,12 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 }
 
 func (repository CloudSqlRepository) Test(request *messaging.ObjectRequest) {
+}
 
+func (repository CloudSqlRepository) ClearCache(request *messaging.ObjectRequest) {
+	tableCache = make(map[string]map[string]string)
+	availableDbs = make(map[string]interface{})
+	availableTables = make(map[string]interface{})
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1470,10 +1550,6 @@ func (repository CloudSqlRepository) getCreateScript(namespace string, class str
 	return query
 }
 
-var availableDbs map[string]interface{}
-var availableTables map[string]interface{}
-var tableCache map[string]map[string]string
-
 func (repository CloudSqlRepository) checkAvailabilityDb(request *messaging.ObjectRequest, conn *sql.DB, dbName string) (err error) {
 	if availableDbs == nil {
 		availableDbs = make(map[string]interface{})
@@ -1744,78 +1820,6 @@ func (repository CloudSqlRepository) checkSchema(request *messaging.ObjectReques
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////Helper functions/////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
-
-var connection map[string]*sql.DB
-
-func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
-
-	if connection == nil {
-		connection = make(map[string]*sql.DB)
-	}
-	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-
-	username := mysqlConf["Username"]
-	password := mysqlConf["Password"]
-	url := mysqlConf["Url"]
-	port := mysqlConf["Port"]
-	IdleLimit := -1
-	OpenLimit := 0
-	TTL := 5
-
-	poolPattern := url
-
-	if mysqlConf["IdleLimit"] != "" {
-		IdleLimit, err = strconv.Atoi(mysqlConf["IdleLimit"])
-		if err != nil {
-			request.Log(err.Error())
-		}
-	}
-
-	if mysqlConf["OpenLimit"] != "" {
-		OpenLimit, err = strconv.Atoi(mysqlConf["OpenLimit"])
-		if err != nil {
-			request.Log(err.Error())
-		}
-	}
-
-	if mysqlConf["TTL"] != "" {
-		TTL, err = strconv.Atoi(mysqlConf["TTL"])
-		if err != nil {
-			request.Log(err.Error())
-		}
-	}
-
-	if connection[poolPattern] == nil {
-		conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
-		if err != nil {
-			request.Log(err.Error())
-			return
-		}
-		connection[poolPattern] = conn
-	} else {
-		if connection[poolPattern].Ping(); err != nil {
-			_ = connection[poolPattern].Close()
-			connection[poolPattern] = nil
-			conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
-			if err != nil {
-				request.Log(err.Error())
-				return
-			}
-			connection[poolPattern] = conn
-		} else {
-			conn = connection[poolPattern]
-		}
-	}
-	return conn, err
-}
-
-func (repository CloudSqlRepository) CreateConnection(username, password, url, port string, IdleLimit, OpenLimit, TTL int) (conn *sql.DB, err error) {
-	conn, err = sql.Open("mysql", username+":"+password+"@tcp("+url+":"+port+")/")
-	conn.SetMaxIdleConns(IdleLimit)
-	conn.SetMaxOpenConns(OpenLimit)
-	conn.SetConnMaxLifetime(time.Duration(TTL) * time.Minute)
-	return
-}
 
 func (repository CloudSqlRepository) getDatabaseName(namespace string) string {
 	return "_" + strings.ToLower(strings.Replace(namespace, ".", "", -1))

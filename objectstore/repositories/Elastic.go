@@ -854,3 +854,6 @@ func (repository ElasticRepository) getRecordID(request *messaging.ObjectRequest
 	}
 	return
 }
+
+func (repository ElasticRepository) ClearCache(request *messaging.ObjectRequest) {
+}
