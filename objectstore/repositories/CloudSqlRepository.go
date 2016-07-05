@@ -9,7 +9,6 @@ import (
 	"duov6.com/queryparser"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
@@ -435,58 +434,21 @@ func (repository CloudSqlRepository) UpdateSingle(request *messaging.ObjectReque
 	return response
 }
 
-var CloudSqlSQLModeCheck map[string]string
-
 func (repository CloudSqlRepository) ReRun(request *messaging.ObjectRequest, conn *sql.DB, obj map[string]interface{}) RepositoryResponse {
 	var response RepositoryResponse
-	var err error
 
-	if strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
+	repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
+	response = repository.queryStore(request)
+	if !response.IsSuccess {
 		if CheckRedisAvailability(request) {
-			repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
-			response = repository.queryStore(request)
-			if !response.IsSuccess {
-				cache.FlushCache(request)
-				repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
-				response = repository.queryStore(request)
-			}
+			cache.FlushCache(request)
 		} else {
-			repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
-			response = repository.queryStore(request)
-
-			if !response.IsSuccess {
-				tableCache = make(map[string]map[string]string)
-				availableDbs = make(map[string]interface{})
-				availableTables = make(map[string]interface{})
-				repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
-				response = repository.queryStore(request)
-			}
+			tableCache = make(map[string]map[string]string)
+			availableDbs = make(map[string]interface{})
+			availableTables = make(map[string]interface{})
 		}
-	} else {
 		repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
 		response = repository.queryStore(request)
-		if !response.IsSuccess {
-			if CheckRedisAvailability(request) {
-				cache.FlushCache(request)
-				repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
-				response = repository.queryStore(request)
-			} else {
-				tableCache = make(map[string]map[string]string)
-				availableDbs = make(map[string]interface{})
-				availableTables = make(map[string]interface{})
-				repository.checkSchema(request, conn, request.Controls.Namespace, request.Controls.Class, obj)
-				response = repository.queryStore(request)
-			}
-		}
-		return response
-	}
-
-	if err != nil {
-		response.IsSuccess = false
-		response.Message = err.Error()
-	} else {
-		response.IsSuccess = true
-		response.Message = "Successfully Completed!"
 	}
 
 	return response
@@ -502,11 +464,7 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 			query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKeyById(request, obj))
 			err := repository.executeNonQuery(conn, query, request)
 			if err != nil {
-				if strings.Contains(err.Error(), "No Rows Changed") {
-					request.Log(getNoSqlKeyById(request, obj) + " : Already Deleted or No Record was Found!")
-				} else {
-					isError = true
-				}
+				isError = true
 			}
 		}
 		if isError {
@@ -532,13 +490,8 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 		query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKey(request))
 		err := repository.executeNonQuery(conn, query, request)
 		if err != nil {
-			if strings.Contains(err.Error(), "No Rows Changed") {
-				response.IsSuccess = true
-				response.Message = "Already Deleted or No Record was Found!"
-			} else {
-				response.IsSuccess = false
-				response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
-			}
+			response.IsSuccess = false
+			response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
 		} else {
 			response.IsSuccess = true
 			response.Message = "Successfully Deleted from CloudSQL repository!"
@@ -702,7 +655,6 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			tableCache = make(map[string]map[string]string)
 			availableDbs = make(map[string]interface{})
 			availableTables = make(map[string]interface{})
-			CloudSqlSQLModeCheck = make(map[string]string)
 		}
 
 		response.IsSuccess = true
@@ -991,7 +943,6 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 				bytes, _ = json.Marshal(obj.([]map[string]interface{}))
 			}
 
-			//bytes, _ := json.Marshal(obj)
 			if checkEmptyByteArray(bytes) {
 				response.GetResponseWithBody(getEmptyByteObject())
 			} else {
@@ -1025,11 +976,6 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 	class := request.Controls.Class
 
 	isOkay := true
-	IsSQlMode := false
-
-	if strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
-		IsSQlMode = true
-	}
 
 	if request.Body.Object != nil || len(request.Body.Objects) == 1 {
 
@@ -1041,40 +987,122 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 			obj = request.Body.Objects[0]
 		}
 
-		if IsSQlMode {
-			script := ""
-			if strings.EqualFold(request.Controls.Operation, "insert") {
-				script = repository.getSingleObjectInsertQuery(request, domain, class, obj, conn)
-			} else {
-				script = repository.getSingleObjectUpdateQuery(request, domain, class, obj, conn)
-			}
-			err := repository.executeNonQuery(conn, script, request)
-			if err != nil {
-				isOkay = false
-				request.Log(err.Error())
-			} else {
-				isOkay = true
-			}
-		} else {
-			insertScript := repository.getSingleObjectInsertQuery(request, domain, class, obj, conn)
-			err := repository.executeNonQuery(conn, insertScript, request)
-			if err != nil {
-				if !strings.Contains(err.Error(), "specified twice") {
-					updateScript := repository.getSingleObjectUpdateQuery(request, domain, class, obj, conn)
-					err := repository.executeNonQuery(conn, updateScript, request)
-					if err != nil {
-						isOkay = false
-						request.Log(err.Error())
-					} else {
-						isOkay = true
-					}
-				} else {
+		insertScript := repository.getSingleObjectInsertQuery(request, domain, class, obj, conn)
+		err := repository.executeNonQuery(conn, insertScript, request)
+		if err != nil {
+			if !strings.Contains(err.Error(), "specified twice") {
+				updateScript := repository.getSingleObjectUpdateQuery(request, domain, class, obj, conn)
+				err := repository.executeNonQuery(conn, updateScript, request)
+				if err != nil {
 					isOkay = false
+					request.Log(err.Error())
+				} else {
+					isOkay = true
 				}
 			} else {
-				isOkay = true
+				isOkay = false
+			}
+		} else {
+			isOkay = true
+		}
+
+	} else {
+
+		//execute insert queries
+		scripts, err := repository.GetMultipleStoreScripts(conn, request)
+
+		for x := 0; x < len(scripts); x++ {
+			script := scripts[x]["query"].(string)
+			if err == nil && script != "" {
+
+				err := repository.executeNonQuery(conn, script, request)
+				if err != nil {
+					request.Log(err.Error())
+					if strings.Contains(err.Error(), "Duplicate entry") {
+						errorBlock := scripts[x]["queryObject"].([]map[string]interface{})
+						for _, singleQueryObject := range errorBlock {
+							insertScript := repository.getSingleObjectInsertQuery(request, domain, class, singleQueryObject, conn)
+							err1 := repository.executeNonQuery(conn, insertScript, request)
+							if err1 != nil {
+								if !strings.Contains(err.Error(), "specified twice") {
+									updateScript := repository.getSingleObjectUpdateQuery(request, domain, class, singleQueryObject, conn)
+									err2 := repository.executeNonQuery(conn, updateScript, request)
+									if err2 != nil {
+										request.Log(err2.Error())
+										isOkay = false
+									}
+								}
+							}
+						}
+					} else {
+						if strings.Contains(err.Error(), "doesn't exist") {
+							isOkay = false
+							break
+						}
+					}
+				}
+
+			} else {
+				isOkay = false
+				request.Log(err.Error())
 			}
 		}
+
+	}
+
+	if isOkay {
+		response.IsSuccess = true
+		response.Message = "Successfully stored object(s) in CloudSQL"
+		request.Log(response.Message)
+	} else {
+		response.IsSuccess = false
+		response.Message = "Error storing/updating all object(s) in CloudSQL."
+		request.Log(response.Message)
+	}
+
+	repository.closeConnection(conn)
+	return response
+}
+
+/*func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+
+	conn, _ := repository.getConnection(request)
+
+	domain := request.Controls.Namespace
+	class := request.Controls.Class
+
+	isOkay := true
+
+	if request.Body.Object != nil || len(request.Body.Objects) == 1 {
+
+		obj := make(map[string]interface{})
+
+		if request.Body.Object != nil {
+			obj = request.Body.Object
+		} else {
+			obj = request.Body.Objects[0]
+		}
+
+		insertScript := repository.getSingleObjectInsertQuery(request, domain, class, obj, conn)
+		err := repository.executeNonQuery(conn, insertScript, request)
+		if err != nil {
+			if !strings.Contains(err.Error(), "specified twice") {
+				updateScript := repository.getSingleObjectUpdateQuery(request, domain, class, obj, conn)
+				err := repository.executeNonQuery(conn, updateScript, request)
+				if err != nil {
+					isOkay = false
+					request.Log(err.Error())
+				} else {
+					isOkay = true
+				}
+			} else {
+				isOkay = false
+			}
+		} else {
+			isOkay = true
+		}
+
 	} else {
 
 		//execute insert queries
@@ -1124,7 +1152,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 
 	repository.closeConnection(conn)
 	return response
-}
+}*/
 
 func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, class string, id string, request *messaging.ObjectRequest) (obj map[string]interface{}) {
 
@@ -1162,7 +1190,7 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 	return
 }
 
-func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messaging.ObjectRequest) (query []string, err error) {
+/*func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messaging.ObjectRequest) (query []string, err error) {
 	namespace := request.Controls.Namespace
 	class := request.Controls.Class
 
@@ -1196,36 +1224,101 @@ func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messa
 
 	}
 	return
+}*/
+
+func (repository CloudSqlRepository) GetMultipleStoreScripts(conn *sql.DB, request *messaging.ObjectRequest) (query []map[string]interface{}, err error) {
+	namespace := request.Controls.Namespace
+	class := request.Controls.Class
+
+	noOfElementsPerSet := 1000
+	noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
+	remainderFromSets := 0
+	remainderFromSets = (len(request.Body.Objects) - (noOfSets * noOfElementsPerSet))
+
+	startIndex := 0
+	stopIndex := noOfElementsPerSet
+
+	for x := 0; x < noOfSets; x++ {
+		queryOutput := repository.GetMultipleInsertQuery(request, namespace, class, request.Body.Objects[startIndex:stopIndex], conn)
+		query = append(query, queryOutput)
+		startIndex += noOfElementsPerSet
+		stopIndex += noOfElementsPerSet
+	}
+
+	if remainderFromSets > 0 {
+		start := len(request.Body.Objects) - remainderFromSets
+		queryOutput := repository.GetMultipleInsertQuery(request, namespace, class, request.Body.Objects[start:len(request.Body.Objects)], conn)
+		query = append(query, queryOutput)
+	}
+
+	return
 }
 
-func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
+func (repository CloudSqlRepository) GetMultipleInsertQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (queryData map[string]interface{}) {
+	queryData = make(map[string]interface{})
+	query := ""
+	//create insert scripts
+	isFirstRow := true
+	var keyArray []string
+	for _, obj := range records {
+		if isFirstRow {
+			query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
+		}
+
+		id := ""
+
+		if obj["OriginalIndex"] == nil {
+			id = getNoSqlKeyById(request, obj)
+		} else {
+			id = obj["OriginalIndex"].(string)
+		}
+
+		delete(obj, "OriginalIndex")
+
+		keyList := ""
+		valueList := ""
+
+		if isFirstRow {
+			for k, _ := range obj {
+				keyList += ("," + k)
+				keyArray = append(keyArray, k)
+			}
+		}
+		//request.Log(keyArray)
+		for _, k := range keyArray {
+			v := obj[k]
+			valueList += ("," + repository.getSqlFieldValue(v))
+		}
+
+		if isFirstRow {
+			query += "(__os_id" + keyList + ") VALUES "
+		} else {
+			query += ","
+		}
+		query += ("(\"" + id + "\"" + valueList + ")")
+
+		if isFirstRow {
+			isFirstRow = false
+		}
+	}
+
+	queryData["query"] = query
+	queryData["queryObject"] = records
+	return
+}
+
+/*func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
 	updateArray := make([]map[string]interface{}, 0)
 	insertArray := make([]map[string]interface{}, 0)
 	updateScripts := make([]string, 0)
 
-	IntendedOperation := request.Controls.Operation
-	IsSQlMode := false
-
-	if strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
-		IsSQlMode = true
-	}
-
 	for _, obj := range records {
 		currentObject := make(map[string]interface{})
-
-		if !IsSQlMode {
-			currentObject = repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj), request)
-			if currentObject == nil || len(currentObject) == 0 {
-				insertArray = append(insertArray, obj)
-			} else {
-				updateArray = append(updateArray, obj)
-			}
-		} else { //SQL
-			if strings.EqualFold(IntendedOperation, "insert") {
-				insertArray = append(insertArray, obj)
-			} else {
-				updateArray = append(updateArray, obj)
-			}
+		currentObject = repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj), request)
+		if currentObject == nil || len(currentObject) == 0 {
+			insertArray = append(insertArray, obj)
+		} else {
+			updateArray = append(updateArray, obj)
 		}
 
 	}
@@ -1298,7 +1391,7 @@ func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectReq
 	}
 
 	return
-}
+}*/
 
 func (repository CloudSqlRepository) getSingleObjectInsertQuery(request *messaging.ObjectRequest, namespace, class string, obj map[string]interface{}, conn *sql.DB) (query string) {
 	var keyArray []string
@@ -1997,22 +2090,14 @@ func (repository CloudSqlRepository) executeQueryOne(request *messaging.ObjectRe
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string, request *messaging.ObjectRequest) (err error) {
 	request.Log(query)
-	tokens := strings.Split(query[0:10], " ")
+	tokens := strings.Split(strings.ToLower(query), " ")
 	result, err := conn.Exec(query)
 	if err == nil {
 		val, _ := result.RowsAffected()
-		if val <= 0 && strings.EqualFold(tokens[0], "UPDATE") && strings.EqualFold(request.Body.Parameters.Mode, "SQL") {
-			err = errors.New("No Rows Changed")
+		if val <= 0 && (tokens[0] == "delete" || tokens[0] == "update") {
 			request.Log("No Rows Changed!")
-			//request.Log(query)
-		} else if val <= 0 && strings.EqualFold(tokens[0], "DELETE") {
-			err = errors.New("No Rows Changed. Already deleted!")
-			request.Log(err.Error())
 		}
-	} else {
-		request.Log(err.Error())
 	}
-
 	return
 }
 

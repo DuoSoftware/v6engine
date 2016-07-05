@@ -6,5 +6,4 @@ type ObjectParameters struct {
 	AutoIncrement bool
 	GUIDKey       bool
 	TransactionID string
-	Mode          string //SQL, NOSQL
 }

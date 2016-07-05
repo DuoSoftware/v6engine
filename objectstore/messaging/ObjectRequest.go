@@ -32,7 +32,6 @@ func (o *ObjectRequest) Log(value interface{}) {
 	}
 
 	o.MessageStack = append(o.MessageStack, message)
-
 	if o.IsLogEnabled {
 		fmt.Println(value)
 	}
