@@ -156,8 +156,8 @@ func CheckCacheAvailability(request *messaging.ObjectRequest) (status bool) {
 
 func checkValidTenentClass(request *messaging.ObjectRequest) (status bool) {
 	namespaces := [...]string{}
-	classes := [...]string{"domainclassattributes"}
-
+	//classes := [...]string{"domainclassattributes"}
+	classes := [...]string{}
 	status = true
 
 	for _, namespace := range namespaces {

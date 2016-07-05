@@ -37,7 +37,7 @@ func UpdateKeysInDB() {
 		}
 
 		for _, repo := range repos {
-			count, err := strconv.Atoi(GetKeyGenKey(&request, client))
+			count, err := strconv.Atoi(ReadKeyGenKey(&request, client))
 			if err != nil {
 				fmt.Println(err.Error())
 				return

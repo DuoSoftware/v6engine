@@ -149,19 +149,21 @@ func VerifyMaxFromDB(request *messaging.ObjectRequest, repository string, count 
 	}
 
 	fmt.Println("Syncing " + request.Controls.Namespace + ".DomainClassAttributes - " + repository)
-	switch repository {
-	case "CLOUDSQL":
-		var driver drivers.CloudSql
-		max = driver.VerifyMaxValueDB(request, count)
-		break
-	case "ELASTIC":
-		var driver drivers.ElasticSearch
-		max = driver.VerifyMaxValueDB(request, count)
-		break
-	default:
-		fmt.Println("Error! No such Repository : " + repository + " exists!")
-		break
-	}
+	// switch repository {
+	// case "CLOUDSQL":
+	// 	var driver drivers.CloudSql
+	// 	max = driver.VerifyMaxValueDB(request, count)
+	// 	break
+	// case "ELASTIC":
+	// 	var driver drivers.ElasticSearch
+	// 	max = driver.VerifyMaxValueDB(request, count)
+	// 	break
+	// default:
+	// 	fmt.Println("Error! No such Repository : " + repository + " exists!")
+	// 	break
+	// }
+	var driver drivers.RepoDefault
+	max = driver.VerifyMaxValueDB(request, count)
 	return
 }
 
