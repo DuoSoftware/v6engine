@@ -1,7 +1,5 @@
 package repositories
 
-//update servers to 15.04 so gocb is supported
-
 import (
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
@@ -378,7 +376,7 @@ func getCouchBucket(request *messaging.ObjectRequest) (bucket *couchbase.Bucket,
 	request.Log("Getting store configuration settings for Couchbase")
 
 	BucketManagerUserName := "Administrator"
-	BucketManagerPassword := "DuoS123"
+	BucketManagerPassword := ""
 	FlushEnabled := true
 	IndexReplicas := false
 	Quota := 100
@@ -442,7 +440,7 @@ func getCouchBucket(request *messaging.ObjectRequest) (bucket *couchbase.Bucket,
 		} else {
 			time.Sleep(2 * time.Second)
 			//Insert Document Wait for another second to refresh
-			status := uploadDesignDocument(setting_host, setting_bucket, getSQLnamespace(request))
+			status := uploadDesignDocument(setting_host, setting_bucket, getSQLnamespace(request), BucketManagerUserName, BucketManagerPassword)
 			fmt.Println(status)
 			//reconnect
 			bucket = reconnect(setting_host, setting_bucket)
@@ -503,13 +501,13 @@ func createCouchbaseBucket(url, bucketName, BucketManagerUserName, BucketManager
 	return status
 }
 
-func uploadDesignDocument(url string, bucketname string, namespace string) (status bool) {
+func uploadDesignDocument(url, bucketname, namespace, username, password string) (status bool) {
 	designDocumentName := "dev_" + namespace
 	tempUrl := strings.Split(url, ":")
 	cluster, _ := gocb.Connect("couchbase://" + tempUrl[0] + "")
 	buckett, _ := cluster.OpenBucket(bucketname, "")
 
-	bucketMgr := buckett.Manager("Administrator", "123456")
+	bucketMgr := buckett.Manager(username, password)
 
 	ddoc := gocb.DesignDocument{}
 	ddoc.Name = designDocumentName
