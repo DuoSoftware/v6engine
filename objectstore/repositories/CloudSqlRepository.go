@@ -1148,96 +1148,6 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 	return response
 }
 
-/*func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest) RepositoryResponse {
-	response := RepositoryResponse{}
-
-	conn, _ := repository.getConnection(request)
-
-	domain := request.Controls.Namespace
-	class := request.Controls.Class
-
-	isOkay := true
-
-	if request.Body.Object != nil || len(request.Body.Objects) == 1 {
-
-		obj := make(map[string]interface{})
-
-		if request.Body.Object != nil {
-			obj = request.Body.Object
-		} else {
-			obj = request.Body.Objects[0]
-		}
-
-		insertScript := repository.getSingleObjectInsertQuery(request, domain, class, obj, conn)
-		err := repository.executeNonQuery(conn, insertScript, request)
-		if err != nil {
-			if !strings.Contains(err.Error(), "specified twice") {
-				updateScript := repository.getSingleObjectUpdateQuery(request, domain, class, obj, conn)
-				err := repository.executeNonQuery(conn, updateScript, request)
-				if err != nil {
-					isOkay = false
-					request.Log(err.Error())
-				} else {
-					isOkay = true
-				}
-			} else {
-				isOkay = false
-			}
-		} else {
-			isOkay = true
-		}
-
-	} else {
-
-		//execute insert queries
-		scripts, err := repository.getStoreScript(conn, request)
-
-		for x := 0; x < len(scripts); x++ {
-			script := scripts[x]
-			if err == nil {
-				if script != "" {
-					err := repository.executeNonQuery(conn, script, request)
-					if err != nil {
-						isOkay = false
-						request.Log(err.Error())
-					}
-				}
-			} else {
-				isOkay = false
-				request.Log(err.Error())
-			}
-		}
-
-		if request.Extras["CloudSQLUpdateScripts"] != nil {
-			updateArray := request.Extras["CloudSQLUpdateScripts"].([]string)
-			for x := 0; x < len(updateArray); x++ {
-				updateQuery := updateArray[x]
-				err := repository.executeNonQuery(conn, updateQuery, request)
-				if err != nil {
-					request.Log("Error! " + err.Error())
-					isOkay = false
-				}
-			}
-		}
-
-		request.Extras["CloudSQLUpdateScripts"] = nil
-
-	}
-
-	if isOkay {
-		response.IsSuccess = true
-		response.Message = "Successfully stored object(s) in CloudSQL"
-		request.Log(response.Message)
-	} else {
-		response.IsSuccess = false
-		response.Message = "Error storing/updating all object(s) in CloudSQL."
-		request.Log(response.Message)
-	}
-
-	repository.closeConnection(conn)
-	return response
-}*/
-
 func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, class string, id string, request *messaging.ObjectRequest) (obj map[string]interface{}) {
 
 	isCacheable := false
@@ -1273,42 +1183,6 @@ func (repository CloudSqlRepository) getByKey(conn *sql.DB, namespace string, cl
 
 	return
 }
-
-/*func (repository CloudSqlRepository) getStoreScript(conn *sql.DB, request *messaging.ObjectRequest) (query []string, err error) {
-	namespace := request.Controls.Namespace
-	class := request.Controls.Class
-
-	if request.Body.Object != nil {
-		arr := make([]map[string]interface{}, 1)
-		arr[0] = request.Body.Object
-		queryOutput := repository.getSingleQuery(request, namespace, class, arr, conn)
-		query = append(query, queryOutput)
-	} else {
-
-		noOfElementsPerSet := 1000
-		noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
-		remainderFromSets := 0
-		remainderFromSets = (len(request.Body.Objects) - (noOfSets * noOfElementsPerSet))
-
-		startIndex := 0
-		stopIndex := noOfElementsPerSet
-
-		for x := 0; x < noOfSets; x++ {
-			queryOutput := repository.getSingleQuery(request, namespace, class, request.Body.Objects[startIndex:stopIndex], conn)
-			query = append(query, queryOutput)
-			startIndex += noOfElementsPerSet
-			stopIndex += noOfElementsPerSet
-		}
-
-		if remainderFromSets > 0 {
-			start := len(request.Body.Objects) - remainderFromSets
-			queryOutput := repository.getSingleQuery(request, namespace, class, request.Body.Objects[start:len(request.Body.Objects)], conn)
-			query = append(query, queryOutput)
-		}
-
-	}
-	return
-}*/
 
 func (repository CloudSqlRepository) GetMultipleStoreScripts(conn *sql.DB, request *messaging.ObjectRequest) (query []map[string]interface{}, err error) {
 	namespace := request.Controls.Namespace
@@ -1390,92 +1264,6 @@ func (repository CloudSqlRepository) GetMultipleInsertQuery(request *messaging.O
 	queryData["queryObject"] = records
 	return
 }
-
-/*func (repository CloudSqlRepository) getSingleQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (query string) {
-	updateArray := make([]map[string]interface{}, 0)
-	insertArray := make([]map[string]interface{}, 0)
-	updateScripts := make([]string, 0)
-
-	for _, obj := range records {
-		currentObject := make(map[string]interface{})
-		currentObject = repository.getByKey(conn, namespace, class, getNoSqlKeyById(request, obj), request)
-		if currentObject == nil || len(currentObject) == 0 {
-			insertArray = append(insertArray, obj)
-		} else {
-			updateArray = append(updateArray, obj)
-		}
-
-	}
-
-	//create update scripts
-	for _, obj := range updateArray {
-		updateValues := ""
-		isFirst := true
-		for k, v := range obj {
-			if isFirst {
-				isFirst = false
-			} else {
-				updateValues += ","
-			}
-
-			updateValues += (k + "=" + repository.getSqlFieldValue(v))
-		}
-		Updatequery := ("UPDATE " + repository.getDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";")
-		updateScripts = append(updateScripts, Updatequery)
-
-	}
-
-	if len(updateScripts) > 0 {
-		request.Extras["CloudSQLUpdateScripts"] = updateScripts
-	}
-
-	//create insert scripts
-	isFirstRow := true
-	var keyArray []string
-	for _, obj := range insertArray {
-		if isFirstRow {
-			query += ("INSERT INTO " + repository.getDatabaseName(namespace) + "." + class)
-		}
-
-		id := ""
-
-		if obj["OriginalIndex"] == nil {
-			id = getNoSqlKeyById(request, obj)
-		} else {
-			id = obj["OriginalIndex"].(string)
-		}
-
-		delete(obj, "OriginalIndex")
-
-		keyList := ""
-		valueList := ""
-
-		if isFirstRow {
-			for k, _ := range obj {
-				keyList += ("," + k)
-				keyArray = append(keyArray, k)
-			}
-		}
-		//request.Log(keyArray)
-		for _, k := range keyArray {
-			v := obj[k]
-			valueList += ("," + repository.getSqlFieldValue(v))
-		}
-
-		if isFirstRow {
-			query += "(__os_id" + keyList + ") VALUES "
-		} else {
-			query += ","
-		}
-		query += ("(\"" + id + "\"" + valueList + ")")
-
-		if isFirstRow {
-			isFirstRow = false
-		}
-	}
-
-	return
-}*/
 
 func (repository CloudSqlRepository) getSingleObjectInsertQuery(request *messaging.ObjectRequest, namespace, class string, obj map[string]interface{}, conn *sql.DB) (query string) {
 	var keyArray []string
@@ -1887,14 +1675,22 @@ func (repository CloudSqlRepository) golangToSql(value interface{}) string {
 	case uint8:
 	case uint16:
 	case uint32:
+		strValue = "INT (10)"
+		break
 	case uint64:
+		strValue = "INT (10)"
+		break
 	case int8:
 	case int16:
 	case int32:
+		strValue = "INT (10)"
+		break
 	case int64:
 		strValue = "INT (10)"
 		break
 	case float32:
+		strValue = "DOUBLE"
+		break
 	case float64:
 		strValue = "DOUBLE"
 		break

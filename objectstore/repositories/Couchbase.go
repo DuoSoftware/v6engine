@@ -1,6 +1,7 @@
 package repositories
+
 //update servers to 15.04 so gocb is supported
-/*
+
 import (
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
@@ -12,11 +13,10 @@ import (
 	"strings"
 	"time"
 )
-*/
 
 type CouchRepository struct {
 }
-/*
+
 func (repository CouchRepository) GetRepositoryName() string {
 	return "Couchbase"
 }
@@ -293,6 +293,10 @@ func (repository CouchRepository) Test(request *messaging.ObjectRequest) {
 
 }
 
+func (repository CouchRepository) ClearCache(request *messaging.ObjectRequest) {
+
+}
+
 func setOne(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
 
@@ -373,6 +377,39 @@ func getCouchBucket(request *messaging.ObjectRequest) (bucket *couchbase.Bucket,
 	isError = false
 	request.Log("Getting store configuration settings for Couchbase")
 
+	BucketManagerUserName := "Administrator"
+	BucketManagerPassword := "DuoS123"
+	FlushEnabled := true
+	IndexReplicas := false
+	Quota := 100
+	Replicas := 0
+
+	couchConf := request.Configuration.ServerConfiguration["COUCH"]
+
+	if couchConf["BucketManagerUserName"] != "" {
+		BucketManagerUserName = couchConf["BucketManagerUserName"]
+	}
+
+	if couchConf["BucketManagerPassword"] != "" {
+		BucketManagerPassword = couchConf["BucketManagerPassword"]
+	}
+
+	if couchConf["FlushEnabled"] != "" {
+		FlushEnabled, _ = strconv.ParseBool(couchConf["IsFlushEnabled"])
+	}
+
+	if couchConf["IndexReplicas"] != "" {
+		IndexReplicas, _ = strconv.ParseBool(couchConf["IsIndexReplicas"])
+	}
+
+	if couchConf["Quota"] != "" {
+		Quota, _ = strconv.Atoi(couchConf["Quota"])
+	}
+
+	if couchConf["Replicas"] != "" {
+		Replicas, _ = strconv.Atoi(couchConf["Replicas"])
+	}
+
 	setting_host := request.Configuration.ServerConfiguration["COUCH"]["Url"]
 	setting_bucket := request.Configuration.ServerConfiguration["COUCH"]["Bucket"]
 	setting_bucket = getSQLnamespace(request)
@@ -395,8 +432,8 @@ func getCouchBucket(request *messaging.ObjectRequest) (bucket *couchbase.Bucket,
 	returnBucket, err := pool.GetBucket(setting_bucket)
 
 	if err != nil {
-		
-		err1 := createCouchbaseBucket(setting_host, setting_bucket)
+
+		err1 := createCouchbaseBucket(setting_host, setting_bucket, BucketManagerUserName, BucketManagerPassword, FlushEnabled, IndexReplicas, Quota, Replicas)
 		if !err1 {
 			isError = true
 			errorMessage = "Error getting/creating Couchbase bucket: " + setting_bucket
@@ -440,18 +477,18 @@ func reconnect(url string, bucketName string) (bucket *couchbase.Bucket) {
 	return bucket
 }
 
-func createCouchbaseBucket(url string, bucketName string) (status bool) {
+func createCouchbaseBucket(url, bucketName, BucketManagerUserName, BucketManagerPassword string, FlushEnabled, IndexReplicas bool, Quota, Replicas int) (status bool) {
 	tempUrl := strings.Split(url, ":")
 	cluster, err := gocb.Connect("couchbase://" + tempUrl[0] + "")
-	clustermgr := cluster.Manager("Administrator", "123456")
+	clustermgr := cluster.Manager(BucketManagerUserName, BucketManagerPassword)
 
 	bucketSettings := gocb.BucketSettings{}
-	bucketSettings.FlushEnabled = true
-	bucketSettings.IndexReplicas = false
+	bucketSettings.FlushEnabled = FlushEnabled
+	bucketSettings.IndexReplicas = IndexReplicas
 	bucketSettings.Name = bucketName
 	bucketSettings.Password = ""
-	bucketSettings.Quota = 100
-	bucketSettings.Replicas = 0
+	bucketSettings.Quota = Quota
+	bucketSettings.Replicas = Replicas
 	bucketSettings.Type = 0
 	q := &bucketSettings
 
@@ -887,4 +924,3 @@ func executeCouchbaseGetClasses(request *messaging.ObjectRequest) (returnByte []
 	}
 	return
 }
-*/
