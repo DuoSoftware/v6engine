@@ -49,8 +49,8 @@ type LoginSessions struct {
 }
 
 // AppAutherize Autherize the application for the user
-func (h *AuthHandler) AppAutherize(ApplicationID, UserID string) bool {
-	bytes, err := client.Go("ignore", "com.duosoftware.auth", "atherized").GetOne().ByUniqueKey(ApplicationID + "-" + UserID).Ok() // fetech user autherized
+func (h *AuthHandler) AppAutherize(ApplicationID, UserID, Domain string) bool {
+	bytes, err := client.Go("ignore", Domain, "atherized10x564xv").GetOne().ByUniqueKey(ApplicationID + "-" + UserID).Ok() // fetech user autherized
 	term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
 	if err == "" {
 		if bytes != nil {
@@ -245,7 +245,7 @@ func (h *AuthHandler) GetAuthCode(ApplicationID, UserID, URI string) string {
 }
 
 // AutherizeApp autherize apps using the secret key that the application provided
-func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID, SecurityToken string) (bool, string) {
+func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID, SecurityToken, Domain string) (bool, string) {
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "authcode").GetOne().ByUniqueKey(Code).Ok()
 	term.Write("AutherizeApp For ApplicationID "+ApplicationID+" Code "+Code+" Secret "+AppSecret+" Err "+err, term.Debug)
 	var uList AuthCode
@@ -261,7 +261,7 @@ func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID, Secur
 				appAth.AppliccatioID = ApplicationID
 				appAth.AutherizeKey = ApplicationID + "-" + UserID
 				appAth.Name = application.Name
-				client.Go("ignore", "com.duosoftware.auth", "atherized").StoreObject().WithKeyField("AutherizeKey").AndStoreOne(appAth).Ok()
+				client.Go("ignore", Domain, "atherized10x564xv").StoreObject().WithKeyField("AutherizeKey").AndStoreOne(appAth).Ok()
 				return true, ""
 			}
 		} else {

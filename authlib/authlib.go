@@ -466,7 +466,7 @@ func (A Auth) Authorize(SecurityToken string, ApplicationID string) (a AuthCerti
 		if c.Otherdata["ApplicationID"] == ApplicationID {
 			return c
 		}
-		if h.AppAutherize(ApplicationID, c.UserID) == true {
+		if h.AppAutherize(ApplicationID, c.UserID, c.Domain) == true {
 			//var appH applib.Apphanler
 			//application, err := appH.Get(ApplicationID, SecurityToken)
 			//if err != "" {
@@ -588,7 +588,7 @@ func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, Applica
 		client.Go("ignore", c.Domain, "scope").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
 		//insert to Objectstore ends here
 		term.Write("AutherizeApp ---------------------------", term.Debug)
-		out, err := h.AutherizeApp(Code, ApplicationID, AppSecret, c.UserID, SecurityToken)
+		out, err := h.AutherizeApp(Code, ApplicationID, AppSecret, c.UserID, SecurityToken, c.Domain)
 		if err != "" {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
 			return
