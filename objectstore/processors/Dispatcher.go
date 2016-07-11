@@ -22,7 +22,7 @@ func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.Rep
 	var outResponse repositories.RepositoryResponse
 
 	if transactionID != "" || transactionStruct.Type != "" {
-		request.Log("Transaction Request")
+		request.Log("Debug : Transaction Request")
 		if repositories.CheckRedisAvailability(request) {
 			var t TransactionDispatcher
 			outResponse = t.DispatchTransaction(request)
@@ -31,7 +31,7 @@ func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.Rep
 			outResponse.Message = "REDIS not found! Please Config REDIS for ObjectStore for Transactions!"
 		}
 	} else {
-		request.Log("Default Request")
+		request.Log("Debug : Default Request")
 		outResponse = d.ProcessDefaultDispatcher(request)
 	}
 

@@ -21,57 +21,57 @@ func (r ReplicatedStorageEngine) Store(request *messaging.ObjectRequest) (respon
 		successAction = 1
 		failAction = 2
 		if request.Controls.Multiplicity == "single" {
-			request.Log("Getting settings for single insert")
+			request.Log("Debug : Getting settings for single insert")
 			engineMappings = request.Configuration.StoreConfiguration["INSERT-SINGLE"]
 		} else {
-			request.Log("Getting settings for multiple insert")
+			request.Log("Debug : Getting settings for multiple insert")
 			engineMappings = request.Configuration.StoreConfiguration["INSERT-MULTIPLE"]
 		}
 	case "read-all":
 		successAction = 3
 		failAction = 1
-		request.Log("Getting settings for get all")
+		request.Log("Debug : Getting settings for get all")
 		engineMappings = request.Configuration.StoreConfiguration["GET-ALL"]
 	case "read-key":
 		successAction = 3
 		failAction = 1
-		request.Log("Getting settings for get by key")
+		request.Log("Debug : Getting settings for get by key")
 		engineMappings = request.Configuration.StoreConfiguration["GET-KEY"]
 	case "read-keyword":
 		successAction = 3
 		failAction = 1
-		request.Log("Getting settings for get by keyword")
+		request.Log("Debug : Getting settings for get by keyword")
 		engineMappings = request.Configuration.StoreConfiguration["GET-QUERY"]
 	case "read-filter":
 		successAction = 3
 		failAction = 1
-		request.Log("Getting settings for get by filtering")
+		request.Log("Debug : Getting settings for get by filtering")
 		engineMappings = request.Configuration.StoreConfiguration["GET-SEARCH"]
 
 	case "update":
 		successAction = 1
 		failAction = 2
 		if request.Controls.Multiplicity == "single" {
-			request.Log("Getting settings for single update")
+			request.Log("Debug : Getting settings for single update")
 			engineMappings = request.Configuration.StoreConfiguration["UPDATE-SINGLE"]
 		} else {
-			request.Log("Getting settings for multiple update")
+			request.Log("Debug : Getting settings for multiple update")
 			engineMappings = request.Configuration.StoreConfiguration["UPDATE-MULTIPLE"]
 		}
 	case "delete":
 		successAction = 1
 		failAction = 2
 		if request.Controls.Multiplicity == "single" {
-			request.Log("Getting settings for single delete")
+			request.Log("Debug : Getting settings for single delete")
 			engineMappings = request.Configuration.StoreConfiguration["DELETE-SINGLE"]
 		} else {
-			request.Log("Getting settings for multiple delete")
+			request.Log("Debug : Getting settings for multiple delete")
 			engineMappings = request.Configuration.StoreConfiguration["DELETE-MULTIPLE"]
 		}
 	case "special":
 		successAction = 3
 		failAction = 1
-		request.Log("Getting settings for special operation")
+		request.Log("Debug : Getting settings for special operation")
 		engineMappings = request.Configuration.StoreConfiguration["SPECIAL"]
 
 	}
@@ -147,7 +147,7 @@ func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []rep
 	}
 
 	if canRollback {
-		request.Log("Transaction failed Rollbacking!!!")
+		request.Log("Error : Transaction failed Rollbacking!!!")
 	}
 	return
 }
