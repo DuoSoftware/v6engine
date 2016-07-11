@@ -59,9 +59,32 @@ func GetByKey(request *messaging.ObjectRequest, database int) (body []byte) {
 
 func StoreOne(request *messaging.ObjectRequest, data map[string]interface{}, database int) (err error) {
 	if CheckCacheAvailability(request) {
-		err = repositories.SetOneRedis(request, data, database)
+		err = repositories.SetOneRedis(request, GetMapWithoutOsHeadersForStoreOne(data), database)
 		if err != nil {
 			term.Write("Error storing One Object to Cache : "+err.Error(), term.Debug)
+		}
+	}
+	return
+}
+
+func GetMapWithoutOsHeadersForStoreOne(input map[string]interface{}) (output map[string]interface{}) {
+	output = make(map[string]interface{})
+	for key, value := range input {
+		if key != "__osHeaders" {
+			output[key] = value
+		}
+	}
+	return
+}
+
+func GetMapWithoutOsHeadersForStoreMany(input []map[string]interface{}) (output []map[string]interface{}) {
+	output = make([]map[string]interface{}, len(input))
+
+	for x := 0; x < len(input); x++ {
+		for key, value := range input[x] {
+			if key != "__osHeaders" {
+				output[x][key] = value
+			}
 		}
 	}
 	return
@@ -114,7 +137,7 @@ func DeletePattern(request *messaging.ObjectRequest, pattern string, database in
 
 func StoreMany(request *messaging.ObjectRequest, data []map[string]interface{}, database int) (err error) {
 	if CheckCacheAvailability(request) {
-		err = repositories.SetManyRedis(request, data, database)
+		err = repositories.SetManyRedis(request, GetMapWithoutOsHeadersForStoreMany(data), database)
 		if err != nil {
 			term.Write("Error storing Many Objects to Cache : "+err.Error(), term.Debug)
 		}
