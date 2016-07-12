@@ -81,11 +81,13 @@ func GetMapWithoutOsHeadersForStoreMany(input []map[string]interface{}) (output 
 	output = make([]map[string]interface{}, len(input))
 
 	for x := 0; x < len(input); x++ {
+		singleObject := make(map[string]interface{})
 		for key, value := range input[x] {
 			if key != "__osHeaders" {
-				output[x][key] = value
+				singleObject[key] = value
 			}
 		}
+		output[x] = singleObject
 	}
 	return
 }

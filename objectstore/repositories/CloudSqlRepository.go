@@ -646,7 +646,6 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		return response
 	case "gettablemeta":
 		recordCount := 0
-		primaryKey := ""
 		fieldNameList := make([]string, 0)
 		isError := false
 		request.Log("Debug : Starting GET-Table-Meta-Data sub routine")
@@ -674,9 +673,6 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		} else {
 			if len(resultSet2) > 0 {
 				for x := 0; x < len(resultSet2); x++ {
-					if resultSet2[x]["Key"].(string) == "PRI" {
-						primaryKey = resultSet2[x]["Field"].(string)
-					}
 					fieldNameList = append(fieldNameList, resultSet2[x]["Field"].(string))
 				}
 			}
@@ -688,7 +684,6 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			response.IsSuccess = true
 			returnMap := make(map[string]interface{})
 			returnMap["RecordCount"] = recordCount
-			returnMap["PrimaryKey"] = primaryKey
 			returnMap["FieldList"] = fieldNameList
 			fmt.Println(returnMap)
 			byteArray, _ := json.Marshal(returnMap)

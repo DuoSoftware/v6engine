@@ -155,7 +155,7 @@ func cacheHandler(params martini.Params, w http.ResponseWriter, r *http.Request)
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
 	cpuCount := strconv.Itoa(runtime.NumCPU())
-	versionData := "{\"Name\": \"Objectstore\",\"Version\": \"1.3.2-a\",\"Change Log\":\"Added HTTP based ID updation service!\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
+	versionData := "{\"Name\": \"Objectstore\",\"Version\": \"1.3.2-a\",\"Change Log\":\"latest!\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
 	fmt.Fprintf(w, versionData)
 }
 
