@@ -36,8 +36,7 @@ func statusHandlder(params martini.Params, w http.ResponseWriter, r *http.Reques
 }
 
 func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	fmt.Println("-------------------------------------------------------")
-	fmt.Println("Post Request!")
+	fmt.Println("---------------------- Request Start ---------------------------------")
 	fmt.Println(time.Now())
 	fmt.Println(r.Header)
 	fmt.Println("-------------------------------------------------------")
@@ -57,10 +56,15 @@ func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request
 			} else {
 				fmt.Println("Request in String : ")
 				fmt.Println(string(rb))
+				fmt.Println()
 				fmt.Println("Request Unmarshalled : ")
 				fmt.Println(requestBody)
 			}
 		}
 	}
+
+	fmt.Println("---------------------- Request End ---------------------------------")
+	fmt.Println()
+	fmt.Println()
 
 }

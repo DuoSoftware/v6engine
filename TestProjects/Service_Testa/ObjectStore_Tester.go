@@ -59,6 +59,7 @@ func send() {
 
 	fmt.Println("999999")
 	fmt.Println(b)
+	//bytes, _ := client.Go("ignore", "roshitha123duocom.space.test.12thdoor.com", "productimagesNew").GetOne().ByUniqueKey("bamil bulk.jpg").Ok() // fetech user autherized
 
 	client.Go("ignore", "wp", "gg").StoreObject().WithKeyField("Token").AndStoreMany(b).Ok()
 	//client.Go("ignore", "wp", "gg").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
