@@ -438,6 +438,13 @@ func Flush(request *messaging.ObjectRequest) {
 		_ = client.FlushDB()
 	}
 
+	//Flush Logs
+	client, err := GetConnection(request, 8)
+	if err != nil {
+		return
+	}
+	_ = client.FlushDB()
+
 }
 
 func LRange(request *messaging.ObjectRequest, key string, database, start, end int) (result []string, err error) {
