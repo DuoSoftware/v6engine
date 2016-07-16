@@ -4,8 +4,10 @@ import (
 	"duov6.com/queryparser/analyzer"
 	"duov6.com/queryparser/repositories"
 	"duov6.com/queryparser/structs"
+	"errors"
 	"fmt"
 	"google.golang.org/cloud/datastore"
+	"strings"
 )
 
 //This is the main entry point to the query parser
@@ -74,6 +76,14 @@ func GetHiveQuery(queryString string, namespace string, class string, parameters
 }
 
 func getQuery(queryString string, repository string, namespace string, class string, parameters map[string]interface{}) (queryResult interface{}, err error) {
+
+	queryTokens := strings.Split(strings.ToLower(queryString), " ")
+
+	if queryTokens[0] != "select" {
+		err = errors.New("Invalid Query! Only SELECT statements are allowed!")
+		return
+	}
+
 	//get type of query
 	if queryType := analyzer.GetQueryType(queryString); queryType == "SQL" {
 		fmt.Println("SQL Query Identified!")
