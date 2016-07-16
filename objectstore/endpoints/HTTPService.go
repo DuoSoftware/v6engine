@@ -15,6 +15,7 @@ import (
 	"duov6.com/term"
 	"encoding/json"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
@@ -34,10 +35,9 @@ type FileData struct {
 
 var isLoggable bool
 var isJsonStack bool
+var isFlusherActivated bool
 
-func (h *HTTPService) Start(isLogEnabled bool, isJsonStackEnabled bool) {
-	isLoggable = isLogEnabled
-	isJsonStack = isJsonStackEnabled
+func (h *HTTPService) Start() {
 	term.Write("Object Store Listening on Port : 3000", 2)
 	m := martini.Classic()
 	m.Use(cors.Allow(&cors.Options{
@@ -65,20 +65,31 @@ func (h *HTTPService) Start(isLogEnabled bool, isJsonStackEnabled bool) {
 	//DELETE
 	m.Delete("/:namespace/:class", handleRequest)
 
+	//------- Utility End Points -------------
+
 	//Get All Error Post Logs
 	m.Get("/ErrorLogs", logHandler)
+
 	//Sync Increment Keys with DomainClassAttributes
 	m.Get("/SyncRedisKeys", syncHandler)
+
 	//Flush Cache
 	m.Get("/ClearCache", cacheHandler)
+
+	//View All Logs
+	m.Get("/ViewLogs")
+
+	//Enable or Disable Terminal View For Request Body
+	m.Get("/ToggleLogs", viewLogHandler)
+
+	//Enable or Disable logging Requests to Disk
+	m.Get("/ToggleStack", jsonStackHandler)
 
 	//5.1 silverlight access
 	// m.Get("/crossdomain.xml", Crossdomain)
 	// m.Get("/clientaccesspolicy.xml", Clientaccesspolicy)
 	m.Run()
 }
-
-var isFlusherActivated bool
 
 func startKeyFlusher(request *messaging.ObjectRequest) {
 	if !isFlusherActivated {
@@ -87,6 +98,30 @@ func startKeyFlusher(request *messaging.ObjectRequest) {
 			go keygenerator.UpdateCountsToDB()
 		}
 	}
+}
+
+func viewLogHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	msg := ""
+	if isLoggable {
+		isLoggable = false
+		msg = "Disabled Terminal Prompt Logging!"
+	} else {
+		isLoggable = true
+		msg = "Enabled Terminal Prompt Logging!"
+	}
+	fmt.Fprintf(w, msg)
+}
+
+func jsonStackHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	msg := ""
+	if isJsonStack {
+		isJsonStack = false
+		msg = "Disabled Writing to JSON Stack!"
+	} else {
+		isJsonStack = true
+		msg = "Enabled Writing to JSON Stack!"
+	}
+	fmt.Fprintf(w, msg)
 }
 
 func syncHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
@@ -405,18 +440,14 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					if err != nil {
 						message = "JSON Parse error in Request : " + err.Error()
 						isSuccess = false
-						if isLoggable {
-							fmt.Println("---------------------------- ERROR REQUEST BODY -----------------------------------")
-							fmt.Println(string(rb))
-							fmt.Println("-----------------------------------------------------------------------------")
-						}
+						color.Red("---------------------------- ERROR REQUEST BODY -----------------------------")
+						color.Red(string(rb))
+						color.Red("-----------------------------------------------------------------------------")
 					} else {
-						//Print All Everytime. Testing for DuoAuth. Remove this after testing done.
-						//isLoggable = true
 						if isLoggable {
-							fmt.Println("---------------------------- REQUEST BODY -----------------------------------")
-							fmt.Println(string(rb))
-							fmt.Println("-----------------------------------------------------------------------------")
+							color.Cyan("---------------------------- REQUEST BODY -----------------------------------")
+							color.Cyan(string(rb))
+							color.Cyan("-----------------------------------------------------------------------------")
 						}
 						objectRequest.Body = requestBody
 					}

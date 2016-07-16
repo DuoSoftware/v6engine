@@ -2,9 +2,11 @@ package messaging
 
 import (
 	"duov6.com/objectstore/configuration"
+	"duov6.com/term"
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type ObjectRequest struct {
@@ -33,6 +35,15 @@ func (o *ObjectRequest) Log(value interface{}) {
 
 	o.MessageStack = append(o.MessageStack, message)
 	if o.IsLogEnabled {
-		fmt.Println(value)
+		lowerCasedMsg := strings.ToLower(message)
+
+		if strings.Contains(lowerCasedMsg, "error") {
+			term.Write(value, term.Error)
+		} else if strings.Contains(lowerCasedMsg, "debug") {
+			term.Write(value, term.Debug)
+		} else {
+			term.Write(value, term.Information)
+		}
+
 	}
 }

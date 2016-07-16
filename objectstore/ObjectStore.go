@@ -5,63 +5,43 @@ import (
 	"duov6.com/objectstore/endpoints"
 	"duov6.com/objectstore/unittesting"
 	"fmt"
-	"os"
+	"github.com/fatih/color"
 	"runtime"
-	"strings"
 )
 
 func main() {
-
 	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	arguments := os.Args[1:]
-	var IsLoggable bool
-	var IsJsonStackEnabled bool
-	if len(arguments) > 0 {
-
-		if strings.EqualFold(arguments[0], "true") {
-			IsLoggable = true
-		} else if strings.EqualFold(arguments[1], "true") {
-			IsJsonStackEnabled = true
-		} else {
-			IsLoggable = false
-			IsJsonStackEnabled = false
-		}
-
-	} else {
-		IsLoggable = false
-		IsJsonStackEnabled = false
-	}
-
 	var isUnitTestMode bool = false
 
 	if isUnitTestMode {
 		unittesting.Start()
 	} else {
 		splash()
-		initialize(IsLoggable, IsJsonStackEnabled)
+		initialize()
 	}
 }
 
-func initialize(isLogEnabled bool, isJsonStack bool) {
+func initialize() {
 
 	cebadapter.Attach("ObjectStore", func(s bool) {
 		cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
-			fmt.Println("Store Configuration Successfully Loaded...")
+			fmt.Println()
 			fmt.Println(data)
+			fmt.Println()
+			color.Yellow("Store Configuration Successfully Loaded...")
 			agent := cebadapter.GetAgent()
 
 			agent.Client.OnEvent("globalConfigChanged.StoreConfig", func(from string, name string, data map[string]interface{}, resources map[string]interface{}) {
 				cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
-					fmt.Println("Store Configuration Successfully Updated...")
+					color.Yellow("Store Configuration Successfully Updated...")
 				})
 			})
 		})
-		fmt.Println("Successfully registered in CEB")
+		color.Yellow("Successfully registered in CEB")
 	})
 
 	httpServer := endpoints.HTTPService{}
-	go httpServer.Start(isLogEnabled, isJsonStack)
+	go httpServer.Start()
 
 	bulkService := endpoints.BulkTransferService{}
 	go bulkService.Start()
@@ -71,16 +51,15 @@ func initialize(isLogEnabled bool, isJsonStack bool) {
 }
 
 func splash() {
-
-	fmt.Println("")
-	fmt.Println("")
-	fmt.Println("                                                 ~~")
-	fmt.Println("    ____             _____ __                  | ][ |")
-	fmt.Println("   / __ \\__  ______ / ___// /_____  ________     ~~")
-	fmt.Println("  / / / / / / / __ \\__ \\/ __/ __ \\/ ___/ _ \\")
-	fmt.Println(" / /_/ / /_/ / /_/ /__/ / /_/ /_/ / /  /  __/")
-	fmt.Println("/_____/\\__,_/\\____/____/\\__/\\____/_/   \\___/ ")
-	fmt.Println("")
-	fmt.Println("")
-	fmt.Println("")
+	color.Green("")
+	color.Green("")
+	color.Green("                                                 ~~")
+	color.Green("    ____             _____ __                  | ][ |")
+	color.Green("   / __ \\__  ______ / ___// /_____  ________     ~~")
+	color.Green("  / / / / / / / __ \\__ \\/ __/ __ \\/ ___/ _ \\")
+	color.Green(" / /_/ / /_/ / /_/ /__/ / /_/ /_/ / /  /  __/")
+	color.Green("/_____/\\__,_/\\____/____/\\__/\\____/_/   \\___/ ")
+	color.Green("")
+	color.Green("")
+	color.Green("")
 }

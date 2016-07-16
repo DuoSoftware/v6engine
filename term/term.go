@@ -8,8 +8,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	//"reflect"
+	"reflect"
 	//"time"
+	"github.com/fatih/color"
 )
 
 const (
@@ -110,38 +111,42 @@ func Write(data interface{}, mType int) {
 	//fmt.Println(data)
 
 	Lable := ""
-	// if reflect.TypeOf(data).String() == "string" {
-	// 	Lable = data.(string)
-	// } else {
-	// 	byteArray, err := json.Marshal(data)
-	// 	if err != nil {
-	// 		fmt.Println(err.Error())
-	// 		return
-	// 	}
-	// 	Lable = string(byteArray)
-	// }
+	if reflect.TypeOf(data).String() == "string" {
+		Lable = data.(string)
+	} else {
+		byteArray, err := json.Marshal(data)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		Lable = string(byteArray)
+	}
 
 	switch mType {
 	case Error:
 		// if Config.ErrorLine {
 		// 	fmt.Println(time.Now().Format("2006-01-02 15:04:05") + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
 		// }
+		color.Red(Lable)
 	case Information:
 		// if Config.InformationLine {
 		// 	fmt.Println(FgGreen + time.Now().Format("2006-01-02 15:04:05") + " Information! " + Lable + Reset)
 		// }
+		color.Yellow(Lable)
 	case Debug:
 		// if Config.DebugLine {
 		// 	fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Debug! " + Lable + Reset)
 		// }
 		//fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Debug!")
-		fmt.Println(data)
+		color.Green(Lable)
 	case Splash:
 		//fmt.Println(FgBlack + BgWhite + Lable + Reset)
 	case Blank:
 		//fmt.Println(Lable)
+		fmt.Println(Lable)
 	default:
 		//fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
+		fmt.Println(Lable)
 	}
 
 	if currentPlugin != nil {
