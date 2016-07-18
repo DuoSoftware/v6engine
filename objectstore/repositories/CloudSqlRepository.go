@@ -6,6 +6,7 @@ import (
 	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/keygenerator"
 	"duov6.com/objectstore/messaging"
+	"duov6.com/objectstore/security"
 	"duov6.com/queryparser"
 	"encoding/base64"
 	"encoding/json"
@@ -172,8 +173,17 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 }
 
 func (repository CloudSqlRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+
+	if security.ValidateSecurity(getNoSqlKey(request)) {
+		response.GetResponseWithBody(getEmptyByteObject())
+		request.Log("Error! Security Violation of request detected. Aborting request with error!")
+		return response
+	}
+
 	query := "SELECT * FROM " + repository.getDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE __os_id = '" + getNoSqlKey(request) + "';"
-	return repository.queryCommonOne(query, request)
+	response = repository.queryCommonOne(query, request)
+	return response
 }
 
 func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
@@ -208,6 +218,12 @@ func (repository CloudSqlRepository) GetSearch(request *messaging.ObjectRequest)
 		tokens := strings.Split(request.Body.Query.Parameters, ":")
 		fieldName := tokens[0]
 		fieldValue := tokens[1]
+
+		if security.ValidateSecurity(fieldValue) {
+			response.GetResponseWithBody(getEmptyByteObject())
+			request.Log("Error! Security Violation of request detected. Aborting request with error!")
+			return response
+		}
 
 		if len(tokens) > 2 {
 			fieldValue = ""
@@ -1166,10 +1182,10 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 							}
 						}
 					} else {
-						if strings.Contains(err.Error(), "doesn't exist") {
-							isOkay = false
-							break
-						}
+						//if strings.Contains(err.Error(), "doesn't exist") {
+						isOkay = false
+						break
+						//}
 					}
 				}
 

@@ -34,7 +34,8 @@ func (o *ObjectRequest) Log(value interface{}) {
 	}
 
 	o.MessageStack = append(o.MessageStack, message)
-	if o.IsLogEnabled {
+	if o.IsLogEnabled || strings.Contains(strings.ToLower(message), "error") {
+
 		lowerCasedMsg := strings.ToLower(message)
 
 		if strings.Contains(lowerCasedMsg, "error") {
