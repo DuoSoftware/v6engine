@@ -19,7 +19,7 @@ func initializeCEBConfig() {
 
 func inititalizeObjectStoreConfig() {
 	forever := make(chan bool)
-	cebadapter.Attach("ObjectStore", func(s bool) {
+	cebadapter.Attach("DuoNotifier", func(s bool) {
 		cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
 			fmt.Println("Store Configuration Successfully Loaded...")
 			fmt.Println(data)
@@ -33,7 +33,7 @@ func inititalizeObjectStoreConfig() {
 				})
 			})
 		})
-		fmt.Println("Successfully registered ObjectStore in CEB")
+		fmt.Println("Successfully registered DuoNotifier in CEB")
 	})
 
 	<-forever

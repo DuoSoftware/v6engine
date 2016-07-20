@@ -437,6 +437,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					}
 
 					err := json.Unmarshal(rb, &requestBody)
+					//AAA(rb)
 					if err != nil {
 						message = "JSON Parse error in Request : " + err.Error()
 						isSuccess = false
