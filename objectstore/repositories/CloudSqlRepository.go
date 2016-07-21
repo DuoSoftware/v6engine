@@ -155,6 +155,12 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 			parameters["take"] = ""
 		}
 
+		if request.Extras["orderby"] != nil {
+			parameters["orderby"] = request.Extras["orderby"].(string)
+		} else if request.Extras["orderbydsc"] != nil {
+			parameters["orderbydsc"] = request.Extras["orderbydsc"].(string)
+		}
+
 		formattedQuery, err := queryparser.GetCloudSQLQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class, parameters)
 		if err != nil {
 			request.Log("Error : " + err.Error())

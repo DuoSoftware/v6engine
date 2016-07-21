@@ -414,7 +414,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 
 			if r.Method != "GET" {
 				rb, rerr := ioutil.ReadAll(r.Body)
-
+				//rb = AAA(rb)
 				if rerr != nil {
 					message = "Error converting request : " + rerr.Error()
 					isSuccess = false
@@ -437,7 +437,6 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					}
 
 					err := json.Unmarshal(rb, &requestBody)
-					//AAA(rb)
 					if err != nil {
 						message = "JSON Parse error in Request : " + err.Error()
 						isSuccess = false
