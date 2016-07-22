@@ -70,8 +70,8 @@ func getQueryResultKey(request *messaging.ObjectRequest) string {
 
 	skip := "0"
 	take := "1000000"
-	orderby := "none"
-	orderbydsc := "none"
+	orderby := "orderyBy=none"
+	orderbydsc := "orderByDsc=none"
 
 	if request.Extras["skip"] != nil {
 		if request.Extras["skip"].(string) != "" {
