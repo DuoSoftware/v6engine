@@ -26,6 +26,16 @@ type TenantAutherized struct {
 }
 
 func AddSession(a AuthCertificate) {
+	o := make(map[string]string)
+	o["ClientIP"] = a.ClientIP
+	o["TenantID"] = a.Domain
+	o["email"] = a.Username
+	o["Name"] = a.Name
+	o["LastLoginDate"] = time.Now().UTC().Format("2006-01-02 15:04:05")
+	o["CreateDate"] = time.Now().UTC().Format("2006-01-02 15:04:05")
+	client.Go(a.SecurityToken, "reports.duosoftware.auth", "lastlogin").StoreObject().WithKeyField("TenantID").AndStoreOne(o).Ok()
+	client.Go(a.SecurityToken, "reports.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
+
 	client.Go(a.SecurityToken, "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 	term.Write("AddSession for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
 }

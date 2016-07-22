@@ -105,6 +105,7 @@ type AuthConfig struct { // Auth Config
 	Password           string // Password
 	NumberOFUserLogins int64
 	UserLoginTries     int64
+	ExpairyTime        int64
 }
 
 // A AuthCode represents a authcode cirtificate to Application auth.

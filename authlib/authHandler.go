@@ -287,6 +287,11 @@ func (h *AuthHandler) AddSession(a AuthCertificate) {
 	c.Username = a.Username
 	c.Otherdata = make(map[string]string)
 	c.Otherdata = a.Otherdata
+	if Config.ExpairyTime > 0 {
+		nowTime := time.Now().UTC()
+		nowTime = nowTime.Add(time.Duration(Config.ExpairyTime) * time.Minute)
+		c.Otherdata["expairyTime"] = nowTime.Format("2006-01-02 15:04:05")
+	}
 	session.AddSession(c)
 }
 
@@ -373,12 +378,29 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 		//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
 		c.DataCaps = strings.Replace(string(bytes[:]), "\"", "`", -1)
 		payload := common.JWTPayload(a.Domain, c.SecurityToken, c.UserID, c.Email, c.Domain, bytes)
+
+		if a.Otherdata["expairyTime"] != "" {
+			Ttime1, _ := time.Parse("2006-01-02 15:04:05", a.Otherdata["expairyTime"])
+			Ttime2 := time.Now().UTC()
+			difference := Ttime1.Sub(Ttime2)
+			minutesTime := difference.Minutes()
+			if minutesTime <= 0 {
+				h.LogOut(c)
+				return AuthCertificate{}, "Session Expaired."
+			}
+		}
+
 		if a.Otherdata["JWT"] == "" {
 			c.Otherdata = make(map[string]string)
 			c.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(a.Domain), payload)
 			c.Otherdata["Scope"] = strings.Replace(string(bytes[:]), "\"", "`", -1)
 			a.Otherdata["JWT"] = c.Otherdata["JWT"]
 			a.Otherdata["Scope"] = c.Otherdata["Scope"]
+			if Config.ExpairyTime > 0 {
+				nowTime := time.Now().UTC()
+				nowTime = nowTime.Add(time.Duration(Config.ExpairyTime) * time.Minute)
+				a.Otherdata["expairyTime"] = nowTime.Format("2006-01-02 15:04:05")
+			}
 			session.AddSession(a)
 		} else {
 			c.Otherdata = make(map[string]string)
