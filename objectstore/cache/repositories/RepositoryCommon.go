@@ -70,6 +70,8 @@ func getQueryResultKey(request *messaging.ObjectRequest) string {
 
 	skip := "0"
 	take := "1000000"
+	orderby := "orderyBy=none"
+	orderbydsc := "orderByDsc=none"
 
 	if request.Extras["skip"] != nil {
 		if request.Extras["skip"].(string) != "" {
@@ -83,8 +85,26 @@ func getQueryResultKey(request *messaging.ObjectRequest) string {
 		}
 	}
 
+	if request.Extras["skip"] != nil {
+		if request.Extras["skip"].(string) != "" {
+			skip = request.Extras["skip"].(string)
+		}
+	}
+
+	if request.Extras["take"] != nil {
+		if request.Extras["take"].(string) != "" {
+			take = request.Extras["take"].(string)
+		}
+	}
+
+	if request.Extras["orderby"] != nil {
+		orderby = "orderyBy=" + request.Extras["orderby"].(string)
+	} else if request.Extras["orderbydsc"] != nil {
+		orderbydsc = "orderByDsc=" + request.Extras["orderbydsc"].(string)
+	}
+
 	queryPart := " limit " + take
-	queryPart += " offset " + skip + " "
+	queryPart += " offset " + skip + " " + ":" + orderby + ":" + orderbydsc
 
 	query = strings.Replace(query, ";", "", -1)
 	query += queryPart + ";"

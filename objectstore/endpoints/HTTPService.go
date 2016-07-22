@@ -5,6 +5,7 @@ import (
 	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
 	"duov6.com/common"
+	"duov6.com/objectstore/JSON_Purifier"
 	"duov6.com/objectstore/backup"
 	"duov6.com/objectstore/cache"
 	"duov6.com/objectstore/configuration"
@@ -414,7 +415,10 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 
 			if r.Method != "GET" {
 				rb, rerr := ioutil.ReadAll(r.Body)
-				//rb = AAA(rb)
+
+				//Clean JSON with escape characters
+				_ = JSON_Purifier.Purify(rb)
+
 				if rerr != nil {
 					message = "Error converting request : " + rerr.Error()
 					isSuccess = false
