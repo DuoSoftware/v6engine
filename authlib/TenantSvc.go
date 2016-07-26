@@ -1,6 +1,7 @@
 package authlib
 
 import (
+	"duov6.com/common"
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
 	"duov6.com/session"
@@ -198,7 +199,10 @@ func (T TenantSvc) RemoveUser(email string) bool {
 		auth := AuthHandler{}
 		u, err := auth.GetUser(email)
 		if err == "" {
-
+			if user.Email == email {
+				T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Cant remove yourself from the.")))
+				return false
+			}
 			th := TenantHandler{}
 			//_, p := th.Autherized(user.Domain, user)
 			//if p.SecurityLevel == "admin" {
