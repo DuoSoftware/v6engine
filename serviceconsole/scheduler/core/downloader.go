@@ -130,10 +130,13 @@ func (d *Downloader) RecurringSchedule(raw []byte, namespace string, class strin
 		fmt.Println("JSON Unmarshll error : " + err.Error())
 	} else {
 		for _, obj := range unmarshall {
-			timeStamp := d.CheckIfRecurring(obj)
+			timeStamp, occuranceCount := d.CheckIfRecurring(obj)
 			if timeStamp != "" {
 				obj["TimeStamp"] = timeStamp
 				obj["TimeStampReadable"] = d.GetReadableTimeStamp(timeStamp)
+				ScheduleParameters := obj["ScheduleParameters"].(map[string]interface{})
+				ScheduleParameters["OccuranceCount"] = occuranceCount
+				obj["ScheduleParameters"] = ScheduleParameters
 				saveList = append(saveList, obj)
 			}
 		}
@@ -144,17 +147,19 @@ func (d *Downloader) RecurringSchedule(raw []byte, namespace string, class strin
 	}
 }
 
-func (d *Downloader) CheckIfRecurring(obj map[string]interface{}) (timestamp string) {
+func (d *Downloader) CheckIfRecurring(obj map[string]interface{}) (timestamp string, occurunceCount int) {
 	ScheduleParameters := make(map[string]interface{})
 	ScheduleParameters = obj["ScheduleParameters"].(map[string]interface{})
 	ScheduleQty := 1
 	ScheduleType := ""
 	timestamp = ""
 	objectTimeStamp := obj["TimeStamp"].(string)
+	occurunceCount = int(ScheduleParameters["OccuranceCount"].(float64))
 
 	if ScheduleParameters["ScheduleQty"] != nil {
-		if ScheduleParameters["ScheduleQty"].(float64) > 1 {
+		if ScheduleParameters["OccuranceCount"].(float64) > 1 && ScheduleParameters["ScheduleQty"].(float64) > 1 {
 			ScheduleQty = int(ScheduleParameters["ScheduleQty"].(float64))
+			occurunceCount -= 1
 		} else {
 			timestamp = ""
 			return
