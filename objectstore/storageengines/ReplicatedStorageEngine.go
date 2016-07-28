@@ -3,7 +3,6 @@ package storageengines
 import (
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/repositories"
-	"duov6.com/term"
 )
 
 type ReplicatedStorageEngine struct {
@@ -105,13 +104,13 @@ func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []rep
 
 	for _, repository := range repositoryList {
 		if repository != nil {
-			term.Write("Executing repository : "+repository.GetRepositoryName(), 2)
+			request.Log("Debug : Executing repository : " + repository.GetRepositoryName())
 
 			tmpResponse := repositories.Execute(request, repository)
 			canBreak := false
 
 			if tmpResponse.IsSuccess {
-				term.Write("Executing repository : "+repository.GetRepositoryName()+" - Success", 2)
+				request.Log("Debug : Executing repository : " + repository.GetRepositoryName() + " - Success")
 				switch successAction {
 				case 1:
 					response = tmpResponse
@@ -121,7 +120,7 @@ func startAtomicOperation(request *messaging.ObjectRequest, repositoryList []rep
 					canBreak = true
 				}
 			} else {
-				term.Write("Executing repository : "+repository.GetRepositoryName()+" - Failed", 1)
+				request.Log("Debug : Executing repository : " + repository.GetRepositoryName() + " - Failed")
 				switch failAction {
 				case 1:
 					continue

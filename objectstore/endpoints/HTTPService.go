@@ -475,17 +475,17 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 					canAddHeader = false
 				case "POST": //read query, read special, insert
 					if len(requestBody.Object) != 0 || len(requestBody.Objects) != 0 {
-						term.Write("Insert by POST : "+objectRequest.Body.Parameters.KeyProperty, 2)
+						//term.Write("Insert by POST : "+objectRequest.Body.Parameters.KeyProperty, 2)
 						headerOperation = "insert"
 						if len(objectRequest.Body.Object) != 0 {
 							headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
 						}
 					} else if requestBody.Query.Type != "" && requestBody.Query.Type != " " {
-						term.Write("Query Function Identified!", 2)
+						//term.Write("Query Function Identified!", 2)
 						headerOperation = "read-filter"
 						canAddHeader = false
 					} else if requestBody.Special.Type != "" && requestBody.Special.Type != " " {
-						term.Write("Special Function Identified!", 2)
+						//term.Write("Special Function Identified!", 2)
 						headerOperation = "special"
 						canAddHeader = false
 					}
