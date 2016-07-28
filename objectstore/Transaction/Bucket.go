@@ -110,7 +110,7 @@ func AppendTransaction(request *messaging.ObjectRequest) (err error) {
 }
 
 func CommitTransaction(request *messaging.ObjectRequest) (err error) {
-	TLog(request, request.Body.Transaction.Parameters["TransactionID"].(string))
+	//TLog(request, request.Body.Transaction.Parameters["TransactionID"].(string))
 	err = Execute(request)
 	if err == nil {
 		TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)

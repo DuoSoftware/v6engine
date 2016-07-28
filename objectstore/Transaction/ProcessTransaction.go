@@ -48,9 +48,9 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 				_ = PushToSuccessList(pickedRequest, TransactionID)
 				_ = PushToInvertList(invertedRequests, TransactionID)
 				//update log
-				UpdateLogStatus(int(x), TransactionID, "TRUE")
+				//UpdateLogStatus(int(x), TransactionID, "TRUE")
 			} else { //if false -> Start rollback process
-				UpdateLogStatus(int(x), TransactionID, "FALSE")
+				//UpdateLogStatus(int(x), TransactionID, "FALSE")
 				err = StartRollBackProcess(request)
 				if err != nil {
 					err = errors.New("Successfully Rolledback because Rollback was triggered!")

@@ -1,5 +1,6 @@
 package Transaction
 
+/*
 import (
 	"duov6.com/common"
 	"duov6.com/objectstore/cache"
@@ -124,3 +125,4 @@ func UpdateLogStatus(StepNo int, TransactionID string, value string) {
 
 	}
 }
+*/

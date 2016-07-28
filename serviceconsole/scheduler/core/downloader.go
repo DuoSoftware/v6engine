@@ -42,6 +42,7 @@ func (d *Downloader) DownloadObjects() {
 	if len(err) != 0 {
 		fmt.Println("ERROR : " + err)
 	}
+
 	if len(rawBytes) > 4 {
 		fmt.Println("Objects Found for Scheduled Execution : ")
 		fmt.Println(string(rawBytes))
