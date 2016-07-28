@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"duov6.com/common"
+	"duov6.com/objectstore/keygenerator"
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
 	"fmt"
@@ -140,5 +141,33 @@ func CheckRedisAvailability(request *messaging.ObjectRequest) (status bool) {
 	}
 	//remove this when going Live
 	//status = true
+	return
+}
+
+func GetRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
+	isGUIDKey := false
+	isAutoIncrementId := false //else MANUAL key from the user
+
+	//multiple requests
+	if (obj[request.Body.Parameters.KeyProperty].(string) == "-999") || (request.Body.Parameters.AutoIncrement == true) {
+		isAutoIncrementId = true
+	}
+
+	if (obj[request.Body.Parameters.KeyProperty].(string) == "-888") || (request.Body.Parameters.GUIDKey == true) {
+		isGUIDKey = true
+	}
+
+	if isGUIDKey {
+		returnID = common.GetGUID()
+	} else if isAutoIncrementId {
+		if CheckRedisAvailability(request) {
+			returnID = keygenerator.GetIncrementID(request, "COMMON", 0)
+		} else {
+			request.Log("Debug : WARNING! : Returning GUID since REDIS not available and not concurrent safe!")
+			returnID = common.GetGUID()
+		}
+	} else {
+		returnID = obj[request.Body.Parameters.KeyProperty].(string)
+	}
 	return
 }

@@ -52,6 +52,26 @@ func ExecuteCommand(request *messaging.ObjectRequest) repositories.RepositoryRes
 func ExecuteOperation(request *messaging.ObjectRequest) repositories.RepositoryResponse {
 	var response repositories.RepositoryResponse
 	var err error
+
+	//check for IDs and have IDs implemented here
+	operation := strings.ToLower(request.Controls.Operation)
+
+	if operation == "insert" || operation == "update" {
+		if request.Body.Object != nil {
+			//Single Object
+			id := repositories.GetRecordID(request, request.Body.Object)
+			request.Body.Object[request.Body.Parameters.KeyProperty] = id
+		} else {
+			//Multiple Objects
+			for index, obj := range request.Body.Objects {
+				id := repositories.GetRecordID(request, obj)
+				request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
+			}
+		}
+	}
+
+	//Preparing IDs end here
+
 	err = AppendTransaction(request)
 	if err != nil {
 		response.IsSuccess = false

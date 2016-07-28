@@ -170,7 +170,7 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 		}
 
 		query := formattedQuery
-		fmt.Println("Formatted Query : " + query)
+		//fmt.Println("Formatted Query : " + query)
 		response = repository.queryCommonMany(query, request)
 	} else {
 		response = repository.GetAll(request)
@@ -674,7 +674,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 
 		query := "SELECT count(*) as count FROM " + domain + "." + request.Controls.Class + ";"
 		result := repository.queryCommonMany(query, request)
-		fmt.Println(string(result.Body))
+		//fmt.Println(string(result.Body))
 		var resultSet []map[string]interface{}
 		if err := json.Unmarshal(result.Body, &resultSet); err != nil {
 			isError = true
@@ -707,7 +707,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			returnMap := make(map[string]interface{})
 			returnMap["RecordCount"] = recordCount
 			returnMap["FieldList"] = fieldNameList
-			fmt.Println(returnMap)
+			//fmt.Println(returnMap)
 			byteArray, _ := json.Marshal(returnMap)
 			response.Body = byteArray
 		}
@@ -889,6 +889,8 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 						}
 					}
 
+					intVal, _ := strconv.Atoi(id)
+					id = strconv.Itoa(intVal + 1)
 					id = prefix + id
 					response.Body = []byte(id)
 					response.IsSuccess = true
@@ -902,6 +904,8 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 				//Get ID and Return
 				if CheckRedisAvailability(request) {
 					id := keygenerator.GetTentativeID(request, "CLOUDSQL", 0)
+					intVal, _ := strconv.Atoi(id)
+					id = strconv.Itoa(intVal + 1)
 					response.Body = []byte(id)
 					response.IsSuccess = true
 					response.Message = "Successfully Completed!"
@@ -1069,7 +1073,7 @@ func (repository CloudSqlRepository) ClearCache(request *messaging.ObjectRequest
 func (repository CloudSqlRepository) queryCommon(query string, request *messaging.ObjectRequest, isOne bool) RepositoryResponse {
 	response := RepositoryResponse{}
 
-	fmt.Println("Query Common Query : " + query)
+	request.Log("Info Query : " + query)
 
 	conn, err := repository.getConnection(request)
 	if err == nil {
