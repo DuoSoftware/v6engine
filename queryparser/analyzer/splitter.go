@@ -2,7 +2,7 @@ package analyzer
 
 import (
 	"duov6.com/queryparser/structs"
-	"fmt"
+	//"fmt"
 	"strings"
 )
 
@@ -30,7 +30,8 @@ func GetQueryMaps(query string) (qObject structs.QueryObject) {
 		queryType = "BasicGet"
 		qObject = getBasicMapping(query)
 	}
-	fmt.Println("Type of Query : " + queryType)
+	_ = queryType
+	//fmt.Println("Type of Query : " + queryType)
 	return
 }
 

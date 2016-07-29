@@ -5,7 +5,7 @@ import (
 	"duov6.com/queryparser/repositories"
 	"duov6.com/queryparser/structs"
 	"errors"
-	"fmt"
+	//"fmt"
 	"google.golang.org/cloud/datastore"
 	"strings"
 )
@@ -86,7 +86,7 @@ func getQuery(queryString string, repository string, namespace string, class str
 
 	//get type of query
 	if queryType := analyzer.GetQueryType(queryString); queryType == "SQL" {
-		fmt.Println("SQL Query Identified!")
+		//fmt.Println("SQL Query Identified!")
 		//Check is valid for preprocessing. Create normalized query
 		preparedQuery, err := analyzer.PrepareSQLStatement(queryString, repository, namespace, class)
 		if err != nil {
@@ -131,7 +131,7 @@ func getQuery(queryString string, repository string, namespace string, class str
 
 	} else {
 		//reply other query
-		fmt.Println("OTHER")
+		//fmt.Println("OTHER")
 		queryResult = analyzer.GetOtherQuery(queryString, repository)
 	}
 	return
