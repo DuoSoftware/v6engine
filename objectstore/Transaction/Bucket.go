@@ -131,14 +131,17 @@ func AppendTransaction(request *messaging.ObjectRequest) (err error) {
 
 func CommitTransaction(request *messaging.ObjectRequest) (err error) {
 	//TLog(request, request.Body.Transaction.Parameters["TransactionID"].(string))
+	request.Log("Debug : Starting Commit Process")
 	err = Execute(request)
 	if err == nil {
+		request.Log("Debug : Completed Commit Process Successfully. Removing meta data from cache.")
 		TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
 		_ = cache.DeleteKey(request, GetBucketName(TransactionID), cache.Transaction)
 		_ = cache.DeleteKey(request, GetSuccessBucketName(TransactionID), cache.Transaction)
 		_ = cache.DeleteKey(request, GetInvertBucketName(TransactionID), cache.Transaction)
 	} else {
 		//Produce Commit Logs!
+		request.Log("Error : Error Completing Transaction. Unexpected error! : " + err.Error())
 	}
 	return
 }

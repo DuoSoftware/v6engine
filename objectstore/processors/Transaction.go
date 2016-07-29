@@ -37,6 +37,15 @@ func (t *TransactionDispatcher) ExecuteTransaction(request *messaging.ObjectRequ
 	if requestType == Transaction.Operation {
 		outResponse = Transaction.ExecuteOperation(request)
 	} else if requestType == Transaction.Command {
+
+		//Enable Logs forcefully
+		if !request.IsLogEnabled {
+			request.IsLogEnabled = true
+			var initialSlice []string
+			initialSlice = make([]string, 0)
+			request.MessageStack = initialSlice
+		}
+
 		outResponse = Transaction.ExecuteCommand(request)
 	}
 

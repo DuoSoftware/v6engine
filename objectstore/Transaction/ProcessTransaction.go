@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	//"fmt"
+	"strconv"
 )
 
 func Execute(request *messaging.ObjectRequest) (err error) {
@@ -16,13 +17,15 @@ func Execute(request *messaging.ObjectRequest) (err error) {
 	if cache.ExistsKeyValue(request, GetBucketName(TransactionID), cache.Transaction) && cache.GetListLength(request, GetBucketName(TransactionID), cache.Transaction) > 1 {
 		err = StartProcess(request)
 	} else {
-		err = errors.New("Transaction either already Rolledback or no transaction items found!")
+		err = errors.New("Error : No such Transaction items found or either already rollbacked!")
+		request.Log("Error : No such Transaction items found or either already rollbacked!")
 	}
 	return
 }
 
 func StartProcess(request *messaging.ObjectRequest) (err error) {
 	//GetTask
+	request.Log("Debug : Starting Executing Transactions Items.")
 	TransactionID := request.Body.Transaction.Parameters["TransactionID"].(string)
 	tasklength := cache.GetListLength(request, GetBucketName(TransactionID), cache.Transaction)
 
@@ -31,12 +34,14 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 	_, _ = cache.LPop(request, GetBucketName(TransactionID), cache.Transaction)
 
 	for x = 0; x < tasklength-1; x++ {
+		taskNo := strconv.Itoa(int(x))
+		request.Log("Debug : Executing Element No : " + taskNo)
 		pickedRequest, err2 := GetTask(request)
 		if err2 != nil {
 			//Rollback executed while executing last processs -> Execute rollback process
 			err = StartRollBackProcess(request)
 			if err != nil {
-				err = errors.New("Successfully Rolledback because Rollback was triggered!")
+				err = errors.New("Debug : Successfully Rolledback because Rollback was triggered!")
 			}
 			return
 		} else {
@@ -45,15 +50,17 @@ func StartProcess(request *messaging.ObjectRequest) (err error) {
 			response := ProcessDispatcher(pickedRequest)
 			//if success -> Push to success list, Create invert request and push to invert list
 			if response.IsSuccess {
+				request.Log("Debug : Successfully Executed Element No : " + taskNo)
 				_ = PushToSuccessList(pickedRequest, TransactionID)
 				_ = PushToInvertList(invertedRequests, TransactionID)
 				//update log
 				//UpdateLogStatus(int(x), TransactionID, "TRUE")
 			} else { //if false -> Start rollback process
 				//UpdateLogStatus(int(x), TransactionID, "FALSE")
+				request.Log("Error : Error Executing Element No : " + taskNo + ". Starting Rollback!")
 				err = StartRollBackProcess(request)
 				if err != nil {
-					err = errors.New("Successfully Rolledback because Rollback was triggered!")
+					err = errors.New("Debug : Successfully Rolledback because Rollback was triggered!")
 				}
 				return
 			}
