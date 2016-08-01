@@ -7,7 +7,6 @@ import (
 	"duov6.com/objectstore/repositories"
 	"duov6.com/objectstore/storageengines"
 	"encoding/json"
-	"fmt"
 	"strconv"
 )
 
@@ -83,7 +82,6 @@ func (d *Dispatcher) GetKeyNameForLog(request *messaging.ObjectRequest) (val str
 	} else {
 		val = "ErrorMultiplePostLog." + request.Controls.Namespace + "." + request.Controls.Class + "." + common.GetGUID()
 	}
-	fmt.Println(val)
 	return
 }
 
