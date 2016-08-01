@@ -442,9 +442,9 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 				}
 			}
 			ut.TenantIDs = s
-			//client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").StoreObject().WithKeyField("UserID").AndStoreOne(ut).Ok()
+			client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").StoreObject().WithKeyField("UserID").AndStoreOne(ut).Ok()
 			//-----test-------
-			client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").DeleteObject().WithKeyField("UserID").AndDeleteObject(ut).Ok()
+			//client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").DeleteObject().WithKeyField("UserID").AndDeleteObject(ut).Ok()
 			//-----test-------
 			term.Write("Remove user from com.duosoftware.tenant.userstenantmappings is succefull#"+TenantID, term.Debug)
 		} else {
