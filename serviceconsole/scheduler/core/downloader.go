@@ -155,11 +155,19 @@ func (d *Downloader) CheckIfRecurring(obj map[string]interface{}) (timestamp str
 	ScheduleType := ""
 	timestamp = ""
 	objectTimeStamp := obj["TimeStamp"].(string)
-	occurunceCount = int(ScheduleParameters["OccuranceCount"].(float64))
+
+	if ScheduleParameters["OccuranceCount"].(float64) > 0 {
+		occurunceCount = int(ScheduleParameters["OccuranceCount"].(float64))
+	} else {
+		occurunceCount = 0
+	}
 
 	if ScheduleParameters["ScheduleQty"] != nil {
-		if ScheduleParameters["OccuranceCount"].(float64) > 1 && ScheduleParameters["ScheduleQty"].(float64) > 1 {
+		if ScheduleParameters["ScheduleQty"].(float64) > 1 {
 			ScheduleQty = int(ScheduleParameters["ScheduleQty"].(float64))
+		}
+
+		if occurunceCount > 1 /*&& ScheduleParameters["ScheduleQty"].(float64) > 1*/ {
 			occurunceCount -= 1
 		} else {
 			timestamp = ""
