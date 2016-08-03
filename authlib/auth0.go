@@ -63,7 +63,7 @@ func (a *auth0) RegisterToken(object map[string]string) (AuthCertificate, string
 		user.Password = common.RandText(5)
 		user.ConfirmPassword = common.RandText(5)
 		user.Active = true
-		user, _ = h.SaveUser(user, false)
+		user, _ = h.SaveUser(user, false, "registertoken")
 	}
 
 	auth.Email = user.EmailAddress

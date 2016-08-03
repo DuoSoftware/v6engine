@@ -439,7 +439,7 @@ func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 		u.ConfirmPassword = passowrd
 		u.Password = passowrd
 		term.Write("Password : "+passowrd, term.Debug)
-		h.SaveUser(u, true)
+		h.SaveUser(u, true, "forgotpassword")
 		var inputParams map[string]string
 		inputParams = make(map[string]string)
 		// inputParams["@@email@@"] = u.EmailAddress
@@ -463,14 +463,14 @@ func (h *AuthHandler) ChangePassword(a AuthCertificate, newPassword string) bool
 		//passowrd := common.RandText(6)
 		u.ConfirmPassword = newPassword
 		u.Password = newPassword
-		h.SaveUser(u, true)
+		h.SaveUser(u, true, "changepassword")
 		return true
 	}
 	return false
 }
 
 // SaveUser helps to save the users
-func (h *AuthHandler) SaveUser(u User, update bool) (User, string) {
+func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, string) {
 	term.Write("SaveUser saving user  "+u.Name, term.Debug)
 	u.EmailAddress = strings.ToLower(u.EmailAddress)
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(u.EmailAddress).Ok()
@@ -485,7 +485,7 @@ func (h *AuthHandler) SaveUser(u User, update bool) (User, string) {
 			u.Active = false
 			u.UserID = common.GetGUID()
 			term.Write("SaveUser saving user  "+u.Name+" New User "+u.UserID, term.Debug)
-			//password := u.Password
+			password := u.Password
 			u.Password = common.GetHash(u.Password)
 			u.ConfirmPassword = common.GetHash(u.ConfirmPassword)
 			var Activ ActivationEmail
@@ -499,9 +499,21 @@ func (h *AuthHandler) SaveUser(u User, update bool) (User, string) {
 			// inputParams["@@password@@"] = password
 			inputParams["@@CEMAIL@@"] = u.EmailAddress
 			inputParams["@@CNAME@@"] = u.Name
-			inputParams["@@CODE@@"] = Activ.Token
+
 			//go notifier.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "T_Email_Verification", inputParams, nil, u.EmailAddress)
-			go notifier.Notify("ignore", "Verification", u.EmailAddress, inputParams, nil)
+
+			switch regtype {
+			case "tenant":
+				inputParams["@PASSWORD@"] = password
+				u.Active = true
+				go notifier.Notify("ignore", "TenantUser_Verification", u.EmailAddress, inputParams, nil)
+				break
+			default:
+				inputParams["@@CODE@@"] = Activ.Token
+
+				go notifier.Notify("ignore", "Verification", u.EmailAddress, inputParams, nil)
+				break
+			}
 			term.Write("E Mail Sent", term.Debug)
 			client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
 			term.Write("Activation stored", term.Debug)

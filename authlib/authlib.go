@@ -605,7 +605,7 @@ func (A Auth) GetGUID() string {
 
 func (A Auth) AddUser(u User) {
 	h := newAuthHandler()
-	u, err := h.SaveUser(u, false)
+	u, err := h.SaveUser(u, false, "xxx")
 	if err == "" {
 		b, _ := json.Marshal(u)
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
@@ -622,8 +622,11 @@ func (A Auth) RegisterTenantUser(u User) {
 	if err == "" {
 		t := TenantHandler{}
 		//u.EmailAddress=strings.ToLower(u.EmailAddress
+		password := common.RandText(5)
+		u.Password = password
+		u.ConfirmPassword = password
+		u, err := h.SaveUser(u, false, "tenant")
 
-		u, err := h.SaveUser(u, false)
 		if err == "" {
 			b, _ := json.Marshal(u)
 			x := t.GetTenant(c.Domain)
