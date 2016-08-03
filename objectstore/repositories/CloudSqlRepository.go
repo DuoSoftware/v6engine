@@ -1707,7 +1707,8 @@ func (repository CloudSqlRepository) getSqlFieldValue(value interface{}) string 
 		break
 	case string:
 		sval := fmt.Sprint(value)
-		if strings.ContainsAny(sval, "\"'\n\r\t") {
+		// if strings.ContainsAny(sval, "\"'\n\r\t") {
+		if strings.ContainsAny(sval, "\"\n\r\t") {
 			sEnc := base64.StdEncoding.EncodeToString([]byte(sval))
 			strValue = "'^" + sEnc + "'"
 		} else {

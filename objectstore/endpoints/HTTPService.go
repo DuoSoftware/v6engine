@@ -417,7 +417,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 				rb, rerr := ioutil.ReadAll(r.Body)
 
 				//Clean JSON with escape characters
-				_ = JSON_Purifier.Purify(rb)
+				rb = JSON_Purifier.Purify(rb)
 
 				if rerr != nil {
 					message = "Error converting request : " + rerr.Error()
