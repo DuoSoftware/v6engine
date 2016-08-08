@@ -1967,7 +1967,7 @@ func (repository CloudSqlRepository) executeQueryOne(request *messaging.ObjectRe
 }
 
 func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string, request *messaging.ObjectRequest) (err error) {
-	request.Log("Info Query : " + query)
+	//request.Log("Info Query : " + query)
 	tokens := strings.Split(strings.ToLower(query), " ")
 	result, err := conn.Exec(query)
 	if err == nil {
