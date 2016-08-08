@@ -2,11 +2,14 @@ package ceb
 
 import (
 	"bufio"
-	"duov6.com/ceb/messaging"
-	"encoding/json"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net"
+	"time"
+
+	"duov6.com/ceb/messaging"
 )
 
 /*
@@ -18,21 +21,21 @@ import (
 */
 
 type CEBClient struct {
-	outgoing chan string
-	reader   	*bufio.Reader
-	writer   	*bufio.Writer
-	connection 	*net.Conn
-	listener func(s messaging.CEBTCPCommand)
+	outgoing   chan string
+	reader     *bufio.Reader
+	writer     *bufio.Writer
+	connection *net.Conn
+	listener   func(s messaging.CEBTCPCommand)
 
-	agentName      string
-	events         map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{})
-	commands       map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{})
-	CommandMaps    []CommandMap
-	StatMetadata   []StatMetadata
-	ConfigMetadata []ConfigMetadata
+	agentName        string
+	events           map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{})
+	commands         map[string]func(from string, name string, data map[string]interface{}, resources map[string]interface{})
+	CommandMaps      []CommandMap
+	StatMetadata     []StatMetadata
+	ConfigMetadata   []ConfigMetadata
 	CanMonitorOutput bool
-	Resources      	map[string]interface{}
-	ListenerName   string
+	Resources        map[string]interface{}
+	ListenerName     string
 }
 
 var curentClient *CEBClient
@@ -49,9 +52,9 @@ func NewCEBClient(host string, callback func(s bool)) (client *CEBClient, e erro
 		reader := bufio.NewReader(connection)
 
 		c := &CEBClient{
-			outgoing: make(chan string),
-			reader:   reader,
-			writer:   writer,
+			outgoing:   make(chan string),
+			reader:     reader,
+			writer:     writer,
 			connection: &connection,
 		}
 
@@ -70,14 +73,13 @@ func NewCEBClient(host string, callback func(s bool)) (client *CEBClient, e erro
 
 			data := s.Data.(map[string]interface{})
 
-			if data["message"] !=nil{
+			if data["message"] != nil {
 				if data["message"] == "Successfully Registered!!!" {
-					callback(true);
+					callback(true)
 				}
 			}
 
-
-			if data["type"] !=nil {
+			if data["type"] != nil {
 				if data["type"] == "command" {
 
 					if data["name"] != nil {
@@ -106,9 +108,9 @@ func NewCEBClient(host string, callback func(s bool)) (client *CEBClient, e erro
 							c.executeCommand(fromUser, commandName, commandData, c.Resources)
 						}
 					}
-				}else {
-					var eventData = data["data"].(map[string]interface{});
-					c.executeEvent(eventData["userName"].(string), data["name"].(string), eventData, c.Resources);
+				} else {
+					var eventData = data["data"].(map[string]interface{})
+					c.executeEvent(eventData["userName"].(string), data["name"].(string), eventData, c.Resources)
 				}
 			}
 		}
@@ -136,8 +138,8 @@ func (client *CEBClient) read() {
 		if client != nil {
 			if client.reader != nil {
 				base64Line, _ := client.reader.ReadBytes('|')
-				if (len(base64Line) !=0){
-					line,err := base64.StdEncoding.DecodeString(string(base64Line[:len(base64Line)-1]))
+				if len(base64Line) != 0 {
+					line, err := base64.StdEncoding.DecodeString(string(base64Line[:len(base64Line)-1]))
 					commandObject := messaging.CEBTCPCommand{}
 					err = json.Unmarshal(line[:len(line)], &commandObject)
 					if err != nil {
@@ -145,8 +147,20 @@ func (client *CEBClient) read() {
 					} else {
 						client.listener(commandObject)
 					}
-				}else{
-					//assume that the connection is disconnected
+				} else {
+					c := *client.connection
+					c.SetReadDeadline(time.Now())
+					var one []byte
+					if _, err := c.Read(one); err == io.EOF {
+						var zero time.Time
+						c.SetReadDeadline(zero)
+					} else {
+						fmt.Println("CEB Disconnected!!!!")
+						c.Close()
+						client.reader = nil
+						client.writer = nil
+						break
+					}
 				}
 
 			}
@@ -156,12 +170,15 @@ func (client *CEBClient) read() {
 
 func (client *CEBClient) write() {
 	for data := range client.outgoing {
-		
+
 		encData := base64.StdEncoding.EncodeToString([]byte(data))
 
 		fmt.Println("AGENT SEND : ")
-		client.writer.WriteString(encData)
-		client.writer.Flush()
+		if client.writer != nil {
+			client.writer.WriteString(encData)
+			client.writer.Flush()
+		}
+
 	}
 }
 
@@ -290,7 +307,7 @@ func (client *CEBClient) OnCommand(name string, proc func(from string, name stri
 func (client *CEBClient) OnEvent(name string, proc func(from string, name string, data map[string]interface{}, resources map[string]interface{})) {
 	client.events[name] = proc
 	subscribeMap := make(map[string]interface{})
-	subscribeMap["userName"] = client.agentName;
+	subscribeMap["userName"] = client.agentName
 	invoke(client, name, "event-subscribe", subscribeMap)
 }
 
@@ -299,14 +316,14 @@ func (client *CEBClient) AddCommandMetadata(m CommandMap) {
 }
 
 func (client *CEBClient) UpdateCommandMetadata(name string, newSettings map[string]interface{}) {
-	for _,command := range client.ConfigMetadata {
+	for _, command := range client.ConfigMetadata {
 		if command.Code == name {
-			for k,v := range newSettings{
-				command.Parameters[k] = v;
+			for k, v := range newSettings {
+				command.Parameters[k] = v
 			}
 			break
 		}
-  	}
+	}
 }
 
 func (client *CEBClient) AddStatMetadata(m StatMetadata) {
@@ -317,6 +334,6 @@ func (client *CEBClient) AddConfigMetadata(m ConfigMetadata) {
 	client.ConfigMetadata = append(client.ConfigMetadata, m)
 }
 
-func (client *CEBClient) UpdateStats(statInterface interface{}){
+func (client *CEBClient) UpdateStats(statInterface interface{}) {
 	client.ClientCommand(client.ListenerName, "stat", "test", statInterface)
 }
