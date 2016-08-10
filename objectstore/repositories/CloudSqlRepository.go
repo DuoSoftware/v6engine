@@ -559,9 +559,13 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 		isError := false
 		for _, obj := range request.Body.Objects {
 			query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKeyById(request, obj))
-			err := repository.executeNonQuery(conn, query, request)
+			err, message := repository.executeNonQuery(conn, query, request)
 			if err != nil {
 				isError = true
+			} else {
+				if message == "No Rows Changed" {
+					request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
+				}
 			}
 		}
 		if isError {
@@ -585,13 +589,16 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 	conn, err := repository.getConnection(request)
 	if err == nil {
 		query := repository.getDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKey(request))
-		err := repository.executeNonQuery(conn, query, request)
+		err, message := repository.executeNonQuery(conn, query, request)
 		if err != nil {
 			response.IsSuccess = false
 			response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
 		} else {
 			response.IsSuccess = true
 			response.Message = "Successfully Deleted from CloudSQL repository!"
+			if message == "No Rows Changed" {
+				request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + request.Body.Object[request.Body.Parameters.KeyProperty].(string))
+			}
 		}
 	} else {
 		response.IsSuccess = false
@@ -726,7 +733,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		conn, err := repository.getConnection(request)
 		if err == nil {
 			query := "DROP TABLE " + domain + "." + request.Controls.Class
-			err := repository.executeNonQuery(conn, query, request)
+			err, _ := repository.executeNonQuery(conn, query, request)
 			if err != nil {
 				response.IsSuccess = false
 				response.Message = "Error Dropping Table in CloudSQL Repository : " + err.Error()
@@ -753,7 +760,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		conn, err := repository.getConnection(request)
 		if err == nil {
 			query := "DROP SCHEMA " + domain
-			err := repository.executeNonQuery(conn, query, request)
+			err, _ := repository.executeNonQuery(conn, query, request)
 			if err != nil {
 				response.IsSuccess = false
 				response.Message = "Error Dropping Table in CloudSQL Repository : " + err.Error()
@@ -945,7 +952,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 					keyName := obj["Key_name"].(string)
 					if !strings.Contains(executedList, keyName) {
 						alterQuery := "ALTER TABLE " + domain + "." + request.Controls.Class + " DROP INDEX " + keyName
-						_ = repository.executeNonQuery(conn, alterQuery, request)
+						_, _ = repository.executeNonQuery(conn, alterQuery, request)
 						executedList += " " + keyName
 					}
 				}
@@ -959,7 +966,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 				alterQuery += ", " + fieldNames[x]
 			}
 			alterQuery += ");"
-			err = repository.executeNonQuery(conn, alterQuery, request)
+			err, _ = repository.executeNonQuery(conn, alterQuery, request)
 			if err != nil {
 				response.IsSuccess = false
 				response.Message = err.Error()
@@ -998,7 +1005,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 					keyName := obj["Key_name"].(string)
 					if !strings.Contains(executedList, keyName) {
 						alterQuery := "ALTER TABLE " + domain + "." + request.Controls.Class + " DROP INDEX " + keyName
-						_ = repository.executeNonQuery(conn, alterQuery, request)
+						_, _ = repository.executeNonQuery(conn, alterQuery, request)
 						executedList += " " + keyName
 					}
 				}
@@ -1012,16 +1019,16 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			for _, singleName := range indexNames {
 				indexID := common.GetGUID()
 				alterQuery := "CREATE UNIQUE INDEX " + indexID + " ON " + domain + "." + request.Controls.Class + " (" + singleName + ");"
-				err = repository.executeNonQuery(conn, alterQuery, request)
+				err, _ = repository.executeNonQuery(conn, alterQuery, request)
 				if err != nil {
 					//1170 - Non defined key length for indexable field
 					if strings.Contains(err.Error(), "BLOB/TEXT") {
 						modifyQuery := "ALTER TABLE " + domain + "." + request.Controls.Class + " MODIFY COLUMN " + singleName + " varchar(255);"
-						err = repository.executeNonQuery(conn, modifyQuery, request)
+						err, _ = repository.executeNonQuery(conn, modifyQuery, request)
 						if err != nil {
 							request.Log("Error : " + err.Error())
 						} else {
-							err = repository.executeNonQuery(conn, alterQuery, request)
+							err, _ = repository.executeNonQuery(conn, alterQuery, request)
 							if err != nil {
 								request.Log("Error : " + err.Error())
 								isAllDone = false
@@ -1145,15 +1152,18 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 		}
 
 		insertScript := repository.getSingleObjectInsertQuery(request, domain, class, obj, conn)
-		err := repository.executeNonQuery(conn, insertScript, request)
+		err, _ := repository.executeNonQuery(conn, insertScript, request)
 		if err != nil {
 			if !strings.Contains(err.Error(), "specified twice") {
 				updateScript := repository.getSingleObjectUpdateQuery(request, domain, class, obj, conn)
-				err := repository.executeNonQuery(conn, updateScript, request)
+				err, message := repository.executeNonQuery(conn, updateScript, request)
 				if err != nil {
 					isOkay = false
 					request.Log("Error : " + err.Error())
 				} else {
+					if message == "No Rows Changed" {
+						request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
+					}
 					isOkay = true
 				}
 			} else {
@@ -1172,21 +1182,25 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 			script := scripts[x]["query"].(string)
 			if err == nil && script != "" {
 
-				err := repository.executeNonQuery(conn, script, request)
+				err, _ := repository.executeNonQuery(conn, script, request)
 				if err != nil {
 					request.Log("Error : " + err.Error())
 					if strings.Contains(err.Error(), "Duplicate entry") {
 						errorBlock := scripts[x]["queryObject"].([]map[string]interface{})
 						for _, singleQueryObject := range errorBlock {
 							insertScript := repository.getSingleObjectInsertQuery(request, domain, class, singleQueryObject, conn)
-							err1 := repository.executeNonQuery(conn, insertScript, request)
+							err1, _ := repository.executeNonQuery(conn, insertScript, request)
 							if err1 != nil {
 								if !strings.Contains(err.Error(), "specified twice") {
 									updateScript := repository.getSingleObjectUpdateQuery(request, domain, class, singleQueryObject, conn)
-									err2 := repository.executeNonQuery(conn, updateScript, request)
+									err2, message := repository.executeNonQuery(conn, updateScript, request)
 									if err2 != nil {
 										request.Log("Error : " + err2.Error())
 										isOkay = false
+									} else {
+										if message == "No Rows Changed" {
+											request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + singleQueryObject[request.Body.Parameters.KeyProperty].(string))
+										}
 									}
 								}
 							}
@@ -1469,13 +1483,13 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 				//if tableResult["Tables_in_"+dbName] == nil {
 				if len(tableResult) == 0 {
 					script := repository.getCreateScript(namespace, class, obj)
-					err = repository.executeNonQuery(conn, script, request)
+					err, _ = repository.executeNonQuery(conn, script, request)
 					if err != nil {
 						return
 					} else {
 						isTableCreatedNow = true
 						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (__os_id, class, maxCount,version) VALUES ('" + getDomainClassAttributesKey(request) + "','" + request.Controls.Class + "','0','" + common.GetGUID() + "')"
-						_ = repository.executeNonQuery(conn, recordForIDService, request)
+						_, _ = repository.executeNonQuery(conn, recordForIDService, request)
 						keygenerator.CreateNewKeyGenBundle(request)
 					}
 				}
@@ -1498,13 +1512,13 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 			if err == nil {
 				if tableResult["Tables_in_"+dbName] == nil {
 					script := repository.getCreateScript(namespace, class, obj)
-					err = repository.executeNonQuery(conn, script, request)
+					err, _ = repository.executeNonQuery(conn, script, request)
 					if err != nil {
 						return
 					} else {
 						isTableCreatedNow = true
 						recordForIDService := "INSERT INTO " + dbName + ".domainClassAttributes (__os_id, class, maxCount,version) VALUES ('" + getDomainClassAttributesKey(request) + "','" + request.Controls.Class + "','0','" + common.GetGUID() + "')"
-						_ = repository.executeNonQuery(conn, recordForIDService, request)
+						_, _ = repository.executeNonQuery(conn, recordForIDService, request)
 					}
 				}
 				if availableTables[dbName+"."+class] == nil || availableTables[dbName+"."+class] == false {
@@ -1562,7 +1576,7 @@ func (repository CloudSqlRepository) checkAvailabilityTable(request *messaging.O
 		if len(alterColumns) != 0 && len(alterColumns) != len(obj) {
 
 			alterQuery := "ALTER TABLE " + dbName + "." + class + " " + alterColumns
-			err = repository.executeNonQuery(conn, alterQuery, request)
+			err, _ = repository.executeNonQuery(conn, alterQuery, request)
 			if err != nil {
 				request.Log("Error : " + err.Error())
 			}
@@ -1966,14 +1980,14 @@ func (repository CloudSqlRepository) executeQueryOne(request *messaging.ObjectRe
 	return
 }
 
-func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string, request *messaging.ObjectRequest) (err error) {
+func (repository CloudSqlRepository) executeNonQuery(conn *sql.DB, query string, request *messaging.ObjectRequest) (err error, message string) {
 	//request.Log("Info Query : " + query)
 	tokens := strings.Split(strings.ToLower(query), " ")
 	result, err := conn.Exec(query)
 	if err == nil {
 		val, _ := result.RowsAffected()
 		if val <= 0 && (tokens[0] == "delete" || tokens[0] == "update") {
-			request.Log("Debug : No Rows Changed!")
+			message = "No Rows Changed"
 		}
 	}
 	return

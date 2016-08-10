@@ -33,17 +33,20 @@ func (o *ObjectRequest) Log(value interface{}) {
 		message = string(byteArray)
 	}
 
-	o.MessageStack = append(o.MessageStack, message)
-
 	if o.IsLogEnabled || strings.Contains(strings.ToLower(message), "error") || strings.Contains(strings.ToLower(message), "info") {
 
 		lowerCasedMsg := strings.ToLower(message)
 
 		if strings.Contains(lowerCasedMsg, "error") {
+			o.MessageStack = append(o.MessageStack, message)
 			term.Write(value, term.Error)
 		} else if strings.Contains(lowerCasedMsg, "debug") {
 			term.Write(value, term.Debug)
+			if o.IsLogEnabled {
+				o.MessageStack = append(o.MessageStack, message)
+			}
 		} else {
+			o.MessageStack = append(o.MessageStack, message)
 			term.Write(value, term.Information)
 		}
 

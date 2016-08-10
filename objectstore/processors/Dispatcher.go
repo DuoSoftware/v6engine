@@ -69,10 +69,6 @@ func (d *Dispatcher) ProcessDefaultDispatcher(request *messaging.ObjectRequest) 
 		}
 	}
 
-	if !request.IsLogEnabled {
-		request.MessageStack = make([]string, 0)
-	}
-
 	return outResponse
 }
 
