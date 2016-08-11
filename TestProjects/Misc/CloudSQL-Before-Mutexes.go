@@ -14,7 +14,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -26,147 +25,15 @@ var availableTables map[string]interface{}
 var tableCache map[string]map[string]string
 var connection map[string]*sql.DB
 
-var cloudSqlTableCache map[string]map[string]string
-var cloudSqlTableCacheLock = sync.RWMutex{}
-
-var cloudSqlAvailableTables map[string]interface{}
-var cloudSqlAvailableTablesLock = sync.RWMutex{}
-
-var cloudSqlAvailableDbs map[string]interface{}
-var cloudSqlAvailableDbsLock = sync.RWMutex{}
-
-var cloudSqlConnections map[string]*sql.DB
-var cloudSqlConnectionLock = sync.RWMutex{}
-
 func (repository CloudSqlRepository) GetRepositoryName() string {
 	return "CloudSQL"
 }
-
-// Start of GET and SET methods
-
-func (repository CloudSqlRepository) GetCloudSqlConnections(index string) (conn *sql.DB) {
-	cloudSqlConnectionLock.RLock()
-	defer cloudSqlConnectionLock.RUnlock()
-	conn = cloudSqlConnections[index]
-	return
-}
-
-func (repository CloudSqlRepository) SetCloudSqlConnections(index string, conn *sql.DB) {
-	cloudSqlConnectionLock.Lock()
-	defer cloudSqlConnectionLock.Unlock()
-	cloudSqlConnections[index] = conn
-}
-
-func (repository CloudSqlRepository) GetCloudSqlAvailableDbs(index string) (value interface{}) {
-	cloudSqlAvailableDbsLock.RLock()
-	defer cloudSqlAvailableDbsLock.RUnlock()
-	value = cloudSqlAvailableDbs[index]
-	return
-}
-
-func (repository CloudSqlRepository) SetCloudSqlAvailabaleDbs(index string, value interface{}) {
-	cloudSqlAvailableDbsLock.Lock()
-	defer cloudSqlAvailableDbsLock.Unlock()
-	cloudSqlAvailableDbs[index] = value
-}
-
-func (repository CloudSqlRepository) GetCloudSqlAvailableTables(index string) (value interface{}) {
-	cloudSqlAvailableTablesLock.RLock()
-	defer cloudSqlAvailableTablesLock.RUnlock()
-	value = cloudSqlAvailableTables[index]
-	return
-}
-
-func (repository CloudSqlRepository) SetCloudSqlAvailabaleTables(index string, value interface{}) {
-	cloudSqlAvailableTablesLock.Lock()
-	defer cloudSqlAvailableTablesLock.Unlock()
-	cloudSqlAvailableTables[index] = value
-}
-
-func (repository CloudSqlRepository) GetCloudSqlTableCache(index string) (value map[string]string) {
-	cloudSqlTableCacheLock.RLock()
-	defer cloudSqlTableCacheLock.RUnlock()
-	value = cloudSqlTableCache[index]
-	return
-}
-
-func (repository CloudSqlRepository) SetCloudSqlTableCache(index string, value map[string]string) {
-	cloudSqlTableCacheLock.Lock()
-	defer cloudSqlTableCacheLock.Unlock()
-	cloudSqlTableCache[index] = value
-}
-
-// End of GET and SET methods
-
-// func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
-
-// 	if cloudSqlConnections == nil {
-// 		cloudSqlConnections = make(map[string]*sql.DB)
-// 	}
-
-// 	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
-
-// 	username := mysqlConf["Username"]
-// 	password := mysqlConf["Password"]
-// 	url := mysqlConf["Url"]
-// 	port := mysqlConf["Port"]
-// 	IdleLimit := -1
-// 	OpenLimit := 0
-// 	TTL := 5
-
-// 	poolPattern := url
-
-// 	if mysqlConf["IdleLimit"] != "" {
-// 		IdleLimit, err = strconv.Atoi(mysqlConf["IdleLimit"])
-// 		if err != nil {
-// 			request.Log("Error : " + err.Error())
-// 		}
-// 	}
-
-// 	if mysqlConf["OpenLimit"] != "" {
-// 		OpenLimit, err = strconv.Atoi(mysqlConf["OpenLimit"])
-// 		if err != nil {
-// 			request.Log("Error : " + err.Error())
-// 		}
-// 	}
-
-// 	if mysqlConf["TTL"] != "" {
-// 		TTL, err = strconv.Atoi(mysqlConf["TTL"])
-// 		if err != nil {
-// 			request.Log("Error : " + err.Error())
-// 		}
-// 	}
-
-// 	if repository.GetCloudSqlConnections(poolPattern) == nil {
-// 		conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
-// 		if err != nil {
-// 			request.Log("Error : " + err.Error())
-// 			return
-// 		}
-// 		repository.SetCloudSqlConnections(poolPattern, conn)
-// 	} else {
-// 		if repository.GetCloudSqlConnections(poolPattern).Ping(); err != nil {
-// 			_ = repository.GetCloudSqlConnections(poolPattern).Close()
-// 			repository.SetCloudSqlConnections(poolPattern, nil)
-// 			conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
-// 			if err != nil {
-// 				request.Log("Error : " + err.Error())
-// 				return
-// 			}
-// 			repository.SetCloudSqlConnections(poolPattern, conn)
-// 		} else {
-// 			conn = repository.GetCloudSqlConnections(poolPattern)
-// 		}
-// 	}
-// 	return conn, err
-// }
 
 func (repository CloudSqlRepository) getConnection(request *messaging.ObjectRequest) (conn *sql.DB, err error) {
 
 	if connection == nil {
 		connection = make(map[string]*sql.DB)
 	}
-
 	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
 
 	username := mysqlConf["Username"]

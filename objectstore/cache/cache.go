@@ -170,7 +170,7 @@ func StoreQuery(request *messaging.ObjectRequest, data interface{}, database int
 func CheckCacheAvailability(request *messaging.ObjectRequest) (status bool) {
 	status = true
 	if request.Configuration.ServerConfiguration["REDIS"] == nil {
-		term.Write("Cache Config/Server Not Found!", term.Debug)
+		//term.Write("Cache Config/Server Not Found!", term.Debug)
 		status = false
 	} else if !checkValidTenentClass(request) {
 		status = false
