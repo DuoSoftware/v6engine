@@ -17,6 +17,10 @@ import (
 type PostgresRepository struct {
 }
 
+var availableDbs map[string]interface{}
+var availableTables map[string]interface{}
+var tableCache map[string]map[string]string
+
 func (repository PostgresRepository) GetRepositoryName() string {
 	return "Postgres DB"
 }

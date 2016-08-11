@@ -67,7 +67,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		//check cache
 		result := cache.Search(request, cache.Data)
 		if result == nil {
-			term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
+			//term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
 			response = repository.GetSearch(request)
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
 				var data []map[string]interface{}
@@ -86,7 +86,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		//check cache
 		result := cache.Query(request, cache.Data)
 		if result == nil {
-			term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
+			//term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
 			response = repository.GetQuery(request)
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
 				var data []map[string]interface{}
