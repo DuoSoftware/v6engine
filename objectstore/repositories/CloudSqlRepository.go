@@ -457,7 +457,7 @@ func (repository CloudSqlRepository) GetFullTextIndexes(request *messaging.Objec
 		return
 	}
 
-	domain := repository.GetDatabaseName(request.Controls.Class)
+	domain := repository.GetDatabaseName(request.Controls.Namespace)
 	getIndexesQuery := "show index from " + domain + "." + request.Controls.Class + " where Index_type = 'FULLTEXT'"
 
 	indexResult, err := repository.ExecuteQueryMany(request, conn, getIndexesQuery, "")

@@ -18,13 +18,34 @@ func (repository CassandraRepository) GetRepositoryName() string {
 	return "Cassandra DB"
 }
 
-func getCassandranamespace(request *messaging.ObjectRequest) string {
-	namespace := strings.Replace(request.Controls.Namespace, ".", "", -1)
+var cassandraConnections map[string]*sql.DB
+var cassandraConnectionLock = sync.RWMutex{}
+
+// Start of GET and SET methods
+
+func (repository CassandraRepository) GetCassandraConnections(index string) (conn *sql.DB) {
+	cassandraConnectionLock.RLock()
+	defer cassandraConnectionLock.RUnlock()
+	conn = cassandraConnections[index]
+	return
+}
+
+func (repository CassandraRepository) SetCassandraConnections(index string, conn *sql.DB) {
+	cassandraConnectionLock.Lock()
+	defer cassandraConnectionLock.Unlock()
+	cassandraConnections[index] = conn
+}
+
+// End of GET and SET methods
+
+func (repository CassandraRepository) GetNamespace(namespace string) string {
+	namespace = strings.Replace(namespace, ".", "", -1)
+	namespace += "db_"
 	return strings.ToLower(namespace)
 }
 
-func getCassandraConnection(request *messaging.ObjectRequest) (session *gocql.Session, isError bool, errorMessage string) {
-	keyspace := getCassandranamespace(request)
+func (repository CassandraRepository) GetConnection(request *messaging.ObjectRequest) (session *gocql.Session, isError bool, errorMessage string) {
+	keyspace := repository.GetNamespace(request.Controls.Namespace)
 	isError = false
 	cluster := gocql.NewCluster(request.Configuration.ServerConfiguration["CASSANDRA"]["Url"])
 	cluster.Keyspace = keyspace
@@ -46,7 +67,7 @@ func getCassandraConnection(request *messaging.ObjectRequest) (session *gocql.Se
 }
 
 // Helper Function
-func createNewCassandraKeyspace(request *messaging.ObjectRequest) (session *gocql.Session, isError bool) {
+func (repository CassandraRepository) CreateNewKeyspace(request *messaging.ObjectRequest) (session *gocql.Session, isError bool) {
 	isError = false
 	keyspace := getCassandranamespace(request)
 	//Log to Default SYSTEM Keyspace
@@ -937,6 +958,7 @@ func executeCassandraGetSelectedFields(request *messaging.ObjectRequest) (return
 
 	return
 }
+
 func getCassandraRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
 	isGUIDKey := false
 	isAutoIncrementId := false //else MANUAL key from the user
