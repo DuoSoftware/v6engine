@@ -25,3 +25,4 @@ objectstore/ObjectStore.exe~
 objectstore/Errors.log
 testpj/May2016/objectStoreTest.exe
 testpj/June2016/InsertTest.exe
+objectstore/repositories/Cassandra.go
