@@ -44,82 +44,86 @@ func (repository CassandraRepository) GetNamespace(namespace string) string {
 	return strings.ToLower(namespace)
 }
 
-func (repository CassandraRepository) GetConnection(request *messaging.ObjectRequest) (session *gocql.Session, isError bool, errorMessage string) {
+func (repository CassandraRepository) GetConnection(request *messaging.ObjectRequest) (conn *gocql.Session, err error) {
+
+	if cassandraConnections == nil {
+		cassandraConnections = make(map[string]*gocql.Session)
+	}
+
+	URL := request.Configuration.ServerConfiguration["CASSANDRA"]["Url"]
+
+	poolPattern := URL + request.Controls.Namespace
+
+	if repository.GetCassandraConnections(poolPattern) == nil {
+		conn, err = repository.CreateConnection(request)
+		if err != nil {
+			request.Log("Error : " + err.Error())
+			return
+		}
+		repository.SetCassandraConnections(poolPattern, conn)
+	} else {
+		conStatus := repository.GetCassandraConnections(poolPattern).Closed()
+		if conStatus == true {
+			repository.SetCassandraConnections(poolPattern, nil)
+			conn, err = repository.CreateConnection(request)
+			if err != nil {
+				request.Log("Error : " + err.Error())
+				return
+			}
+			repository.SetCassandraConnections(poolPattern, conn)
+		} else {
+			conn = repository.GetCassandraConnections(poolPattern)
+		}
+	}
+	return
+}
+
+func (repository CassandraRepository) CreateConnection(request *messaging.ObjectRequest) (conn *gocql.Session, err error) {
 	keyspace := repository.GetNamespace(request.Controls.Namespace)
-	isError = false
 	cluster := gocql.NewCluster(request.Configuration.ServerConfiguration["CASSANDRA"]["Url"])
 	cluster.Keyspace = keyspace
 
-	session, err := cluster.CreateSession()
+	conn, err = cluster.CreateSession()
 	if err != nil {
-		isError = false
-		errorMessage = err.Error()
 		request.Log("Error : Cassandra connection initilizing failed!")
-		session, _ = repository.CreateNewKeyspace(request)
-	} else {
-		request.Log("Cassandra connection initilizing success!")
+		err = repository.CreateNewKeyspace(request)
+		if err != nil {
+			request.Log("Error : " + err.Error())
+		} else {
+			return repository.CreateConnection(request)
+		}
 	}
-	//defer session.Close()
-	request.Log("Reusing existing Cassandra connection")
 	return
 }
 
 // Helper Function
-func (repository CassandraRepository) CreateNewKeyspace(request *messaging.ObjectRequest) (session *gocql.Session, isError bool) {
-	isError = false
+func (repository CassandraRepository) CreateNewKeyspace(request *messaging.ObjectRequest) (err error) {
 	keyspace := repository.GetNamespace(request.Controls.Namespace)
 	//Log to Default SYSTEM Keyspace
 	cluster := gocql.NewCluster(request.Configuration.ServerConfiguration["CASSANDRA"]["Url"])
 	cluster.Keyspace = "system"
-
-	session, err := cluster.CreateSession()
+	var conn *gocql.Session
+	conn, err = cluster.CreateSession()
 	if err != nil {
-		request.Log("Cassandra connection to SYSTEM keyspace initilizing failed!")
+		request.Log("Error : Cassandra connection to SYSTEM keyspace initilizing failed!")
 	} else {
-		request.Log("Cassandra connection to SYSTEM keyspace initilizing success!")
-		err := session.Query("CREATE KEYSPACE " + keyspace + " WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };").Exec()
+		err = conn.Query("CREATE KEYSPACE " + keyspace + " WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };").Exec()
 		if err != nil {
-			isError = false
-			request.Log("Failed to create new " + keyspace + " Keyspace : " + err.Error())
+			request.Log("Error : Failed to create new " + keyspace + " Keyspace : " + err.Error())
 		} else {
-			request.Log("Created new " + keyspace + " Keyspace")
+			request.Log("Debug : Created new " + keyspace + " Keyspace")
 		}
-		//session.Close()
-		cluster2 := gocql.NewCluster(request.Configuration.ServerConfiguration["CASSANDRA"]["Url"])
-		cluster2.Keyspace = keyspace
-		session2, err := cluster2.CreateSession()
-		if err != nil {
-			request.Log("Cassandra connection to " + keyspace + " keyspace initilizing failed!")
-		} else {
-			request.Log("Cassandra connection to " + keyspace + " keyspace initilizing success!")
-			session = session2
-			//Create a Namespace Class Attribute table
-			request.Log("Creating Cassandra Namespace Class Attribute table!")
-			request.Log("CREATE TABLE domainClassAttributes (class text, maxCount text, version text, PRIMARY KEY(class));")
-			err := session2.Query("CREATE TABLE domainClassAttributes (class text, maxCount text, version text, PRIMARY KEY(class));").Exec()
-			if err != nil {
-				isError = false
-				request.Log("Failed to create new Namespace Class Attribute table : " + err.Error())
-			} else {
-				request.Log("Created new Namespace Class Attribute table")
-			}
-		}
-
 	}
-	//defer session.Close()
-	request.Log("Reusing existing Cassandra connection")
 	return
 }
 
 func (repository CassandraRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting GET-ALL!")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := repository.GetConnection(request)
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
+	session, err := repository.GetConnection(request)
+	if err != nil {
+		response.GetErrorResponse(err.Error())
 	} else {
-		isError = false
-
 		iter2 := session.Query("SELECT * FROM " + strings.ToLower(request.Controls.Class)).Iter()
 
 		my, isErr := iter2.SliceMap()
@@ -221,11 +225,10 @@ func (repository CassandraRepository) GetQuery(request *messaging.ObjectRequest)
 func (repository CassandraRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting Get-BY-KEY!")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := repository.GetConnection(request)
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
+	session, err := repository.GetConnection(request)
+	if err != nil {
+		response.GetErrorResponse(err.Error())
 	} else {
-		isError = false
 
 		//get primary key field name
 		iter := session.Query("select type, column_name from system.schema_columns WHERE keyspace_name='" + repository.GetNamespace(request.Controls.Namespace) + "' AND columnfamily_name='" + strings.ToLower(request.Controls.Class) + "'").Iter()
@@ -306,9 +309,9 @@ func (repository CassandraRepository) InsertMultiple(request *messaging.ObjectRe
 	var idData map[string]interface{}
 	idData = make(map[string]interface{})
 
-	session, isError, errorMessage := repository.GetConnection(request)
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
+	session, err := repository.GetConnection(request)
+	if err != nil {
+		response.GetErrorResponse(err.Error())
 	} else {
 
 		// if createCassandraTable(request, session) {
@@ -430,10 +433,10 @@ func (repository CassandraRepository) InsertMultiple(request *messaging.ObjectRe
 func (repository CassandraRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting INSERT-SINGLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := repository.GetConnection(request)
+	session, err := repository.GetConnection(request)
 	keyValue := GetRecordID(request, nil)
-	if isError == true || keyValue == "" {
-		response.GetErrorResponse(errorMessage)
+	if err != nil || keyValue == "" {
+		response.GetErrorResponse(err.Error())
 	} else {
 		//change field names to Lower Case
 		var DataObject map[string]interface{}
@@ -542,9 +545,9 @@ func (repository CassandraRepository) InsertSingle(request *messaging.ObjectRequ
 func (repository CassandraRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting UPDATE-MULTIPLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := repository.GetConnection(request)
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
+	session, err := repository.GetConnection(request)
+	if err != nil {
+		response.GetErrorResponse(err.Error())
 	} else {
 
 		for i := 0; i < len(request.Body.Objects); i++ {
@@ -614,9 +617,9 @@ func (repository CassandraRepository) UpdateMultiple(request *messaging.ObjectRe
 func (repository CassandraRepository) UpdateSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting UPDATE-SINGLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := repository.GetConnection(request)
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
+	session, err := repository.GetConnection(request)
+	if err != nil {
+		response.GetErrorResponse(err.Error())
 	} else {
 
 		noOfElements := len(request.Body.Object) - 1
@@ -682,10 +685,10 @@ func (repository CassandraRepository) UpdateSingle(request *messaging.ObjectRequ
 func (repository CassandraRepository) DeleteMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting DELETE-MULTIPLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := repository.GetConnection(request)
+	session, err := repository.GetConnection(request)
 
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
+	if err != nil {
+		response.GetErrorResponse(err.Error())
 	} else {
 
 		for _, obj := range request.Body.Objects {
@@ -709,10 +712,10 @@ func (repository CassandraRepository) DeleteMultiple(request *messaging.ObjectRe
 func (repository CassandraRepository) DeleteSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting DELETE-SINGLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := repository.GetConnection(request)
+	session, err := repository.GetConnection(request)
 
-	if isError == true {
-		response.GetErrorResponse(errorMessage)
+	if err != nil {
+		response.GetErrorResponse(err.Error())
 	} else {
 
 		err := session.Query("DELETE FROM " + strings.ToLower(request.Controls.Class) + " WHERE " + request.Body.Parameters.KeyProperty + " = '" + request.Controls.Id + "'").Exec()
@@ -746,8 +749,8 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 	// 	} else {
 	// 		response.IsSuccess = false
 	// 		response.Message = "Aborted! Unsuccessful Retrieving Fileds on Class : " + request.Controls.Class
-	// 		errorMessage := response.Message
-	// 		response.GetErrorResponse(errorMessage)
+	// 		err.Error() := response.Message
+	// 		response.GetErrorResponse(err.Error())
 	// 	}
 	// case "getClasses":
 	// 	request.Log("Starting GET-CLASSES sub routine")
@@ -759,8 +762,8 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 	// 	} else {
 	// 		response.IsSuccess = false
 	// 		response.Message = "Aborted! Unsuccessful Retrieving Fileds on Class : " + request.Controls.Class
-	// 		errorMessage := response.Message
-	// 		response.GetErrorResponse(errorMessage)
+	// 		err.Error() := response.Message
+	// 		response.GetErrorResponse(err.Error())
 	// 	}
 	// case "getNamespaces":
 	// 	request.Log("Starting GET-NAMESPACES sub routine")
@@ -772,8 +775,8 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 	// 	} else {
 	// 		response.IsSuccess = false
 	// 		response.Message = "Aborted! Unsuccessful Retrieving All Namespaces"
-	// 		errorMessage := response.Message
-	// 		response.GetErrorResponse(errorMessage)
+	// 		err.Error() := response.Message
+	// 		response.GetErrorResponse(err.Error())
 	// 	}
 	// case "getSelected":
 	// 	request.Log("Starting GET-SELECTED_FIELDS sub routine")
@@ -785,8 +788,8 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 	// 	} else {
 	// 		response.IsSuccess = false
 	// 		response.Message = "Aborted! Unsuccessful Retrieving All selected field data"
-	// 		errorMessage := response.Message
-	// 		response.GetErrorResponse(errorMessage)
+	// 		err.Error() := response.Message
+	// 		response.GetErrorResponse(err.Error())
 	// 	}
 	// }
 
