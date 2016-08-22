@@ -430,114 +430,145 @@ func (repository CassandraRepository) InsertMultiple(request *messaging.ObjectRe
 	return response
 }
 
+// func (repository CassandraRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
+// 	request.Log("Starting INSERT-SINGLE")
+// 	response := RepositoryResponse{}
+// 	session, err := repository.GetConnection(request)
+// 	keyValue := GetRecordID(request, nil)
+// 	if err != nil || keyValue == "" {
+// 		response.GetErrorResponse(err.Error())
+// 	} else {
+// 		//change field names to Lower Case
+// 		var DataObject map[string]interface{}
+// 		DataObject = make(map[string]interface{})
+
+// 		for key, value := range request.Body.Object {
+// 			if key == "__osHeaders" {
+// 				DataObject["osheaders"] = value
+// 			} else {
+// 				DataObject[strings.ToLower(key)] = value
+// 			}
+// 		}
+
+// 		noOfElements := len(DataObject)
+// 		DataObject[strings.ToLower(request.Body.Parameters.KeyProperty)] = keyValue
+
+// 		// if createCassandraTable(request, session) {
+// 		// 	request.Log("Table Verified Successfully!")
+// 		// } else {
+// 		// 	response.IsSuccess = false
+// 		// 	return response
+// 		// }
+
+// 		//indexNames := getCassandraFieldOrder(request)
+// 		indexNames := make([]string, 0)
+// 		var argKeyList string
+// 		var argValueList string
+
+// 		//create keyvalue list
+
+// 		for i := 0; i < len(indexNames); i++ {
+// 			if i != len(indexNames)-1 {
+// 				argKeyList = argKeyList + indexNames[i] + ", "
+// 			} else {
+// 				argKeyList = argKeyList + indexNames[i]
+// 			}
+// 		}
+
+// 		var keyArray = make([]string, noOfElements)
+// 		var valueArray = make([]string, noOfElements)
+
+// 		// Process A :start identifying individual data in array and convert to string
+// 		for index := 0; index < len(indexNames); index++ {
+// 			if indexNames[index] != "osheaders" {
+
+// 				if _, ok := DataObject[indexNames[index]].(string); ok {
+// 					keyArray[index] = indexNames[index]
+// 					valueArray[index] = DataObject[indexNames[index]].(string)
+// 				} else {
+// 					fmt.Println("Non string value detected, Will be strigified!")
+// 					keyArray[index] = indexNames[index]
+// 					valueArray[index] = getStringByObject(DataObject[indexNames[index]])
+// 				}
+// 			} else {
+// 				// __osHeaders Catched!
+// 				keyArray[index] = "osheaders"
+// 				valueArray[index] = ConvertOsheaders(DataObject[indexNames[index]].(messaging.ControlHeaders))
+// 			}
+
+// 		}
+
+// 		//Build the query string
+// 		for i := 0; i < noOfElements; i++ {
+// 			if i != noOfElements-1 {
+// 				argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
+// 			} else {
+// 				argValueList = argValueList + "'" + valueArray[i] + "'"
+// 			}
+// 		}
+// 		//..........................................
+
+// 		//DEBUG USE : Display Query information
+// 		//fmt.Println("Table Name : " + request.Controls.Class)
+// 		//fmt.Println("Key list : " + argKeyList)
+// 		//fmt.Println("Value list : " + argValueList)
+// 		//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES (" + argValueList + ")")
+// 		request.Log("INSERT INTO " + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES (" + argValueList + ");")
+// 		err := session.Query("INSERT INTO " + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES (" + argValueList + ");").Exec()
+// 		if err != nil {
+// 			response.IsSuccess = false
+// 			response.GetErrorResponse("Error inserting one object in Cassandra" + err.Error())
+// 			if strings.Contains(err.Error(), "duplicate key value") {
+// 				response.IsSuccess = true
+// 				response.Message = "No Change since record already Available!"
+// 				request.Log(response.Message)
+// 				return response
+// 			}
+// 		} else {
+// 			response.IsSuccess = true
+// 			response.Message = "Successfully inserted one object in Cassandra"
+// 			request.Log(response.Message)
+// 		}
+// 	}
+
+// 	//Update Response
+// 	var Data []map[string]interface{}
+// 	Data = make([]map[string]interface{}, 1)
+// 	var actualData map[string]interface{}
+// 	actualData = make(map[string]interface{})
+// 	actualData["ID"] = keyValue
+// 	Data[0] = actualData
+// 	response.Data = Data
+// 	return response
+// }
+
 func (repository CassandraRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
-	request.Log("Starting INSERT-SINGLE")
-	response := RepositoryResponse{}
-	session, err := repository.GetConnection(request)
-	keyValue := GetRecordID(request, nil)
-	if err != nil || keyValue == "" {
-		response.GetErrorResponse(err.Error())
-	} else {
-		//change field names to Lower Case
-		var DataObject map[string]interface{}
-		DataObject = make(map[string]interface{})
+	var response RepositoryResponse
 
-		for key, value := range request.Body.Object {
-			if key == "__osHeaders" {
-				DataObject["osheaders"] = value
-			} else {
-				DataObject[strings.ToLower(key)] = value
-			}
-		}
-
-		noOfElements := len(DataObject)
-		DataObject[strings.ToLower(request.Body.Parameters.KeyProperty)] = keyValue
-
-		// if createCassandraTable(request, session) {
-		// 	request.Log("Table Verified Successfully!")
-		// } else {
-		// 	response.IsSuccess = false
-		// 	return response
-		// }
-
-		//indexNames := getCassandraFieldOrder(request)
-		indexNames := make([]string, 0)
-		var argKeyList string
-		var argValueList string
-
-		//create keyvalue list
-
-		for i := 0; i < len(indexNames); i++ {
-			if i != len(indexNames)-1 {
-				argKeyList = argKeyList + indexNames[i] + ", "
-			} else {
-				argKeyList = argKeyList + indexNames[i]
-			}
-		}
-
-		var keyArray = make([]string, noOfElements)
-		var valueArray = make([]string, noOfElements)
-
-		// Process A :start identifying individual data in array and convert to string
-		for index := 0; index < len(indexNames); index++ {
-			if indexNames[index] != "osheaders" {
-
-				if _, ok := DataObject[indexNames[index]].(string); ok {
-					keyArray[index] = indexNames[index]
-					valueArray[index] = DataObject[indexNames[index]].(string)
-				} else {
-					fmt.Println("Non string value detected, Will be strigified!")
-					keyArray[index] = indexNames[index]
-					valueArray[index] = getStringByObject(DataObject[indexNames[index]])
-				}
-			} else {
-				// __osHeaders Catched!
-				keyArray[index] = "osheaders"
-				valueArray[index] = ConvertOsheaders(DataObject[indexNames[index]].(messaging.ControlHeaders))
-			}
-
-		}
-
-		//Build the query string
-		for i := 0; i < noOfElements; i++ {
-			if i != noOfElements-1 {
-				argValueList = argValueList + "'" + valueArray[i] + "'" + ", "
-			} else {
-				argValueList = argValueList + "'" + valueArray[i] + "'"
-			}
-		}
-		//..........................................
-
-		//DEBUG USE : Display Query information
-		//fmt.Println("Table Name : " + request.Controls.Class)
-		//fmt.Println("Key list : " + argKeyList)
-		//fmt.Println("Value list : " + argValueList)
-		//request.Log("INSERT INTO " + request.Controls.Class + " (" + argKeyList + ") VALUES (" + argValueList + ")")
-		request.Log("INSERT INTO " + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES (" + argValueList + ");")
-		err := session.Query("INSERT INTO " + strings.ToLower(request.Controls.Class) + " (" + argKeyList + ") VALUES (" + argValueList + ");").Exec()
-		if err != nil {
-			response.IsSuccess = false
-			response.GetErrorResponse("Error inserting one object in Cassandra" + err.Error())
-			if strings.Contains(err.Error(), "duplicate key value") {
-				response.IsSuccess = true
-				response.Message = "No Change since record already Available!"
-				request.Log(response.Message)
-				return response
-			}
-		} else {
-			response.IsSuccess = true
-			response.Message = "Successfully inserted one object in Cassandra"
-			request.Log(response.Message)
-		}
+	conn, err := repository.GetConnection(request)
+	if err != nil {
+		response.IsSuccess = false
+		response.Message = err.Error()
+		return response
 	}
 
-	//Update Response
-	var Data []map[string]interface{}
-	Data = make([]map[string]interface{}, 1)
-	var actualData map[string]interface{}
-	actualData = make(map[string]interface{})
-	actualData["ID"] = keyValue
-	Data[0] = actualData
+	_ = conn
+
+	id := GetRecordID(request, request.Body.Object)
+	request.Controls.Id = id
+	request.Body.Object[request.Body.Parameters.KeyProperty] = id
+
+	Data := make([]map[string]interface{}, 1)
+	var idData map[string]interface{}
+	idData = make(map[string]interface{})
+	idData["ID"] = id
+	Data[0] = idData
+
+	//response = repository.queryStore(request)
+	// if !response.IsSuccess {
+	// 	response = repository.ReRun(request, conn, request.Body.Object)
+	// }
+
 	response.Data = Data
 	return response
 }
@@ -799,6 +830,298 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 func (repository CassandraRepository) Test(request *messaging.ObjectRequest) {
 
 }
+
+//.....................................
+
+// func (repository CassandraRepository) queryStore(request *messaging.ObjectRequest) RepositoryResponse {
+// 	response := RepositoryResponse{}
+
+// 	conn, _ := repository.GetConnection(request)
+
+// 	domain := request.Controls.Namespace
+// 	class := request.Controls.Class
+
+// 	isOkay := true
+
+// 	if request.Body.Object != nil || len(request.Body.Objects) == 1 {
+
+// 		obj := make(map[string]interface{})
+
+// 		if request.Body.Object != nil {
+// 			obj = request.Body.Object
+// 		} else {
+// 			obj = request.Body.Objects[0]
+// 		}
+
+// 		insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, obj, conn)
+// 		err, _ := repository.ExecuteNonQuery(conn, insertScript, request)
+// 		if err != nil {
+// 			if !strings.Contains(err.Error(), "specified twice") {
+// 				updateScript := repository.GetSingleObjectUpdateQuery(request, domain, class, obj, conn)
+// 				err, message := repository.ExecuteNonQuery(conn, updateScript, request)
+// 				if err != nil {
+// 					isOkay = false
+// 					request.Log("Error : " + err.Error())
+// 				} else {
+// 					if message == "No Rows Changed" {
+// 						request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
+// 					}
+// 					isOkay = true
+// 				}
+// 			} else {
+// 				isOkay = false
+// 			}
+// 		} else {
+// 			isOkay = true
+// 		}
+
+// 	} else {
+
+// 		//execute insert queries
+// 		scripts, err := repository.GetMultipleStoreScripts(conn, request)
+
+// 		for x := 0; x < len(scripts); x++ {
+// 			script := scripts[x]["query"].(string)
+// 			if err == nil && script != "" {
+
+// 				err, _ := repository.ExecuteNonQuery(conn, script, request)
+// 				if err != nil {
+// 					request.Log("Error : " + err.Error())
+// 					if strings.Contains(err.Error(), "Duplicate entry") {
+// 						errorBlock := scripts[x]["queryObject"].([]map[string]interface{})
+// 						for _, singleQueryObject := range errorBlock {
+// 							insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, singleQueryObject, conn)
+// 							err1, _ := repository.ExecuteNonQuery(conn, insertScript, request)
+// 							if err1 != nil {
+// 								if !strings.Contains(err.Error(), "specified twice") {
+// 									updateScript := repository.GetSingleObjectUpdateQuery(request, domain, class, singleQueryObject, conn)
+// 									err2, message := repository.ExecuteNonQuery(conn, updateScript, request)
+// 									if err2 != nil {
+// 										request.Log("Error : " + err2.Error())
+// 										isOkay = false
+// 									} else {
+// 										if message == "No Rows Changed" {
+// 											request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + singleQueryObject[request.Body.Parameters.KeyProperty].(string))
+// 										}
+// 									}
+// 								}
+// 							}
+// 						}
+// 					} else {
+// 						//if strings.Contains(err.Error(), "doesn't exist") {
+// 						isOkay = false
+// 						break
+// 						//}
+// 					}
+// 				}
+
+// 			} else {
+// 				isOkay = false
+// 				request.Log("Error : " + err.Error())
+// 			}
+// 		}
+
+// 	}
+
+// 	if isOkay {
+// 		response.IsSuccess = true
+// 		response.Message = "Successfully stored object(s) in CloudSQL"
+// 		request.Log("Debug : " + response.Message)
+// 	} else {
+// 		response.IsSuccess = false
+// 		response.Message = "Error storing/updating all object(s) in CloudSQL."
+// 		request.Log("Error : " + response.Message)
+// 	}
+
+// 	repository.CloseConnection(conn)
+// 	return response
+// }
+
+// func (repository CassandraRepository) GetSingleObjectInsertQuery(request *messaging.ObjectRequest, namespace, class string, obj map[string]interface{}, conn *sql.DB) (query string) {
+// 	var keyArray []string
+// 	query = ""
+// 	query = ("INSERT INTO " + repository.GetNamespace(namespace) + "." + class)
+
+// 	id := ""
+
+// 	if obj["OriginalIndex"] == nil {
+// 		id = getNoSqlKeyById(request, obj)
+// 	} else {
+// 		id = obj["OriginalIndex"].(string)
+// 	}
+
+// 	delete(obj, "OriginalIndex")
+
+// 	keyList := ""
+// 	valueList := ""
+
+// 	for k, _ := range obj {
+// 		keyList += ("," + k)
+// 		keyArray = append(keyArray, k)
+// 	}
+
+// 	for _, k := range keyArray {
+// 		v := obj[k]
+// 		valueList += ("," + repository.GetSqlFieldValue(v))
+// 	}
+
+// 	query += "(__os_id" + keyList + ") VALUES "
+// 	query += ("(\"" + id + "\"" + valueList + ")")
+// 	return
+// }
+
+// func (repository CassandraRepository) GetSingleObjectUpdateQuery(request *messaging.ObjectRequest, namespace, class string, obj map[string]interface{}, conn *sql.DB) (query string) {
+
+// 	updateValues := ""
+// 	isFirst := true
+// 	for k, v := range obj {
+// 		if isFirst {
+// 			isFirst = false
+// 		} else {
+// 			updateValues += ","
+// 		}
+
+// 		updateValues += (k + "=" + repository.GetSqlFieldValue(v))
+// 	}
+// 	query = ("UPDATE " + repository.GetNamespace(namespace) + "." + class + " SET " + updateValues + " WHERE __os_id=\"" + getNoSqlKeyById(request, obj) + "\";")
+// 	return
+// }
+
+// func (repository CassandraRepository) ExecuteNonQuery(conn *gocql.Session, query string, request *messaging.ObjectRequest) (err error, message string) {
+// 	request.Log("Debug Query : " + query)
+// 	tokens := strings.Split(strings.ToLower(query), " ")
+// 	result, err := conn.Exec(query)
+// 	if err == nil {
+// 		val, _ := result.RowsAffected()
+// 		if val <= 0 && (tokens[0] == "delete" || tokens[0] == "update") {
+// 			message = "No Rows Changed"
+// 		}
+// 	}
+// 	return
+// }
+
+// func (repository CassandraRepository) GetMultipleStoreScripts(conn *gocql.Session, request *messaging.ObjectRequest) (query []map[string]interface{}, err error) {
+// 	namespace := request.Controls.Namespace
+// 	class := request.Controls.Class
+
+// 	noOfElementsPerSet := 1000
+// 	noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
+// 	remainderFromSets := 0
+// 	remainderFromSets = (len(request.Body.Objects) - (noOfSets * noOfElementsPerSet))
+
+// 	startIndex := 0
+// 	stopIndex := noOfElementsPerSet
+
+// 	for x := 0; x < noOfSets; x++ {
+// 		queryOutput := repository.GetMultipleInsertQuery(request, namespace, class, request.Body.Objects[startIndex:stopIndex], conn)
+// 		query = append(query, queryOutput)
+// 		startIndex += noOfElementsPerSet
+// 		stopIndex += noOfElementsPerSet
+// 	}
+
+// 	if remainderFromSets > 0 {
+// 		start := len(request.Body.Objects) - remainderFromSets
+// 		queryOutput := repository.GetMultipleInsertQuery(request, namespace, class, request.Body.Objects[start:len(request.Body.Objects)], conn)
+// 		query = append(query, queryOutput)
+// 	}
+
+// 	return
+// }
+
+// func (repository CassandraRepository) GetMultipleInsertQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *sql.DB) (queryData map[string]interface{}) {
+// 	queryData = make(map[string]interface{})
+// 	query := ""
+// 	//create insert scripts
+// 	isFirstRow := true
+// 	var keyArray []string
+// 	for _, obj := range records {
+// 		if isFirstRow {
+// 			query += ("INSERT INTO " + repository.GetNamespace(namespace) + "." + class)
+// 		}
+
+// 		id := ""
+
+// 		if obj["OriginalIndex"] == nil {
+// 			id = getNoSqlKeyById(request, obj)
+// 		} else {
+// 			id = obj["OriginalIndex"].(string)
+// 		}
+
+// 		delete(obj, "OriginalIndex")
+
+// 		keyList := ""
+// 		valueList := ""
+
+// 		if isFirstRow {
+// 			for k, _ := range obj {
+// 				keyList += ("," + k)
+// 				keyArray = append(keyArray, k)
+// 			}
+// 		}
+// 		//request.Log(keyArray)
+// 		for _, k := range keyArray {
+// 			v := obj[k]
+// 			valueList += ("," + repository.GetSqlFieldValue(v))
+// 		}
+
+// 		if isFirstRow {
+// 			query += "(__os_id" + keyList + ") VALUES "
+// 		} else {
+// 			query += ","
+// 		}
+// 		query += ("(\"" + id + "\"" + valueList + ")")
+
+// 		if isFirstRow {
+// 			isFirstRow = false
+// 		}
+// 	}
+
+// 	queryData["query"] = query
+// 	queryData["queryObject"] = records
+// 	return
+// }
+
+// func (repository CassandraRepository) GetSqlFieldValue(value interface{}) string {
+// 	var strValue string
+// 	switch v := value.(type) {
+// 	case bool:
+// 		if value.(bool) == true {
+// 			strValue = "b'1'"
+// 		} else {
+// 			strValue = "b'0'"
+// 		}
+// 		break
+// 	case string:
+// 		sval := fmt.Sprint(value)
+// 		// if strings.ContainsAny(sval, "\"'\n\r\t") {
+// 		if strings.ContainsAny(sval, "\"\n\r\t") {
+// 			sEnc := base64.StdEncoding.EncodeToString([]byte(sval))
+// 			strValue = "'^" + sEnc + "'"
+// 		} else {
+// 			strValue = "'" + sval + "'"
+// 		}
+// 		/*else if (strings.Contains(sval, "'")){
+// 		  		    sEnc := base64.StdEncoding.EncodeToString([]byte(sval))
+// 		      		strValue = "'^" + sEnc + "'";
+// 		  		}
+// 		break
+// 	default:
+// 		strValue = "'" + repository.GetJson(v) + "'"
+// 		break
+
+// 	}
+
+// 	return strValue
+// }
+
+// func (repository CassandraRepository) CloseConnection(conn *gocql.Session) {
+// 	// err := conn.Close()
+// 	// if err != nil {
+// 	// 	request.Log(err.Error())
+// 	// } else {
+// 	// 	request.Log("Connection Closed!")
+// 	// }
+// }
 
 //SUB ROUTINES
 
