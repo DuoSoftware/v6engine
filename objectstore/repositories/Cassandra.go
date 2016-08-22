@@ -1,15 +1,14 @@
 package repositories
 
-/*
 import (
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
 	"fmt"
 	"github.com/gocql/gocql"
-	"github.com/twinj/uuid"
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type CassandraRepository struct {
@@ -19,19 +18,19 @@ func (repository CassandraRepository) GetRepositoryName() string {
 	return "Cassandra DB"
 }
 
-var cassandraConnections map[string]*sql.DB
+var cassandraConnections map[string]*gocql.Session
 var cassandraConnectionLock = sync.RWMutex{}
 
 // Start of GET and SET methods
 
-func (repository CassandraRepository) GetCassandraConnections(index string) (conn *sql.DB) {
+func (repository CassandraRepository) GetCassandraConnections(index string) (conn *gocql.Session) {
 	cassandraConnectionLock.RLock()
 	defer cassandraConnectionLock.RUnlock()
 	conn = cassandraConnections[index]
 	return
 }
 
-func (repository CassandraRepository) SetCassandraConnections(index string, conn *sql.DB) {
+func (repository CassandraRepository) SetCassandraConnections(index string, conn *gocql.Session) {
 	cassandraConnectionLock.Lock()
 	defer cassandraConnectionLock.Unlock()
 	cassandraConnections[index] = conn
@@ -56,7 +55,7 @@ func (repository CassandraRepository) GetConnection(request *messaging.ObjectReq
 		isError = false
 		errorMessage = err.Error()
 		request.Log("Error : Cassandra connection initilizing failed!")
-		session, _ = createNewCassandraKeyspace(request)
+		session, _ = repository.CreateNewKeyspace(request)
 	} else {
 		request.Log("Cassandra connection initilizing success!")
 	}
@@ -68,7 +67,7 @@ func (repository CassandraRepository) GetConnection(request *messaging.ObjectReq
 // Helper Function
 func (repository CassandraRepository) CreateNewKeyspace(request *messaging.ObjectRequest) (session *gocql.Session, isError bool) {
 	isError = false
-	keyspace := getCassandranamespace(request)
+	keyspace := repository.GetNamespace(request.Controls.Namespace)
 	//Log to Default SYSTEM Keyspace
 	cluster := gocql.NewCluster(request.Configuration.ServerConfiguration["CASSANDRA"]["Url"])
 	cluster.Keyspace = "system"
@@ -115,13 +114,11 @@ func (repository CassandraRepository) CreateNewKeyspace(request *messaging.Objec
 func (repository CassandraRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting GET-ALL!")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := getCassandraConnection(request)
+	session, isError, errorMessage := repository.GetConnection(request)
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
 	} else {
 		isError = false
-
-		_ = getCassandraFieldOrder(request)
 
 		iter2 := session.Query("SELECT * FROM " + strings.ToLower(request.Controls.Class)).Iter()
 
@@ -224,14 +221,14 @@ func (repository CassandraRepository) GetQuery(request *messaging.ObjectRequest)
 func (repository CassandraRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting Get-BY-KEY!")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := getCassandraConnection(request)
+	session, isError, errorMessage := repository.GetConnection(request)
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
 	} else {
 		isError = false
 
 		//get primary key field name
-		iter := session.Query("select type, column_name from system.schema_columns WHERE keyspace_name='" + getCassandranamespace(request) + "' AND columnfamily_name='" + strings.ToLower(request.Controls.Class) + "'").Iter()
+		iter := session.Query("select type, column_name from system.schema_columns WHERE keyspace_name='" + repository.GetNamespace(request.Controls.Namespace) + "' AND columnfamily_name='" + strings.ToLower(request.Controls.Class) + "'").Iter()
 
 		my1, isErr := iter.SliceMap()
 
@@ -309,17 +306,17 @@ func (repository CassandraRepository) InsertMultiple(request *messaging.ObjectRe
 	var idData map[string]interface{}
 	idData = make(map[string]interface{})
 
-	session, isError, errorMessage := getCassandraConnection(request)
+	session, isError, errorMessage := repository.GetConnection(request)
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
 	} else {
 
-		if createCassandraTable(request, session) {
-			request.Log("Table Verified Successfully!")
-		} else {
-			response.IsSuccess = false
-			return response
-		}
+		// if createCassandraTable(request, session) {
+		// 	request.Log("Table Verified Successfully!")
+		// } else {
+		// 	response.IsSuccess = false
+		// 	return response
+		// }
 
 		var DataObjects []map[string]interface{}
 		DataObjects = make([]map[string]interface{}, len(request.Body.Objects))
@@ -342,7 +339,7 @@ func (repository CassandraRepository) InsertMultiple(request *messaging.ObjectRe
 
 		for i := 0; i < len(DataObjects); i++ {
 
-			keyValue := getCassandraRecordID(request, DataObjects[i])
+			keyValue := GetRecordID(request, DataObjects[i])
 			DataObjects[i][strings.ToLower(request.Body.Parameters.KeyProperty)] = keyValue
 			idData[strconv.Itoa(i)] = keyValue
 			if keyValue == "" {
@@ -433,8 +430,8 @@ func (repository CassandraRepository) InsertMultiple(request *messaging.ObjectRe
 func (repository CassandraRepository) InsertSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting INSERT-SINGLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := getCassandraConnection(request)
-	keyValue := getCassandraRecordID(request, nil)
+	session, isError, errorMessage := repository.GetConnection(request)
+	keyValue := GetRecordID(request, nil)
 	if isError == true || keyValue == "" {
 		response.GetErrorResponse(errorMessage)
 	} else {
@@ -453,15 +450,15 @@ func (repository CassandraRepository) InsertSingle(request *messaging.ObjectRequ
 		noOfElements := len(DataObject)
 		DataObject[strings.ToLower(request.Body.Parameters.KeyProperty)] = keyValue
 
-		if createCassandraTable(request, session) {
-			request.Log("Table Verified Successfully!")
-		} else {
-			response.IsSuccess = false
-			return response
-		}
+		// if createCassandraTable(request, session) {
+		// 	request.Log("Table Verified Successfully!")
+		// } else {
+		// 	response.IsSuccess = false
+		// 	return response
+		// }
 
-		indexNames := getCassandraFieldOrder(request)
-
+		//indexNames := getCassandraFieldOrder(request)
+		indexNames := make([]string, 0)
 		var argKeyList string
 		var argValueList string
 
@@ -545,7 +542,7 @@ func (repository CassandraRepository) InsertSingle(request *messaging.ObjectRequ
 func (repository CassandraRepository) UpdateMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting UPDATE-MULTIPLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := getCassandraConnection(request)
+	session, isError, errorMessage := repository.GetConnection(request)
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
 	} else {
@@ -617,7 +614,7 @@ func (repository CassandraRepository) UpdateMultiple(request *messaging.ObjectRe
 func (repository CassandraRepository) UpdateSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting UPDATE-SINGLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := getCassandraConnection(request)
+	session, isError, errorMessage := repository.GetConnection(request)
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
 	} else {
@@ -685,7 +682,7 @@ func (repository CassandraRepository) UpdateSingle(request *messaging.ObjectRequ
 func (repository CassandraRepository) DeleteMultiple(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting DELETE-MULTIPLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := getCassandraConnection(request)
+	session, isError, errorMessage := repository.GetConnection(request)
 
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
@@ -712,7 +709,7 @@ func (repository CassandraRepository) DeleteMultiple(request *messaging.ObjectRe
 func (repository CassandraRepository) DeleteSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	request.Log("Starting DELETE-SINGLE")
 	response := RepositoryResponse{}
-	session, isError, errorMessage := getCassandraConnection(request)
+	session, isError, errorMessage := repository.GetConnection(request)
 
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
@@ -735,63 +732,63 @@ func (repository CassandraRepository) DeleteSingle(request *messaging.ObjectRequ
 
 func (repository CassandraRepository) Special(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
-	request.Log("Starting SPECIAL!")
-	queryType := request.Body.Special.Type
+	// request.Log("Starting SPECIAL!")
+	// queryType := request.Body.Special.Type
 
-	switch queryType {
-	case "getFields":
-		request.Log("Starting GET-FIELDS sub routine!")
-		fieldsInByte := executeCassandraGetFields(request)
-		if fieldsInByte != nil {
-			response.IsSuccess = true
-			response.Message = "Successfully Retrieved Fileds on Class : " + request.Controls.Class
-			response.GetResponseWithBody(fieldsInByte)
-		} else {
-			response.IsSuccess = false
-			response.Message = "Aborted! Unsuccessful Retrieving Fileds on Class : " + request.Controls.Class
-			errorMessage := response.Message
-			response.GetErrorResponse(errorMessage)
-		}
-	case "getClasses":
-		request.Log("Starting GET-CLASSES sub routine")
-		fieldsInByte := executeCassandraGetClasses(request)
-		if fieldsInByte != nil {
-			response.IsSuccess = true
-			response.Message = "Successfully Retrieved Fileds on Class : " + request.Controls.Class
-			response.GetResponseWithBody(fieldsInByte)
-		} else {
-			response.IsSuccess = false
-			response.Message = "Aborted! Unsuccessful Retrieving Fileds on Class : " + request.Controls.Class
-			errorMessage := response.Message
-			response.GetErrorResponse(errorMessage)
-		}
-	case "getNamespaces":
-		request.Log("Starting GET-NAMESPACES sub routine")
-		fieldsInByte := executeCassandraGetNamespaces(request)
-		if fieldsInByte != nil {
-			response.IsSuccess = true
-			response.Message = "Successfully Retrieved All Namespaces"
-			response.GetResponseWithBody(fieldsInByte)
-		} else {
-			response.IsSuccess = false
-			response.Message = "Aborted! Unsuccessful Retrieving All Namespaces"
-			errorMessage := response.Message
-			response.GetErrorResponse(errorMessage)
-		}
-	case "getSelected":
-		request.Log("Starting GET-SELECTED_FIELDS sub routine")
-		fieldsInByte := executeCassandraGetSelectedFields(request)
-		if fieldsInByte != nil {
-			response.IsSuccess = true
-			response.Message = "Successfully Retrieved All selected Field data"
-			response.GetResponseWithBody(fieldsInByte)
-		} else {
-			response.IsSuccess = false
-			response.Message = "Aborted! Unsuccessful Retrieving All selected field data"
-			errorMessage := response.Message
-			response.GetErrorResponse(errorMessage)
-		}
-	}
+	// switch queryType {
+	// case "getFields":
+	// 	request.Log("Starting GET-FIELDS sub routine!")
+	// 	fieldsInByte := executeCassandraGetFields(request)
+	// 	if fieldsInByte != nil {
+	// 		response.IsSuccess = true
+	// 		response.Message = "Successfully Retrieved Fileds on Class : " + request.Controls.Class
+	// 		response.GetResponseWithBody(fieldsInByte)
+	// 	} else {
+	// 		response.IsSuccess = false
+	// 		response.Message = "Aborted! Unsuccessful Retrieving Fileds on Class : " + request.Controls.Class
+	// 		errorMessage := response.Message
+	// 		response.GetErrorResponse(errorMessage)
+	// 	}
+	// case "getClasses":
+	// 	request.Log("Starting GET-CLASSES sub routine")
+	// 	fieldsInByte := executeCassandraGetClasses(request)
+	// 	if fieldsInByte != nil {
+	// 		response.IsSuccess = true
+	// 		response.Message = "Successfully Retrieved Fileds on Class : " + request.Controls.Class
+	// 		response.GetResponseWithBody(fieldsInByte)
+	// 	} else {
+	// 		response.IsSuccess = false
+	// 		response.Message = "Aborted! Unsuccessful Retrieving Fileds on Class : " + request.Controls.Class
+	// 		errorMessage := response.Message
+	// 		response.GetErrorResponse(errorMessage)
+	// 	}
+	// case "getNamespaces":
+	// 	request.Log("Starting GET-NAMESPACES sub routine")
+	// 	fieldsInByte := executeCassandraGetNamespaces(request)
+	// 	if fieldsInByte != nil {
+	// 		response.IsSuccess = true
+	// 		response.Message = "Successfully Retrieved All Namespaces"
+	// 		response.GetResponseWithBody(fieldsInByte)
+	// 	} else {
+	// 		response.IsSuccess = false
+	// 		response.Message = "Aborted! Unsuccessful Retrieving All Namespaces"
+	// 		errorMessage := response.Message
+	// 		response.GetErrorResponse(errorMessage)
+	// 	}
+	// case "getSelected":
+	// 	request.Log("Starting GET-SELECTED_FIELDS sub routine")
+	// 	fieldsInByte := executeCassandraGetSelectedFields(request)
+	// 	if fieldsInByte != nil {
+	// 		response.IsSuccess = true
+	// 		response.Message = "Successfully Retrieved All selected Field data"
+	// 		response.GetResponseWithBody(fieldsInByte)
+	// 	} else {
+	// 		response.IsSuccess = false
+	// 		response.Message = "Aborted! Unsuccessful Retrieving All selected field data"
+	// 		errorMessage := response.Message
+	// 		response.GetErrorResponse(errorMessage)
+	// 	}
+	// }
 
 	return response
 }
@@ -802,442 +799,357 @@ func (repository CassandraRepository) Test(request *messaging.ObjectRequest) {
 
 //SUB ROUTINES
 
-func executeCassandraGetFields(request *messaging.ObjectRequest) (returnByte []byte) {
-	session, isError, _ := getCassandraConnection(request)
-	if isError == true {
-		request.Log("Cassandra connection failed")
-		returnByte = nil
-	} else {
-		isError = false
-
-		iter2 := session.Query("select column_name from system.schema_columns WHERE keyspace_name='" + getCassandranamespace(request) + "' AND columnfamily_name='" + strings.ToLower(request.Controls.Class) + "'").Iter()
-
-		my, _ := iter2.SliceMap()
-
-		iter2.Close()
-
-		var fields []string
-		fields = make([]string, len(my))
-
-		for key, value := range my {
-			for _, fieldname := range value {
-				fields[key] = fieldname.(string)
-			}
-		}
-
-		byteValue, errMarshal := json.Marshal(fields)
-		if errMarshal != nil {
-			request.Log("Error getting values for all objects in Cassandra")
-			returnByte = []byte("Error JSON marshalling to BYTE array")
-		} else {
-			request.Log("Successfully retrieved values for all objects in Cassandra")
-			returnByte = byteValue
-		}
-
-	}
-	return
-}
-
-func executeCassandraGetClasses(request *messaging.ObjectRequest) (returnByte []byte) {
-	session, isError, _ := getCassandraConnection(request)
-	if isError == true {
-		request.Log("Cassandra connection failed")
-		returnByte = nil
-	} else {
-		isError = false
-
-		iter2 := session.Query("select columnfamily_name from system.schema_columnfamilies WHERE keyspace_name='" + getSQLnamespace(request) + "'").Iter()
-
-		my, _ := iter2.SliceMap()
-
-		iter2.Close()
-
-		var fields []string
-		fields = make([]string, len(my))
-
-		for key, value := range my {
-			for _, fieldname := range value {
-				fields[key] = fieldname.(string)
-			}
-		}
-
-		byteValue, errMarshal := json.Marshal(fields)
-		if errMarshal != nil {
-			request.Log("Error getting values for all objects in Cassandra")
-			returnByte = []byte("Error JSON marshalling to BYTE array")
-		} else {
-			request.Log("Successfully retrieved values for all objects in Cassandra")
-			returnByte = byteValue
-		}
-
-	}
-	return
-}
-
-func executeCassandraGetNamespaces(request *messaging.ObjectRequest) (returnByte []byte) {
-	session, isError, _ := getCassandraConnection(request)
-	if isError == true {
-		request.Log("Cassandra connection failed")
-		returnByte = nil
-	} else {
-		isError = false
-
-		iter2 := session.Query("select keyspace_name from system.schema_keyspaces").Iter()
-
-		my, _ := iter2.SliceMap()
-
-		iter2.Close()
-
-		var fields []string
-		fields = make([]string, len(my))
-
-		for key, value := range my {
-			for _, fieldname := range value {
-				fields[key] = fieldname.(string)
-			}
-		}
-
-		byteValue, errMarshal := json.Marshal(fields)
-		if errMarshal != nil {
-			request.Log("Error getting values for all objects in Cassandra")
-			returnByte = []byte("Error JSON marshalling to BYTE array")
-		} else {
-			request.Log("Successfully retrieved values for all objects in Cassandra")
-			returnByte = byteValue
-		}
-
-	}
-	return
-}
-
-func executeCassandraGetSelectedFields(request *messaging.ObjectRequest) (returnByte []byte) {
-	session, isError, _ := getCassandraConnection(request)
-	if isError == true {
-		request.Log("Cassandra connection failed")
-		returnByte = nil
-	} else {
-		isError = false
-
-		var selectedItemsQuery string
-
-		var requestedFields []string
-		request.Log("Requested Field List : " + request.Body.Special.Parameters)
-		if request.Body.Special.Parameters == "*" {
-			request.Log("All fields requested")
-			requestedFields = make([]string, 1)
-			requestedFields[0] = "*"
-			selectedItemsQuery = "*"
-		} else {
-			requestedFields = strings.Split(request.Body.Special.Parameters, " ")
-
-			for key, value := range requestedFields {
-				if key == len(requestedFields)-1 {
-					selectedItemsQuery += value
-				} else {
-					selectedItemsQuery += (value + ",")
-				}
-			}
-		}
-
-		iter2 := session.Query("select " + selectedItemsQuery + " from " + strings.ToLower(request.Controls.Class)).Iter()
-
-		my, _ := iter2.SliceMap()
-
-		iter2.Close()
-
-		byteValue, errMarshal := json.Marshal(my)
-		if errMarshal != nil {
-			request.Log("Error getting values for all objects in Cassandra")
-			returnByte = []byte("Error JSON marshalling to BYTE array")
-		} else {
-			request.Log("Successfully retrieved values for all objects in Cassandra")
-			returnByte = byteValue
-		}
-	}
-
-	return
-}
-
-func getCassandraRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
-	isGUIDKey := false
-	isAutoIncrementId := false //else MANUAL key from the user
-
-	if obj == nil {
-		//single request
-		if (request.Controls.Id == "-999") || (request.Body.Parameters.AutoIncrement == true) {
-			isAutoIncrementId = true
-		}
-
-		if (request.Controls.Id == "-888") || (request.Body.Parameters.GUIDKey == true) {
-			isGUIDKey = true
-		}
-
-	} else {
-		//multiple requests
-		if (obj[strings.ToLower(request.Body.Parameters.KeyProperty)].(string) == "-999") || (request.Body.Parameters.AutoIncrement == true) {
-			isAutoIncrementId = true
-		}
-
-		if (obj[strings.ToLower(request.Body.Parameters.KeyProperty)].(string) == "-888") || (request.Body.Parameters.GUIDKey == true) {
-			isGUIDKey = true
-		}
-
-	}
-
-	if isGUIDKey {
-		request.Log("GUID Key generation requested!")
-		returnID = uuid.NewV1().String()
-	} else if isAutoIncrementId {
-		request.Log("Automatic Increment Key generation requested!")
-		session, isError, _ := getCassandraConnection(request)
-		if isError {
-			returnID = ""
-			request.Log("Connecting to Cassandra Failed!")
-		} else {
-			//read Attributes table
-			iter2 := session.Query("SELECT maxCount FROM domainClassAttributes where class = '" + strings.ToLower(request.Controls.Class) + "'").Iter()
-			result, _ := iter2.SliceMap()
-			iter2.Close()
-			if len(result) == 0 {
-				request.Log("This is a freshly created namespace. Inserting new Class record.")
-				err := session.Query("INSERT INTO domainClassAttributes (class,maxCount,version) VALUES ('" + strings.ToLower(request.Controls.Class) + "'," + "'1'" + ",'" + uuid.NewV1().String() + "');").Exec()
-				if err != nil {
-					request.Log("Error inserting new record to domainClassAttributes : " + err.Error())
-					return ""
-				}
-				returnID = "1"
-			} else {
-
-				//get current count
-				var UpdatedCount int
-				for _, value := range result {
-					for fieldName, fieldvalue := range value {
-						if strings.ToLower(fieldName) == "maxcount" {
-							UpdatedCount, _ = strconv.Atoi(fieldvalue.(string))
-							UpdatedCount++
-							returnID = strconv.Itoa(UpdatedCount)
-							break
-						}
-					}
-				}
-
-				//save to attributes table
-				err := session.Query("UPDATE domainClassAttributes SET maxCount ='" + strconv.Itoa(UpdatedCount) + "' WHERE class =" + "'" + strings.ToLower(request.Controls.Class) + "'").Exec()
-				if err != nil {
-					request.Log("Update of maxCount Failed")
-					returnID = ""
-				}
-			}
-		}
-	} else {
-		request.Log("Manual Key requested!")
-		if obj == nil {
-			returnID = request.Controls.Id
-		} else {
-			returnID = obj[strings.ToLower(request.Body.Parameters.KeyProperty)].(string)
-		}
-	}
-
-	return
-}
-
-func getCassandraDataType(item interface{}) (datatype string) {
-	datatype = reflect.TypeOf(item).Name()
-	if datatype == "bool" {
-		datatype = "text"
-	} else if datatype == "float64" {
-		datatype = "text"
-	} else if datatype == "string" {
-		datatype = "text"
-	} else if datatype == "" || datatype == "ControlHeaders" {
-		datatype = "text"
-	}
-	return datatype
-}
-
-func getCassandraFieldOrder(request *messaging.ObjectRequest) []string {
-	var returnArray []string
-	//read fields
-	byteValue := executeCassandraGetFields(request)
-
-	err := json.Unmarshal(byteValue, &returnArray)
-	fmt.Print("Field List from DB : ")
-	fmt.Println(returnArray)
-	if err != nil {
-		request.Log("Converstion of Json Failed!")
-		returnArray = make([]string, 1)
-		returnArray[0] = "nil"
-		return returnArray
-	}
-
-	return returnArray
-}
-
-func createCassandraTable(request *messaging.ObjectRequest, session *gocql.Session) (status bool) {
-	status = false
-
-	//get table list
-	classBytes := executeCassandraGetClasses(request)
-	var classList []string
-	err := json.Unmarshal(classBytes, &classList)
-	fmt.Print("Recieved Table List : ")
-	fmt.Println(classList)
-	if err != nil {
-		status = false
-	} else {
-		for _, className := range classList {
-			if strings.ToLower(request.Controls.Class) == className {
-				fmt.Println("Table Already Available")
-				status = true
-				//Get all fields
-				classBytes := executeCassandraGetFields(request)
-				var tableFieldList []string
-				_ = json.Unmarshal(classBytes, &tableFieldList)
-				//Check For missing fields. If any ALTER TABLE
-				var recordFieldList []string
-				var recordFieldType []string
-				if request.Body.Object == nil {
-					recordFieldList = make([]string, len(request.Body.Objects[0]))
-					recordFieldType = make([]string, len(request.Body.Objects[0]))
-					index := 0
-					for key, value := range request.Body.Objects[0] {
-						if key == "__osHeaders" {
-							recordFieldList[index] = "osheaders"
-							recordFieldType[index] = "text"
-						} else {
-							recordFieldList[index] = strings.ToLower(key)
-							recordFieldType[index] = getCassandraDataType(value)
-						}
-						index++
-					}
-				} else {
-					recordFieldList = make([]string, len(request.Body.Object))
-					recordFieldType = make([]string, len(request.Body.Object))
-					index := 0
-					for key, value := range request.Body.Object {
-						if key == "__osHeaders" {
-							recordFieldList[index] = "osheaders"
-							recordFieldType[index] = "text"
-						} else {
-							recordFieldList[index] = strings.ToLower(key)
-							recordFieldType[index] = getCassandraDataType(value)
-						}
-						index++
-					}
-				}
-
-				var newFields []string
-				var newTypes []string
-
-				//check for new Fields
-				for key, fieldName := range recordFieldList {
-					isAvailable := false
-					for _, tableField := range tableFieldList {
-						if fieldName == tableField {
-							isAvailable = true
-							break
-						}
-					}
-
-					if !isAvailable {
-						newFields = append(newFields, fieldName)
-						newTypes = append(newTypes, recordFieldType[key])
-					}
-				}
-
-				//ALTER TABLES
-
-				for key, _ := range newFields {
-					request.Log("ALTER TABLE " + strings.ToLower(request.Controls.Class) + " ADD " + newFields[key] + " " + newTypes[key] + ";")
-					er := session.Query("ALTER TABLE " + strings.ToLower(request.Controls.Class) + " ADD " + newFields[key] + " " + newTypes[key] + ";").Exec()
-					if er != nil {
-						status = false
-						request.Log("Table Alter Failed : " + er.Error())
-						return
-					} else {
-						status = true
-						request.Log("Table Alter Success!")
-					}
-				}
-
-				return
-			}
-		}
-
-		// if not available
-		//get one object
-		var dataObject map[string]interface{}
-		dataObject = make(map[string]interface{})
-
-		if request.Body.Object != nil {
-			for key, value := range request.Body.Object {
-				if key == "__osHeaders" {
-					dataObject["osheaders"] = value
-				} else {
-					dataObject[key] = value
-				}
-			}
-		} else {
-			for key, value := range request.Body.Objects[0] {
-				if key == "__osHeaders" {
-					dataObject["osheaders"] = value
-				} else {
-					dataObject[key] = value
-				}
-			}
-		}
-		//read fields
-		noOfElements := len(dataObject)
-		var keyArray = make([]string, noOfElements)
-		var dataTypeArray = make([]string, noOfElements)
-
-		var startIndex int = 0
-
-		for key, value := range dataObject {
-			keyArray[startIndex] = key
-			dataTypeArray[startIndex] = getCassandraDataType(value)
-			startIndex = startIndex + 1
-
-		}
-
-		//Create Table
-
-		var argKeyList2 string
-
-		for i := 0; i < noOfElements; i++ {
-			if i != noOfElements-1 {
-				if keyArray[i] == request.Body.Parameters.KeyProperty {
-					argKeyList2 = argKeyList2 + keyArray[i] + " text PRIMARY KEY, "
-				} else {
-					argKeyList2 = argKeyList2 + keyArray[i] + " " + dataTypeArray[i] + ", "
-				}
-
-			} else {
-				if keyArray[i] == request.Body.Parameters.KeyProperty {
-					argKeyList2 = argKeyList2 + keyArray[i] + " text PRIMARY KEY"
-				} else {
-					argKeyList2 = argKeyList2 + keyArray[i] + " " + dataTypeArray[i]
-				}
-
-			}
-		}
-
-		request.Log("create table " + strings.ToLower(request.Controls.Class) + " (" + argKeyList2 + ");")
-
-		er := session.Query("create table " + strings.ToLower(request.Controls.Class) + " (" + argKeyList2 + ");").Exec()
-		if er != nil {
-			status = false
-			request.Log("Table Creation Failed : " + er.Error())
-			return
-		}
-
-		status = true
-
-	}
-
-	return
-}
+// func executeCassandraGetFields(request *messaging.ObjectRequest) (returnByte []byte) {
+// 	session, isError, _ := repository.GetConnection(request)
+// 	if isError == true {
+// 		request.Log("Cassandra connection failed")
+// 		returnByte = nil
+// 	} else {
+// 		isError = false
+
+// 		iter2 := session.Query("select column_name from system.schema_columns WHERE keyspace_name='" + repository.GetNamespace(request.Controls.Namespace) + "' AND columnfamily_name='" + strings.ToLower(request.Controls.Class) + "'").Iter()
+
+// 		my, _ := iter2.SliceMap()
+
+// 		iter2.Close()
+
+// 		var fields []string
+// 		fields = make([]string, len(my))
+
+// 		for key, value := range my {
+// 			for _, fieldname := range value {
+// 				fields[key] = fieldname.(string)
+// 			}
+// 		}
+
+// 		byteValue, errMarshal := json.Marshal(fields)
+// 		if errMarshal != nil {
+// 			request.Log("Error getting values for all objects in Cassandra")
+// 			returnByte = []byte("Error JSON marshalling to BYTE array")
+// 		} else {
+// 			request.Log("Successfully retrieved values for all objects in Cassandra")
+// 			returnByte = byteValue
+// 		}
+
+// 	}
+// 	return
+// }
+
+// func executeCassandraGetClasses(request *messaging.ObjectRequest) (returnByte []byte) {
+// 	session, isError, _ := repository.GetConnection(request)
+// 	if isError == true {
+// 		request.Log("Cassandra connection failed")
+// 		returnByte = nil
+// 	} else {
+// 		isError = false
+
+// 		iter2 := session.Query("select columnfamily_name from system.schema_columnfamilies WHERE keyspace_name='" + getSQLnamespace(request) + "'").Iter()
+
+// 		my, _ := iter2.SliceMap()
+
+// 		iter2.Close()
+
+// 		var fields []string
+// 		fields = make([]string, len(my))
+
+// 		for key, value := range my {
+// 			for _, fieldname := range value {
+// 				fields[key] = fieldname.(string)
+// 			}
+// 		}
+
+// 		byteValue, errMarshal := json.Marshal(fields)
+// 		if errMarshal != nil {
+// 			request.Log("Error getting values for all objects in Cassandra")
+// 			returnByte = []byte("Error JSON marshalling to BYTE array")
+// 		} else {
+// 			request.Log("Successfully retrieved values for all objects in Cassandra")
+// 			returnByte = byteValue
+// 		}
+
+// 	}
+// 	return
+// }
+
+// func executeCassandraGetNamespaces(request *messaging.ObjectRequest) (returnByte []byte) {
+// 	session, isError, _ := repository.GetConnection(request)
+// 	if isError == true {
+// 		request.Log("Cassandra connection failed")
+// 		returnByte = nil
+// 	} else {
+// 		isError = false
+
+// 		iter2 := session.Query("select keyspace_name from system.schema_keyspaces").Iter()
+
+// 		my, _ := iter2.SliceMap()
+
+// 		iter2.Close()
+
+// 		var fields []string
+// 		fields = make([]string, len(my))
+
+// 		for key, value := range my {
+// 			for _, fieldname := range value {
+// 				fields[key] = fieldname.(string)
+// 			}
+// 		}
+
+// 		byteValue, errMarshal := json.Marshal(fields)
+// 		if errMarshal != nil {
+// 			request.Log("Error getting values for all objects in Cassandra")
+// 			returnByte = []byte("Error JSON marshalling to BYTE array")
+// 		} else {
+// 			request.Log("Successfully retrieved values for all objects in Cassandra")
+// 			returnByte = byteValue
+// 		}
+
+// 	}
+// 	return
+// }
+
+// func executeCassandraGetSelectedFields(request *messaging.ObjectRequest) (returnByte []byte) {
+// 	session, isError, _ := repository.GetConnection(request)
+// 	if isError == true {
+// 		request.Log("Cassandra connection failed")
+// 		returnByte = nil
+// 	} else {
+// 		isError = false
+
+// 		var selectedItemsQuery string
+
+// 		var requestedFields []string
+// 		request.Log("Requested Field List : " + request.Body.Special.Parameters)
+// 		if request.Body.Special.Parameters == "*" {
+// 			request.Log("All fields requested")
+// 			requestedFields = make([]string, 1)
+// 			requestedFields[0] = "*"
+// 			selectedItemsQuery = "*"
+// 		} else {
+// 			requestedFields = strings.Split(request.Body.Special.Parameters, " ")
+
+// 			for key, value := range requestedFields {
+// 				if key == len(requestedFields)-1 {
+// 					selectedItemsQuery += value
+// 				} else {
+// 					selectedItemsQuery += (value + ",")
+// 				}
+// 			}
+// 		}
+
+// 		iter2 := session.Query("select " + selectedItemsQuery + " from " + strings.ToLower(request.Controls.Class)).Iter()
+
+// 		my, _ := iter2.SliceMap()
+
+// 		iter2.Close()
+
+// 		byteValue, errMarshal := json.Marshal(my)
+// 		if errMarshal != nil {
+// 			request.Log("Error getting values for all objects in Cassandra")
+// 			returnByte = []byte("Error JSON marshalling to BYTE array")
+// 		} else {
+// 			request.Log("Successfully retrieved values for all objects in Cassandra")
+// 			returnByte = byteValue
+// 		}
+// 	}
+
+// 	return
+// }
+// func getCassandraDataType(item interface{}) (datatype string) {
+// 	datatype = reflect.TypeOf(item).Name()
+// 	if datatype == "bool" {
+// 		datatype = "text"
+// 	} else if datatype == "float64" {
+// 		datatype = "text"
+// 	} else if datatype == "string" {
+// 		datatype = "text"
+// 	} else if datatype == "" || datatype == "ControlHeaders" {
+// 		datatype = "text"
+// 	}
+// 	return datatype
+// }
+
+// func getCassandraFieldOrder(request *messaging.ObjectRequest) []string {
+// 	var returnArray []string
+// 	//read fields
+// 	byteValue := executeCassandraGetFields(request)
+
+// 	err := json.Unmarshal(byteValue, &returnArray)
+// 	fmt.Print("Field List from DB : ")
+// 	fmt.Println(returnArray)
+// 	if err != nil {
+// 		request.Log("Converstion of Json Failed!")
+// 		returnArray = make([]string, 1)
+// 		returnArray[0] = "nil"
+// 		return returnArray
+// 	}
+
+// 	return returnArray
+// }
+
+// func createCassandraTable(request *messaging.ObjectRequest, session *gocql.Session) (status bool) {
+// 	status = false
+
+// 	//get table list
+// 	classBytes := executeCassandraGetClasses(request)
+// 	var classList []string
+// 	err := json.Unmarshal(classBytes, &classList)
+// 	fmt.Print("Recieved Table List : ")
+// 	fmt.Println(classList)
+// 	if err != nil {
+// 		status = false
+// 	} else {
+// 		for _, className := range classList {
+// 			if strings.ToLower(request.Controls.Class) == className {
+// 				fmt.Println("Table Already Available")
+// 				status = true
+// 				//Get all fields
+// 				classBytes := executeCassandraGetFields(request)
+// 				var tableFieldList []string
+// 				_ = json.Unmarshal(classBytes, &tableFieldList)
+// 				//Check For missing fields. If any ALTER TABLE
+// 				var recordFieldList []string
+// 				var recordFieldType []string
+// 				if request.Body.Object == nil {
+// 					recordFieldList = make([]string, len(request.Body.Objects[0]))
+// 					recordFieldType = make([]string, len(request.Body.Objects[0]))
+// 					index := 0
+// 					for key, value := range request.Body.Objects[0] {
+// 						if key == "__osHeaders" {
+// 							recordFieldList[index] = "osheaders"
+// 							recordFieldType[index] = "text"
+// 						} else {
+// 							recordFieldList[index] = strings.ToLower(key)
+// 							recordFieldType[index] = getCassandraDataType(value)
+// 						}
+// 						index++
+// 					}
+// 				} else {
+// 					recordFieldList = make([]string, len(request.Body.Object))
+// 					recordFieldType = make([]string, len(request.Body.Object))
+// 					index := 0
+// 					for key, value := range request.Body.Object {
+// 						if key == "__osHeaders" {
+// 							recordFieldList[index] = "osheaders"
+// 							recordFieldType[index] = "text"
+// 						} else {
+// 							recordFieldList[index] = strings.ToLower(key)
+// 							recordFieldType[index] = getCassandraDataType(value)
+// 						}
+// 						index++
+// 					}
+// 				}
+
+// 				var newFields []string
+// 				var newTypes []string
+
+// 				//check for new Fields
+// 				for key, fieldName := range recordFieldList {
+// 					isAvailable := false
+// 					for _, tableField := range tableFieldList {
+// 						if fieldName == tableField {
+// 							isAvailable = true
+// 							break
+// 						}
+// 					}
+
+// 					if !isAvailable {
+// 						newFields = append(newFields, fieldName)
+// 						newTypes = append(newTypes, recordFieldType[key])
+// 					}
+// 				}
+
+// 				//ALTER TABLES
+
+// 				for key, _ := range newFields {
+// 					request.Log("ALTER TABLE " + strings.ToLower(request.Controls.Class) + " ADD " + newFields[key] + " " + newTypes[key] + ";")
+// 					er := session.Query("ALTER TABLE " + strings.ToLower(request.Controls.Class) + " ADD " + newFields[key] + " " + newTypes[key] + ";").Exec()
+// 					if er != nil {
+// 						status = false
+// 						request.Log("Table Alter Failed : " + er.Error())
+// 						return
+// 					} else {
+// 						status = true
+// 						request.Log("Table Alter Success!")
+// 					}
+// 				}
+
+// 				return
+// 			}
+// 		}
+
+// 		// if not available
+// 		//get one object
+// 		var dataObject map[string]interface{}
+// 		dataObject = make(map[string]interface{})
+
+// 		if request.Body.Object != nil {
+// 			for key, value := range request.Body.Object {
+// 				if key == "__osHeaders" {
+// 					dataObject["osheaders"] = value
+// 				} else {
+// 					dataObject[key] = value
+// 				}
+// 			}
+// 		} else {
+// 			for key, value := range request.Body.Objects[0] {
+// 				if key == "__osHeaders" {
+// 					dataObject["osheaders"] = value
+// 				} else {
+// 					dataObject[key] = value
+// 				}
+// 			}
+// 		}
+// 		//read fields
+// 		noOfElements := len(dataObject)
+// 		var keyArray = make([]string, noOfElements)
+// 		var dataTypeArray = make([]string, noOfElements)
+
+// 		var startIndex int = 0
+
+// 		for key, value := range dataObject {
+// 			keyArray[startIndex] = key
+// 			dataTypeArray[startIndex] = getCassandraDataType(value)
+// 			startIndex = startIndex + 1
+
+// 		}
+
+// 		//Create Table
+
+// 		var argKeyList2 string
+
+// 		for i := 0; i < noOfElements; i++ {
+// 			if i != noOfElements-1 {
+// 				if keyArray[i] == request.Body.Parameters.KeyProperty {
+// 					argKeyList2 = argKeyList2 + keyArray[i] + " text PRIMARY KEY, "
+// 				} else {
+// 					argKeyList2 = argKeyList2 + keyArray[i] + " " + dataTypeArray[i] + ", "
+// 				}
+
+// 			} else {
+// 				if keyArray[i] == request.Body.Parameters.KeyProperty {
+// 					argKeyList2 = argKeyList2 + keyArray[i] + " text PRIMARY KEY"
+// 				} else {
+// 					argKeyList2 = argKeyList2 + keyArray[i] + " " + dataTypeArray[i]
+// 				}
+
+// 			}
+// 		}
+
+// 		request.Log("create table " + strings.ToLower(request.Controls.Class) + " (" + argKeyList2 + ");")
+
+// 		er := session.Query("create table " + strings.ToLower(request.Controls.Class) + " (" + argKeyList2 + ");").Exec()
+// 		if er != nil {
+// 			status = false
+// 			request.Log("Table Creation Failed : " + er.Error())
+// 			return
+// 		}
+
+// 		status = true
+
+// 	}
+
+// 	return
+// }
 
 func (repository CassandraRepository) ClearCache(request *messaging.ObjectRequest) {
 }
-*/
