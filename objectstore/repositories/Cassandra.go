@@ -1,5 +1,6 @@
 package repositories
 
+/*
 import (
 	"duov6.com/objectstore/messaging"
 	"encoding/json"
@@ -49,14 +50,12 @@ func (repository CassandraRepository) GetConnection(request *messaging.ObjectReq
 	isError = false
 	cluster := gocql.NewCluster(request.Configuration.ServerConfiguration["CASSANDRA"]["Url"])
 	cluster.Keyspace = keyspace
-	request.Log("Cassandra URL : " + request.Configuration.ServerConfiguration["CASSANDRA"]["Url"])
-	request.Log("KeySpace : " + keyspace)
 
 	session, err := cluster.CreateSession()
 	if err != nil {
 		isError = false
 		errorMessage = err.Error()
-		request.Log("Cassandra connection initilizing failed!")
+		request.Log("Error : Cassandra connection initilizing failed!")
 		session, _ = createNewCassandraKeyspace(request)
 	} else {
 		request.Log("Cassandra connection initilizing success!")
@@ -1241,3 +1240,4 @@ func createCassandraTable(request *messaging.ObjectRequest, session *gocql.Sessi
 
 func (repository CassandraRepository) ClearCache(request *messaging.ObjectRequest) {
 }
+*/
