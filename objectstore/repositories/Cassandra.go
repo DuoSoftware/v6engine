@@ -163,16 +163,16 @@ func (repository CassandraRepository) GetAll(request *messaging.ObjectRequest) R
 	isOrderByAsc := false
 	isOrderByDesc := false
 	orderbyfield := ""
-	skip := "0"
-	take := "100"
+	//skip := "0"
+	//take := "100"
 
-	if request.Extras["skip"] != nil {
-		skip = request.Extras["skip"].(string)
-	}
+	// if request.Extras["skip"] != nil {
+	// 	skip = request.Extras["skip"].(string)
+	// }
 
-	if request.Extras["take"] != nil {
-		take = request.Extras["take"].(string)
-	}
+	// if request.Extras["take"] != nil {
+	// 	take = request.Extras["take"].(string)
+	// }
 
 	if request.Extras["orderby"] != nil {
 		orderbyfield = request.Extras["orderby"].(string)
@@ -190,8 +190,8 @@ func (repository CassandraRepository) GetAll(request *messaging.ObjectRequest) R
 		query += " order by " + orderbyfield + " desc "
 	}
 
-	query += " limit " + take
-	query += " offset " + skip
+	//query += " limit " + take
+	//query += " offset " + skip
 
 	response := repository.queryCommonMany(query, request)
 	return response
@@ -1947,79 +1947,27 @@ func (repository CassandraRepository) GetInterfaceValue(tmp string) (outData int
 	return
 }
 
-// func (repository CassandraRepository) RowsToMap(request *messaging.ObjectRequest, rows *sql.Rows, tableName interface{}) (tableMap []map[string]interface{}, err error) {
+func (repository CassandraRepository) RowsToMap(request *messaging.ObjectRequest, rows []map[string]interface{}, tableName interface{}) (tableMap []map[string]interface{}, err error) {
 
-// 	columns, _ := rows.Columns()
-// 	count := len(columns)
-// 	values := make([]interface{}, count)
-// 	valuePtrs := make([]interface{}, count)
+	tableMap = make([]map[string]interface{}, 0)
 
-// 	cacheItem := make(map[string]string)
+	// for index, miniMap := range rows {
+	// 	tempMap := make(map[string]interface{})
+	// 	for key, value := range miniMap {
+	// 		switch v := value.(type) {
+	// 		case []byte:
+	// 			//var data interface{}
+	// 			//_=json.Unmarshal(value.([], v)
+	// 			break
+	// 		default:
+	// 			tempMap[key] = value
+	// 			break
+	// 		}
+	// 	}
+	// }
 
-// 	if tableName != nil {
-// 		if CheckRedisAvailability(request) {
-// 			tableCachePattern := "CassandraTableCache." + tableName.(string)
-
-// 			if IsTableCacheKeys := cache.ExistsKeyValue(request, tableCachePattern, cache.MetaData); IsTableCacheKeys {
-
-// 				byteVal := cache.GetKeyValue(request, tableCachePattern, cache.MetaData)
-// 				err = json.Unmarshal(byteVal, &cacheItem)
-// 				if err != nil {
-// 					request.Log("Error : " + err.Error())
-// 					return
-// 				}
-// 			}
-// 		} else {
-// 			tName := tableName.(string)
-// 			cacheItem = repository.GetCassandraTableCache(tName)
-// 		}
-// 	}
-
-// 	for rows.Next() {
-
-// 		for i, _ := range columns {
-// 			valuePtrs[i] = &values[i]
-// 		}
-
-// 		rows.Scan(valuePtrs...)
-
-// 		rowMap := make(map[string]interface{})
-
-// 		for i, col := range columns {
-// 			if col == "os_id" || col == "osHeaders" {
-// 				continue
-// 			}
-// 			var v interface{}
-// 			val := values[i]
-// 			b, ok := val.([]byte)
-// 			if ok {
-// 				if cacheItem != nil {
-// 					t, ok := cacheItem[col]
-// 					if ok {
-// 						v = repository.SqlToGolang(b, t)
-// 					}
-// 				}
-
-// 				if v == nil {
-// 					if b == nil {
-// 						v = nil
-// 					} else if strings.ToLower(string(b)) == "null" {
-// 						v = nil
-// 					} else {
-// 						v = string(b)
-// 					}
-
-// 				}
-// 			} else {
-// 				v = val
-// 			}
-// 			rowMap[col] = v
-// 		}
-// 		tableMap = append(tableMap, rowMap)
-// 	}
-
-// 	return
-// }
+	return
+}
 
 func (repository CassandraRepository) ExecuteQueryMany(request *messaging.ObjectRequest, conn *gocql.Session, query string, tableName interface{}) (result []map[string]interface{}, err error) {
 	result = make([]map[string]interface{}, 0)

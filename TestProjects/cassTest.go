@@ -4,7 +4,6 @@ import (
 	//"encoding/json"
 	"fmt"
 	"github.com/gocql/gocql"
-	"reflect"
 )
 
 func main() {
@@ -13,13 +12,14 @@ func main() {
 	cluster.Keyspace = keyspace
 
 	conn, _ := cluster.CreateSession()
-	query := "select column_name,validator from system.schema_columns WHERE keyspace_name='ddf' AND columnfamily_name='hue';"
+	query := "select osheaders from db_test.lod;"
 	iter := conn.Query(query).Iter()
 	resultSet, err := iter.SliceMap()
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println(resultSet)
-		fmt.Println(reflect.TypeOf(resultSet[0]["validator"]))
+		for _, kk := range resultSet {
+			fmt.Println(string(kk["osheaders"].([]byte)))
+		}
 	}
 }
