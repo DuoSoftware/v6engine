@@ -145,13 +145,14 @@ func (repository CassandraRepository) CreateNewKeyspace(request *messaging.Objec
 			request.Log("Debug : Created new " + keyspace + " Keyspace")
 
 			//Create domainClassAttributes
+			//conn.Close()
+			//conn = nil
+			//cluster = nil
+			//cluster = gocql.NewCluster(request.Configuration.ServerConfiguration["CASSANDRA"]["Url"])
+			//cluster.Keyspace = keyspace
+			//conn, err = cluster.CreateSession()
+			err = conn.Query("create table IF NOT EXISTS " + keyspace + ".domainClassAttributes (os_id text, class text, maxCount text, version text, PRIMARY KEY(os_id));").Exec()
 			conn.Close()
-			conn = nil
-			cluster = nil
-			cluster = gocql.NewCluster(request.Configuration.ServerConfiguration["CASSANDRA"]["Url"])
-			cluster.Keyspace = keyspace
-			conn, err = cluster.CreateSession()
-			err, _ = repository.ExecuteNonQuery(conn, "create table IF NOT EXISTS domainClassAttributes (os_id text, class text, maxCount text, version text, PRIMARY KEY(os_id));", request)
 		}
 	}
 	return
@@ -164,15 +165,15 @@ func (repository CassandraRepository) GetAll(request *messaging.ObjectRequest) R
 	isOrderByDesc := false
 	orderbyfield := ""
 	//skip := "0"
-	//take := "100"
+	take := "100"
 
 	// if request.Extras["skip"] != nil {
 	// 	skip = request.Extras["skip"].(string)
 	// }
 
-	// if request.Extras["take"] != nil {
-	// 	take = request.Extras["take"].(string)
-	// }
+	if request.Extras["take"] != nil {
+		take = request.Extras["take"].(string)
+	}
 
 	if request.Extras["orderby"] != nil {
 		orderbyfield = request.Extras["orderby"].(string)
@@ -190,8 +191,10 @@ func (repository CassandraRepository) GetAll(request *messaging.ObjectRequest) R
 		query += " order by " + orderbyfield + " desc "
 	}
 
-	//query += " limit " + take
+	query += " limit " + take
 	//query += " offset " + skip
+
+	query += ";"
 
 	response := repository.queryCommonMany(query, request)
 	return response
@@ -1951,20 +1954,22 @@ func (repository CassandraRepository) RowsToMap(request *messaging.ObjectRequest
 
 	tableMap = make([]map[string]interface{}, 0)
 
-	// for index, miniMap := range rows {
-	// 	tempMap := make(map[string]interface{})
-	// 	for key, value := range miniMap {
-	// 		switch v := value.(type) {
-	// 		case []byte:
-	// 			//var data interface{}
-	// 			//_=json.Unmarshal(value.([], v)
-	// 			break
-	// 		default:
-	// 			tempMap[key] = value
-	// 			break
-	// 		}
-	// 	}
-	// }
+	for _, miniMap := range rows {
+		tempMap := make(map[string]interface{})
+		for key, value := range miniMap {
+			switch value.(type) {
+			case []uint8:
+				var data interface{}
+				err = json.Unmarshal(value.([]byte), &data)
+				tempMap[key] = data
+				break
+			default:
+				tempMap[key] = value
+				break
+			}
+		}
+		tableMap = append(tableMap, tempMap)
+	}
 
 	return
 }
@@ -1975,7 +1980,7 @@ func (repository CassandraRepository) ExecuteQueryMany(request *messaging.Object
 	iter := conn.Query(query).Iter()
 	result, err = iter.SliceMap()
 	iter.Close()
-
+	result, err = repository.RowsToMap(request, result, nil)
 	return
 }
 
@@ -1985,7 +1990,7 @@ func (repository CassandraRepository) ExecuteQueryOne(request *messaging.ObjectR
 
 	iter := conn.Query(query).Iter()
 	resultSet, err = iter.SliceMap()
-
+	resultSet, err = repository.RowsToMap(request, resultSet, nil)
 	if err == nil {
 		if len(resultSet) > 0 {
 			result = resultSet[0]
