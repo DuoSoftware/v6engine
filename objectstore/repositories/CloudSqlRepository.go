@@ -747,7 +747,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 		return response
 	case "gettablemeta":
 		recordCount := 0
-		fieldNameList := make([]string, 0)
+		//fieldNameList := make([]string, 0)
 		isError := false
 		request.Log("Debug : Starting GET-Table-Meta-Data sub routine")
 
@@ -765,19 +765,19 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 
 		//........... Get PK and Table Info .................
 
-		query = "EXPLAIN " + domain + "." + request.Controls.Class + ";"
-		var resultSet2 []map[string]interface{}
-		repoResponse := repository.queryCommonMany(query, request)
-		err := json.Unmarshal(repoResponse.Body, &resultSet2)
-		if err != nil {
-			isError = true
-		} else {
-			if len(resultSet2) > 0 {
-				for x := 0; x < len(resultSet2); x++ {
-					fieldNameList = append(fieldNameList, resultSet2[x]["Field"].(string))
-				}
-			}
-		}
+		// query = "EXPLAIN " + domain + "." + request.Controls.Class + ";"
+		// var resultSet2 []map[string]interface{}
+		// repoResponse := repository.queryCommonMany(query, request)
+		// err := json.Unmarshal(repoResponse.Body, &resultSet2)
+		// if err != nil {
+		// 	isError = true
+		// } else {
+		// 	if len(resultSet2) > 0 {
+		// 		for x := 0; x < len(resultSet2); x++ {
+		// 			fieldNameList = append(fieldNameList, resultSet2[x]["Field"].(string))
+		// 		}
+		// 	}
+		// }
 
 		if isError {
 			response.IsSuccess = false
@@ -785,8 +785,7 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 			response.IsSuccess = true
 			returnMap := make(map[string]interface{})
 			returnMap["RecordCount"] = recordCount
-			returnMap["FieldList"] = fieldNameList
-			//fmt.Println(returnMap)
+			//returnMap["FieldList"] = fieldNameList
 			byteArray, _ := json.Marshal(returnMap)
 			response.Body = byteArray
 		}

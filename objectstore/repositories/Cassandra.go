@@ -172,6 +172,7 @@ func (repository CassandraRepository) GetAll(request *messaging.ObjectRequest) R
 func (repository CassandraRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
 	if request.Body.Query.Parameters != "*" {
+		request.Log("Error : Get Query not implemented in Cassandra DB repository")
 		response = getDefaultNotImplemented()
 	} else {
 		response = repository.GetAll(request)
@@ -194,6 +195,7 @@ func (repository CassandraRepository) GetByKey(request *messaging.ObjectRequest)
 }
 
 func (repository CassandraRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
+	request.Log("Error : Get Search not implemented in Cassandra DB repository")
 	return getDefaultNotImplemented()
 }
 
@@ -212,9 +214,12 @@ func (repository CassandraRepository) InsertMultiple(request *messaging.ObjectRe
 	idData = make(map[string]interface{})
 
 	for index, obj := range request.Body.Objects {
-		id := repository.GetRecordID(request, obj)
+		id := GetRecordID(request, obj)
 		idData[strconv.Itoa(index)] = id
 		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
+
+		request.Body.Objects[index]["osHeaders"] = request.Body.Objects[index]["__osHeaders"]
+		delete(request.Body.Objects[index], "__osHeaders")
 	}
 
 	DataMap := make([]map[string]interface{}, 1)
@@ -229,6 +234,12 @@ func (repository CassandraRepository) InsertMultiple(request *messaging.ObjectRe
 	}
 
 	response.Data = DataMap
+
+	for index, _ := range request.Body.Objects {
+		request.Body.Objects[index]["__osHeaders"] = request.Body.Objects[index]["osHeaders"]
+		delete(request.Body.Objects[index], "osHeaders")
+	}
+
 	return response
 }
 
@@ -246,7 +257,7 @@ func (repository CassandraRepository) InsertSingle(request *messaging.ObjectRequ
 		return response
 	}
 
-	id := repository.GetRecordID(request, request.Body.Object)
+	id := GetRecordID(request, request.Body.Object)
 	request.Controls.Id = id
 	request.Body.Object[request.Body.Parameters.KeyProperty] = id
 
@@ -284,9 +295,12 @@ func (repository CassandraRepository) UpdateMultiple(request *messaging.ObjectRe
 	idData = make(map[string]interface{})
 
 	for index, obj := range request.Body.Objects {
-		id := repository.GetRecordID(request, obj)
+		id := GetRecordID(request, obj)
 		idData[strconv.Itoa(index)] = id
 		request.Body.Objects[index][request.Body.Parameters.KeyProperty] = id
+
+		request.Body.Objects[index]["osHeaders"] = request.Body.Objects[index]["__osHeaders"]
+		delete(request.Body.Objects[index], "__osHeaders")
 	}
 
 	DataMap := make([]map[string]interface{}, 1)
@@ -301,12 +315,21 @@ func (repository CassandraRepository) UpdateMultiple(request *messaging.ObjectRe
 	}
 
 	response.Data = DataMap
+
+	for index, _ := range request.Body.Objects {
+		request.Body.Objects[index]["__osHeaders"] = request.Body.Objects[index]["osHeaders"]
+		delete(request.Body.Objects[index], "osHeaders")
+	}
+
 	return response
 }
 
 func (repository CassandraRepository) UpdateSingle(request *messaging.ObjectRequest) RepositoryResponse {
 
 	var response RepositoryResponse
+
+	request.Body.Object["osHeaders"] = request.Body.Object["__osHeaders"]
+	delete(request.Body.Object, "__osHeaders")
 
 	conn, err := repository.GetConnection(request)
 	if err != nil {
@@ -315,7 +338,7 @@ func (repository CassandraRepository) UpdateSingle(request *messaging.ObjectRequ
 		return response
 	}
 
-	id := repository.GetRecordID(request, request.Body.Object)
+	id := GetRecordID(request, request.Body.Object)
 	request.Controls.Id = id
 	request.Body.Object[request.Body.Parameters.KeyProperty] = id
 
@@ -331,6 +354,9 @@ func (repository CassandraRepository) UpdateSingle(request *messaging.ObjectRequ
 	}
 
 	response.Data = Data
+
+	request.Body.Object["__osHeaders"] = request.Body.Object["osHeaders"]
+	delete(request.Body.Object, "osHeaders")
 
 	return response
 }
@@ -362,13 +388,9 @@ func (repository CassandraRepository) DeleteMultiple(request *messaging.ObjectRe
 		isError := false
 		for _, obj := range request.Body.Objects {
 			query := repository.GetDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKeyById(request, obj))
-			err, message := repository.ExecuteNonQuery(conn, query, request)
+			err, _ := repository.ExecuteNonQuery(conn, query, request)
 			if err != nil {
 				isError = true
-			} else {
-				if message == "No Rows Changed" {
-					request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
-				}
 			}
 		}
 		if isError {
@@ -376,7 +398,7 @@ func (repository CassandraRepository) DeleteMultiple(request *messaging.ObjectRe
 			response.Message = "Error deleting all objects. Please double check data!"
 		} else {
 			response.IsSuccess = true
-			response.Message = "Successfully Deleted all objects from CloudSQL repository!"
+			response.Message = "Successfully Deleted all objects from Cassandra repository!"
 		}
 	} else {
 		response.IsSuccess = false
@@ -392,20 +414,17 @@ func (repository CassandraRepository) DeleteSingle(request *messaging.ObjectRequ
 	conn, err := repository.GetConnection(request)
 	if err == nil {
 		query := repository.GetDeleteScript(request.Controls.Namespace, request.Controls.Class, getNoSqlKey(request))
-		err, message := repository.ExecuteNonQuery(conn, query, request)
+		err, _ := repository.ExecuteNonQuery(conn, query, request)
 		if err != nil {
 			response.IsSuccess = false
-			response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
+			response.Message = "Failed Deleting from Cassandra repository : " + err.Error()
 		} else {
 			response.IsSuccess = true
-			response.Message = "Successfully Deleted from CloudSQL repository!"
-			if message == "No Rows Changed" {
-				request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + request.Body.Object[request.Body.Parameters.KeyProperty].(string))
-			}
+			response.Message = "Successfully Deleted from Cassandra repository!"
 		}
 	} else {
 		response.IsSuccess = false
-		response.Message = "Failed Deleting from CloudSQL repository : " + err.Error()
+		response.Message = "Failed Deleting from Cassandra repository : " + err.Error()
 	}
 	repository.CloseConnection(conn)
 	return response
@@ -421,28 +440,15 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 	switch queryType {
 	case "getfields":
 		request.Log("Debug : Starting GET-FIELDS sub routine!")
-		query := "EXPLAIN " + domain + "." + request.Controls.Class + ";"
-		var resultSet []map[string]interface{}
-		repoResponse := repository.queryCommonMany(query, request)
-		err := json.Unmarshal(repoResponse.Body, &resultSet)
-		if err != nil {
-			response.IsSuccess = false
-			response.Message = err.Error()
-		} else {
-			for x := 0; x < len(resultSet); x++ {
-				delete(resultSet[x], "Default")
-				delete(resultSet[x], "Extra")
-				delete(resultSet[x], "Key")
-				delete(resultSet[x], "Null")
-			}
-			response.IsSuccess = true
-			byteArray, _ := json.Marshal(resultSet)
-			response.Body = byteArray
-		}
+		conn, _ := repository.GetConnection(request)
+		resultSet, _ := repository.ExplainTable(request, conn)
+		response.IsSuccess = true
+		byteArray, _ := json.Marshal(resultSet)
+		response.Body = byteArray
 		return response
 	case "getclasses":
 		request.Log("Error : Starting GET-CLASSES sub routine")
-		query := "SELECT DISTINCT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='" + domain + "';"
+		query := "select columnfamily_name from system.schema_columnfamilies WHERE keyspace_name='" + domain + "'"
 		repoResponse := repository.queryCommonMany(query, request)
 		var mapArray []map[string]interface{}
 		err := json.Unmarshal(repoResponse.Body, &mapArray)
@@ -453,14 +459,14 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 		} else {
 			valueArray := make([]string, len(mapArray))
 			for index, value := range mapArray {
-				valueArray[index] = value["TABLE_NAME"].(string)
+				valueArray[index] = value["columnfamily_name"].(string)
 			}
 			repoResponse.Body, _ = json.Marshal(valueArray)
 			return repoResponse
 		}
-	case "GetDatabaseNames":
+	case "getnamespaces":
 		request.Log("Debug : Starting GET-NAMESPACES sub routine")
-		query := "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME != 'information_schema' AND SCHEMA_NAME !='mysql' AND SCHEMA_NAME !='performance_schema';"
+		query := "select keyspace_name from system.schema_keyspaces"
 		result := repository.queryCommonMany(query, request)
 		var resultSet []map[string]interface{}
 		if err := json.Unmarshal(result.Body, &resultSet); err != nil {
@@ -470,45 +476,45 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 			response.IsSuccess = true
 			var resultArray []string
 			for _, singleDB := range resultSet {
-				resultArray = append(resultArray, singleDB["SCHEMA_NAME"].(string))
+				resultArray = append(resultArray, singleDB["keyspace_name"].(string))
 			}
 			byteArray, _ := json.Marshal(resultArray)
 			response.Body = byteArray
 		}
 		return response
 	case "gettablemeta":
-		recordCount := 0
-		fieldNameList := make([]string, 0)
+		var recordCount float64
+		//fieldNameList := make([]string, 0)
 		isError := false
 		request.Log("Debug : Starting GET-Table-Meta-Data sub routine")
 
 		query := "SELECT count(*) as count FROM " + domain + "." + request.Controls.Class + ";"
 		result := repository.queryCommonMany(query, request)
-		//fmt.Println(string(result.Body))
+		fmt.Println(string(result.Body))
 		var resultSet []map[string]interface{}
 		if err := json.Unmarshal(result.Body, &resultSet); err != nil {
 			isError = true
 		} else {
 			if len(resultSet) > 0 {
-				recordCount, _ = strconv.Atoi(resultSet[0]["count"].(string))
+				recordCount = resultSet[0]["count"].(float64)
 			}
 		}
 
 		//........... Get PK and Table Info .................
 
-		query = "EXPLAIN " + domain + "." + request.Controls.Class + ";"
-		var resultSet2 []map[string]interface{}
-		repoResponse := repository.queryCommonMany(query, request)
-		err := json.Unmarshal(repoResponse.Body, &resultSet2)
-		if err != nil {
-			isError = true
-		} else {
-			if len(resultSet2) > 0 {
-				for x := 0; x < len(resultSet2); x++ {
-					fieldNameList = append(fieldNameList, resultSet2[x]["Field"].(string))
-				}
-			}
-		}
+		// query = "EXPLAIN " + domain + "." + request.Controls.Class + ";"
+		// var resultSet2 []map[string]interface{}
+		// repoResponse := repository.queryCommonMany(query, request)
+		// err := json.Unmarshal(repoResponse.Body, &resultSet2)
+		// if err != nil {
+		// 	isError = true
+		// } else {
+		// 	if len(resultSet2) > 0 {
+		// 		for x := 0; x < len(resultSet2); x++ {
+		// 			fieldNameList = append(fieldNameList, resultSet2[x]["Field"].(string))
+		// 		}
+		// 	}
+		// }
 
 		if isError {
 			response.IsSuccess = false
@@ -516,7 +522,7 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 			response.IsSuccess = true
 			returnMap := make(map[string]interface{})
 			returnMap["RecordCount"] = recordCount
-			returnMap["FieldList"] = fieldNameList
+			//returnMap["FieldList"] = fieldNameList
 			//fmt.Println(returnMap)
 			byteArray, _ := json.Marshal(returnMap)
 			response.Body = byteArray
@@ -535,11 +541,11 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 		request.Log("Debug : Starting Delete-Class sub routine")
 		conn, err := repository.GetConnection(request)
 		if err == nil {
-			query := "DROP TABLE " + domain + "." + request.Controls.Class
+			query := "DROP TABLE " + domain + "." + request.Controls.Class + ";"
 			err, _ := repository.ExecuteNonQuery(conn, query, request)
 			if err != nil {
 				response.IsSuccess = false
-				response.Message = "Error Dropping Table in CloudSQL Repository : " + err.Error()
+				response.Message = "Error Dropping Table in Cassandra Repository : " + err.Error()
 			} else {
 				//Delete Class from availableTables and tablecache
 				if CheckRedisAvailability(request) {
@@ -555,18 +561,18 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 			}
 		} else {
 			response.IsSuccess = false
-			response.Message = "Connection Failed to CloudSQL Server"
+			response.Message = "Connection Failed to Cassandra Server"
 		}
 		repository.CloseConnection(conn)
 	case "dropnamespace":
 		request.Log("Debug : Starting Delete-Database sub routine")
 		conn, err := repository.GetConnection(request)
 		if err == nil {
-			query := "DROP SCHEMA " + domain
+			query := "DROP KEYSPACE " + domain + ";"
 			err, _ := repository.ExecuteNonQuery(conn, query, request)
 			if err != nil {
 				response.IsSuccess = false
-				response.Message = "Error Dropping Table in CloudSQL Repository : " + err.Error()
+				response.Message = "Error Dropping Table in Cassandra Repository : " + err.Error()
 			} else {
 				if CheckRedisAvailability(request) {
 
@@ -596,7 +602,7 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 			}
 		} else {
 			response.IsSuccess = false
-			response.Message = "Connection Failed to CloudSQL Server"
+			response.Message = "Connection Failed to Cassandra Server"
 		}
 		repository.CloseConnection(conn)
 	case "flushcache":
@@ -630,7 +636,7 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 				value, _ = strconv.Atoi(valueInString)
 
 				if CheckRedisAvailability(request) {
-					id := keygenerator.GetIncrementID(request, "CLOUDSQL", value)
+					id := keygenerator.GetIncrementID(request, "Cassandra", value)
 
 					for x := 0; x < len(request.Controls.Class); x++ {
 						if (len(prefix) + len(id)) < len(request.Controls.Class) {
@@ -652,7 +658,7 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 			} else {
 				//Get ID and Return
 				if CheckRedisAvailability(request) {
-					id := keygenerator.GetIncrementID(request, "CLOUDSQL", 0)
+					id := keygenerator.GetIncrementID(request, "Cassandra", 0)
 					response.Body = []byte(id)
 					response.IsSuccess = true
 					response.Message = "Successfully Completed!"
@@ -669,7 +675,7 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 				value, _ = strconv.Atoi(valueInString)
 
 				if CheckRedisAvailability(request) {
-					id := keygenerator.GetTentativeID(request, "CLOUDSQL", value)
+					id := keygenerator.GetTentativeID(request, "Cassandra", value)
 
 					for x := 0; x < len(request.Controls.Class); x++ {
 						if (len(prefix) + len(id)) < len(request.Controls.Class) {
@@ -693,7 +699,7 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 			} else {
 				//Get ID and Return
 				if CheckRedisAvailability(request) {
-					id := keygenerator.GetTentativeID(request, "CLOUDSQL", 0)
+					id := keygenerator.GetTentativeID(request, "Cassandra", 0)
 					intVal, _ := strconv.Atoi(id)
 					id = strconv.Itoa(intVal + 1)
 					response.Body = []byte(id)
@@ -709,12 +715,15 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 			response.Message = "No Such Command is facilitated!"
 		}
 	case "fulltextsearch":
+		request.Log("Error : Full Text Search not implemented in Cassandra DB repository")
 		response = getDefaultNotImplemented()
 		return response
 	case "uniqueindex":
+		request.Log("Error : Unique Index not implemented in Cassandra DB repository")
 		response = getDefaultNotImplemented()
 		return response
 	default:
+		request.Log("Error : This Special Function not implemented in Cassandra DB repository")
 		response = getDefaultNotImplemented()
 	}
 
@@ -775,7 +784,7 @@ func (repository CassandraRepository) queryCommon(query string, request *messagi
 			response.GetResponseWithBody(getEmptyByteObject())
 		}
 	} else {
-		response.GetErrorResponse("Error connecting to CloudSQL : " + err.Error())
+		response.GetErrorResponse("Error connecting to Cassandra : " + err.Error())
 	}
 	repository.CloseConnection(conn)
 	return response
@@ -882,11 +891,11 @@ func (repository CassandraRepository) queryStore(request *messaging.ObjectReques
 
 	if isOkay {
 		response.IsSuccess = true
-		response.Message = "Successfully stored object(s) in CloudSQL"
+		response.Message = "Successfully stored object(s) in Cassandra"
 		request.Log("Debug : " + response.Message)
 	} else {
 		response.IsSuccess = false
-		response.Message = "Error storing/updating all object(s) in CloudSQL."
+		response.Message = "Error storing/updating all object(s) in Cassandra."
 		request.Log("Error : " + response.Message)
 	}
 
@@ -1313,8 +1322,6 @@ func (repository CassandraRepository) ExplainTable(request *messaging.ObjectRequ
 
 	}
 
-	fmt.Println(retMap)
-
 	return
 }
 
@@ -1591,34 +1598,6 @@ func (repository CassandraRepository) ExecuteNonQuery(conn *gocql.Session, query
 	// 		message = "No Rows Changed"
 	// 	}
 	// }
-	return
-}
-
-func (repository CassandraRepository) GetRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (returnID string) {
-	isGUIDKey := false
-	isAutoIncrementId := false //else MANUAL key from the user
-
-	//multiple requests
-	if (obj[request.Body.Parameters.KeyProperty].(string) == "-999") || (request.Body.Parameters.AutoIncrement == true) {
-		isAutoIncrementId = true
-	}
-
-	if (obj[request.Body.Parameters.KeyProperty].(string) == "-888") || (request.Body.Parameters.GUIDKey == true) {
-		isGUIDKey = true
-	}
-
-	if isGUIDKey {
-		returnID = common.GetGUID()
-	} else if isAutoIncrementId {
-		if CheckRedisAvailability(request) {
-			returnID = keygenerator.GetIncrementID(request, "CLOUDSQL", 0)
-		} else {
-			request.Log("Debug : WARNING! : Returning GUID since REDIS not available and not concurrent safe!")
-			returnID = common.GetGUID()
-		}
-	} else {
-		returnID = obj[request.Body.Parameters.KeyProperty].(string)
-	}
 	return
 }
 
