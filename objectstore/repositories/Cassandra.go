@@ -6,7 +6,6 @@ import (
 	"duov6.com/objectstore/keygenerator"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/objectstore/security"
-	"duov6.com/queryparser"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -143,14 +142,6 @@ func (repository CassandraRepository) CreateNewKeyspace(request *messaging.Objec
 			request.Log("Error : Failed to create new " + keyspace + " Keyspace : " + err.Error())
 		} else {
 			request.Log("Debug : Created new " + keyspace + " Keyspace")
-
-			//Create domainClassAttributes
-			//conn.Close()
-			//conn = nil
-			//cluster = nil
-			//cluster = gocql.NewCluster(request.Configuration.ServerConfiguration["CASSANDRA"]["Url"])
-			//cluster.Keyspace = keyspace
-			//conn, err = cluster.CreateSession()
 			err = conn.Query("create table IF NOT EXISTS " + keyspace + ".domainClassAttributes (os_id text, class text, maxCount text, version text, PRIMARY KEY(os_id));").Exec()
 			conn.Close()
 		}
@@ -161,38 +152,16 @@ func (repository CassandraRepository) CreateNewKeyspace(request *messaging.Objec
 //.................................................................................
 
 func (repository CassandraRepository) GetAll(request *messaging.ObjectRequest) RepositoryResponse {
-	isOrderByAsc := false
-	isOrderByDesc := false
-	orderbyfield := ""
-	//skip := "0"
-	take := "100"
 
-	// if request.Extras["skip"] != nil {
-	// 	skip = request.Extras["skip"].(string)
-	// }
+	take := "100"
 
 	if request.Extras["take"] != nil {
 		take = request.Extras["take"].(string)
 	}
 
-	if request.Extras["orderby"] != nil {
-		orderbyfield = request.Extras["orderby"].(string)
-		isOrderByAsc = true
-	} else if request.Extras["orderbydsc"] != nil {
-		orderbyfield = request.Extras["orderbydsc"].(string)
-		isOrderByDesc = true
-	}
-
 	query := "SELECT * FROM " + repository.GetDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
 
-	if isOrderByAsc {
-		query += " order by " + orderbyfield + " asc "
-	} else if isOrderByDesc {
-		query += " order by " + orderbyfield + " desc "
-	}
-
 	query += " limit " + take
-	//query += " offset " + skip
 
 	query += ";"
 
@@ -203,38 +172,7 @@ func (repository CassandraRepository) GetAll(request *messaging.ObjectRequest) R
 func (repository CassandraRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
 	if request.Body.Query.Parameters != "*" {
-
-		parameters := make(map[string]interface{})
-
-		if request.Extras["skip"] != nil {
-			parameters["skip"] = request.Extras["skip"].(string)
-		} else {
-			parameters["skip"] = ""
-		}
-
-		if request.Extras["take"] != nil {
-			parameters["take"] = request.Extras["take"].(string)
-		} else {
-			parameters["take"] = ""
-		}
-
-		if request.Extras["orderby"] != nil {
-			parameters["orderby"] = request.Extras["orderby"].(string)
-		} else if request.Extras["orderbydsc"] != nil {
-			parameters["orderbydsc"] = request.Extras["orderbydsc"].(string)
-		}
-
-		formattedQuery, err := queryparser.GetCloudSQLQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class, parameters)
-		if err != nil {
-			request.Log("Error : " + err.Error())
-			response.IsSuccess = false
-			response.Message = err.Error()
-			return response
-		}
-
-		query := formattedQuery
-		//fmt.Println("Formatted Query : " + query)
-		response = repository.queryCommonMany(query, request)
+		response = getDefaultNotImplemented()
 	} else {
 		response = repository.GetAll(request)
 	}
@@ -256,213 +194,7 @@ func (repository CassandraRepository) GetByKey(request *messaging.ObjectRequest)
 }
 
 func (repository CassandraRepository) GetSearch(request *messaging.ObjectRequest) RepositoryResponse {
-	isOrderByAsc := false
-	isOrderByDesc := false
-	orderbyfield := ""
-	skip := "0"
-	take := "100"
-	isFullTextSearch := false
-
-	if request.Extras["skip"] != nil {
-		skip = request.Extras["skip"].(string)
-	}
-
-	if request.Extras["take"] != nil {
-		take = request.Extras["take"].(string)
-	}
-
-	if request.Extras["orderby"] != nil {
-		orderbyfield = request.Extras["orderby"].(string)
-		isOrderByAsc = true
-	} else if request.Extras["orderbydsc"] != nil {
-		orderbyfield = request.Extras["orderbydsc"].(string)
-		isOrderByDesc = true
-	}
-
-	domain := repository.GetDatabaseName(request.Controls.Namespace)
-
-	response := RepositoryResponse{}
-	query := ""
-	if strings.Contains(request.Body.Query.Parameters, ":") {
-		tokens := strings.Split(request.Body.Query.Parameters, ":")
-		fieldName := tokens[0]
-		fieldValue := tokens[1]
-
-		if security.ValidateSecurity(fieldValue) {
-			response.GetResponseWithBody(getEmptyByteObject())
-			request.Log("Error! Security Violation of request detected. Aborting request with error!")
-			return response
-		}
-
-		if len(tokens) > 2 {
-			fieldValue = ""
-			for x := 1; x < len(tokens); x++ {
-				fieldValue += tokens[x] + " "
-			}
-		}
-
-		fieldName = strings.TrimSpace(fieldName)
-		fieldValue = strings.TrimSpace(fieldValue)
-		if strings.HasPrefix(fieldValue, "*") && strings.HasSuffix(fieldValue, "*") {
-			fieldValue = strings.TrimSuffix(fieldValue, "*")
-			fieldValue = strings.TrimPrefix(fieldValue, "*")
-			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + " LIKE '%" + fieldValue + "%'"
-		} else if strings.HasPrefix(fieldValue, "*") {
-			fieldValue = strings.TrimPrefix(fieldValue, "*")
-			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + " LIKE '%" + fieldValue + "'"
-		} else if strings.HasSuffix(fieldValue, "*") {
-			fieldValue = strings.TrimSuffix(fieldValue, "*")
-			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + " LIKE '" + fieldValue + "%'"
-		} else {
-			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "'"
-		}
-	} else {
-		if request.Body.Query.Parameters == "" || request.Body.Query.Parameters == "*" {
-			//Get All Query
-			query = "select * from " + domain + "." + request.Controls.Class
-		} else {
-			//Full Text Search Query
-			query = repository.GetFullTextSearchQuery(request)
-			isFullTextSearch = true
-		}
-	}
-
-	if !isFullTextSearch {
-		if isOrderByAsc {
-			query += " order by " + orderbyfield + " asc "
-		} else if isOrderByDesc {
-			query += " order by " + orderbyfield + " desc "
-		}
-
-		query += " limit " + take
-		query += " offset " + skip
-
-		query += ";"
-	}
-
-	response = repository.queryCommonMany(query, request)
-	return response
-}
-
-func (repository CassandraRepository) GetFullTextSearchQuery(request *messaging.ObjectRequest) (query string) {
-	var fieldNames []string
-
-	domain := repository.GetDatabaseName(request.Controls.Namespace)
-
-	indexedFields := repository.GetFullTextIndexes(request)
-
-	if len(indexedFields) > 0 {
-		//Indexed Queries
-		queryParam := request.Body.Query.Parameters
-		queryParam = strings.TrimPrefix(queryParam, "*")
-		queryParam = strings.TrimSuffix(queryParam, "*")
-
-		query = "SELECT * FROM " + domain + "." + request.Controls.Class + " WHERE MATCH ("
-
-		argumentCount := 0
-		fullTextArguments := ""
-		for _, field := range indexedFields {
-			if argumentCount < 16 {
-				fullTextArguments += field + ","
-			} else {
-				break
-			}
-			argumentCount += 1
-		}
-		fullTextArguments = strings.TrimSuffix(fullTextArguments, ",")
-		query += fullTextArguments + ") AGAINST ('" + queryParam
-		query += "*' IN BOOLEAN MODE);"
-	} else {
-
-		fieldsAndTypes := make(map[string]string)
-
-		tableCacheRedisPattern := "CassandraTableCache." + domain + "." + request.Controls.Class
-
-		IsRedis := false
-		if CheckRedisAvailability(request) {
-			IsRedis = true
-		}
-
-		localTableCacheEntry := repository.GetCassandraTableCache(domain + "." + request.Controls.Class)
-
-		if IsRedis && cache.ExistsKeyValue(request, tableCacheRedisPattern, cache.MetaData) {
-
-			byteVal := cache.GetKeyValue(request, tableCacheRedisPattern, cache.MetaData)
-			err := json.Unmarshal(byteVal, &fieldsAndTypes)
-			if err != nil {
-				request.Log("Error : " + err.Error())
-				return
-			}
-
-			for name, typee := range fieldsAndTypes {
-				if strings.EqualFold(typee, "TEXT") {
-					fieldNames = append(fieldNames, name)
-				}
-			}
-		} else if localTableCacheEntry != nil {
-			//Available in Table Cache
-			for name, fieldType := range localTableCacheEntry {
-				if name != "osHeaders" && strings.EqualFold(fieldType, "TEXT") {
-					fieldNames = append(fieldNames, name)
-				}
-			}
-		} else {
-			//Get From Db
-			query := "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + domain + "' AND TABLE_NAME = '" + request.Controls.Class + "';"
-			repoResponse := repository.queryCommonMany(query, request)
-			var mapArray []map[string]interface{}
-			err := json.Unmarshal(repoResponse.Body, &mapArray)
-			if err != nil {
-				request.Log("Error : " + err.Error())
-			} else {
-				for _, value := range mapArray {
-					if value["COLUMN_NAME"].(string) != "osHeaders" && strings.EqualFold(value["DATA_TYPE"].(string), "TEXT") {
-						fieldNames = append(fieldNames, value["COLUMN_NAME"].(string))
-					}
-				}
-			}
-		}
-
-		//Non Indexed Queries
-		query = "SELECT * FROM " + repository.GetDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE Concat("
-
-		//Make Argument Array
-		fullTextArguments := ""
-		for _, field := range fieldNames {
-			fullTextArguments += "IFNULL(" + field + ",''), '',"
-		}
-
-		fullTextArguments = fullTextArguments[:(len(fullTextArguments) - 5)]
-
-		queryParam := request.Body.Query.Parameters
-		queryParam = strings.TrimPrefix(queryParam, "*")
-		queryParam = strings.TrimSuffix(queryParam, "*")
-		query += fullTextArguments + ") LIKE '%" + queryParam + "%' "
-	}
-	return
-}
-
-func (repository CassandraRepository) GetFullTextIndexes(request *messaging.ObjectRequest) (fieldnames []string) {
-
-	conn, err := repository.GetConnection(request)
-	if err != nil {
-		request.Log("Error : " + err.Error())
-		return
-	}
-
-	domain := repository.GetDatabaseName(request.Controls.Namespace)
-	getIndexesQuery := "show index from " + domain + "." + request.Controls.Class + " where Index_type = 'FULLTEXT'"
-
-	indexResult, err := repository.ExecuteQueryMany(request, conn, getIndexesQuery, "")
-	if err != nil {
-		request.Log("Error : " + err.Error())
-	} else {
-		for _, obj := range indexResult {
-			keyName := obj["Column_name"].(string)
-			fieldnames = append(fieldnames, keyName)
-		}
-	}
-	return
+	return getDefaultNotImplemented()
 }
 
 func (repository CassandraRepository) InsertMultiple(request *messaging.ObjectRequest) RepositoryResponse {
@@ -977,136 +709,13 @@ func (repository CassandraRepository) Special(request *messaging.ObjectRequest) 
 			response.Message = "No Such Command is facilitated!"
 		}
 	case "fulltextsearch":
-		var FTH_command string
-
-		if request.Body.Special.Extras["Command"] != nil {
-			FTH_command = strings.ToLower(request.Body.Special.Extras["Command"].(string))
-		}
-
-		conn, err := repository.GetConnection(request)
-		if err != nil {
-			response.IsSuccess = false
-			response.Message = err.Error()
-			return response
-		}
-
-		switch FTH_command {
-		case "reset":
-			getIndexesQuery := "show index from " + domain + "." + request.Controls.Class + " where Index_type = 'FULLTEXT'"
-
-			indexResult, err := repository.ExecuteQueryMany(request, conn, getIndexesQuery, "")
-			if err != nil {
-				request.Log("Error : " + err.Error())
-			} else {
-				executedList := ""
-				for _, obj := range indexResult {
-					keyName := obj["Key_name"].(string)
-					if !strings.Contains(executedList, keyName) {
-						alterQuery := "ALTER TABLE " + domain + "." + request.Controls.Class + " DROP INDEX " + keyName
-						_, _ = repository.ExecuteNonQuery(conn, alterQuery, request)
-						executedList += " " + keyName
-					}
-				}
-			}
-			response.IsSuccess = true
-			response.Message = "Successfully dropped Full Text Indexes!"
-		case "index":
-			fieldNames := strings.Split(strings.TrimSpace(request.Body.Special.Parameters), " ")
-			alterQuery := "ALTER TABLE " + domain + "." + request.Controls.Class + " ADD FULLTEXT(" + fieldNames[0]
-			for x := 1; x < len(fieldNames); x++ {
-				alterQuery += ", " + fieldNames[x]
-			}
-			alterQuery += ");"
-			err, _ = repository.ExecuteNonQuery(conn, alterQuery, request)
-			if err != nil {
-				response.IsSuccess = false
-				response.Message = err.Error()
-			} else {
-				response.IsSuccess = true
-				response.Message = "Successfully added Full Text Indexes!"
-			}
-		default:
-			response.IsSuccess = false
-			response.Message = "No Such Command is facilitated!"
-		}
+		response = getDefaultNotImplemented()
+		return response
 	case "uniqueindex":
-		var UIC_command string
-
-		if request.Body.Special.Extras["Command"] != nil {
-			UIC_command = strings.ToLower(request.Body.Special.Extras["Command"].(string))
-		}
-
-		conn, err := repository.GetConnection(request)
-		if err != nil {
-			response.IsSuccess = false
-			response.Message = err.Error()
-			return response
-		}
-
-		switch UIC_command {
-		case "reset":
-			getIndexesQuery := "show index from " + domain + "." + request.Controls.Class + " where Index_type = 'BTREE' AND Key_name != 'PRIMARY';"
-
-			indexResult, err := repository.ExecuteQueryMany(request, conn, getIndexesQuery, "")
-			if err != nil {
-				request.Log("Error : " + err.Error())
-			} else {
-				executedList := ""
-				for _, obj := range indexResult {
-					keyName := obj["Key_name"].(string)
-					if !strings.Contains(executedList, keyName) {
-						alterQuery := "ALTER TABLE " + domain + "." + request.Controls.Class + " DROP INDEX " + keyName
-						_, _ = repository.ExecuteNonQuery(conn, alterQuery, request)
-						executedList += " " + keyName
-					}
-				}
-			}
-			response.IsSuccess = true
-			response.Message = "Successfully dropped UNIQUE Key Indexes!"
-		case "index":
-			indexNames := strings.Split(strings.TrimSpace(request.Body.Special.Parameters), " ")
-			isAllDone := true
-
-			for _, singleName := range indexNames {
-				indexID := common.GetGUID()
-				alterQuery := "CREATE UNIQUE INDEX " + indexID + " ON " + domain + "." + request.Controls.Class + " (" + singleName + ");"
-				err, _ = repository.ExecuteNonQuery(conn, alterQuery, request)
-				if err != nil {
-					//1170 - Non defined key length for indexable field
-					if strings.Contains(err.Error(), "BLOB/TEXT") {
-						modifyQuery := "ALTER TABLE " + domain + "." + request.Controls.Class + " MODIFY COLUMN " + singleName + " varchar(255);"
-						err, _ = repository.ExecuteNonQuery(conn, modifyQuery, request)
-						if err != nil {
-							request.Log("Error : " + err.Error())
-						} else {
-							err, _ = repository.ExecuteNonQuery(conn, alterQuery, request)
-							if err != nil {
-								request.Log("Error : " + err.Error())
-								isAllDone = false
-							}
-						}
-					} else {
-						request.Log("Error : " + err.Error())
-					}
-				}
-			}
-
-			if isAllDone {
-				response.IsSuccess = true
-				response.Message = "Successfully added UNIQUE Indexes!"
-			} else {
-				response.IsSuccess = false
-				response.Message = "Creating UNIQUE Indexes Failed!"
-			}
-		default:
-			response.IsSuccess = false
-			response.Message = "No Such Command is facilitated!"
-		}
-
+		response = getDefaultNotImplemented()
+		return response
 	default:
-		response.IsSuccess = false
-		response.Message = "No such Special Type is Implemented!"
-
+		response = getDefaultNotImplemented()
 	}
 
 	return response
@@ -1285,42 +894,6 @@ func (repository CassandraRepository) queryStore(request *messaging.ObjectReques
 	return response
 }
 
-func (repository CassandraRepository) getByKey(conn *gocql.Session, namespace string, class string, id string, request *messaging.ObjectRequest) (obj map[string]interface{}) {
-
-	isCacheable := false
-	if request != nil {
-		if CheckRedisAvailability(request) {
-			isCacheable = true
-		}
-	}
-
-	if isCacheable {
-		result := cache.GetByKey(request, cache.Data)
-		if result == nil {
-			query := "SELECT * FROM " + repository.GetDatabaseName(namespace) + "." + class + " WHERE os_id = '" + id + "';"
-			obj, _ = repository.ExecuteQueryOne(request, conn, query, nil)
-			if obj == nil || len(obj) == 0 {
-				//Data not available.
-			} else {
-				err := cache.StoreOne(request, obj, cache.Data)
-				if err != nil {
-					request.Log("Error : " + err.Error())
-				}
-			}
-		} else {
-			err := json.Unmarshal(result, &obj)
-			if err != nil {
-				request.Log("Error : " + err.Error())
-			}
-		}
-	} else {
-		query := "SELECT * FROM " + repository.GetDatabaseName(namespace) + "." + class + " WHERE os_id = '" + id + "';"
-		obj, _ = repository.ExecuteQueryOne(request, conn, query, nil)
-	}
-
-	return
-}
-
 func (repository CassandraRepository) GetMultipleStoreScripts(conn *gocql.Session, request *messaging.ObjectRequest) (query []map[string]interface{}, err error) {
 	namespace := request.Controls.Namespace
 	class := request.Controls.Class
@@ -1453,7 +1026,7 @@ func (repository CassandraRepository) GetSingleObjectUpdateQuery(request *messag
 }
 
 func (repository CassandraRepository) GetDeleteScript(namespace string, class string, id string) string {
-	return "DELETE FROM " + repository.GetDatabaseName(namespace) + "." + class + " WHERE os_id = \"" + id + "\""
+	return "DELETE FROM " + repository.GetDatabaseName(namespace) + "." + class + " WHERE os_id = '" + id + "'"
 }
 
 func (repository CassandraRepository) GetCreateScript(namespace string, class string, obj map[string]interface{}) string {
