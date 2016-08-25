@@ -12,14 +12,16 @@ func main() {
 	cluster.Keyspace = keyspace
 
 	conn, _ := cluster.CreateSession()
-	query := "select osheaders from db_test.lod;"
-	iter := conn.Query(query).Iter()
-	resultSet, err := iter.SliceMap()
+	query := "INSERT INTO gg.wp (firstname, lastname, age, email, city) VALUES ('John', 'Smith', 50, 'johnsmith@email.com', 'Sacramento');"
+	//iter := conn.Query(query).Iter()
+	//resultSet, err := iter.SliceMap()
+	err := conn.Query(query).Exec()
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		for _, kk := range resultSet {
-			fmt.Println(string(kk["osheaders"].([]byte)))
-		}
+		fmt.Println("yay")
+		// for _, kk := range resultSet {
+		// 	fmt.Println(string(kk["osheaders"].([]byte)))
+		// }
 	}
 }

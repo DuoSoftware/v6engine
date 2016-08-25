@@ -792,7 +792,6 @@ func (repository CassandraRepository) queryCommon(query string, request *messagi
 
 func (repository CassandraRepository) queryCommonMany(query string, request *messaging.ObjectRequest) RepositoryResponse {
 	return repository.queryCommon(query, request, false)
-
 }
 
 func (repository CassandraRepository) queryCommonOne(query string, request *messaging.ObjectRequest) RepositoryResponse {
@@ -822,71 +821,20 @@ func (repository CassandraRepository) queryStore(request *messaging.ObjectReques
 		insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, obj, conn)
 		err, _ := repository.ExecuteNonQuery(conn, insertScript, request)
 		if err != nil {
-			if !strings.Contains(err.Error(), "specified twice") {
-				updateScript := repository.GetSingleObjectUpdateQuery(request, domain, class, obj, conn)
-				err, message := repository.ExecuteNonQuery(conn, updateScript, request)
-				if err != nil {
-					isOkay = false
-					request.Log("Error : " + err.Error())
-				} else {
-					if message == "No Rows Changed" {
-						request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
-					}
-					isOkay = true
-				}
-			} else {
-				isOkay = false
-			}
+			isOkay = false
 		} else {
 			isOkay = true
 		}
 
 	} else {
-
-		//execute insert queries
-		scripts, err := repository.GetMultipleStoreScripts(conn, request)
-
-		for x := 0; x < len(scripts); x++ {
-			script := scripts[x]["query"].(string)
-			if err == nil && script != "" {
-
-				err, _ := repository.ExecuteNonQuery(conn, script, request)
-				if err != nil {
-					request.Log("Error : " + err.Error())
-					if strings.Contains(err.Error(), "Duplicate entry") {
-						errorBlock := scripts[x]["queryObject"].([]map[string]interface{})
-						for _, singleQueryObject := range errorBlock {
-							insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, singleQueryObject, conn)
-							err1, _ := repository.ExecuteNonQuery(conn, insertScript, request)
-							if err1 != nil {
-								if !strings.Contains(err.Error(), "specified twice") {
-									updateScript := repository.GetSingleObjectUpdateQuery(request, domain, class, singleQueryObject, conn)
-									err2, message := repository.ExecuteNonQuery(conn, updateScript, request)
-									if err2 != nil {
-										request.Log("Error : " + err2.Error())
-										isOkay = false
-									} else {
-										if message == "No Rows Changed" {
-											request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + singleQueryObject[request.Body.Parameters.KeyProperty].(string))
-										}
-									}
-								}
-							}
-						}
-					} else {
-						//if strings.Contains(err.Error(), "doesn't exist") {
-						isOkay = false
-						break
-						//}
-					}
-				}
-
-			} else {
-				isOkay = false
+		for _, singleObject := range request.Body.Objects {
+			insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, singleObject, conn)
+			err, _ := repository.ExecuteNonQuery(conn, insertScript, request)
+			if err != nil {
 				request.Log("Error : " + err.Error())
+				isOkay = false
 			}
 		}
-
 	}
 
 	if isOkay {
@@ -901,87 +849,6 @@ func (repository CassandraRepository) queryStore(request *messaging.ObjectReques
 
 	repository.CloseConnection(conn)
 	return response
-}
-
-func (repository CassandraRepository) GetMultipleStoreScripts(conn *gocql.Session, request *messaging.ObjectRequest) (query []map[string]interface{}, err error) {
-	namespace := request.Controls.Namespace
-	class := request.Controls.Class
-
-	noOfElementsPerSet := 1000
-	noOfSets := (len(request.Body.Objects) / noOfElementsPerSet)
-	remainderFromSets := 0
-	remainderFromSets = (len(request.Body.Objects) - (noOfSets * noOfElementsPerSet))
-
-	startIndex := 0
-	stopIndex := noOfElementsPerSet
-
-	for x := 0; x < noOfSets; x++ {
-		queryOutput := repository.GetMultipleInsertQuery(request, namespace, class, request.Body.Objects[startIndex:stopIndex], conn)
-		query = append(query, queryOutput)
-		startIndex += noOfElementsPerSet
-		stopIndex += noOfElementsPerSet
-	}
-
-	if remainderFromSets > 0 {
-		start := len(request.Body.Objects) - remainderFromSets
-		queryOutput := repository.GetMultipleInsertQuery(request, namespace, class, request.Body.Objects[start:len(request.Body.Objects)], conn)
-		query = append(query, queryOutput)
-	}
-
-	return
-}
-
-func (repository CassandraRepository) GetMultipleInsertQuery(request *messaging.ObjectRequest, namespace, class string, records []map[string]interface{}, conn *gocql.Session) (queryData map[string]interface{}) {
-	queryData = make(map[string]interface{})
-	query := ""
-	//create insert scripts
-	isFirstRow := true
-	var keyArray []string
-	for _, obj := range records {
-		if isFirstRow {
-			query += ("INSERT INTO " + repository.GetDatabaseName(namespace) + "." + class)
-		}
-
-		id := ""
-
-		if obj["OriginalIndex"] == nil {
-			id = getNoSqlKeyById(request, obj)
-		} else {
-			id = obj["OriginalIndex"].(string)
-		}
-
-		delete(obj, "OriginalIndex")
-
-		keyList := ""
-		valueList := ""
-
-		if isFirstRow {
-			for k, _ := range obj {
-				keyList += ("," + k)
-				keyArray = append(keyArray, k)
-			}
-		}
-		//request.Log(keyArray)
-		for _, k := range keyArray {
-			v := obj[k]
-			valueList += ("," + repository.GetSqlFieldValue(v))
-		}
-
-		if isFirstRow {
-			query += "(os_id" + keyList + ") VALUES "
-		} else {
-			query += ","
-		}
-		query += ("(\"" + id + "\"" + valueList + ")")
-
-		if isFirstRow {
-			isFirstRow = false
-		}
-	}
-
-	queryData["query"] = query
-	queryData["queryObject"] = records
-	return
 }
 
 func (repository CassandraRepository) GetSingleObjectInsertQuery(request *messaging.ObjectRequest, namespace, class string, obj map[string]interface{}, conn *gocql.Session) (query string) {
@@ -1014,23 +881,6 @@ func (repository CassandraRepository) GetSingleObjectInsertQuery(request *messag
 
 	query += "(os_id" + keyList + ") VALUES "
 	query += ("('" + id + "'" + valueList + ");")
-	return
-}
-
-func (repository CassandraRepository) GetSingleObjectUpdateQuery(request *messaging.ObjectRequest, namespace, class string, obj map[string]interface{}, conn *gocql.Session) (query string) {
-
-	updateValues := ""
-	isFirst := true
-	for k, v := range obj {
-		if isFirst {
-			isFirst = false
-		} else {
-			updateValues += ","
-		}
-
-		updateValues += (k + "=" + repository.GetSqlFieldValue(v))
-	}
-	query = ("UPDATE " + repository.GetDatabaseName(namespace) + "." + class + " SET " + updateValues + " WHERE os_id=\"" + getNoSqlKeyById(request, obj) + "\";")
 	return
 }
 
@@ -1138,7 +988,7 @@ func (repository CassandraRepository) CheckAvailabilityTable(request *messaging.
 
 		if CheckRedisAvailability(request) {
 			tableCachePattern := "CassandraTableCache." + dbName + "." + request.Controls.Class
-
+			fmt.Println(tableCachePattern)
 			if IsTableCacheKeys := cache.ExistsKeyValue(request, tableCachePattern, cache.MetaData); IsTableCacheKeys {
 
 				byteVal := cache.GetKeyValue(request, tableCachePattern, cache.MetaData)
@@ -1153,10 +1003,11 @@ func (repository CassandraRepository) CheckAvailabilityTable(request *messaging.
 			cacheItem = repository.GetCassandraTableCache(dbName + "." + class)
 		}
 
+		fmt.Println(cacheItem)
 		isFirst := true
 		for k, v := range obj {
 			if !strings.EqualFold(k, "OriginalIndex") || !strings.EqualFold(k, "osHeaders") {
-				_, ok := cacheItem[k]
+				_, ok := cacheItem[strings.ToLower(k)]
 				if !ok {
 					if isFirst {
 						isFirst = false
@@ -1164,7 +1015,7 @@ func (repository CassandraRepository) CheckAvailabilityTable(request *messaging.
 						alterColumns += ", "
 					}
 
-					alterColumns += ("ADD COLUMN " + k + " " + repository.GolangToSql(v))
+					alterColumns += ("ADD " + k + " " + repository.GolangToSql(v))
 					repository.AddColumnToTableCache(request, dbName, class, k, repository.GolangToSql(v))
 					cacheItem[k] = repository.GolangToSql(v)
 				}
