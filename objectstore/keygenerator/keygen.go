@@ -116,7 +116,7 @@ func ExecuteKeyGenProcessForReading(client *goredis.Redis, request *messaging.Ob
 	} else {
 		if IsLockKey := CheckKeyGenLock(request, client); !IsLockKey {
 			LockKeyGen(request, client)
-			max := VerifyMaxFromDB(request, repository, amount)
+			max := VerifyMaxFromDB(request, repository, amount-1)
 			SetKeyGenKey(request, client, max)
 			UnlockKeyGen(request, client)
 			//SetKeyGenTime(request, client)
