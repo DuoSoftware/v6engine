@@ -4,9 +4,9 @@ import (
 	"duov6.com/agentCore/commands"
 	"duov6.com/agentCore/core"
 	"duov6.com/agentCore/dcommands"
+	"duov6.com/ceb"
 	"duov6.com/common"
 	"duov6.com/config"
-	"duov6.com/ceb"
 	"duov6.com/term"
 	"encoding/json"
 	"fmt"
@@ -14,10 +14,10 @@ import (
 	"strings"
 )
 
+var agentInstance *core.Agent
 
-var agentInstance *core.Agent;
 //initializes a new agent
-func New(agentClass string, callback func(s bool))(err error){
+func New(agentClass string, callback func(s bool)) (err error) {
 
 	data, err := ioutil.ReadFile("./agent.config")
 
@@ -29,12 +29,12 @@ func New(agentClass string, callback func(s bool))(err error){
 		if err == nil {
 
 			a := &core.Agent{}
-			agentInstance = a;
-			c, err := ceb.NewCEBClient(settings["cebUrl"].(string), func (s bool){
-				if (a.Client.CanMonitorOutput){
+			agentInstance = a
+			c, err := ceb.NewCEBClient(settings["cebUrl"].(string), func(s bool) {
+				if a.Client.CanMonitorOutput {
 					term.AddPlugin(AgentLogger{})
 				}
-				callback(s)	
+				callback(s)
 			})
 			if err == nil {
 				c.Resources["agent"] = a
@@ -49,29 +49,32 @@ func New(agentClass string, callback func(s bool))(err error){
 				a.Client.OnCommand("switch", commands.AgentSwitch)
 				a.Client.OnCommand("getinfo", commands.GetInfo)
 				a.Client.OnCommand("applyconfig", commands.ApplyConfig)
-				
 
 				registerCommands(a)
 				registerConfig(a)
 
-				if (settings["showResourceStats"]!=nil){
-					if (settings["showResourceStats"].(bool) == true){
+				if settings["showResourceStats"] != nil {
+					if settings["showResourceStats"].(bool) == true {
 						registerStats(a)
 					}
 				}
 
-				if (settings["canMonitorOutput"]!=nil){
-					if (settings["canMonitorOutput"].(bool) == true){
-						a.Client.CanMonitorOutput = true;
+				if settings["canMonitorOutput"] != nil {
+					if settings["canMonitorOutput"].(bool) == true {
+						a.Client.CanMonitorOutput = true
 					}
 				}
 
-				if agentClass == ""{
-					agentClass = settings["class"].(string)	
+				if agentClass == "" {
+					agentClass = settings["class"].(string)
 				}
-				
 
-				a.Client.Register(agentClass+"@"+common.GetLocalHostName(), "1234")
+				ResourceClass := "server"
+				if settings["ResourceClass"] != nil {
+					ResourceClass = settings["ResourceClass"].(string)
+				}
+
+				a.Client.Register(agentClass+"@"+common.GetLocalHostName(), "1234", ResourceClass)
 
 			} else {
 				fmt.Println("TCP Connection Error : " + err.Error())
@@ -84,12 +87,12 @@ func New(agentClass string, callback func(s bool))(err error){
 	} else {
 		fmt.Println("Error accessing configuration file ./agent.config : " + err.Error())
 	}
-	
-	return 
+
+	return
 }
 
-func GetInstance()(a *core.Agent){
-	return agentInstance;
+func GetInstance() (a *core.Agent) {
+	return agentInstance
 }
 
 func registerCommands(a *core.Agent) {

@@ -191,7 +191,7 @@ func (client *CEBClient) Msg(message string) {
 	client.outgoing <- message
 }
 
-func (client *CEBClient) Register(userName string, securityToken string) {
+func (client *CEBClient) Register(userName string, securityToken string, ResourceClass string) {
 
 	client.agentName = userName
 	tcpComm := messaging.CEBTCPCommand{}
@@ -199,7 +199,7 @@ func (client *CEBClient) Register(userName string, securityToken string) {
 	regComm := messaging.RegisterTCPCommand{}
 	regComm.SecurityToken = securityToken
 	regComm.UserName = userName
-	regComm.ResourceClass = "server"
+	regComm.ResourceClass = ResourceClass
 
 	tcpComm.Data = regComm
 
