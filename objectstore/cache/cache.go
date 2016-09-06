@@ -188,22 +188,22 @@ func checkValidTenentClassKeywords(request *messaging.ObjectRequest) (status boo
 
 	for _, namespace := range namespaces {
 		if strings.ToLower(request.Controls.Namespace) == strings.ToLower(namespace) {
-			term.Write("Invalid Namespace. Wouldn't be saved on Cache", term.Debug)
+			term.Write("Invalid Namespace. Wouldn't be saved on Cache", term.Error)
 			status = false
 			return
 		}
 	}
 	for _, class := range classes {
 		if strings.ToLower(request.Controls.Class) == strings.ToLower(class) {
-			term.Write("Invalid Class. Wouldn't be saved on Cache!", term.Debug)
+			term.Write("Invalid Class. Wouldn't be saved on Cache!", term.Error)
 			status = false
 			return
 		}
 	}
 	for _, keyword := range keywords {
 		byteArray, _ := json.Marshal(request)
-		if strings.ToLower(string(byteArray)) == strings.ToLower(keyword) {
-			term.Write("Restrictive Keyword Found. Wouldn't be saved on Cache!", term.Debug)
+		if strings.Contains(strings.ToLower(string(byteArray)), strings.ToLower(keyword)) {
+			term.Write("Restrictive Keyword Found. Wouldn't be saved on Cache!", term.Error)
 			status = false
 			return
 		}

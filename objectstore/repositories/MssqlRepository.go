@@ -1,3 +1,4 @@
+/*
 package repositories
 
 import (
@@ -1886,10 +1887,9 @@ func getMssqlDataType(item interface{}) (datatype string) {
 
 func (repository MssqlRepository) ClearCache(request *messaging.ObjectRequest) {
 }
-
+*/
 //Reformed code for MsSQL - Work in Progress
 
-/*
 package repositories
 
 import (
@@ -1936,53 +1936,53 @@ func (repository MssqlRepository) GetRepositoryName() string {
 
 // Start of GET and SET methods
 
-func (repository MssqlRepository) GetCloudSqlConnections(index string) (conn *sql.DB) {
+func (repository MssqlRepository) GetMsSqlConnections(index string) (conn *sql.DB) {
 	msSqlConnectionLock.RLock()
 	defer msSqlConnectionLock.RUnlock()
 	conn = msSqlConnections[index]
 	return
 }
 
-func (repository MssqlRepository) SetCloudSqlConnections(index string, conn *sql.DB) {
+func (repository MssqlRepository) SetMsSqlConnections(index string, conn *sql.DB) {
 	msSqlConnectionLock.Lock()
 	defer msSqlConnectionLock.Unlock()
 	msSqlConnections[index] = conn
 }
 
-func (repository MssqlRepository) GetCloudSqlAvailableDbs(index string) (value interface{}) {
+func (repository MssqlRepository) GetMsSqlAvailableDbs(index string) (value interface{}) {
 	msSqlAvailableDbsLock.RLock()
 	defer msSqlAvailableDbsLock.RUnlock()
 	value = msSqlAvailableDbs[index]
 	return
 }
 
-func (repository MssqlRepository) SetCloudSqlAvailabaleDbs(index string, value interface{}) {
+func (repository MssqlRepository) SetMsSqlAvailabaleDbs(index string, value interface{}) {
 	msSqlAvailableDbsLock.Lock()
 	defer msSqlAvailableDbsLock.Unlock()
 	msSqlAvailableDbs[index] = value
 }
 
-func (repository MssqlRepository) GetCloudSqlAvailableTables(index string) (value interface{}) {
+func (repository MssqlRepository) GetMsSqlAvailableTables(index string) (value interface{}) {
 	msSqlAvailableTablesLock.RLock()
 	defer msSqlAvailableTablesLock.RUnlock()
 	value = msSqlAvailableTables[index]
 	return
 }
 
-func (repository MssqlRepository) SetCloudSqlAvailabaleTables(index string, value interface{}) {
+func (repository MssqlRepository) SetMsSqlAvailabaleTables(index string, value interface{}) {
 	msSqlAvailableTablesLock.Lock()
 	defer msSqlAvailableTablesLock.Unlock()
 	msSqlAvailableTables[index] = value
 }
 
-func (repository MssqlRepository) GetCloudSqlTableCache(index string) (value map[string]string) {
+func (repository MssqlRepository) GetMsSqlTableCache(index string) (value map[string]string) {
 	msSqlTableCacheLock.RLock()
 	defer msSqlTableCacheLock.RUnlock()
 	value = msSqlTableCache[index]
 	return
 }
 
-func (repository MssqlRepository) SetCloudSqlTableCache(index string, value map[string]string) {
+func (repository MssqlRepository) SetMsSqlTableCache(index string, value map[string]string) {
 	msSqlTableCacheLock.Lock()
 	defer msSqlTableCacheLock.Unlock()
 	msSqlTableCache[index] = value
@@ -1996,11 +1996,11 @@ func (repository MssqlRepository) GetConnection(request *messaging.ObjectRequest
 		msSqlConnections = make(map[string]*sql.DB)
 	}
 
-	mysqlConf := request.Configuration.ServerConfiguration["MYSQL"]
+	mysqlConf := request.Configuration.ServerConfiguration["MSSQL"]
 
 	username := mysqlConf["Username"]
 	password := mysqlConf["Password"]
-	url := mysqlConf["Url"]
+	url := mysqlConf["Server"]
 	port := mysqlConf["Port"]
 	IdleLimit := -1
 	OpenLimit := 0
@@ -2029,32 +2029,32 @@ func (repository MssqlRepository) GetConnection(request *messaging.ObjectRequest
 		}
 	}
 
-	if repository.GetCloudSqlConnections(poolPattern) == nil {
+	if repository.GetMsSqlConnections(poolPattern) == nil {
 		conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
 		if err != nil {
 			request.Log("Error : " + err.Error())
 			return
 		}
-		repository.SetCloudSqlConnections(poolPattern, conn)
+		repository.SetMsSqlConnections(poolPattern, conn)
 	} else {
-		if repository.GetCloudSqlConnections(poolPattern).Ping(); err != nil {
-			_ = repository.GetCloudSqlConnections(poolPattern).Close()
-			repository.SetCloudSqlConnections(poolPattern, nil)
+		if repository.GetMsSqlConnections(poolPattern).Ping(); err != nil {
+			_ = repository.GetMsSqlConnections(poolPattern).Close()
+			repository.SetMsSqlConnections(poolPattern, nil)
 			conn, err = repository.CreateConnection(username, password, url, port, IdleLimit, OpenLimit, TTL)
 			if err != nil {
 				request.Log("Error : " + err.Error())
 				return
 			}
-			repository.SetCloudSqlConnections(poolPattern, conn)
+			repository.SetMsSqlConnections(poolPattern, conn)
 		} else {
-			conn = repository.GetCloudSqlConnections(poolPattern)
+			conn = repository.GetMsSqlConnections(poolPattern)
 		}
 	}
 	return conn, err
 }
 
 func (repository MssqlRepository) CreateConnection(username, password, url, port string, IdleLimit, OpenLimit, TTL int) (conn *sql.DB, err error) {
-	conn, err = sql.Open("mysql", username+":"+password+"@tcp("+url+":"+port+")/")
+	conn, err = sql.Open("mssql", "server="+url+";port="+port+";user id="+username+";password="+password+";encrypt=disable")
 	conn.SetMaxIdleConns(IdleLimit)
 	conn.SetMaxOpenConns(OpenLimit)
 	conn.SetConnMaxLifetime(time.Duration(TTL) * time.Minute)
@@ -2282,7 +2282,7 @@ func (repository MssqlRepository) GetFullTextSearchQuery(request *messaging.Obje
 			IsRedis = true
 		}
 
-		localTableCacheEntry := repository.GetCloudSqlTableCache(domain + "." + request.Controls.Class)
+		localTableCacheEntry := repository.GetMsSqlTableCache(domain + "." + request.Controls.Class)
 
 		if IsRedis && cache.ExistsKeyValue(request, tableCacheRedisPattern, cache.MetaData) {
 
@@ -3402,7 +3402,7 @@ func (repository MssqlRepository) CheckAvailabilityDb(request *messaging.ObjectR
 			return
 		}
 	} else {
-		if repository.GetCloudSqlAvailableDbs(dbName) != nil {
+		if repository.GetMsSqlAvailableDbs(dbName) != nil {
 			return
 		}
 	}
@@ -3419,8 +3419,8 @@ func (repository MssqlRepository) CheckAvailabilityDb(request *messaging.ObjectR
 		if CheckRedisAvailability(request) {
 			err = cache.StoreKeyValue(request, ("CloudSqlAvailableDbs." + dbName), "true", cache.MetaData)
 		} else {
-			if repository.GetCloudSqlAvailableDbs(dbName) == nil {
-				repository.SetCloudSqlAvailabaleDbs(dbName, true)
+			if repository.GetMsSqlAvailableDbs(dbName) == nil {
+				repository.SetMsSqlAvailabaleDbs(dbName, true)
 			}
 		}
 	} else {
@@ -3460,9 +3460,9 @@ func (repository MssqlRepository) CheckAvailabilityTable(request *messaging.Obje
 					err = cache.StoreKeyValue(request, ("CloudSqlAvailableTables." + dbName + "." + class), "true", cache.MetaData)
 				} else {
 					keyword := dbName + "." + class
-					availableTableValue := repository.GetCloudSqlAvailableTables(keyword)
+					availableTableValue := repository.GetMsSqlAvailableTables(keyword)
 					if availableTableValue == nil || availableTableValue.(bool) == false {
-						repository.SetCloudSqlAvailabaleTables(keyword, true)
+						repository.SetMsSqlAvailabaleTables(keyword, true)
 					}
 				}
 
@@ -3472,7 +3472,7 @@ func (repository MssqlRepository) CheckAvailabilityTable(request *messaging.Obje
 		}
 	} else {
 		keyword := dbName + "." + class
-		availableTableValue := repository.GetCloudSqlAvailableTables(keyword)
+		availableTableValue := repository.GetMsSqlAvailableTables(keyword)
 		if availableTableValue == nil {
 			var tableResult map[string]interface{}
 			tableResult, err = repository.ExecuteQueryOne(request, conn, "SHOW TABLES FROM "+dbName+" LIKE \""+class+"\"", nil)
@@ -3489,7 +3489,7 @@ func (repository MssqlRepository) CheckAvailabilityTable(request *messaging.Obje
 					}
 				}
 				if availableTableValue == nil || availableTableValue.(bool) == false {
-					repository.SetCloudSqlAvailabaleTables(keyword, true)
+					repository.SetMsSqlAvailabaleTables(keyword, true)
 				}
 
 			} else {
@@ -3519,7 +3519,7 @@ func (repository MssqlRepository) CheckAvailabilityTable(request *messaging.Obje
 			}
 
 		} else {
-			cacheItem = repository.GetCloudSqlTableCache(dbName + "." + class)
+			cacheItem = repository.GetMsSqlTableCache(dbName + "." + class)
 		}
 
 		isFirst := true
@@ -3573,9 +3573,9 @@ func (repository MssqlRepository) AddColumnToTableCache(request *messaging.Objec
 		}
 	} else {
 		dataMap := make(map[string]string)
-		dataMap = repository.GetCloudSqlTableCache(dbName + "." + class)
+		dataMap = repository.GetMsSqlTableCache(dbName + "." + class)
 		dataMap[field] = datatype
-		repository.SetCloudSqlTableCache(dbName+"."+class, dataMap)
+		repository.SetMsSqlTableCache(dbName+"."+class, dataMap)
 	}
 }
 
@@ -3586,7 +3586,7 @@ func (repository MssqlRepository) BuildTableCache(request *messaging.ObjectReque
 
 	if !CheckRedisAvailability(request) {
 		var ok bool
-		tableCacheLocalEntry := repository.GetCloudSqlTableCache(dbName + "." + class)
+		tableCacheLocalEntry := repository.GetMsSqlTableCache(dbName + "." + class)
 		if tableCacheLocalEntry != nil {
 			ok = true
 		}
@@ -3601,8 +3601,8 @@ func (repository MssqlRepository) BuildTableCache(request *messaging.ObjectReque
 					newMap[cRow["Field"].(string)] = cRow["Type"].(string)
 				}
 
-				if repository.GetCloudSqlTableCache(dbName+"."+class) == nil {
-					repository.SetCloudSqlTableCache(dbName+"."+class, newMap)
+				if repository.GetMsSqlTableCache(dbName+"."+class) == nil {
+					repository.SetMsSqlTableCache(dbName+"."+class, newMap)
 				}
 			}
 		} else {
@@ -3615,7 +3615,7 @@ func (repository MssqlRepository) BuildTableCache(request *messaging.ObjectReque
 						newMap[cRow["Field"].(string)] = cRow["Type"].(string)
 					}
 
-					repository.SetCloudSqlTableCache(dbName+"."+class, newMap)
+					repository.SetMsSqlTableCache(dbName+"."+class, newMap)
 				}
 			}
 		}
@@ -3867,7 +3867,7 @@ func (repository MssqlRepository) RowsToMap(request *messaging.ObjectRequest, ro
 			}
 		} else {
 			tName := tableName.(string)
-			cacheItem = repository.GetCloudSqlTableCache(tName)
+			cacheItem = repository.GetMsSqlTableCache(tName)
 		}
 	}
 
@@ -4001,4 +4001,3 @@ func (repository MssqlRepository) CloseConnection(conn *sql.DB) {
 	// 	request.Log("Connection Closed!")
 	// }
 }
-*/
