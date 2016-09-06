@@ -191,7 +191,7 @@ func cacheHandler(params martini.Params, w http.ResponseWriter, r *http.Request)
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
 	cpuCount := strconv.Itoa(runtime.NumCPU())
-	versionData := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.1-a\",\"Change Log\":\"Ported Cassandra to New Format with mutexes!\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
+	versionData := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.2-a\",\"Change Log\":\"Added Cache Exception Keyword List.\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
 	fmt.Fprintf(w, versionData)
 }
 

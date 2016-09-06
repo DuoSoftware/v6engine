@@ -4,6 +4,7 @@ import (
 	"duov6.com/objectstore/cache/repositories"
 	"duov6.com/objectstore/messaging"
 	"duov6.com/term"
+	"encoding/json"
 	"strings"
 )
 
@@ -172,16 +173,16 @@ func CheckCacheAvailability(request *messaging.ObjectRequest) (status bool) {
 	if request.Configuration.ServerConfiguration["REDIS"] == nil {
 		//term.Write("Cache Config/Server Not Found!", term.Debug)
 		status = false
-	} else if !checkValidTenentClass(request) {
+	} else if !checkValidTenentClassKeywords(request) {
 		status = false
 	}
 
 	return
 }
 
-func checkValidTenentClass(request *messaging.ObjectRequest) (status bool) {
+func checkValidTenentClassKeywords(request *messaging.ObjectRequest) (status bool) {
 	namespaces := [...]string{}
-	//classes := [...]string{"domainclassattributes"}
+	keywords := [...]string{"UTC_TIMESTAMP()"}
 	classes := [...]string{}
 	status = true
 
@@ -195,6 +196,14 @@ func checkValidTenentClass(request *messaging.ObjectRequest) (status bool) {
 	for _, class := range classes {
 		if strings.ToLower(request.Controls.Class) == strings.ToLower(class) {
 			term.Write("Invalid Class. Wouldn't be saved on Cache!", term.Debug)
+			status = false
+			return
+		}
+	}
+	for _, keyword := range keywords {
+		byteArray, _ := json.Marshal(request)
+		if strings.ToLower(string(byteArray)) == strings.ToLower(keyword) {
+			term.Write("Restrictive Keyword Found. Wouldn't be saved on Cache!", term.Debug)
 			status = false
 			return
 		}
