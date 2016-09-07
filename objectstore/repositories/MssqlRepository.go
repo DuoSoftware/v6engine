@@ -1,4 +1,3 @@
-/*
 package repositories
 
 import (
@@ -1887,9 +1886,9 @@ func getMssqlDataType(item interface{}) (datatype string) {
 
 func (repository MssqlRepository) ClearCache(request *messaging.ObjectRequest) {
 }
-*/
-//Reformed code for MsSQL - Work in Progress
 
+//Reformed code for MsSQL - Work in Progress
+/*
 package repositories
 
 import (
@@ -2083,8 +2082,9 @@ func (repository MssqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 		orderbyfield = request.Extras["orderbydsc"].(string)
 		isOrderByDesc = true
 	}
+	rowss, err := session.Query("select top " + take + " * from (select *, ROW_NUMBER() over (order by " + fieldName + ") as r_n_n from [" + getMssqlSQLnamespace(request) + "].[dbo].[" + request.Controls.Class + "]) xx where r_n_n >=" + skip + ";")
 
-	query := "SELECT * FROM " + repository.GetDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class
+	query := "SELECT * FROM [" + repository.GetDatabaseName(request.Controls.Namespace) + "].[dbo].[" + request.Controls.Class + "] "
 
 	if isOrderByAsc {
 		query += " order by " + orderbyfield + " asc "
@@ -2092,8 +2092,8 @@ func (repository MssqlRepository) GetAll(request *messaging.ObjectRequest) Repos
 		query += " order by " + orderbyfield + " desc "
 	}
 
-	query += " limit " + take
-	query += " offset " + skip
+	query += " OFFSET " + skip + " ROWS "
+	query += " FETCH NEXT " + take + " ROWS ONLY;"
 
 	response := repository.queryCommonMany(query, request)
 	return response
@@ -2123,7 +2123,7 @@ func (repository MssqlRepository) GetQuery(request *messaging.ObjectRequest) Rep
 			parameters["orderbydsc"] = request.Extras["orderbydsc"].(string)
 		}
 
-		formattedQuery, err := queryparser.GetCloudSQLQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class, parameters)
+		formattedQuery, err := queryparser.GetMsSQLQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class, parameters)
 		if err != nil {
 			request.Log("Error : " + err.Error())
 			response.IsSuccess = false
@@ -2149,7 +2149,7 @@ func (repository MssqlRepository) GetByKey(request *messaging.ObjectRequest) Rep
 		return response
 	}
 
-	query := "SELECT * FROM " + repository.GetDatabaseName(request.Controls.Namespace) + "." + request.Controls.Class + " WHERE __os_id = '" + getNoSqlKey(request) + "';"
+	query := "SELECT * FROM [" + repository.GetDatabaseName(request.Controls.Namespace) + "].[dbo].[" + request.Controls.Class + "] WHERE __os_id = '" + getNoSqlKey(request) + "';"
 	response = repository.queryCommonOne(query, request)
 	return response
 }
@@ -2205,20 +2205,20 @@ func (repository MssqlRepository) GetSearch(request *messaging.ObjectRequest) Re
 		if strings.HasPrefix(fieldValue, "*") && strings.HasSuffix(fieldValue, "*") {
 			fieldValue = strings.TrimSuffix(fieldValue, "*")
 			fieldValue = strings.TrimPrefix(fieldValue, "*")
-			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + " LIKE '%" + fieldValue + "%'"
+			query = "select * from [" + domain + "].[dbo].[" + request.Controls.Class + "] where " + fieldName + " LIKE '%" + fieldValue + "%'"
 		} else if strings.HasPrefix(fieldValue, "*") {
 			fieldValue = strings.TrimPrefix(fieldValue, "*")
-			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + " LIKE '%" + fieldValue + "'"
+			query = "select * from [" + domain + "].[dbo].[" + request.Controls.Class + "] where " + fieldName + " LIKE '%" + fieldValue + "'"
 		} else if strings.HasSuffix(fieldValue, "*") {
 			fieldValue = strings.TrimSuffix(fieldValue, "*")
-			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + " LIKE '" + fieldValue + "%'"
+			query = "select * from [" + domain + "].[dbo].[" + request.Controls.Class + "] where " + fieldName + " LIKE '" + fieldValue + "%'"
 		} else {
-			query = "select * from " + domain + "." + request.Controls.Class + " where " + fieldName + "='" + fieldValue + "'"
+			query = "select * from [" + domain + "].[dbo].[" + request.Controls.Class + "] where " + fieldName + "='" + fieldValue + "'"
 		}
 	} else {
 		if request.Body.Query.Parameters == "" || request.Body.Query.Parameters == "*" {
 			//Get All Query
-			query = "select * from " + domain + "." + request.Controls.Class
+			query = "select * from [" + domain + "].[dbo].[" + request.Controls.Class + "]"
 		} else {
 			//Full Text Search Query
 			query = repository.GetFullTextSearchQuery(request)
@@ -2233,10 +2233,8 @@ func (repository MssqlRepository) GetSearch(request *messaging.ObjectRequest) Re
 			query += " order by " + orderbyfield + " desc "
 		}
 
-		query += " limit " + take
-		query += " offset " + skip
-
-		query += ";"
+		query += " OFFSET " + take + " ROWS "
+		query += " FETCH NEXT " + skip + " ROWS ONLY;"
 	}
 
 	response = repository.queryCommonMany(query, request)
@@ -3501,8 +3499,6 @@ func (repository MssqlRepository) CheckAvailabilityTable(request *messaging.Obje
 	err = repository.BuildTableCache(request, conn, dbName, class)
 
 	if !isTableCreatedNow {
-		alterColumns := ""
-
 		cacheItem := make(map[string]string)
 
 		if CheckRedisAvailability(request) {
@@ -3530,22 +3526,17 @@ func (repository MssqlRepository) CheckAvailabilityTable(request *messaging.Obje
 					if isFirst {
 						isFirst = false
 					} else {
-						alterColumns += ", "
 					}
 
-					alterColumns += ("ADD COLUMN " + k + " " + repository.GolangToSql(v))
+					alterQuery := "ALTER TABLE [" + dbName + "].[dbo].[" + class + "] ADD " + k + " " + repository.GolangToSql(v)
+					err, _ = repository.ExecuteNonQuery(conn, alterQuery, request)
+					if err != nil {
+						request.Log("Error : " + err.Error())
+					}
+
 					repository.AddColumnToTableCache(request, dbName, class, k, repository.GolangToSql(v))
 					cacheItem[k] = repository.GolangToSql(v)
 				}
-			}
-		}
-
-		if len(alterColumns) != 0 && len(alterColumns) != len(obj) {
-
-			alterQuery := "ALTER TABLE " + dbName + "." + class + " " + alterColumns
-			err, _ = repository.ExecuteNonQuery(conn, alterQuery, request)
-			if err != nil {
-				request.Log("Error : " + err.Error())
 			}
 		}
 
@@ -4001,3 +3992,4 @@ func (repository MssqlRepository) CloseConnection(conn *sql.DB) {
 	// 	request.Log("Connection Closed!")
 	// }
 }
+*/
