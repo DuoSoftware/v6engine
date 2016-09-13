@@ -320,7 +320,7 @@ func (T TenantSvc) Subciribe(TenantID string) bool {
 	}
 }
 
-func (T TenantSvc) GetPendingTenantRequest(securityToken string) []map[string]interface{} {
+func (T TenantSvc) GetPendingTenantRequest() []map[string]interface{} {
 	var tns []map[string]interface{}
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 
