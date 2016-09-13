@@ -335,7 +335,7 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 	return true
 }
 
-func (r *TenantHandler) GetRequestCode(u session.AuthCertificate) ([]map[string]interface{}, string) {
+func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]map[string]interface{}, string) {
 	//o := make([]map[string]string{}, 0)
 	var o []map[string]interface{}
 	bytes, err := client.Go("ignore", u.Domain, "usersubscriptionreq321").GetMany().All().Ok() // fetech user autherized

@@ -7,13 +7,14 @@ import (
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/session"
 	//"duov6.com/config"
-	"duov6.com/objectstore/client"
-	"duov6.com/term"
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"duov6.com/objectstore/client"
+	"duov6.com/term"
 )
 
 // A AuthHandler represents a Method collection for Auth
@@ -34,6 +35,7 @@ type ActivationEmail struct {
 	Token    string // Token for the email actiavte form
 }
 
+//A LoginAttemts represent Tracking login atttemts
 type LoginAttemts struct {
 	Email          string
 	Domain         string
@@ -42,6 +44,7 @@ type LoginAttemts struct {
 	BlockUser      string
 }
 
+//A LoginSessions represents tracking login sessions
 type LoginSessions struct {
 	Email  string
 	Domain string
@@ -66,26 +69,9 @@ func (h *AuthHandler) AppAutherize(ApplicationID, UserID, Domain string) bool {
 	return false
 }
 
-/*
-func (h *AuthHandler) GetUserGroups(UserID, Domain string) []map[string]interface{} {
-	usergroups := []make(map[string]interface{})
-	bytes, err := client.Go("ignore", Domain, "UserGroup").GetMany().BySearching(UserID).Ok() // fetech user autherized
-	term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
-	if err == "" {
-		if bytes != nil {
-			var uList AppAutherize
-			err := json.Unmarshal(bytes, &usergroups)
-			if err == nil {
-				return usergroups
-			}
-		}
-	} else {
-		term.Write("AppAutherize Error "+err, term.Error)
-	}
-	return usergroups
-}*/
-func (a *AuthHandler) CanLogin(email, domain string) (bool, string) {
-	o, m := a.CheckLoginConcurrency(email)
+// CanLogin checked if the user can login
+func (h *AuthHandler) CanLogin(email, domain string) (bool, string) {
+	o, m := h.CheckLoginConcurrency(email)
 	if !o {
 		return o, m
 	}
@@ -106,7 +92,7 @@ func (a *AuthHandler) CanLogin(email, domain string) (bool, string) {
 					difference := Ttime1.Sub(Ttime2)
 					minutesTime := difference.Minutes()
 					if minutesTime <= 0 {
-						a.RemoveAttemts(uList)
+						h.RemoveAttemts(uList)
 						return true, ""
 					} else {
 						m := strconv.FormatFloat(difference.Minutes(), 'f', 6, 64)
@@ -124,7 +110,8 @@ func (a *AuthHandler) CanLogin(email, domain string) (bool, string) {
 	return true, ""
 }
 
-func (a *AuthHandler) CheckLoginConcurrency(email string) (bool, string) {
+//CheckLoginConcurrency helps to check and block the concurrent user logins
+func (h *AuthHandler) CheckLoginConcurrency(email string) (bool, string) {
 	if Config.NumberOFUserLogins != 0 {
 		bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginsessions").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 		term.Write("CanLogin For Login "+email+" Domain ", term.Debug)
@@ -145,7 +132,8 @@ func (a *AuthHandler) CheckLoginConcurrency(email string) (bool, string) {
 	return true, ""
 }
 
-func (a *AuthHandler) Release(email string) {
+// Release will release the blocked users
+func (h *AuthHandler) Release(email string) {
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginAttemts").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 	term.Write("CanLogin For Login "+email+" Domain ", term.Debug)
 	if err == "" {
@@ -153,7 +141,7 @@ func (a *AuthHandler) Release(email string) {
 			var uList LoginAttemts
 			err := json.Unmarshal(bytes, &uList)
 			if err == nil {
-				a.RemoveAttemts(uList)
+				h.RemoveAttemts(uList)
 			}
 		}
 	}
