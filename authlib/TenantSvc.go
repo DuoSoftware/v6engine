@@ -27,7 +27,7 @@ type TenantSvc struct {
 	addUser                 gorest.EndPoint `method:"GET" path:"/tenant/AddUser/{email:string}/{level:string}" output:"bool"`
 	removeUser              gorest.EndPoint `method:"GET" path:"/tenant/RemoveUser/{email:string}" output:"bool"`
 	tranferAdmin            gorest.EndPoint `method:"GET" path:"/tenant/TranferAdmin/{email:string}" output:"bool"`
-	getPendingTenantRequest gorest.EndPoint `method:"GET" path:"/tenant/GetPendingTenantRequest/" output:"[]map[string]interface{}"`
+	getPendingTenantRequest gorest.EndPoint `method:"GET" path:"/tenant/GetPendingTenantRequest/" output:"[]PendingUserRequest"`
 }
 
 func (T TenantSvc) CreateTenant(t Tenant) {
@@ -320,16 +320,46 @@ func (T TenantSvc) Subciribe(TenantID string) bool {
 	}
 }
 
-func (T TenantSvc) GetPendingTenantRequest() []map[string]interface{} {
-	var tns []map[string]interface{}
+type PendingUserRequest struct {
+	UserID string
+	Email  string
+	Code   string
+}
+
+func (T TenantSvc) GetPendingTenantRequest() (m []PendingUserRequest) {
+	var tns []PendingUserRequest
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 
 	if error == "" {
 		th := TenantHandler{}
-		tns, _ = th.GetPendingRequests(user)
+		x, _ := th.GetPendingRequests(user)
+		for _, element := range x {
+			o := PendingUserRequest{}
+			for key, value := range element {
+				//term.Write("GetRequestCode "+requestCode+"  "+key, term.Debug)
+				if str, ok := value.(string); ok {
+					/* act on str */
+					switch key {
+					case "RequestCode":
+						o.Code = str
+						break
+					case "UserID":
+						o.Email = str
+						break
+					case "email":
+						o.Email = str
+						break
+					}
+					//o[key] = str
+				}
+
+			}
+			tns = append(tns, o)
+		}
 
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 	}
-	return tns
+	m = tns
+	return
 }
