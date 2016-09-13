@@ -1,12 +1,13 @@
 package authlib
 
 import (
+	"encoding/json"
+
 	"duov6.com/common"
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
 	"duov6.com/session"
 	"duov6.com/term"
-	"encoding/json"
 	//"fmt"
 )
 
@@ -37,7 +38,7 @@ func (T TenantSvc) CreateTenant(t Tenant) {
 		T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 
 	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return
 	}
 }
@@ -58,7 +59,7 @@ func (T TenantSvc) TenantUpgrade(Otherdata map[string]string) {
 		}
 
 	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return
 	}
 
@@ -76,7 +77,7 @@ func (T TenantSvc) TranferAdmin(email string) bool {
 			return false
 		}
 	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return false
 	}
 }
@@ -94,11 +95,11 @@ func (T TenantSvc) Autherized(TenantID string) (outCrt TenantAutherized) {
 			outCrt = d
 			return d
 		} else {
-			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Tenant ID " + TenantID + " not Atherized"))
+			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Tenant ID " + TenantID + " not Atherized")))
 			return
 		}
 	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return
 	}
 }
@@ -112,7 +113,7 @@ func (T TenantSvc) GetTenant(TenantID string) Tenant {
 		th := TenantHandler{}
 		return th.GetTenant(TenantID)
 	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return Tenant{}
 	}
 }
@@ -128,7 +129,7 @@ func (T TenantSvc) GetUsers(TenantID string) []string {
 		//a.GetUser(email)
 		return th.GetUsersForTenant(u, TenantID)
 	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return []string{}
 	}
 }
@@ -140,7 +141,7 @@ func (T TenantSvc) InviteUser(users []InviteUsers) {
 		th := TenantHandler{}
 		th.AddUserToTenant(user, users)
 	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return
 	}
 }
@@ -187,7 +188,7 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			return true
 		}
 	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return false
 	}
 }
@@ -220,7 +221,7 @@ func (T TenantSvc) RemoveUser(email string) bool {
 			return false
 		}
 	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return false
 	}
 }
@@ -243,12 +244,23 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 			th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
 			return true
 		} else {
-			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Email not registered."))
+			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Email not registered.")))
+			return false
+		}
+		break
+	case "tenant_useradd":
+		auth := AuthHandler{}
+		a, err := auth.GetUser(o["email"])
+		if err == "" {
+			th.AddUsersToTenant(o["TenantID"], o["tname"], a.UserID, o["level"])
+			return true
+		} else {
+			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Email not registered.")))
 			return false
 		}
 		break
 	default:
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Unatherized token"))
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Unatherized token")))
 		return false
 		break
 	}
@@ -256,7 +268,7 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 	//} else {
 
 	//}
-	T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Unatherized token"))
+	T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Unatherized token")))
 	return false
 }
 
@@ -268,7 +280,7 @@ func (T TenantSvc) GetTenants(securityToken string) []TenantMinimum {
 		th := TenantHandler{}
 		return th.GetTenantsForUser(user.UserID)
 	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("SecurityToken  not Autherized"))
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 	}
 	return tns
 }

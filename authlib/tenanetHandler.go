@@ -3,11 +3,12 @@ package authlib
 import (
 	"duov6.com/common"
 	//"duov6.com/email"
+	"encoding/json"
+
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/objectstore/client"
 	"duov6.com/session"
 	"duov6.com/term"
-	"encoding/json"
 )
 
 type Tenant struct {
@@ -313,15 +314,49 @@ func (h *TenantHandler) AddUserToTenant(u session.AuthCertificate, users []Invit
 }
 
 func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID string) bool {
-	//h.
-	var t InviteUserRequest
-	t.UserID = u.UserID
-	t.TenantID = TenantID
-	t.SecurityLevel = "user"
-	t.RequestToken = common.RandText(5)
-	t.Name = u.Name
-	//t.FromUserID=
+
+	var tmp tempRequestGenerator
+	o := make(map[string]string)
+	t := h.GetTenant(TenantID)
+	o["process"] = "tenant_useradd"
+	o["email"] = u.Email
+	o["UserID"] = u.UserID
+	o["name"] = u.Name
+	o["TenantID"] = TenantID
+	o["tname"] = t.Name
+	o["level"] = "user"
+	code := tmp.GenerateRequestCode(o)
+	up := make(map[string]string)
+	up["RequestCode"] = code
+	up["UserID"] = u.UserID
+	up["email"] = u.Email
+	client.Go("ignore", TenantID, "usersubscriptionreq321").StoreObject().WithKeyField("email").AndStoreOne(up).Ok()
+	//o[""]
 	return true
+}
+
+func (r *TenantHandler) GetRequestCode(u session.AuthCertificate) ([]map[string]interface{}, string) {
+	//o := make([]map[string]string{}, 0)
+	var o []map[string]interface{}
+	bytes, err := client.Go("ignore", u.Domain, "usersubscriptionreq321").GetMany().All().Ok() // fetech user autherized
+	//term.Write("GetRequestCode "+requestCode+"  ", term.Debug)
+	if err == "" {
+		if bytes != nil {
+			//var uList LoginSessions
+			//var data []map[string]interface{} // := make(map[string]interface{})
+			err := json.Unmarshal(bytes, &o)
+			if err == nil {
+				//Ttime2 := time.Now().UTC()
+				return o, ""
+			} else {
+				term.Write("GetRequestCode err "+err.Error(), term.Error)
+			}
+		}
+	} else {
+		term.Write("GetRequestCode err "+err, term.Error)
+	}
+
+	return o, "Incorrect Request Code."
 }
 
 func (h *TenantHandler) AcceptRequest(u session.AuthCertificate, securityLevel, RequestToken string, accept bool) bool {
