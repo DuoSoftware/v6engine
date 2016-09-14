@@ -2,18 +2,20 @@ package authlib
 
 import (
 	//"duov6.com/applib"
+	"encoding/json"
+
 	"duov6.com/common"
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
 	"duov6.com/objectstore/client"
-	"encoding/json"
 	//"fmt"
 	//"golang.org/x/oauth2"
 	//"crypto/hmac"
-	"duov6.com/session"
-	"duov6.com/term"
 	"strconv"
 	"strings"
+
+	"duov6.com/session"
+	"duov6.com/term"
 	///"strings"
 )
 
@@ -32,6 +34,7 @@ type Auth struct {
 	login            gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
 	noPasswordLogin  gorest.EndPoint `method:"GET" path:"/NoPasswordLogin/{OTP:string}" output:"AuthCertificate"`
 	loginOTP         gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}" output:"string"`
+	loginOTPNoPass   gorest.EndPoint `method:"GET" path:"/LoginOTPNoPass/{username:string}/{domain:string}" output:"string"`
 	getLoginSessions gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
 	authorize        gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
 	getSession       gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
@@ -309,6 +312,86 @@ func (A Auth) LoginOTP(username, password, domain string) string {
 	}
 	u, err := h.Login(username, password)
 
+	//if()
+	if err == "" {
+		//fmt.Println("login succeful")
+		//securityToken := common.GetGUID()
+		r := requestHandler{}
+		th := TenantHandler{}
+		//th.Autherized(domain, user)
+		x, _ := th.AutherizedUser(domain, u.UserID)
+		if !x {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(domain + " Is not autherized for signin.")))
+			//A.Context.Request().
+			return common.ErrorJson(domain + " Is not autherized for signin.")
+		}
+		o := make(map[string]string)
+
+		if A.Context.Request().Header.Get("PHP") != "101" {
+			o["ClientIP"] = A.Context.Request().RemoteAddr
+		} else {
+			o["ClientIP"] = A.Context.Request().Header.Get("IP")
+		}
+		o["DataCaps"] = GetDataCaps(domain, u.UserID)
+		o["Email"] = u.EmailAddress
+		o["UserID"] = u.UserID
+		o["Name"] = u.Name
+		o["SecurityToken"] = common.GetGUID()
+		o["Domain"] = domain
+		o["Username"] = u.EmailAddress
+		//outCrt.Otherdata = make(map[string]string)
+		o["UserAgent"] = A.Context.Request().UserAgent()
+		bytes, _ := client.Go("ignore", domain, "scope").GetOne().ByUniqueKey(domain).Ok() // fetech user autherized
+		//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
+		o["DataCaps"] = string(bytes[:])
+		payload := common.JWTPayload(domain, o["SecurityToken"], o["UserID"], o["Email"], o["Domain"], bytes)
+		o["JWT"] = common.Jwt(h.GetSecretKey(domain), payload)
+		o["Scope"] = strings.Replace(string(bytes[:]), "\"", "`", -1)
+
+		//outCrt.Otherdata["Tempkey"] = "No"
+		//th := TenantHandler{}
+		tlist := th.GetTenantsForUser(u.UserID)
+		b, _ := json.Marshal(tlist)
+		o["TenentsAccessible"] = strings.Replace(string(b[:]), "\"", "`", -1)
+		//outCrt = AuthCertificate{u.UserID, u.EmailAddress, u.Name, u.EmailAddress, securityToken, "http://192.168.0.58:9000/instaltionpath", "#0so0936#sdasd", "IPhere"}
+		if Config.NumberOFUserLogins != 0 {
+			h.LogLoginSessions(username, domain, 1)
+		}
+		//h.AddSession(outCrt)
+		code := r.GenerateRequestCode(o)
+		var inputParams map[string]string
+		inputParams = make(map[string]string)
+		inputParams["@@email@@"] = u.EmailAddress
+		inputParams["@@name@@"] = u.Name
+		inputParams["@@UserAgent@@"] = o["UserAgent"]
+		inputParams["@@ClientIP@@"] = o["ClientIP"]
+		inputParams["@@Domain@@"] = domain
+		//inputParams["@@SecurityToken@@"] = o["UserAgent"]
+		inputParams["@@Code@@"] = code
+		//Change activation status to true and save
+		//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
+		//go notifier.Send("ignore", "One time password for user login.", "com.duosoftware.auth", "email", "user_otp", inputParams, nil, u.EmailAddress)
+		go notifier.Notify("ignore", "user_otp", u.EmailAddress, inputParams, nil)
+		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.MsgJson("One time password sent.")))
+		return common.MsgJson("One time password sent.")
+	} else {
+		h.LogFailedAttemts(username, domain, "")
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Invalid user name password.")))
+		//A.Context.Request().
+		return common.ErrorJson("Invalid user name password.")
+	}
+}
+
+func (A Auth) LoginOTPNoPass(username, domain string) string {
+	h := newAuthHandler()
+	c, msg := h.CanLogin(username, domain)
+	if !c {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(msg)))
+		//A.Context.Request().
+		return common.ErrorJson(msg)
+	}
+	u, err := h.GetUser(username)
+	//h.GetUser
 	//if()
 	if err == "" {
 		//fmt.Println("login succeful")
