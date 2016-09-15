@@ -332,6 +332,7 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 		s := PendingUserRequest{}
 		s.Code = code
 		s.UserID = u.UserID
+		s.Name = u.Name
 		s.Email = u.Email
 		client.Go("ignore", TenantID, "usersubscriptionreq321").StoreObject().WithKeyField("Email").AndStoreOne(s).Ok()
 		//o[""]
