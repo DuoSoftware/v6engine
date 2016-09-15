@@ -345,7 +345,7 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 func (h *TenantHandler) RemovePendingRequest(TID string, email string) {
 	o := PendingUserRequest{}
 	o.Email = email
-	client.Go("ignore", TID, "tmprequestcodes").DeleteObject().WithKeyField("Email").AndDeleteOne(o).Ok()
+	client.Go("ignore", TID, "usersubscriptionreq321").DeleteObject().WithKeyField("Email").AndDeleteOne(o).Ok()
 }
 func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]PendingUserRequest, string) {
 	//o := make([]map[string]string{}, 0)
