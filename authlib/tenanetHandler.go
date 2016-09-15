@@ -346,6 +346,7 @@ func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]Pending
 	var o []PendingUserRequest
 	bytes, err := client.Go("ignore", u.Domain, "usersubscriptionreq321").GetMany().All().Ok() // fetech user autherized
 	//term.Write("GetRequestCode "+requestCode+"  ", term.Debug)
+	term.Write(string(bytes[:]), term.Debug)
 	if err == "" {
 		if bytes != nil {
 			//var uList LoginSessions
@@ -354,6 +355,7 @@ func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]Pending
 			if err == nil {
 				//Ttime2 := time.Now().UTC()
 				term.Write("Object Retrived", term.Debug)
+
 				term.Write(o, term.Debug)
 				return o, ""
 			} else {
