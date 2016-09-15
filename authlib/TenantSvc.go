@@ -254,6 +254,7 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 		a, err := auth.GetUser(o["email"])
 		if err == "" {
 			th.AddUsersToTenant(o["TenantID"], o["tname"], a.UserID, o["level"])
+			th.RemovePendingRequest(o["TenantID"], a.EmailAddress)
 			return true
 		} else {
 			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Email not registered.")))
@@ -323,6 +324,7 @@ func (T TenantSvc) Subciribe(TenantID string) bool {
 type PendingUserRequest struct {
 	UserID string
 	Email  string
+	Name   string
 	Code   string
 }
 
