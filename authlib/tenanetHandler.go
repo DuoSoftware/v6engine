@@ -318,21 +318,27 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 	var tmp tempRequestGenerator
 	o := make(map[string]string)
 	t := h.GetTenant(TenantID)
-	o["process"] = "tenant_useradd"
-	o["email"] = u.Email
-	o["UserID"] = u.UserID
-	o["name"] = u.Name
-	o["TenantID"] = TenantID
-	o["tname"] = t.Name
-	o["level"] = "user"
-	code := tmp.GenerateRequestCode(o)
-	up := make(map[string]string)
-	up["RequestCode"] = code
-	up["UserID"] = u.UserID
-	up["email"] = u.Email
-	client.Go("ignore", TenantID, "usersubscriptionreq321").StoreObject().WithKeyField("email").AndStoreOne(up).Ok()
-	//o[""]
-	return true
+	if t.TenantID != "" {
+		o["process"] = "tenant_useradd"
+		o["email"] = u.Email
+		o["UserID"] = u.UserID
+		o["name"] = u.Name
+		o["TenantID"] = TenantID
+		o["tname"] = t.Name
+		o["level"] = "user"
+		code := tmp.GenerateRequestCode(o)
+		term.Write("Adding Token GenerateRequestCode", term.Debug)
+		term.Write("Code Generated"+code, term.Debug)
+		up := make(map[string]string)
+		up["RequestCode"] = code
+		up["UserID"] = u.UserID
+		up["email"] = u.Email
+		client.Go("ignore", TenantID, "usersubscriptionreq321").StoreObject().WithKeyField("email").AndStoreOne(up).Ok()
+		//o[""]
+		return true
+	}
+	return false
+
 }
 
 func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]map[string]interface{}, string) {
