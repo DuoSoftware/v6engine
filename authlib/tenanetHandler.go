@@ -353,6 +353,8 @@ func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]Pending
 			err := json.Unmarshal(bytes, &o)
 			if err == nil {
 				//Ttime2 := time.Now().UTC()
+				term.Write("Object Retrived", term.Debug)
+				term.Write(o, term.Debug)
 				return o, ""
 			} else {
 				term.Write("GetRequestCode err "+err.Error(), term.Error)
@@ -361,7 +363,6 @@ func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]Pending
 	} else {
 		term.Write("GetRequestCode err "+err, term.Error)
 	}
-
 	return o, "Incorrect Request Code."
 }
 
