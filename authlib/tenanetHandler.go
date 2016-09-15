@@ -329,11 +329,11 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 		code := tmp.GenerateRequestCode(o)
 		term.Write("Adding Token GenerateRequestCode", term.Debug)
 		term.Write("Code Generated"+code, term.Debug)
-		up := make(map[string]string)
-		up["RequestCode"] = code
-		up["UserID"] = u.UserID
-		up["email"] = u.Email
-		client.Go("ignore", TenantID, "usersubscriptionreq321").StoreObject().WithKeyField("email").AndStoreOne(up).Ok()
+		s := PendingUserRequest{}
+		s.Code = code
+		s.UserID = u.UserID
+		s.Email = u.Email
+		client.Go("ignore", TenantID, "usersubscriptionreq321").StoreObject().WithKeyField("Email").AndStoreOne(s).Ok()
 		//o[""]
 		return true
 	}
@@ -341,9 +341,9 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 
 }
 
-func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]map[string]interface{}, string) {
+func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]PendingUserRequest, string) {
 	//o := make([]map[string]string{}, 0)
-	var o []map[string]interface{}
+	var o []PendingUserRequest
 	bytes, err := client.Go("ignore", u.Domain, "usersubscriptionreq321").GetMany().All().Ok() // fetech user autherized
 	//term.Write("GetRequestCode "+requestCode+"  ", term.Debug)
 	if err == "" {

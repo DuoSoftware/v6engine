@@ -332,30 +332,7 @@ func (T TenantSvc) GetPendingTenantRequest() (m []PendingUserRequest) {
 
 	if error == "" {
 		th := TenantHandler{}
-		x, _ := th.GetPendingRequests(user)
-		for _, element := range x {
-			o := PendingUserRequest{}
-			for key, value := range element {
-				//term.Write("GetRequestCode "+requestCode+"  "+key, term.Debug)
-				if str, ok := value.(string); ok {
-					/* act on str */
-					switch key {
-					case "RequestCode":
-						o.Code = str
-						break
-					case "UserID":
-						o.Email = str
-						break
-					case "email":
-						o.Email = str
-						break
-					}
-					//o[key] = str
-				}
-
-			}
-			tns = append(tns, o)
-		}
+		tns, _ = th.GetPendingRequests(user)
 
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
