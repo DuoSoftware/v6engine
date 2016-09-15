@@ -1182,8 +1182,8 @@ func (repository CloudSqlRepository) queryCommon(query string, request *messagin
 				response.GetResponseWithBody(getEmptyByteObject())
 			} else {
 				bytesInString := string(bytes)
-				bytesInString = strings.Replace(bytesInString, "\u003e", ">", -1)
-				bytesInString = strings.Replace(bytesInString, "\u003c", "<", -1)
+				bytesInString = strings.Replace(bytesInString, "\\u003e", ">", -1)
+				bytesInString = strings.Replace(bytesInString, "\\u003c", "<", -1)
 				bytesInString = strings.Replace(bytesInString, "u003e", ">", -1)
 				bytesInString = strings.Replace(bytesInString, "u003c", "<", -1)
 				response.GetResponseWithBody([]byte(bytesInString))
