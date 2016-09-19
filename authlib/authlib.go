@@ -546,6 +546,8 @@ func (A Auth) GetSessionStatic(SecurityToken string) (a AuthCertificate) {
 		c.SecurityToken = common.GetGUID()
 		c.Otherdata["expairyTime"] = ""
 		c.Otherdata["OneTimeToken"] = "yes"
+		c.Otherdata["OneTimeToken"] = "yes"
+
 		h.AddSession(c)
 		a = c
 		return a
