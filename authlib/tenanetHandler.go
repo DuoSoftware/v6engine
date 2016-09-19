@@ -44,6 +44,15 @@ type TenantMinimum struct {
 	Name     string
 }
 
+type TenantSubscription struct {
+	TenantID          int
+	MaxNumberofusers  int
+	UsedNumberofusers int
+	APMax1            string
+	APUsed1           string
+	TenantExpairy     string
+}
+
 //type  int8
 
 type TenantAutherized struct {
@@ -86,6 +95,8 @@ func (h *TenantHandler) CreateTenant(t Tenant, user session.AuthCertificate, upd
 			inputParams["@@name@@"] = user.Name
 			inputParams["@@tenantID@@"] = t.TenantID
 			inputParams["@@tenantName@@"] = t.Name
+			//var load PendingUserRequest{}
+			//load.
 			h.AddUsersToTenant(t.TenantID, t.Name, user.UserID, "admin")
 			//go notifier.Send("ignore", "Tenent Creation Notification!", "com.duosoftware.auth", "tenant", "tenant_creation", inputParams, nil, user.Email)
 			go notifier.Notify("ignore", "tenant_creation", user.Email, inputParams, nil)
@@ -334,7 +345,10 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 		s.UserID = u.UserID
 		s.Name = u.Name
 		s.Email = u.Email
+		s.TenantID = TenantID
 		client.Go("ignore", TenantID, "usersubscriptionreq321").StoreObject().WithKeyField("Email").AndStoreOne(s).Ok()
+		s.Code = common.GetGUID()
+		client.Go("ignore", "com.duosoftware.tenant", "usersubscriptionreq321").StoreObject().WithKeyField("TenantID").AndStoreOne(s).Ok()
 		//o[""]
 		return true
 	}
@@ -345,8 +359,11 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 func (h *TenantHandler) RemovePendingRequest(TID string, email string) {
 	o := PendingUserRequest{}
 	o.Email = email
+	o.TenantID = TID
 	client.Go("ignore", TID, "usersubscriptionreq321").DeleteObject().WithKeyField("Email").AndDeleteOne(o).Ok()
+	client.Go("ignore", "com.duosoftware.tenant", "usersubscriptionreq321").DeleteObject().WithKeyField("TenantID").AndDeleteOne(o).Ok()
 }
+
 func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]PendingUserRequest, string) {
 	//o := make([]map[string]string{}, 0)
 	var o []PendingUserRequest
@@ -359,6 +376,33 @@ func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]Pending
 		if bytes != nil {
 			//var uList LoginSessions
 			//var data []map[string]interface{} // := make(map[string]interface{})
+			err := json.Unmarshal(bytes, &o)
+			if err == nil {
+				//Ttime2 := time.Now().UTC()
+				term.Write("Object Retrived", term.Debug)
+
+				term.Write(o, term.Debug)
+				return o, ""
+			} else {
+				term.Write("GetRequestCode err "+err.Error(), term.Error)
+			}
+		}
+	} else {
+		term.Write("GetRequestCode err "+err, term.Error)
+	}
+	return o, "Incorrect Request Code."
+}
+
+func (h *TenantHandler) GetMyPendingRequests(u session.AuthCertificate) ([]PendingUserRequest, string) {
+	//o := make([]map[string]string{}, 0)
+	var o []PendingUserRequest
+	//bytes, err := client.Go("ignore", u.Domain, "usersubscriptionreq321").GetMany().All().Ok() // fetech user autherized
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "usersubscriptionreq321").GetMany().ByQuerying("Email ='" + u.Email + "'").Ok() // fetech user autherized
+	//term.Write("GetRequestCode "+requestCode+"  ", term.Debug)
+	term.Write(u.Domain, term.Debug)
+	term.Write(string(bytes[:]), term.Debug)
+	if err == "" {
+		if bytes != nil {
 			err := json.Unmarshal(bytes, &o)
 			if err == nil {
 				//Ttime2 := time.Now().UTC()
