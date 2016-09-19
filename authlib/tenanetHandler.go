@@ -397,7 +397,7 @@ func (h *TenantHandler) GetMyPendingRequests(u session.AuthCertificate) ([]Pendi
 	//o := make([]map[string]string{}, 0)
 	var o []PendingUserRequest
 	//bytes, err := client.Go("ignore", u.Domain, "usersubscriptionreq321").GetMany().All().Ok() // fetech user autherized
-	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "usersubscriptionreq321").GetMany().ByQuerying("Email ='" + u.Email + "'").Ok() // fetech user autherized
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "usersubscriptionreq321").GetMany().ByQuerying("Select * From usersubscriptionreq321 where Email ='" + u.Email + "'").Ok() // fetech user autherized
 	//term.Write("GetRequestCode "+requestCode+"  ", term.Debug)
 	term.Write(u.Domain, term.Debug)
 	term.Write(string(bytes[:]), term.Debug)
