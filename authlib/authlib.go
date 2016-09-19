@@ -38,6 +38,7 @@ type Auth struct {
 	getLoginSessions gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
 	authorize        gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
 	getSession       gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
+	getSessionStatic gorest.EndPoint `method:"GET" path:"/GetSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
 	getSecret        gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
 	getAuthCode      gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
 	//Lasith's method - Don't Delete
@@ -527,6 +528,25 @@ func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 	c, err := h.GetSession(SecurityToken, Domain)
 	//fmt.Println(c)
 	if err == "" {
+		a = c
+		return a
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Not Autherized Err:" + err)))
+		return
+	}
+
+}
+
+func (A Auth) GetSessionStatic(SecurityToken string) (a AuthCertificate) {
+	h := newAuthHandler()
+	c, err := h.GetSession(SecurityToken, "Nil")
+
+	//fmt.Println(c)
+	if err == "" {
+		c.SecurityToken = common.GetGUID()
+		c.Otherdata["expairyTime"] = ""
+		c.Otherdata["OneTimeToken"] = "yes"
+		h.AddSession(c)
 		a = c
 		return a
 	} else {
