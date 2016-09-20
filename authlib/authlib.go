@@ -551,7 +551,7 @@ func (A Auth) GetSessionStatic(SecurityToken string) (a AuthCertificate) {
 		c.Otherdata["expairyTime"] = ""
 		c.Otherdata["OneTimeToken"] = "yes"
 		payload := common.JWTPayload(c.Domain, c.SecurityToken, c.UserID, c.Email, c.Domain, []byte(scope))
-		c.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(a.Domain), payload)
+		c.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(c.Domain), payload)
 		c.Otherdata["Scope"] = strings.Replace(scope, "\"", "`", -1)
 		h.AddSession(c)
 		a = c
