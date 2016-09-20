@@ -540,14 +540,19 @@ func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 func (A Auth) GetSessionStatic(SecurityToken string) (a AuthCertificate) {
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
-
+	scope := A.Context.Request().Header.Get("scope")
+	if c.Otherdata["OneTimeToken"] == "yes" {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Unautherized Security Token")))
+		return
+	}
 	//fmt.Println(c)
 	if err == "" {
 		c.SecurityToken = common.GetGUID()
 		c.Otherdata["expairyTime"] = ""
 		c.Otherdata["OneTimeToken"] = "yes"
-		c.Otherdata["OneTimeToken"] = "yes"
-
+		payload := common.JWTPayload(c.Domain, c.SecurityToken, c.UserID, c.Email, c.Domain, []byte(scope))
+		c.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(a.Domain), payload)
+		c.Otherdata["Scope"] = strings.Replace(scope, "\"", "`", -1)
 		h.AddSession(c)
 		a = c
 		return a
