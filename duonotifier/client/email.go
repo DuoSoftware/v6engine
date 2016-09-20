@@ -190,7 +190,7 @@ func GetEmailSubject(EmailTemplateId, tenant string) (subject string) {
 		data := make(map[string]interface{})
 		err := json.Unmarshal(bytes, &data)
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println("Get Email Subject Error : " + err.Error())
 			subject = "NIL"
 		} else {
 			subject = data["Title"].(string)
@@ -210,7 +210,7 @@ func GetPhoneNumber(recieverEmail, tenant string) (phone string) {
 		var data []map[string]interface{}
 		err := json.Unmarshal(bytes, &data)
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println("Get Phone Number Error : " + err.Error())
 			phone = ""
 		} else {
 			phone = data[0]["PhoneNumber"].(string)
