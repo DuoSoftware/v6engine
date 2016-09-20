@@ -553,6 +553,13 @@ func (A Auth) GetSessionStatic(SecurityToken string) (a AuthCertificate) {
 		payload := common.JWTPayload(c.Domain, c.SecurityToken, c.UserID, c.Email, c.Domain, []byte(scope))
 		c.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(c.Domain), payload)
 		c.Otherdata["Scope"] = strings.Replace(scope, "\"", "`", -1)
+		c.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
+		//c.ClientIP=
+		if A.Context.Request().Header.Get("PHP") != "101" {
+			c.ClientIP = A.Context.Request().RemoteAddr
+		} else {
+			c.ClientIP = A.Context.Request().Header.Get("IP")
+		}
 		h.AddSession(c)
 		a = c
 		return a
