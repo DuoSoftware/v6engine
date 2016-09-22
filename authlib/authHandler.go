@@ -434,8 +434,9 @@ func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 		// inputParams["@@name@@"] = u.Name
 		// inputParams["@@password@@"] = passowrd
 		// go email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "user_resetpassword", inputParams, nil, u.EmailAddress)
+		inputParams["@@CEMAIL@@"] = u.EmailAddress
 		inputParams["@@CNAME@@"] = u.Name
-		inputParams["@@PASSWORD@@"] = passowrd
+		inputParams["@@@PASSWORD@@@"] = passowrd
 		//go notifier.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "T_Email_FORGETPW", inputParams, nil, u.EmailAddress)
 		go notifier.Notify("ignore", "FORGETPW", u.EmailAddress, inputParams, nil)
 		term.Write("E Mail Sent", term.Debug)
@@ -492,7 +493,7 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 
 			switch regtype {
 			case "tenant":
-				inputParams["@PASSWORD@"] = password
+				inputParams["@@PASSWORD@@"] = password
 				u.Active = true
 				go notifier.Notify("ignore", "TenantUser_Verification", u.EmailAddress, inputParams, nil)
 				break
