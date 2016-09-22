@@ -3,7 +3,9 @@ package main
 import (
 	"duov6.com/cebadapter"
 	"duov6.com/duonotifier/endpoints"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 )
 
 func main() {
@@ -14,7 +16,22 @@ func main() {
 }
 
 func initializeCEBConfig() {
+	initializeSettingsFile()
 	inititalizeObjectStoreConfig()
+}
+
+func initializeSettingsFile() {
+	content, err := ioutil.ReadFile("settings.config")
+	if err != nil {
+		data := make(map[string]interface{})
+		data["From"] = "DuoWorld.com <mail-noreply@duoworld.com>"
+		dataBytes, _ := json.Marshal(data)
+		_ = ioutil.WriteFile("settings.config", dataBytes, 0666)
+	} else {
+		vv := make(map[string]interface{})
+		_ = json.Unmarshal(content, &vv)
+		fmt.Println(vv)
+	}
 }
 
 func inititalizeObjectStoreConfig() {
