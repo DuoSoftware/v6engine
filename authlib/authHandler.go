@@ -434,6 +434,7 @@ func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 		// inputParams["@@name@@"] = u.Name
 		// inputParams["@@password@@"] = passowrd
 		// go email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "user_resetpassword", inputParams, nil, u.EmailAddress)
+		inputParams["@@CEMAIL@@"] = u.EmailAddress
 		inputParams["@@CNAME@@"] = u.Name
 		inputParams["@@PASSWORD@@"] = passowrd
 		//go notifier.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "T_Email_FORGETPW", inputParams, nil, u.EmailAddress)
