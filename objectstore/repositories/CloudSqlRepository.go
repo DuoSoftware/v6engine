@@ -1786,7 +1786,11 @@ func (repository CloudSqlRepository) CheckSchema(request *messaging.ObjectReques
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (repository CloudSqlRepository) GetDatabaseName(namespace string) string {
-	return "_" + strings.ToLower(strings.Replace(namespace, ".", "", -1))
+	db := "_" + strings.ToLower(strings.Replace(namespace, ".", "", -1))
+	if strings.Contains(db, "@") {
+		db = strings.Replace(db, "@", "_at_", -1)
+	}
+	return db
 }
 
 func (repository CloudSqlRepository) GetJson(m interface{}) string {
