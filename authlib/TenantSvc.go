@@ -158,6 +158,17 @@ func (T TenantSvc) AddUser(email, level string) bool {
 
 			th := TenantHandler{}
 			t := th.GetTenant(user.Domain)
+			var inputParams map[string]string
+			inputParams = make(map[string]string)
+			inputParams["@@EMAIL@@"] = email
+			inputParams["@@INVEMAIL@@"] = user.Email
+			inputParams["@@NAME@@"] = user.Name
+			inputParams["@@DOMAIN@@"] = user.Domain
+			//inputParams["@@CODE@@"] = code
+
+			//go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
+			go notifier.Notify("ignore", "tenant_invitation_existing", email, inputParams, nil)
+			//go email.Send("ignore", "Invitation to register !", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
 			th.AddUsersToTenant(user.Domain, t.Name, a.UserID, level)
 			return true
 
