@@ -59,15 +59,18 @@ type Auth struct {
 	arbiterAuthorize   gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
 }
 
+//GetClientIP Represent to get ClientIP
 func GetClientIP() string {
 	//hmac.New(hash.)
 	return "hope"
 }
 
+//GetDataCaps Represent to getting datacaps
 func GetDataCaps(Domain, UserID string) string {
 	return "#" + Domain + "#" + UserID + "#1#2#4"
 }
 
+//UserActivation Represent activation of the user account
 func (A Auth) UserActivation(token string) bool {
 	h := newAuthHandler()
 	return h.UserActivation(token)
