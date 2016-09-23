@@ -48,7 +48,7 @@ type Auth struct {
 	addUser            gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
 	registerTenantUser gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
 	userActivation     gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
-	logOut             gorest.EndPoint `method:"GET" path:"/LogOut/{password:string}" output:"bool"`
+	logOut             gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
 	checkPassword      gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
 	getUser            gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
 	blockUser          gorest.EndPoint `method:"GET" path:"/BlockUser/{Email:string}" output:"bool"`
