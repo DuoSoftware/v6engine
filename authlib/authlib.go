@@ -255,14 +255,14 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		//go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, u.EmailAddress)
 		go notifier.Notify("ignore", "user_login", u.EmailAddress, inputParams, nil)
 		return
-	} else {
-		h.LogFailedAttemts(username, domain, "")
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
-		//A.Context.Request().
-		return
 	}
+	h.LogFailedAttemts(username, domain, "")
+	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
+	//A.Context.Request().
+	return
 }
 
+// NoPasswordLogin Represent nopassword
 func (A Auth) NoPasswordLogin(OTP string) (outCrt AuthCertificate) {
 	h := newAuthHandler()
 	r := requestHandler{}
