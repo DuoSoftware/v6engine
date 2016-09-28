@@ -495,6 +495,7 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 			case "tenant":
 				inputParams["@@PASSWORD@@"] = password
 				u.Active = true
+				term.Write("SaveUser saving user for tenat "+u.Name+" Update User "+u.UserID, term.Debug)
 				go notifier.Notify("ignore", "TenantUser_Verification", u.EmailAddress, inputParams, nil)
 				break
 			default:
