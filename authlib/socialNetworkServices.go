@@ -56,8 +56,9 @@ func (g *googlePlusAuth) RegisterToken(object map[string]string) (AuthCertificat
 			user.EmailAddress = emailAddress
 			user.UserID = profileID
 			user.Name = profileName
-			user.Password = common.RandText(5)
-			user.ConfirmPassword = common.RandText(5)
+			randText := common.RandText(5)
+			user.Password = randText
+			user.ConfirmPassword = randText
 			user.Active = true
 			user, _ = h.SaveUser(user, false, "registertoken")
 		}
@@ -118,8 +119,9 @@ func (t *twitterAuth) RegisterToken(object map[string]string) (AuthCertificate, 
 			user.EmailAddress = emailAddress
 			user.UserID = profileID
 			user.Name = profileName
-			user.Password = common.RandText(5)
-			user.ConfirmPassword = common.RandText(5)
+			randText := common.RandText(5)
+			user.Password = randText
+			user.ConfirmPassword = randText
 			user.Active = true
 			user, _ = h.SaveUser(user, false, "registertoken")
 		}
