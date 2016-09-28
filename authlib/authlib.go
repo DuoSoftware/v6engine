@@ -502,6 +502,8 @@ func (A Auth) GetUser(Email string) (outCrt User) {
 	h := newAuthHandler()
 	outCrt, err := h.GetUser(Email)
 	if err == "" {
+		outCrt.Password = "****"
+		outCrt.ConfirmPassword = "******"
 		return
 	} else {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("User Dose not exist.")))
