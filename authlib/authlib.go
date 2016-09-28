@@ -141,6 +141,26 @@ func (A Auth) ArbiterAuthorize(object map[string]string) {
 			outCrt = c
 		}
 		break
+	case "twitter":
+		ah := twitterAuth{}
+		c, err := ah.RegisterToken(object)
+		if err != "" {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
+			return
+		} else {
+			outCrt = c
+		}
+		break
+	case "googleplus":
+		ah := googlePlusAuth{}
+		c, err := ah.RegisterToken(object)
+		if err != "" {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
+			return
+		} else {
+			outCrt = c
+		}
+		break
 	default:
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Unautherized Arbiter Form.")))
 		return
