@@ -2,6 +2,7 @@ package authlib
 
 import (
 	"bytes"
+
 	"duov6.com/common"
 	//"encoding/base64"
 	//"duov6.com/session"
@@ -43,6 +44,7 @@ func (a *auth0) RegisterToken(object map[string]string) (AuthCertificate, string
 	if err1 != nil {
 		//panic(err)
 		fmt.Println(err)
+		return auth, "Error Decoding request !" + err1.Error()
 	}
 	defer resp.Body.Close()
 	fmt.Println("response Status:", resp.Status)
@@ -52,7 +54,7 @@ func (a *auth0) RegisterToken(object map[string]string) (AuthCertificate, string
 	err2 := json.Unmarshal(body, &o)
 	if err2 != nil {
 		fmt.Println(err1)
-		return auth, "Error Decoding request !" + err1.Error()
+		return auth, "Error Decoding request !" + err2.Error()
 	}
 	email, _ := o["email"].(string)
 	user, status := h.GetUser(email)

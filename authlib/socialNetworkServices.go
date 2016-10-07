@@ -1,12 +1,13 @@
 package authlib
 
 import (
-	"duov6.com/common"
 	"encoding/json"
 	"fmt"
-	"github.com/ChimeraCoder/anaconda"
 	"strconv"
 	"strings"
+
+	"duov6.com/common"
+	"github.com/ChimeraCoder/anaconda"
 )
 
 type facebookAuth struct {
@@ -70,9 +71,10 @@ func (g *googlePlusAuth) RegisterToken(object map[string]string) (AuthCertificat
 		auth.Name = user.Name
 		auth.Otherdata = make(map[string]string)
 		auth.Otherdata["auth0"] = oauthKey
+		return auth, ""
 	}
 
-	return auth, ""
+	return auth, "Error Authendicating"
 }
 
 func (t *twitterAuth) RegisterToken(object map[string]string) (AuthCertificate, string) {
@@ -133,12 +135,13 @@ func (t *twitterAuth) RegisterToken(object map[string]string) (AuthCertificate, 
 		auth.Name = user.Name
 		auth.Otherdata = make(map[string]string)
 		auth.Otherdata["auth0"] = oauthToken
+		return auth, ""
 	}
-
-	return auth, ""
+	return auth, "Error Authendicating"
 }
 
 func (f *facebookAuth) RegisterToken(object map[string]string) (AuthCertificate, string) {
 	var auth AuthCertificate
-	return auth, ""
+	return auth, "Not Implementated"
+	//return auth, ""
 }
