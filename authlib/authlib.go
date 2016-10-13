@@ -11,11 +11,10 @@ import (
 	//"fmt"
 	//"golang.org/x/oauth2"
 	//"crypto/hmac"
-	"strconv"
-	"strings"
-
 	"duov6.com/session"
 	"duov6.com/term"
+	"strconv"
+	"strings"
 	///"strings"
 )
 
@@ -57,6 +56,7 @@ type Auth struct {
 	forgotPassword     gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
 	changePassword     gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
 	arbiterAuthorize   gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
+	getUserByUserId    gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
 }
 
 //GetClientIP Represent to get ClientIP
@@ -83,6 +83,14 @@ func (A Auth) GetLoginSessions(UserID string) []session.AuthCertificate {
 /*func (A Auth) ForceLogout(UserID string) {
 
 }*/
+
+func (A Auth) GetUserByUserId(object []string) {
+	h := AuthHandler{}
+	userDetails := h.GetMultipleUserDetails(object)
+	objectByteArray, _ := json.Marshal(userDetails)
+	A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(objectByteArray)
+	return
+}
 
 func (A Auth) LogOut(SecurityToken string) bool {
 	h := newAuthHandler()

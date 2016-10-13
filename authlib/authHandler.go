@@ -667,6 +667,30 @@ func (h *AuthHandler) GetUser(email string) (User, string) {
 	return user, "Error Validating user"
 }
 
+func (h *AuthHandler) GetMultipleUserDetails(UserIDs []string) (users []map[string]interface{}) {
+	users = make([]map[string]interface{}, 0)
+
+	for x := 0; x < len(UserIDs); x++ {
+		bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().BySearching("UserID:" + UserIDs[x]).Ok()
+		var user User
+		if err == "" {
+			if bytes != nil {
+				var uList User
+				err := json.Unmarshal(bytes, &uList)
+				if err == nil {
+					singleUser := make(map[string]interface{})
+					singleUser["UserID"] = user.UserID
+					singleUser["Name"] = user.Name
+					singleUser["EmailAddress"] = user.EmailAddress
+					users = append(users, singleUser)
+				}
+			}
+		}
+	}
+
+	return users
+}
+
 func SendNotification(u User, Message string) {
 
 }
