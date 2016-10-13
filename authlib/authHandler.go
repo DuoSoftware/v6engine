@@ -672,16 +672,15 @@ func (h *AuthHandler) GetMultipleUserDetails(UserIDs []string) (users []map[stri
 
 	for x := 0; x < len(UserIDs); x++ {
 		bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().BySearching("UserID:" + UserIDs[x]).Ok()
-		var user User
 		if err == "" {
 			if bytes != nil {
 				var uList User
 				err := json.Unmarshal(bytes, &uList)
 				if err == nil {
 					singleUser := make(map[string]interface{})
-					singleUser["UserID"] = user.UserID
-					singleUser["Name"] = user.Name
-					singleUser["EmailAddress"] = user.EmailAddress
+					singleUser["UserID"] = uList.UserID
+					singleUser["Name"] = uList.Name
+					singleUser["EmailAddress"] = uList.EmailAddress
 					users = append(users, singleUser)
 				}
 			}
