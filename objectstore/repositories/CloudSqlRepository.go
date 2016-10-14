@@ -210,38 +210,49 @@ func (repository CloudSqlRepository) GetAll(request *messaging.ObjectRequest) Re
 func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
 	if request.Body.Query.Parameters != "*" {
+		if strings.Contains(request.Body.Query.Type, "Query") {
+			parameters := make(map[string]interface{})
 
-		parameters := make(map[string]interface{})
+			if request.Extras["skip"] != nil {
+				parameters["skip"] = request.Extras["skip"].(string)
+			} else {
+				parameters["skip"] = ""
+			}
 
-		if request.Extras["skip"] != nil {
-			parameters["skip"] = request.Extras["skip"].(string)
-		} else {
-			parameters["skip"] = ""
+			if request.Extras["take"] != nil {
+				parameters["take"] = request.Extras["take"].(string)
+			} else {
+				parameters["take"] = ""
+			}
+
+			if request.Extras["orderby"] != nil {
+				parameters["orderby"] = request.Extras["orderby"].(string)
+			} else if request.Extras["orderbydsc"] != nil {
+				parameters["orderbydsc"] = request.Extras["orderbydsc"].(string)
+			}
+
+			formattedQuery, err := queryparser.GetCloudSQLQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class, parameters)
+			if err != nil {
+				request.Log("Error : " + err.Error())
+				response.IsSuccess = false
+				response.Message = err.Error()
+				return response
+			}
+
+			query := formattedQuery
+			response = repository.queryCommonMany(query, request)
+		} else if strings.Contains(request.Body.Query.Type, "TSQL") {
+			query := request.Body.Query.Parameters
+			conn, _ := repository.GetConnection(request)
+			err, _ := repository.ExecuteNonQuery(conn, query, request)
+			if err != nil {
+				response.IsSuccess = false
+				response.Message = err.Error()
+			} else {
+				response.IsSuccess = true
+				response.Message = "Successfully Executed TSQL Query."
+			}
 		}
-
-		if request.Extras["take"] != nil {
-			parameters["take"] = request.Extras["take"].(string)
-		} else {
-			parameters["take"] = ""
-		}
-
-		if request.Extras["orderby"] != nil {
-			parameters["orderby"] = request.Extras["orderby"].(string)
-		} else if request.Extras["orderbydsc"] != nil {
-			parameters["orderbydsc"] = request.Extras["orderbydsc"].(string)
-		}
-
-		formattedQuery, err := queryparser.GetCloudSQLQuery(request.Body.Query.Parameters, request.Controls.Namespace, request.Controls.Class, parameters)
-		if err != nil {
-			request.Log("Error : " + err.Error())
-			response.IsSuccess = false
-			response.Message = err.Error()
-			return response
-		}
-
-		query := formattedQuery
-		//fmt.Println("Formatted Query : " + query)
-		response = repository.queryCommonMany(query, request)
 	} else {
 		response = repository.GetAll(request)
 	}
