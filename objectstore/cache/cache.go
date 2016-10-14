@@ -40,6 +40,14 @@ func DeleteMany(request *messaging.ObjectRequest, data []map[string]interface{},
 func Search(request *messaging.ObjectRequest, database int) (body []byte) {
 	if CheckCacheAvailability(request) {
 		body = repositories.GetSearch(request, database)
+		if body != nil {
+			bytesInString := string(body)
+			bytesInString = strings.Replace(bytesInString, "\\u003e", ">", -1)
+			bytesInString = strings.Replace(bytesInString, "\\u003c", "<", -1)
+			bytesInString = strings.Replace(bytesInString, "u003e", ">", -1)
+			bytesInString = strings.Replace(bytesInString, "u003c", "<", -1)
+			body = []byte(bytesInString)
+		}
 	}
 	return
 }
@@ -47,6 +55,14 @@ func Search(request *messaging.ObjectRequest, database int) (body []byte) {
 func Query(request *messaging.ObjectRequest, database int) (body []byte) {
 	if CheckCacheAvailability(request) {
 		body = repositories.GetQuery(request, database)
+		if body != nil {
+			bytesInString := string(body)
+			bytesInString = strings.Replace(bytesInString, "\\u003e", ">", -1)
+			bytesInString = strings.Replace(bytesInString, "\\u003c", "<", -1)
+			bytesInString = strings.Replace(bytesInString, "u003e", ">", -1)
+			bytesInString = strings.Replace(bytesInString, "u003c", "<", -1)
+			body = []byte(bytesInString)
+		}
 	}
 	return
 }
@@ -54,6 +70,14 @@ func Query(request *messaging.ObjectRequest, database int) (body []byte) {
 func GetByKey(request *messaging.ObjectRequest, database int) (body []byte) {
 	if CheckCacheAvailability(request) {
 		body = repositories.GetByKey(request, database)
+		if body != nil {
+			bytesInString := string(body)
+			bytesInString = strings.Replace(bytesInString, "\\u003e", ">", -1)
+			bytesInString = strings.Replace(bytesInString, "\\u003c", "<", -1)
+			bytesInString = strings.Replace(bytesInString, "u003e", ">", -1)
+			bytesInString = strings.Replace(bytesInString, "u003c", "<", -1)
+			body = []byte(bytesInString)
+		}
 	}
 	return
 }
