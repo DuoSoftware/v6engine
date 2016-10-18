@@ -575,8 +575,13 @@ func (h *TenantHandler) GetDefaultTenant(UserID string) Tenant {
 
 		teanantID := data.TenantIDs[0].TenantID
 
-		bytes2, _ := client.Go("ignore", "com.duosoftware.tenant", "tenants").GetOne().ByUniqueKey(teanantID).Ok()
-		_ = json.Unmarshal(bytes2, &tenant)
+		if teanantID != "" {
+
+			h.SetDefaultTenant(UserID, teanantID)
+
+			bytes2, _ := client.Go("ignore", "com.duosoftware.tenant", "tenants").GetOne().ByUniqueKey(teanantID).Ok()
+			_ = json.Unmarshal(bytes2, &tenant)
+		}
 
 	} else {
 		//default tenant available
