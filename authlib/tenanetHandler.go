@@ -3,12 +3,11 @@ package authlib
 import (
 	"duov6.com/common"
 	//"duov6.com/email"
-	"encoding/json"
-
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/objectstore/client"
 	"duov6.com/session"
 	"duov6.com/term"
+	"encoding/json"
 )
 
 type Tenant struct {
@@ -558,4 +557,47 @@ func (h *TenantHandler) SearchTenants(Search string, since, pagesize int) []Tena
 	}
 
 	return t
+}
+
+func (h *TenantHandler) GetDefaultTenant(UserID string) Tenant {
+	tenant := Tenant{}
+
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "defaulttenant").GetOne().ByUniqueKey(UserID).Ok()
+	if err != "" {
+		return tenant
+	}
+
+	if len(bytes) <= 4 {
+		//no default tenant available
+		data := UserTenants{}
+		bytes1, _ := client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").GetOne().ByUniqueKey(UserID).Ok()
+		_ = json.Unmarshal(bytes1, &data)
+
+		teanantID := data.TenantIDs[0].TenantID
+
+		bytes2, _ := client.Go("ignore", "com.duosoftware.tenant", "tenants").GetOne().ByUniqueKey(teanantID).Ok()
+		_ = json.Unmarshal(bytes2, &tenant)
+
+	} else {
+		//default tenant available
+		t := make(map[string]interface{})
+		_ = json.Unmarshal(bytes, &t)
+
+		bytes1, _ := client.Go("ignore", "com.duosoftware.tenant", "tenants").GetOne().ByUniqueKey(t["TenantID"].(string)).Ok()
+		_ = json.Unmarshal(bytes1, &tenant)
+
+	}
+
+	return tenant
+}
+
+func (h *TenantHandler) SetDefaultTenant(UserID string, TenantID string) bool {
+	object := make(map[string]interface{})
+	object["UserID"] = UserID
+	object["TenantID"] = TenantID
+	err := client.Go("ignore", "com.duosoftware.tenant", "defaulttenant").StoreObject().WithKeyField("UserID").AndStoreOne(object).Ok()
+	if err == nil {
+		return true
+	}
+	return false
 }

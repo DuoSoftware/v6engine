@@ -8,7 +8,6 @@ import (
 	"duov6.com/gorest"
 	"duov6.com/session"
 	"duov6.com/term"
-	//"fmt"
 )
 
 type TenantSvc struct {
@@ -29,6 +28,36 @@ type TenantSvc struct {
 	tranferAdmin              gorest.EndPoint `method:"GET" path:"/tenant/TranferAdmin/{email:string}" output:"bool"`
 	getPendingTenantRequest   gorest.EndPoint `method:"GET" path:"/tenant/GetPendingTenantRequest/" output:"[]PendingUserRequest"`
 	getMyPendingTenantRequest gorest.EndPoint `method:"GET" path:"/tenant/GetMyPendingTenantRequest/" output:"[]PendingUserRequest"`
+	getDefaultTenant          gorest.EndPoint `method:"GET" path:"/tenant/GetDefaultTenant/{UserID:string}" output:"Tenant"`
+	setDefaultTenant          gorest.EndPoint `method:"GET" path:"/tenant/SetDefaultTenant/{UserID:string}/{TenantID:string}" output:"bool"`
+}
+
+func (T TenantSvc) GetDefaultTenant(UserID string) Tenant {
+	//fmt.Println(T.Context.Request().Header["SecurityToken"])
+	_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		th := TenantHandler{}
+		return th.GetDefaultTenant(UserID)
+		//b, _ := json.Marshal(th.GetDefaultTenant(UserID))
+		//T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	} else {
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
+		return Tenant{}
+	}
+}
+
+func (T TenantSvc) SetDefaultTenant(UserID string, TenantID string) bool {
+	//fmt.Println(T.Context.Request().Header["SecurityToken"])
+	_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		th := TenantHandler{}
+		return th.SetDefaultTenant(UserID, TenantID)
+		//b, _ := json.Marshal(th.GetDefaultTenant(UserID))
+		//T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	} else {
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
+		return false
+	}
 }
 
 func (T TenantSvc) CreateTenant(t Tenant) {
