@@ -137,6 +137,12 @@ func formatTableNames(repo string, namespace string, class string, query string)
 		two := query[whereIndex:]
 		retQurey = one + " " + common.GetSQLTableName(repo, namespace, class) + two
 
+	} else if !strings.Contains(query, " WHERE ") && strings.Contains(query, " GROUP BY ") {
+		fromIndex := strings.Index(query, " FROM ") + 5
+		whereIndex := strings.Index(query, " GROUP BY ")
+		one := query[:fromIndex]
+		two := query[whereIndex:]
+		retQurey = one + " " + common.GetSQLTableName(repo, namespace, class) + two
 	} else if !strings.Contains(query, " WHERE ") && strings.Contains(query, " ORDER BY ") {
 		fromIndex := strings.Index(query, " FROM ") + 5
 		orderByIndex := strings.Index(query, " ORDER BY ")
@@ -144,12 +150,6 @@ func formatTableNames(repo string, namespace string, class string, query string)
 		two := query[orderByIndex:]
 		retQurey = one + " " + common.GetSQLTableName(repo, namespace, class) + two
 
-	} else if !strings.Contains(query, " WHERE ") && strings.Contains(query, " GROUP BY ") {
-		fromIndex := strings.Index(query, " FROM ") + 5
-		whereIndex := strings.Index(query, " GROUP BY ")
-		one := query[:fromIndex]
-		two := query[whereIndex:]
-		retQurey = one + " " + common.GetSQLTableName(repo, namespace, class) + two
 	} else if !strings.Contains(query, " WHERE ") && !strings.Contains(query, " ORDER BY ") {
 		fromIndex := strings.Index(query, " FROM ") + 5
 		queryWithoutClass := query[:fromIndex]
