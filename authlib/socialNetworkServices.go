@@ -142,6 +142,66 @@ func (t *twitterAuth) RegisterToken(object map[string]string) (AuthCertificate, 
 
 func (f *facebookAuth) RegisterToken(object map[string]string) (AuthCertificate, string) {
 	var auth AuthCertificate
-	return auth, "Not Implementated"
+
+	access_token := object["access_token"]
+	//authority := object["authority"]
+	user_id := object["user_id"]
+	domain := object["domain"]
+
+	name := ""
+	email := ""
+	errorString := ""
+
+	isAuthenticated := false
+
+	url := "https://graph.facebook.com/me?access_token=" + access_token + "&fields=id,email,name"
+
+	h := AuthHandler{}
+	s, eErr := h.GetSession(access_token, domain)
+	if eErr == "" {
+		return s, ""
+	}
+
+	//Authenticate from GooglePlus
+	err, body := common.HTTP_GET(url, nil, false)
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		data := make(map[string]interface{})
+		_ = json.Unmarshal(body, &data)
+		if data["email"] == nil {
+			//data private
+			errorString = "Error :  Email Address is Unavailable or private!"
+		} else {
+			email = data["email"].(string)
+			name = data["name"].(string)
+			isAuthenticated = true
+		}
+	}
+
+	if isAuthenticated {
+		user, status := h.GetUser(email)
+		if status != "" {
+			user.EmailAddress = email
+			user.UserID = user_id
+			user.Name = name
+			randText := common.RandText(5)
+			user.Password = randText
+			user.ConfirmPassword = randText
+			user.Active = true
+			user, _ = h.SaveUser(user, false, "registertoken")
+		}
+
+		auth.Email = user.EmailAddress
+		auth.SecurityToken = access_token
+		auth.Domain = domain
+		auth.UserID = user.UserID
+		auth.Name = user.Name
+		auth.Otherdata = make(map[string]string)
+		auth.Otherdata["auth0"] = access_token
+		return auth, ""
+	}
+
+	return auth, errorString
 	//return auth, ""
 }

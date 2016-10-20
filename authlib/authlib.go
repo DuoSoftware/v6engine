@@ -148,6 +148,15 @@ func (A Auth) ArbiterAuthorize(object map[string]string) {
 		} else {
 			outCrt = c
 		}
+	case "FaceBook":
+		ah := facebookAuth{}
+		c, err := ah.RegisterToken(object)
+		if err != "" {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
+			return
+		} else {
+			outCrt = c
+		}
 		break
 	case "twitter":
 		ah := twitterAuth{}
