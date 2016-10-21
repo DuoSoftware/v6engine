@@ -170,9 +170,8 @@ func (f *facebookAuth) RegisterToken(object map[string]string) (AuthCertificate,
 		data := make(map[string]interface{})
 		_ = json.Unmarshal(body, &data)
 		if data["email"] == nil {
-			email = data["id"].(string) + "@facebook.com"
-			name = data["name"].(string)
-			isAuthenticated = true
+			//data private
+			errorString = "Error :  Email Address is Unavailable or private!"
 		} else {
 			email = data["email"].(string)
 			name = data["name"].(string)
