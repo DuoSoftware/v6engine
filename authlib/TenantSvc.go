@@ -352,6 +352,17 @@ func (T TenantSvc) GetSampleTenantForm() Tenant {
 func (T TenantSvc) Subciribe(TenantID string) bool {
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
+		//check for available tenants.. If Tenant ID is there.. Reject else continue
+		tenantsForUser := T.GetTenants(T.Context.Request().Header.Get("Securitytoken"))
+
+		for _, tenant := range tenantsForUser {
+			if tenant.TenantID == TenantID {
+				term.Write(("User : " + user.Email + " is already Subscribed to Tenant : " + TenantID), term.Information)
+				return false
+			}
+		}
+
+		//Request to tenent
 		th := TenantHandler{}
 		return th.RequestToTenant(user, TenantID)
 	} else {
