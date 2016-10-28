@@ -348,21 +348,9 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 		client.Go("ignore", TenantID, "usersubscriptionreq321").StoreObject().WithKeyField("Email").AndStoreOne(s).Ok()
 		s.Code = common.GetGUID()
 		client.Go("ignore", "com.duosoftware.tenant", "usersubscriptionreq321").StoreObject().WithKeyField("TenantID").AndStoreOne(s).Ok()
-
-		var inputParams map[string]string
-		inputParams = make(map[string]string)
-		inputParams["@@email@@"] = u.Email
-		inputParams["@@name@@"] = u.Name
-		inputParams["@@userID@@"] = u.UserID
-		inputParams["@@tenantID@@"] = u.Domain
-		inputParams["@@FromName@@"] = u.Username
-		inputParams["@@FromID@@"] = u.UserID
-		inputParams["@@FromEmail@@"] = u.Email
-		go notifier.Notify("ignore", "tenant_request", u.Email, inputParams, nil)
 		//o[""]
 		return true
 	}
-
 	return false
 
 }
