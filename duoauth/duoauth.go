@@ -7,6 +7,7 @@ import (
 	"duov6.com/cebadapter"
 	"duov6.com/config"
 	//"duov6.com/email"
+	"duov6.com/common"
 	"duov6.com/gorest"
 	"duov6.com/pog"
 	//"duov6.com/stat"
@@ -43,6 +44,7 @@ func GetConfig() ServiceConfig {
 func main() {
 	//runRestFul()
 	//term.Read("Lable")
+	common.VerifyConfigFiles()
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	cebadapter.Attach("DuoAuth", func(s bool) {

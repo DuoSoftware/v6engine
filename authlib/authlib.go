@@ -8,6 +8,7 @@ import (
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
 	"duov6.com/objectstore/client"
+	"runtime"
 	//"fmt"
 	//"golang.org/x/oauth2"
 	//"crypto/hmac"
@@ -128,7 +129,36 @@ func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
 }
 
 func (A Auth) Verify() (output string) {
-	output = "{\"name\": \"DuoAuth\",\"version\": \"6.0.24-a\",\"Change Log\":\"Added Check for tenant subscription invitation.\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	//output = "{\"name\": \"DuoAuth\",\"version\": \"6.0.24-a\",\"Change Log\":\"Added Check for tenant subscription invitation.\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
+	cpuCount := strconv.Itoa(runtime.NumCPU())
+
+	versionData := make(map[string]interface{})
+	versionData["API Name"] = "Duo Auth"
+	versionData["API Version"] = "6.1.00"
+
+	versionData["Change Log"] = [...]string{
+		"Started new versioning with 6.1.00",
+		"Added agent.config to reflect localhost if agent.config not found",
+	}
+
+	gitMap := make(map[string]string)
+	gitMap["Type"] = "git"
+	gitMap["URL"] = "https://github.com/DuoSoftware/v6engine/"
+	versionData["Repository"] = gitMap
+
+	statMap := make(map[string]string)
+	statMap["CPU"] = cpuUsage + " (percentage)"
+	statMap["CPU Cores"] = cpuCount
+	versionData["System Usage"] = statMap
+
+	authorMap := make(map[string]string)
+	authorMap["Name"] = "Duo Software Pvt Ltd"
+	authorMap["URL"] = "http://www.duosoftware.com/"
+	versionData["Project Author"] = authorMap
+
+	byteArray, _ := json.Marshal(versionData)
+	output = string(byteArray)
 	return
 }
 
