@@ -8,7 +8,6 @@ import (
 	"duov6.com/session"
 	"duov6.com/term"
 	"encoding/json"
-	"fmt"
 )
 
 type Tenant struct {
@@ -326,13 +325,10 @@ func (h *TenantHandler) AddUserToTenant(u session.AuthCertificate, users []Invit
 
 func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID string) bool {
 
-	fmt.Println("Request to Tenant Executed!")
-
 	var tmp tempRequestGenerator
 	o := make(map[string]string)
 	t := h.GetTenant(TenantID)
 	if t.TenantID != "" {
-		fmt.Println("Tenant ID not null...")
 		o["process"] = "tenant_useradd"
 		o["email"] = u.Email
 		o["UserID"] = u.UserID
@@ -362,13 +358,7 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 		inputParams["@@FromName@@"] = u.Username
 		inputParams["@@FromID@@"] = u.UserID
 		inputParams["@@FromEmail@@"] = u.Email
-
-		fmt.Println(inputParams)
-
-		res := notifier.Notify("ignore", "tenant_request", u.Email, inputParams, nil)
-
-		fmt.Println(res)
-		fmt.Println("----------")
+		go notifier.Notify("ignore", "tenant_request", u.Email, inputParams, nil)
 		//o[""]
 		return true
 	}
