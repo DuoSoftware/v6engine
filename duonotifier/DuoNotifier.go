@@ -2,6 +2,7 @@ package main
 
 import (
 	"duov6.com/cebadapter"
+	"duov6.com/common"
 	"duov6.com/duonotifier/endpoints"
 	"encoding/json"
 	"fmt"
@@ -16,6 +17,7 @@ func main() {
 }
 
 func initializeCEBConfig() {
+	common.VerifyConfigFiles()
 	initializeSettingsFile()
 	inititalizeObjectStoreConfig()
 }

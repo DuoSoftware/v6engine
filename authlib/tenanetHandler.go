@@ -363,13 +363,8 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 		inputParams["@@FromID@@"] = u.UserID
 		inputParams["@@FromEmail@@"] = u.Email
 
-		fmt.Println(inputParams)
+		go notifier.Notify("ignore", "tenant_subscribe_request", u.Email, inputParams, nil)
 
-		res := notifier.Notify("ignore", "tenant_request", u.Email, inputParams, nil)
-
-		fmt.Println(res)
-		fmt.Println("----------")
-		//o[""]
 		return true
 	}
 
