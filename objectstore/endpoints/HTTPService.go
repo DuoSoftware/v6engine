@@ -191,7 +191,7 @@ func cacheHandler(params martini.Params, w http.ResponseWriter, r *http.Request)
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
 	cpuCount := strconv.Itoa(runtime.NumCPU())
-	versionData := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.3-a\",\"Change Log\":\"Added Unicode replacers to Cache.\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
+	versionData := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.4-a\",\"Change Log\":\"Fixed certain alter table issues.\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
 	fmt.Fprintf(w, versionData)
 }
 

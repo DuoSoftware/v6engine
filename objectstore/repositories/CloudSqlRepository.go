@@ -1555,7 +1555,6 @@ func (repository CloudSqlRepository) CheckAvailabilityDb(request *messaging.Obje
 }
 
 func (repository CloudSqlRepository) CheckAvailabilityTable(request *messaging.ObjectRequest, conn *sql.DB, dbName string, namespace string, class string, obj map[string]interface{}) (err error) {
-
 	if cloudSqlAvailableTables == nil {
 		cloudSqlAvailableTables = make(map[string]interface{})
 	}
@@ -1626,7 +1625,7 @@ func (repository CloudSqlRepository) CheckAvailabilityTable(request *messaging.O
 
 	if !isTableCreatedNow {
 		alterColumns := ""
-
+		alterCount := 0
 		cacheItem := make(map[string]string)
 
 		if CheckRedisAvailability(request) {
@@ -1651,6 +1650,8 @@ func (repository CloudSqlRepository) CheckAvailabilityTable(request *messaging.O
 			if !strings.EqualFold(k, "OriginalIndex") || !strings.EqualFold(k, "__osHeaders") {
 				_, ok := cacheItem[k]
 				if !ok {
+					alterCount++
+
 					if isFirst {
 						isFirst = false
 					} else {
@@ -1664,7 +1665,7 @@ func (repository CloudSqlRepository) CheckAvailabilityTable(request *messaging.O
 			}
 		}
 
-		if len(alterColumns) != 0 && len(alterColumns) != len(obj) {
+		if len(alterColumns) != 0 && alterCount != len(obj) {
 
 			alterQuery := "ALTER TABLE " + dbName + "." + class + " " + alterColumns
 			err, _ = repository.ExecuteNonQuery(conn, alterQuery, request)
