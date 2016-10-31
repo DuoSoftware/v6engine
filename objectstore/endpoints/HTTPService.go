@@ -388,6 +388,14 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 		objectRequest.Extras["searchGlobalNamespace"] = r.Header.Get("searchGlobalNamespace")
 	}
 
+	if r.Header.Get("timezone") != "" {
+		objectRequest.Extras["timezone"] = r.Header.Get("timezone")
+	}
+
+	if r.URL.Query().Get("timezone") != "" {
+		objectRequest.Extras["timezone"] = r.URL.Query().Get("timezone")
+	}
+
 	if r.URL.Query().Get("skip") != "" {
 		objectRequest.Extras["skip"] = r.URL.Query().Get("skip")
 	}
