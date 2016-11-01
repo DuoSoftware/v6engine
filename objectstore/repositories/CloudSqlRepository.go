@@ -1850,7 +1850,11 @@ func (repository CloudSqlRepository) GolangToSql(value interface{}) string {
 	//request.Log(reflect.TypeOf(value))
 	switch value.(type) {
 	case string:
-		strValue = "TEXT"
+		if repository.CheckIfDateTime(value.(string)) {
+			strValue = "DATETIME"
+		} else {
+			strValue = "TEXT"
+		}
 	case bool:
 		strValue = "BIT"
 		break
@@ -1892,7 +1896,26 @@ func (repository CloudSqlRepository) GolangToSql(value interface{}) string {
 	return strValue
 }
 
-func (repository CloudSqlRepository) SqlToGolang(b []byte, t string) interface{} {
+func (repository CloudSqlRepository) CheckIfDateTime(value string) (isDateTime bool) {
+	isDateTime = true
+
+	_, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		err = nil
+		_, err = time.Parse("2006-01-02T15:04:05", value)
+		if err != nil {
+			err = nil
+			_, err = time.Parse("2006-01-02 15:04:05", value)
+			if err != nil {
+				isDateTime = false
+			}
+		}
+	}
+
+	return
+}
+
+func (repository CloudSqlRepository) SqlToGolang(request *messaging.ObjectRequest, b []byte, t string) interface{} {
 
 	if b == nil {
 		return nil
@@ -1915,6 +1938,9 @@ func (repository CloudSqlRepository) SqlToGolang(b []byte, t string) interface{}
 				outData = false
 			}
 		}
+	} else if strings.Contains(tType, "datetime") && request.Extras["timezone"] != nil {
+		convertedTime := GetZoneConvertedTime(tmp, request.Extras["timezone"].(string))
+		outData = convertedTime.Format(time.RFC3339)
 	} else if strings.Contains(tType, "double") {
 		fData, err := strconv.ParseFloat(tmp, 64)
 		if err != nil {
@@ -2021,7 +2047,7 @@ func (repository CloudSqlRepository) RowsToMap(request *messaging.ObjectRequest,
 				if cacheItem != nil {
 					t, ok := cacheItem[col]
 					if ok {
-						v = repository.SqlToGolang(b, t)
+						v = repository.SqlToGolang(request, b, t)
 					}
 				}
 
