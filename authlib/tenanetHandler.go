@@ -623,3 +623,26 @@ func (h *TenantHandler) SetDefaultTenant(UserID string, TenantID string) bool {
 	}
 	return false
 }
+
+func (h *TenantHandler) IncreaseTenantCountInRatingEngine(domain, securityToken string) (status bool) {
+	url := "http://" + domain + "/apis/ratingservice/process/" + domain + "/user/1/tenant"
+
+	headers := make(map[string]string)
+	headers["securityToken"] = securityToken
+
+	err, bodyBytes := common.HTTP_GET(url, headers, false)
+
+	responseMap := make(map[string]interface{})
+
+	if err != nil {
+		json.Unmarshal(([]byte(err.Error())), &responseMap)
+		status = false
+	} else {
+		json.Unmarshal(bodyBytes, &responseMap)
+		status = true
+	}
+
+	fmt.Println(responseMap)
+
+	return
+}
