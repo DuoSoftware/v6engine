@@ -194,11 +194,10 @@ func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Reques
 	//versionDaata := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.4-a\",\"Change Log\":\"Fixed certain alter table issues.\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "ObjectStore"
-	versionData["API Version"] = "6.1.00"
+	versionData["API Version"] = "6.1.01"
 
 	versionData["Change Log"] = [...]string{
-		"Started new versioning with 6.1.00",
-		"Added agent.config to reflect localhost if agent.config not found",
+		"Added timezone compatibility",
 	}
 
 	gitMap := make(map[string]string)
