@@ -173,9 +173,12 @@ func GetRecordID(request *messaging.ObjectRequest, obj map[string]interface{}) (
 }
 
 func GetZoneConvertedTime(timeInString string, location string) (retTime time.Time) {
-	loc, _ := time.LoadLocation(location)
+	loc, err := time.LoadLocation(location)
 
-	var err error
+	if err != nil {
+		err = nil
+		loc, _ = time.LoadLocation("UTC")
+	}
 
 	retTime, err = time.Parse(time.RFC3339, timeInString)
 	if err != nil {
@@ -185,7 +188,7 @@ func GetZoneConvertedTime(timeInString string, location string) (retTime time.Ti
 			err = nil
 			retTime, err = time.Parse("2006-01-02 15:04:05", timeInString)
 			if err != nil {
-				retTime = time.Now()
+				retTime = time.Now().UTC()
 				fmt.Println(err.Error())
 			}
 		}

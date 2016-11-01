@@ -1925,10 +1925,6 @@ func (repository CloudSqlRepository) SqlToGolang(request *messaging.ObjectReques
 		return b
 	}
 
-	fmt.Println(string(b))
-	fmt.Println(t)
-	fmt.Println("---------------")
-
 	var outData interface{}
 	tmp := string(b)
 	tType := strings.ToLower(t)
@@ -1943,9 +1939,7 @@ func (repository CloudSqlRepository) SqlToGolang(request *messaging.ObjectReques
 			}
 		}
 	} else if strings.Contains(tType, "datetime") && request.Extras["timezone"] != nil {
-		fmt.Println(tmp)
 		convertedTime := GetZoneConvertedTime(tmp, request.Extras["timezone"].(string))
-		fmt.Println(convertedTime)
 		outData = convertedTime.Format(time.RFC3339)
 	} else if strings.Contains(tType, "double") {
 		fData, err := strconv.ParseFloat(tmp, 64)
