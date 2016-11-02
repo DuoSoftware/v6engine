@@ -605,7 +605,8 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 					if uList.Active {
 						return uList, ""
 					} else {
-						return user, "Email Address is not varified."
+						return user, "Email Address is not verified."
+						//return user, "Email Address is not varified."
 					}
 				} else {
 					term.Write("Username password incorrect", term.Error)
@@ -619,7 +620,8 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 	} else {
 		term.Write("Login  user  Error "+err, term.Error)
 	}
-	return user, "Username password incorrect"
+	return user, "The username or password is incorrect. Please try again with the correct credentials. 3 failed attempts will temporarily block the account."
+	//return user, "Username password incorrect"
 }
 
 func (h *AuthHandler) GetUserByID(UserID string) (User, string) {
