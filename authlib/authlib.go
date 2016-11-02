@@ -135,10 +135,11 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.01"
+	versionData["API Version"] = "6.1.02"
 
 	versionData["Change Log"] = [...]string{
-		"Added rating engine check for tenant add.",
+		"Removed rating engine check for tenant add.",
+		"Added Activate User Email Check..",
 	}
 
 	gitMap := make(map[string]string)

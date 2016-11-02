@@ -555,14 +555,19 @@ func (h *AuthHandler) UserActivation(token string) bool {
 			//Change activation status to true and save
 
 			term.Write(u, term.Debug)
-			u.Active = true
-			client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
-			//h.SaveUser(u, true)
-			term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-			//go notifier.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
-			go notifier.Notify("ignore", "user_activated", u.EmailAddress, inputParams, nil)
-			return true
 
+			if u.Active {
+				term.Write("This User : "+u.EmailAddress+" is already activated!", term.Debug)
+				return true
+			} else {
+				u.Active = true
+				client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
+				//h.SaveUser(u, true)
+				term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
+				//go notifier.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
+				go notifier.Notify("ignore", "user_activated", u.EmailAddress, inputParams, nil)
+				return true
+			}
 		} else {
 			term.Write(err, term.Debug)
 			term.Write(string(bytes), term.Debug)
