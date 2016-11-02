@@ -74,7 +74,18 @@ func GetDataCaps(Domain, UserID string) string {
 //UserActivation Represent activation of the user account
 func (A Auth) UserActivation(token string) bool {
 	h := newAuthHandler()
-	return h.UserActivation(token)
+	status := h.UserActivation(token)
+	if status == "alreadyActivated" {
+		A.ResponseBuilder().SetResponseCode(300)
+		return true
+	} else if status == "true" {
+		A.ResponseBuilder().SetResponseCode(200)
+		return true
+	} else if status == "false" {
+		A.ResponseBuilder().SetResponseCode(500)
+		return false
+	}
+	return false
 }
 
 func (A Auth) GetLoginSessions(UserID string) []session.AuthCertificate {
@@ -135,9 +146,10 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.05"
+	versionData["API Version"] = "6.1.06"
 
 	versionData["Change Log"] = [...]string{
+		"Added response codes for ActivateUser method",
 		"Added New Login password,username message and Activate message",
 		"Added GetTenantAdmin method for auth",
 		"Removed rating engine check for tenant add.",
