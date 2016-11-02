@@ -423,24 +423,29 @@ func (h *AuthHandler) GetSecretKey(key string) string {
 func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 	u, error := h.GetUser(emailaddress)
 	if error == "" {
-		passowrd := common.RandText(6)
-		u.ConfirmPassword = passowrd
-		u.Password = passowrd
-		term.Write("Password : "+passowrd, term.Debug)
-		h.SaveUser(u, true, "forgotpassword")
-		var inputParams map[string]string
-		inputParams = make(map[string]string)
-		// inputParams["@@email@@"] = u.EmailAddress
-		// inputParams["@@name@@"] = u.Name
-		// inputParams["@@password@@"] = passowrd
-		// go email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "user_resetpassword", inputParams, nil, u.EmailAddress)
-		inputParams["@@CEMAIL@@"] = u.EmailAddress
-		inputParams["@@CNAME@@"] = u.Name
-		inputParams["@@@PASSWORD@@@"] = passowrd
-		//go notifier.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "T_Email_FORGETPW", inputParams, nil, u.EmailAddress)
-		go notifier.Notify("ignore", "FORGETPW", u.EmailAddress, inputParams, nil)
-		term.Write("E Mail Sent", term.Debug)
-		return true
+		if u.Active {
+			passowrd := common.RandText(6)
+			u.ConfirmPassword = passowrd
+			u.Password = passowrd
+			term.Write("Password : "+passowrd, term.Debug)
+			h.SaveUser(u, true, "forgotpassword")
+			var inputParams map[string]string
+			inputParams = make(map[string]string)
+			// inputParams["@@email@@"] = u.EmailAddress
+			// inputParams["@@name@@"] = u.Name
+			// inputParams["@@password@@"] = passowrd
+			// go email.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "user_resetpassword", inputParams, nil, u.EmailAddress)
+			inputParams["@@CEMAIL@@"] = u.EmailAddress
+			inputParams["@@CNAME@@"] = u.Name
+			inputParams["@@@PASSWORD@@@"] = passowrd
+			//go notifier.Send("ignore", "Password Recovery.", "com.duosoftware.auth", "email", "T_Email_FORGETPW", inputParams, nil, u.EmailAddress)
+			go notifier.Notify("ignore", "FORGETPW", u.EmailAddress, inputParams, nil)
+			term.Write("E Mail Sent", term.Debug)
+			return true
+		} else {
+			term.Write("This User is not yet activated.. Cannot reset password!", term.Debug)
+			return false
+		}
 	}
 	return false
 }
