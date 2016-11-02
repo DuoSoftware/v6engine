@@ -9,6 +9,7 @@ import (
 	"duov6.com/term"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type Tenant struct {
@@ -622,6 +623,32 @@ func (h *TenantHandler) SetDefaultTenant(UserID string, TenantID string) bool {
 		return true
 	}
 	return false
+}
+
+func (h *TenantHandler) GetTenantAdmin(TenantID string) []string {
+
+	adminUsers := make([]string, 0)
+
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetMany().BySearching("TenantID:" + TenantID).Ok()
+	if err != "" {
+		return adminUsers
+	} else {
+		var data []map[string]interface{}
+		json.Unmarshal(bytes, &data)
+
+		if len(data) == 0 {
+			return adminUsers
+		} else {
+			for _, obj := range data {
+				if strings.Contains(obj["SecurityLevel"].(string), "admin") {
+					adminUsers = append(adminUsers, obj["UserID"].(string))
+				}
+			}
+			return adminUsers
+		}
+	}
+
+	return adminUsers
 }
 
 func (h *TenantHandler) IncreaseTenantCountInRatingEngine(domain, securityToken string) (status bool) {

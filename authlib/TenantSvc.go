@@ -30,6 +30,20 @@ type TenantSvc struct {
 	getMyPendingTenantRequest gorest.EndPoint `method:"GET" path:"/tenant/GetMyPendingTenantRequest/" output:"[]PendingUserRequest"`
 	getDefaultTenant          gorest.EndPoint `method:"GET" path:"/tenant/GetDefaultTenant/{UserID:string}" output:"Tenant"`
 	setDefaultTenant          gorest.EndPoint `method:"GET" path:"/tenant/SetDefaultTenant/{UserID:string}/{TenantID:string}" output:"bool"`
+	getTenantAdmin            gorest.EndPoint `method:"GET" path:"/tenant/GetTenantAdmin/{TenantID:string}" output:"[]string"`
+}
+
+func (T TenantSvc) GetTenantAdmin(TenantID string) []string {
+	//fmt.Println(T.Context.Request().Header["SecurityToken"])
+	_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		th := TenantHandler{}
+		return th.GetTenantAdmin(TenantID)
+	} else {
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
+		emptyArray := make([]string, 0)
+		return emptyArray
+	}
 }
 
 func (T TenantSvc) GetDefaultTenant(UserID string) Tenant {
