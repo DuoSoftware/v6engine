@@ -30,6 +30,20 @@ type TenantSvc struct {
 	getMyPendingTenantRequest gorest.EndPoint `method:"GET" path:"/tenant/GetMyPendingTenantRequest/" output:"[]PendingUserRequest"`
 	getDefaultTenant          gorest.EndPoint `method:"GET" path:"/tenant/GetDefaultTenant/{UserID:string}" output:"Tenant"`
 	setDefaultTenant          gorest.EndPoint `method:"GET" path:"/tenant/SetDefaultTenant/{UserID:string}/{TenantID:string}" output:"bool"`
+	getTenantAdmin            gorest.EndPoint `method:"GET" path:"/tenant/GetTenantAdmin/{TenantID:string}" output:"[]string"`
+}
+
+func (T TenantSvc) GetTenantAdmin(TenantID string) []string {
+	//fmt.Println(T.Context.Request().Header["SecurityToken"])
+	_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		th := TenantHandler{}
+		return th.GetTenantAdmin(TenantID)
+	} else {
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
+		emptyArray := make([]string, 0)
+		return emptyArray
+	}
 }
 
 func (T TenantSvc) GetDefaultTenant(UserID string) Tenant {
@@ -196,9 +210,12 @@ func (T TenantSvc) AddUser(email, level string) bool {
 
 			go notifier.Notify("ignore", "tenant_invitation_existing", email, inputParams, nil)
 			//go email.Send("ignore", "Invitation to register !", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
-			th.AddUsersToTenant(user.Domain, t.Name, a.UserID, level)
-			return true
-
+			if th.IncreaseTenantCountInRatingEngine(user.Domain, T.Context.Request().Header.Get("Securitytoken")) {
+				th.AddUsersToTenant(user.Domain, t.Name, a.UserID, level)
+				return true
+			} else {
+				return false
+			}
 		} else {
 			tmp := tempRequestGenerator{}
 			th := TenantHandler{}
@@ -270,6 +287,12 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 	//fmt.Println(T.Context.Request().Header.Get("Securitytoken"))
 	//user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	//if error == "" {
+
+	if T.Context.Request().Header.Get("Securitytoken") == "" {
+		term.Write("Error : No SecurityToken found in Header", term.Error)
+		return false
+	}
+
 	tmp := tempRequestGenerator{}
 
 	o, _ := tmp.GetRequestCode(RequestToken)
@@ -281,8 +304,12 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 		auth := AuthHandler{}
 		a, err := auth.GetUser(o["email"])
 		if err == "" {
-			th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
-			return true
+			if th.IncreaseTenantCountInRatingEngine(o["domain"], T.Context.Request().Header.Get("Securitytoken")) {
+				th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
+				return true
+			} else {
+				return false
+			}
 		} else {
 			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Email not registered.")))
 			return false
@@ -292,9 +319,13 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 		auth := AuthHandler{}
 		a, err := auth.GetUser(o["email"])
 		if err == "" {
-			th.AddUsersToTenant(o["TenantID"], o["tname"], a.UserID, o["level"])
-			th.RemovePendingRequest(o["TenantID"], a.EmailAddress)
-			return true
+			if th.IncreaseTenantCountInRatingEngine(o["domain"], T.Context.Request().Header.Get("Securitytoken")) {
+				th.AddUsersToTenant(o["TenantID"], o["tname"], a.UserID, o["level"])
+				th.RemovePendingRequest(o["TenantID"], a.EmailAddress)
+				return true
+			} else {
+				return false
+			}
 		} else {
 			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Email not registered.")))
 			return false

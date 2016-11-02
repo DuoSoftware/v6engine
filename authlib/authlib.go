@@ -135,11 +135,14 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.00"
+	versionData["API Version"] = "6.1.05"
 
 	versionData["Change Log"] = [...]string{
-		"Started new versioning with 6.1.00",
-		"Added agent.config to reflect localhost if agent.config not found",
+		"Added New Login password,username message and Activate message",
+		"Added GetTenantAdmin method for auth",
+		"Removed rating engine check for tenant add.",
+		"Added Activate User Email Check..",
+		"Added Reset Password Check by checking user activated or not",
 	}
 
 	gitMap := make(map[string]string)
