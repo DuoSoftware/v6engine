@@ -149,6 +149,7 @@ func (A Auth) Verify() (output string) {
 	versionData["API Version"] = "6.1.06"
 
 	versionData["Change Log"] = [...]string{
+		"Commented SecurityToken from AcceptRequest",
 		"Added response codes for ActivateUser method",
 		"Added New Login password,username message and Activate message",
 		"Added GetTenantAdmin method for auth",

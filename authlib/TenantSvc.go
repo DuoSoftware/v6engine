@@ -288,10 +288,10 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 	//user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	//if error == "" {
 
-	if T.Context.Request().Header.Get("Securitytoken") == "" {
-		term.Write("Error : No SecurityToken found in Header", term.Error)
-		return false
-	}
+	// if T.Context.Request().Header.Get("Securitytoken") == "" {
+	// 	term.Write("Error : No SecurityToken found in Header", term.Error)
+	// 	return false
+	// }
 
 	tmp := tempRequestGenerator{}
 
@@ -304,7 +304,8 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 		auth := AuthHandler{}
 		a, err := auth.GetUser(o["email"])
 		if err == "" {
-			if th.IncreaseTenantCountInRatingEngine(o["domain"], T.Context.Request().Header.Get("Securitytoken")) {
+			if th.IncreaseTenantCountInRatingEngine(o["domain"], "ignore") {
+				//if th.IncreaseTenantCountInRatingEngine(o["domain"], T.Context.Request().Header.Get("Securitytoken")) {
 				th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
 				return true
 			} else {
