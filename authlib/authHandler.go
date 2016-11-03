@@ -497,6 +497,14 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 			//go notifier.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "T_Email_Verification", inputParams, nil, u.EmailAddress)
 
 			switch regtype {
+			case "invitedUserRegistration":
+				u.Active = true
+				var inputParams map[string]string
+				inputParams = make(map[string]string)
+				inputParams["@@email@@"] = u.EmailAddress
+				inputParams["@@name@@"] = u.Name
+				go notifier.Notify("ignore", "user_activated", u.EmailAddress, inputParams, nil)
+				break
 			case "tenant":
 				inputParams["@@PASSWORD@@"] = password
 				u.Active = true
@@ -509,9 +517,11 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 				go notifier.Notify("ignore", "Verification", u.EmailAddress, inputParams, nil)
 				break
 			}
-			term.Write("E Mail Sent", term.Debug)
-			client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
-			term.Write("Activation stored", term.Debug)
+			if regtype != "invitedUserRegistration" {
+				term.Write("E Mail Sent", term.Debug)
+				client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
+				term.Write("Activation stored", term.Debug)
+			}
 			client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
 			u.Password = "*****"
 			u.ConfirmPassword = "*****"
