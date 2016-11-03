@@ -147,18 +147,31 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.06"
+	versionData["API Version"] = "6.1.07"
 
-	versionData["Change Log"] = [...]string{
-		"Test activation skip",
+	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.07"] = [...]string{
+		"Added Activation Skip Endpoint for Registration. <InvitedUserRegistration>",
+	}
+
+	changeLogs["6.1.06"] = [...]string{
 		"Commented SecurityToken from AcceptRequest",
 		"Added response codes for ActivateUser method",
+	}
+
+	changeLogs["6.1.05"] = [...]string{
 		"Added New Login password,username message and Activate message",
 		"Added GetTenantAdmin method for auth",
 		"Removed rating engine check for tenant add.",
+	}
+
+	changeLogs["6.1.04"] = [...]string{
 		"Added Activate User Email Check..",
 		"Added Reset Password Check by checking user activated or not",
 	}
+
+	versionData["Change Logs"] = changeLogs
 
 	gitMap := make(map[string]string)
 	gitMap["Type"] = "git"
