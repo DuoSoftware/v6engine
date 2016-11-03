@@ -279,6 +279,31 @@ func (h *TenantHandler) GetTenantsForUser(UserID string) []TenantMinimum {
 	}
 }
 
+func (h *TenantHandler) GetTenantsForUserByEmail(Email string) []TenantMinimum {
+
+	var u User
+	byteArray, errUser := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(Email).Ok()
+	_ = json.Unmarshal(byteArray, &u)
+
+	if errUser != "" {
+		return []TenantMinimum{}
+	}
+
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").GetOne().ByUniqueKey(u.UserID).Ok()
+	var t UserTenants
+	if err == "" {
+		err := json.Unmarshal(bytes, &t)
+		if err == nil {
+			return t.TenantIDs
+		} else {
+			return []TenantMinimum{}
+		}
+	} else {
+		return []TenantMinimum{}
+	}
+
+}
+
 func (h *TenantHandler) GetUsersForTenant(u session.AuthCertificate, TenantID string) []string {
 	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "users").GetOne().ByUniqueKey(TenantID).Ok()
 	var t TenantUsers
@@ -558,6 +583,24 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 			term.Write("Error Deleting User "+err.Error(), term.Debug)
 			return false
 		}
+	}
+
+	//since user is out of all tenants assigned to him... Deactivate the user
+	if len(h.GetTenantsForUser(UserID)) == 0 {
+		bytes2, _ := client.Go("ignore", "com.duosoftware.auth", "users").GetMany().BySearching("UserID:" + UserID).Ok()
+		var u []User
+		_ = json.Unmarshal(bytes2, &u)
+
+		if len(u) > 0 {
+			//users are found.... deactive them
+			updateUser := u[0]
+			updateUser.Active = false
+			term.Write("Updating the New user as Disabled since no tenants are remaining : "+updateUser.EmailAddress, term.Debug)
+			client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(updateUser).Ok()
+		} else {
+			term.Write("No Users are found to update as disabled.", term.Debug)
+		}
+
 	}
 
 	return true
