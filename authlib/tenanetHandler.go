@@ -600,17 +600,19 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 
 			//Clear All Sessions
 			sessionBytes, _ := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("UserID:" + updateUser.UserID).Ok()
-			var uList []map[string]interface{}
+			var uList []AuthCertificate
 			_ = json.Unmarshal(sessionBytes, &uList)
 
 			if len(uList) > 0 {
-				b := make([]interface{}, len(uList))
-				for i := range uList {
-					b[i] = uList[i]
-				}
+				// b := make([]interface{}, len(uList))
+				// for i := range uList {
+				// 	b[i] = uList[i]
+				// }
 				//sessions found.. delete them all
 				term.Write("Found sessions related to deactivated user and now Logging out All sessions.", term.Debug)
-				client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteMany(b).Ok()
+				for _, singleU := range uList {
+					client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(singleU).Ok()
+				}
 			}
 
 		} else {
