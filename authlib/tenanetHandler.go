@@ -601,7 +601,7 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 			//Clear All Sessions
 			sessionBytes, _ := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("UserID:" + updateUser.UserID).Ok()
 			var uList []map[string]interface{}
-			_ = json.Unmarshal(sessionBytes, &sessionBytes)
+			_ = json.Unmarshal(sessionBytes, &uList)
 
 			if len(uList) > 0 {
 				b := make([]interface{}, len(uList))
