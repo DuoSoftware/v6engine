@@ -597,6 +597,22 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 			updateUser.Active = false
 			term.Write("Updating the New user as Disabled since no tenants are remaining : "+updateUser.EmailAddress, term.Debug)
 			client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(updateUser).Ok()
+
+			//Clear All Sessions
+			sessionBytes, _ := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("UserID:" + updateUser.UserID).Ok()
+			var uList []map[string]interface{}
+			_ = json.Unmarshal(sessionBytes, &sessionBytes)
+
+			if len(uList) > 0 {
+				b := make([]interface{}, len(uList))
+				for i := range uList {
+					b[i] = uList[i]
+				}
+				//sessions found.. delete them all
+				term.Write("Found sessions related to deactivated user and now Logging out All sessions.", term.Debug)
+				client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteMany(b).Ok()
+			}
+
 		} else {
 			term.Write("No Users are found to update as disabled.", term.Debug)
 		}
