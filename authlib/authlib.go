@@ -147,13 +147,9 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.08"
+	versionData["API Version"] = "6.1.07"
 
 	changeLogs := make(map[string]interface{})
-
-	changeLogs["6.1.08"] = [...]string{
-		"Added check for tenants accessible when account Active is False",
-	}
 
 	changeLogs["6.1.07"] = [...]string{
 		"Added Activation Skip Endpoint for Registration. <InvitedUserRegistration>",
