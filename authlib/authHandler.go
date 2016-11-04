@@ -662,10 +662,10 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 					if uList.Active {
 						return uList, ""
 					} else {
-						th := TenantHandler{}
-						if len(th.GetTenantsForUser(user.UserID)) == 0 {
-							return user, "Sorry, your access has been denied."
-						}
+						// th := TenantHandler{}
+						// if len(th.GetTenantsForUser(user.UserID)) == 0 {
+						// 	return user, "Sorry, your access has been denied."
+						// }
 						return user, "Email Address is not verified."
 						//return user, "Email Address is not varified."
 					}
