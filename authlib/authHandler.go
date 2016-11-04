@@ -662,10 +662,11 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 					if uList.Active {
 						return uList, ""
 					} else {
-						// th := TenantHandler{}
-						// if len(th.GetTenantsForUser(user.UserID)) == 0 {
-						// 	return user, "Sorry, your access has been denied."
-						// }
+						bytess, _ := client.Go("ignore", "com.duosoftware.tenant", "deniedUserTemp").GetOne().ByUniqueKey(uList.UserID).Ok()
+						if len(bytess) > 10 {
+							return user, "Sorry, your access has been denied."
+						}
+
 						return user, "Email Address is not verified."
 						//return user, "Email Address is not varified."
 					}

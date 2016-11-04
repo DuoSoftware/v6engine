@@ -587,11 +587,20 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 
 	//since user is out of all tenants assigned to him... Deactivate the user
 	if len(h.GetTenantsForUser(UserID)) == 0 {
+
 		bytes2, _ := client.Go("ignore", "com.duosoftware.auth", "users").GetMany().BySearching("UserID:" + UserID).Ok()
 		var u []User
 		_ = json.Unmarshal(bytes2, &u)
 
 		if len(u) > 0 {
+			//Add to Denied List
+			denyMap := make(map[string]interface{})
+			denyMap["UserID"] = UserID
+			denyMap["EmailAddress"] = u[0].EmailAddress
+			term.Write("Storing denied user to deniedUserTemp table..", term.Debug)
+			client.Go("ignore", "com.duosoftware.tenant", "deniedUserTemp").StoreObject().WithKeyField("UserID").AndStoreOne(denyMap).Ok()
+			//Adding to denied list ends here
+
 			//users are found.... deactive them
 			updateUser := u[0]
 			updateUser.Active = false

@@ -152,6 +152,7 @@ func (A Auth) Verify() (output string) {
 	changeLogs := make(map[string]interface{})
 
 	changeLogs["6.1.08"] = [...]string{
+		"Added user deny check",
 		"Added User Deactivate if user has no accesible tenants.",
 	}
 
