@@ -147,9 +147,13 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.08"
+	versionData["API Version"] = "6.1.09"
 
 	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.09"] = [...]string{
+		"Added new user email templates for events.",
+	}
 
 	changeLogs["6.1.08"] = [...]string{
 		"Added user deny check",
