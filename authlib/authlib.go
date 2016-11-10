@@ -43,21 +43,22 @@ type Auth struct {
 	getAuthCode      gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
 	//Lasith's method - Don't Delete
 	//autherizeApp       gorest.EndPoint `method:"GET" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" output:"bool"`
-	autherizeApp       gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
-	updateScope        gorest.EndPoint `method:"POST" path:"/UpdateScope/{SecurityToken:string}/{UserID:string}/{ApplicationID:string}" postdata:"AuthorizeAppData"`
-	addUser            gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
-	registerTenantUser gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
-	userActivation     gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
-	logOut             gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
-	checkPassword      gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
-	getUser            gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
-	blockUser          gorest.EndPoint `method:"GET" path:"/BlockUser/{Email:string}" output:"bool"`
-	releaseUser        gorest.EndPoint `method:"GET" path:"/ReleaseUser/{Email:string}/{b4:string}" output:"bool"`
-	getGUID            gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
-	forgotPassword     gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
-	changePassword     gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
-	arbiterAuthorize   gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
-	getUserByUserId    gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
+	autherizeApp            gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
+	updateScope             gorest.EndPoint `method:"POST" path:"/UpdateScope/{SecurityToken:string}/{UserID:string}/{ApplicationID:string}" postdata:"AuthorizeAppData"`
+	addUser                 gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
+	invitedUserRegistration gorest.EndPoint `method:"POST" path:"/InvitedUserRegistration/" postdata:"User"`
+	registerTenantUser      gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
+	userActivation          gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
+	logOut                  gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
+	checkPassword           gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
+	getUser                 gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
+	blockUser               gorest.EndPoint `method:"GET" path:"/BlockUser/{Email:string}" output:"bool"`
+	releaseUser             gorest.EndPoint `method:"GET" path:"/ReleaseUser/{Email:string}/{b4:string}" output:"bool"`
+	getGUID                 gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
+	forgotPassword          gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
+	changePassword          gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
+	arbiterAuthorize        gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
+	getUserByUserId         gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
 }
 
 //GetClientIP Represent to get ClientIP
@@ -74,7 +75,18 @@ func GetDataCaps(Domain, UserID string) string {
 //UserActivation Represent activation of the user account
 func (A Auth) UserActivation(token string) bool {
 	h := newAuthHandler()
-	return h.UserActivation(token)
+	status := h.UserActivation(token)
+	if status == "alreadyActivated" {
+		A.ResponseBuilder().SetResponseCode(300)
+		return true
+	} else if status == "true" {
+		A.ResponseBuilder().SetResponseCode(200)
+		return true
+	} else if status == "false" {
+		A.ResponseBuilder().SetResponseCode(500)
+		return false
+	}
+	return false
 }
 
 func (A Auth) GetLoginSessions(UserID string) []session.AuthCertificate {
@@ -135,15 +147,40 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.05"
+	versionData["API Version"] = "6.1.09"
 
-	versionData["Change Log"] = [...]string{
+	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.09"] = [...]string{
+		"Added new user email templates for events.",
+	}
+
+	changeLogs["6.1.08"] = [...]string{
+		"Added user deny check",
+		"Added User Deactivate if user has no accesible tenants.",
+	}
+
+	changeLogs["6.1.07"] = [...]string{
+		"Added Activation Skip Endpoint for Registration. <InvitedUserRegistration>",
+	}
+
+	changeLogs["6.1.06"] = [...]string{
+		"Commented SecurityToken from AcceptRequest",
+		"Added response codes for ActivateUser method",
+	}
+
+	changeLogs["6.1.05"] = [...]string{
 		"Added New Login password,username message and Activate message",
 		"Added GetTenantAdmin method for auth",
 		"Removed rating engine check for tenant add.",
+	}
+
+	changeLogs["6.1.04"] = [...]string{
 		"Added Activate User Email Check..",
 		"Added Reset Password Check by checking user activated or not",
 	}
+
+	versionData["Change Logs"] = changeLogs
 
 	gitMap := make(map[string]string)
 	gitMap["Type"] = "git"
@@ -803,6 +840,23 @@ func (A Auth) AddUser(u User) {
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 	} else {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
+	}
+
+}
+
+func (A Auth) InvitedUserRegistration(u User) {
+	h := newAuthHandler()
+	//t := TenantHandler{}
+
+	u, err := h.SaveUser(u, false, "invitedUserRegistration")
+
+	if err == "" {
+		b, _ := json.Marshal(u)
+		//x := t.GetTenant(c.Domain)
+		//t.AddUsersToTenant(x.TenantID, x.Name, u.UserID, "User")
+		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
 	}
 
 }

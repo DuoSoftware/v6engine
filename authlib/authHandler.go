@@ -497,11 +497,23 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 			//go notifier.Send("ignore", "Thank you for registering!", "com.duosoftware.auth", "email", "T_Email_Verification", inputParams, nil, u.EmailAddress)
 
 			switch regtype {
+			case "invitedUserRegistration":
+				u.Active = true
+				var inputParams map[string]string
+				inputParams = make(map[string]string)
+				inputParams["@@email@@"] = u.EmailAddress
+				inputParams["@@name@@"] = u.Name
+				go notifier.Notify("ignore", "user_activated", u.EmailAddress, inputParams, nil)
+				break
 			case "tenant":
 				inputParams["@@PASSWORD@@"] = password
 				u.Active = true
 				term.Write("SaveUser saving user for tenat "+u.Name+" Update User "+u.UserID, term.Debug)
 				go notifier.Notify("ignore", "TenantUser_Verification", u.EmailAddress, inputParams, nil)
+				break
+			case "changepassword":
+				term.Write("Password Changed for "+u.Name, term.Debug)
+				go notifier.Notify("ignore", "ChangePassword", u.EmailAddress, inputParams, nil)
 				break
 			default:
 				inputParams["@@CODE@@"] = Activ.Token
@@ -509,9 +521,11 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 				go notifier.Notify("ignore", "Verification", u.EmailAddress, inputParams, nil)
 				break
 			}
-			term.Write("E Mail Sent", term.Debug)
-			client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
-			term.Write("Activation stored", term.Debug)
+			if regtype != "invitedUserRegistration" {
+				term.Write("E Mail Sent", term.Debug)
+				client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
+				term.Write("Activation stored", term.Debug)
+			}
 			client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
 			u.Password = "*****"
 			u.ConfirmPassword = "*****"
@@ -541,7 +555,54 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 }
 
 // UserActivation Helps to activate the users
-func (h *AuthHandler) UserActivation(token string) bool {
+//commenting for DSF-318.. changing return to string
+// func (h *AuthHandler) UserActivation(token string) bool {
+// 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "activation").GetOne().ByUniqueKey(token).Ok()
+// 	if err == "" {
+// 		var uList ActivationEmail
+// 		err := json.Unmarshal(bytes, &uList)
+// 		if err == nil {
+// 			//new user
+
+// 			//uList[0].GUUserID
+
+// 			//var u User
+// 			u, _ := h.GetUser(uList.GUUserID)
+// 			var inputParams map[string]string
+// 			inputParams = make(map[string]string)
+// 			inputParams["@@email@@"] = u.EmailAddress
+// 			inputParams["@@name@@"] = u.Name
+// 			//Change activation status to true and save
+
+// 			term.Write(u, term.Debug)
+
+// 			if u.Active {
+// 				term.Write("This User : "+u.EmailAddress+" is already activated!", term.Debug)
+// 				return true
+// 			} else {
+// 				u.Active = true
+// 				client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
+// 				//h.SaveUser(u, true)
+// 				term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
+// 				//go notifier.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
+// 				go notifier.Notify("ignore", "user_activated", u.EmailAddress, inputParams, nil)
+// 				return true
+// 			}
+// 		} else {
+// 			term.Write(err, term.Debug)
+// 			term.Write(string(bytes), term.Debug)
+// 		}
+
+// 	} else {
+// 		term.Write("Activation Fail ", term.Debug)
+// 		term.Write(err, term.Debug)
+// 		return false
+
+// 	}
+// 	return false
+// }
+
+func (h *AuthHandler) UserActivation(token string) string {
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "activation").GetOne().ByUniqueKey(token).Ok()
 	if err == "" {
 		var uList ActivationEmail
@@ -563,7 +624,7 @@ func (h *AuthHandler) UserActivation(token string) bool {
 
 			if u.Active {
 				term.Write("This User : "+u.EmailAddress+" is already activated!", term.Debug)
-				return true
+				return "alreadyActivated"
 			} else {
 				u.Active = true
 				client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
@@ -571,7 +632,7 @@ func (h *AuthHandler) UserActivation(token string) bool {
 				term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
 				//go notifier.Send("ignore", "User Activation.", "com.duosoftware.auth", "email", "user_activated", inputParams, nil, u.EmailAddress)
 				go notifier.Notify("ignore", "user_activated", u.EmailAddress, inputParams, nil)
-				return true
+				return "true"
 			}
 		} else {
 			term.Write(err, term.Debug)
@@ -581,10 +642,10 @@ func (h *AuthHandler) UserActivation(token string) bool {
 	} else {
 		term.Write("Activation Fail ", term.Debug)
 		term.Write(err, term.Debug)
-		return false
+		return "false"
 
 	}
-	return false
+	return "false"
 }
 
 // Login helps to authedicate the users
@@ -605,6 +666,11 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 					if uList.Active {
 						return uList, ""
 					} else {
+						bytess, _ := client.Go("ignore", "com.duosoftware.tenant", "deniedUserTemp").GetOne().ByUniqueKey(uList.UserID).Ok()
+						if len(bytess) > 10 {
+							return user, "Sorry, your access has been denied."
+						}
+
 						return user, "Email Address is not verified."
 						//return user, "Email Address is not varified."
 					}

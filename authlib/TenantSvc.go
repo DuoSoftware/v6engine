@@ -288,10 +288,10 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 	//user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	//if error == "" {
 
-	if T.Context.Request().Header.Get("Securitytoken") == "" {
-		term.Write("Error : No SecurityToken found in Header", term.Error)
-		return false
-	}
+	// if T.Context.Request().Header.Get("Securitytoken") == "" {
+	// 	term.Write("Error : No SecurityToken found in Header", term.Error)
+	// 	return false
+	// }
 
 	tmp := tempRequestGenerator{}
 
@@ -299,13 +299,22 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 	th := TenantHandler{}
 	term.Write(o, term.Debug)
 	term.Write(o["process"], term.Debug)
+
+	inputParams := make(map[string]string)
+
 	switch o["process"] {
 	case "tenant_invitation":
 		auth := AuthHandler{}
 		a, err := auth.GetUser(o["email"])
 		if err == "" {
-			if th.IncreaseTenantCountInRatingEngine(o["domain"], T.Context.Request().Header.Get("Securitytoken")) {
+			if th.IncreaseTenantCountInRatingEngine(o["domain"], "ignore") {
+				//if th.IncreaseTenantCountInRatingEngine(o["domain"], T.Context.Request().Header.Get("Securitytoken")) {
 				th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
+				inputParams["@@CNAME@@"] = a.Name
+				inputParams["@@DOMAIN@@"] = o["domain"]
+				inputParams["@@TENANTID@@"] = o["TenantID"]
+				go notifier.Notify("ignore", "tenant_accepted_success", email, inputParams, nil)
+				go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
 				return true
 			} else {
 				return false
@@ -322,6 +331,11 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 			if th.IncreaseTenantCountInRatingEngine(o["domain"], T.Context.Request().Header.Get("Securitytoken")) {
 				th.AddUsersToTenant(o["TenantID"], o["tname"], a.UserID, o["level"])
 				th.RemovePendingRequest(o["TenantID"], a.EmailAddress)
+				inputParams["@@CNAME@@"] = a.Name
+				inputParams["@@DOMAIN@@"] = o["domain"]
+				inputParams["@@TENANTID@@"] = o["TenantID"]
+				go notifier.Notify("ignore", "tenant_accepted_success", email, inputParams, nil)
+				go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
 				return true
 			} else {
 				return false
