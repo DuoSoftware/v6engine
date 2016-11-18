@@ -194,7 +194,7 @@ func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Reques
 	//versionDaata := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.4-a\",\"Change Log\":\"Fixed certain alter table issues.\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "ObjectStore"
-	versionData["API Version"] = "6.1.02"
+	versionData["API Version"] = "6.1.03"
 
 	changeLogs := make(map[string]interface{})
 
@@ -204,6 +204,10 @@ func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Reques
 
 	changeLogs["6.1.02"] = [...]string{
 		"Added redis key update clear call",
+	}
+
+	changeLogs["6.1.03"] = [...]string{
+		"Added MySQL JSON store.",
 	}
 
 	versionData["Change Logs"] = changeLogs

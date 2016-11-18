@@ -283,7 +283,18 @@ func (repository MssqlRepository) sqlToGolang(input interface{}) (output interfa
 
 		switch dataType {
 		case "string":
-			output = strings.TrimSpace(input.(string))
+
+			if strings.Contains(input.(string), ":\"") {
+				var test interface{}
+				errA := json.Unmarshal([]byte(input.(string)), &test)
+				if errA != nil {
+					output = strings.TrimSpace(input.(string))
+				} else {
+					output = test
+				}
+			} else {
+				output = strings.TrimSpace(input.(string))
+			}
 			break
 		case "[]byte":
 			b, ok := input.([]byte)
@@ -355,8 +366,7 @@ func (repository MssqlRepository) executeMssqlQuery(request *messaging.ObjectReq
 	} else {
 		isError = false
 		//Process A : Get Count of DB
-		var returnMap map[string]interface{}
-		returnMap = make(map[string]interface{})
+		returnMap := make([]map[string]interface{}, 0)
 
 		rows, err := session.Query(request.Body.Query.Parameters)
 
@@ -399,7 +409,7 @@ func (repository MssqlRepository) executeMssqlQuery(request *messaging.ObjectReq
 
 				}
 
-				returnMap[strconv.Itoa(index)] = tempMap
+				returnMap = append(returnMap, tempMap)
 				index++
 			}
 
