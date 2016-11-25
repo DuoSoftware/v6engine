@@ -1851,7 +1851,8 @@ func (repository CloudSqlRepository) GolangToSql(value interface{}) string {
 	switch value.(type) {
 	case string:
 		if repository.CheckIfDateTime(value.(string)) {
-			strValue = "DATETIME"
+			//strValue = "DATETIME"
+			strValue = "TEXT"
 		} else {
 			strValue = "TEXT"
 		}

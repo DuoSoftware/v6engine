@@ -29,6 +29,7 @@ func (m *GetModifier) ByQuerying(query string) *GetModifier {
 	m.Request.Body = messaging.RequestBody{}
 	m.Request.Body.Query = messaging.Query{}
 	m.Request.Body.Query.Parameters = query
+	m.Request.Body.Query.Type = "Query"
 	return m
 }
 
