@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
+	"strings"
 )
 
 type HTTPService struct {
@@ -102,13 +103,11 @@ func startKeyFlusher(request *messaging.ObjectRequest) {
 }
 
 func viewLogHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	msg := ""
-	if isLoggable {
-		isLoggable = false
-		msg = "Disabled Terminal Prompt Logging!"
-	} else {
+	msg := term.ToggleConfig()
+	if strings.Contains(msg, "Enabled") {
 		isLoggable = true
-		msg = "Enabled Terminal Prompt Logging!"
+	} else {
+		isLoggable = false
 	}
 	fmt.Fprintf(w, msg)
 }
@@ -186,54 +185,6 @@ func cacheHandler(params martini.Params, w http.ResponseWriter, r *http.Request)
 		message = "REDIS not configured in this server. Available In-Memory Data structures cleared!"
 	}
 	fmt.Fprintf(w, message)
-}
-
-func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
-	cpuCount := strconv.Itoa(runtime.NumCPU())
-	//versionDaata := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.4-a\",\"Change Log\":\"Fixed certain alter table issues.\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
-	versionData := make(map[string]interface{})
-	versionData["API Name"] = "ObjectStore"
-	versionData["API Version"] = "6.1.04"
-
-	changeLogs := make(map[string]interface{})
-
-	changeLogs["6.1.01"] = [...]string{
-		"Added timezone compatibility",
-	}
-
-	changeLogs["6.1.02"] = [...]string{
-		"Added redis key update clear call",
-	}
-
-	changeLogs["6.1.03"] = [...]string{
-		"Added MySQL JSON store.",
-	}
-
-	changeLogs["6.1.04"] = [...]string{
-		"Removed TimeZone compatability temporarily.",
-	}
-
-	versionData["Change Logs"] = changeLogs
-
-	gitMap := make(map[string]string)
-	gitMap["Type"] = "git"
-	gitMap["URL"] = "https://github.com/DuoSoftware/v6engine/"
-	versionData["Repository"] = gitMap
-
-	statMap := make(map[string]string)
-	statMap["CPU"] = cpuUsage + " (percentage)"
-	statMap["CPU Cores"] = cpuCount
-	versionData["System Usage"] = statMap
-
-	authorMap := make(map[string]string)
-	authorMap["Name"] = "Duo Software Pvt Ltd"
-	authorMap["URL"] = "http://www.duosoftware.com/"
-	versionData["Project Author"] = authorMap
-
-	byteArray, _ := json.Marshal(versionData)
-
-	fmt.Fprintf(w, string(byteArray))
 }
 
 // func Crossdomain(params martini.Params, w http.ResponseWriter, r *http.Request) {
@@ -603,4 +554,58 @@ func CheckRedisAvailability(request *messaging.ObjectRequest) (status bool) {
 		status = false
 	}
 	return
+}
+
+//------------------ Version Management -----------------------
+
+func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
+	cpuCount := strconv.Itoa(runtime.NumCPU())
+	//versionDaata := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.4-a\",\"Change Log\":\"Fixed certain alter table issues.\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
+	versionData := make(map[string]interface{})
+	versionData["API Name"] = "ObjectStore"
+	versionData["API Version"] = "6.1.05"
+
+	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.01"] = [...]string{
+		"Added timezone compatibility",
+	}
+
+	changeLogs["6.1.02"] = [...]string{
+		"Added redis key update clear call",
+	}
+
+	changeLogs["6.1.03"] = [...]string{
+		"Added MySQL JSON store.",
+	}
+
+	changeLogs["6.1.04"] = [...]string{
+		"Removed TimeZone compatability temporarily.",
+	}
+
+	changeLogs["6.1.05"] = [...]string{
+		"Added Toggle Logs and Removed Log header requirement.",
+	}
+
+	versionData["Change Logs"] = changeLogs
+
+	gitMap := make(map[string]string)
+	gitMap["Type"] = "git"
+	gitMap["URL"] = "https://github.com/DuoSoftware/v6engine/"
+	versionData["Repository"] = gitMap
+
+	statMap := make(map[string]string)
+	statMap["CPU"] = cpuUsage + " (percentage)"
+	statMap["CPU Cores"] = cpuCount
+	versionData["System Usage"] = statMap
+
+	authorMap := make(map[string]string)
+	authorMap["Name"] = "Duo Software Pvt Ltd"
+	authorMap["URL"] = "http://www.duosoftware.com/"
+	versionData["Project Author"] = authorMap
+
+	byteArray, _ := json.Marshal(versionData)
+
+	fmt.Fprintf(w, string(byteArray))
 }
