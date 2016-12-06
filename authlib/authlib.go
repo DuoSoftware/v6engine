@@ -59,6 +59,11 @@ type Auth struct {
 	changePassword          gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
 	arbiterAuthorize        gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
 	getUserByUserId         gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
+	toggleLogs              gorest.EndPoint `method:"GET" path:"/ToggleLogs/" output:"string"`
+}
+
+func (A Auth) ToggleLogs() string {
+	return term.ToggleConfig()
 }
 
 //GetClientIP Represent to get ClientIP
@@ -138,68 +143,6 @@ func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
 	} else {
 		return false
 	}
-}
-
-func (A Auth) Verify() (output string) {
-	//output = "{\"name\": \"DuoAuth\",\"version\": \"6.0.24-a\",\"Change Log\":\"Added Check for tenant subscription invitation.\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
-	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
-	cpuCount := strconv.Itoa(runtime.NumCPU())
-
-	versionData := make(map[string]interface{})
-	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.09"
-
-	changeLogs := make(map[string]interface{})
-
-	changeLogs["6.1.09"] = [...]string{
-		"Added new user email templates for events.",
-	}
-
-	changeLogs["6.1.08"] = [...]string{
-		"Added user deny check",
-		"Added User Deactivate if user has no accesible tenants.",
-	}
-
-	changeLogs["6.1.07"] = [...]string{
-		"Added Activation Skip Endpoint for Registration. <InvitedUserRegistration>",
-	}
-
-	changeLogs["6.1.06"] = [...]string{
-		"Commented SecurityToken from AcceptRequest",
-		"Added response codes for ActivateUser method",
-	}
-
-	changeLogs["6.1.05"] = [...]string{
-		"Added New Login password,username message and Activate message",
-		"Added GetTenantAdmin method for auth",
-		"Removed rating engine check for tenant add.",
-	}
-
-	changeLogs["6.1.04"] = [...]string{
-		"Added Activate User Email Check..",
-		"Added Reset Password Check by checking user activated or not",
-	}
-
-	versionData["Change Logs"] = changeLogs
-
-	gitMap := make(map[string]string)
-	gitMap["Type"] = "git"
-	gitMap["URL"] = "https://github.com/DuoSoftware/v6engine/"
-	versionData["Repository"] = gitMap
-
-	statMap := make(map[string]string)
-	statMap["CPU"] = cpuUsage + " (percentage)"
-	statMap["CPU Cores"] = cpuCount
-	versionData["System Usage"] = statMap
-
-	authorMap := make(map[string]string)
-	authorMap["Name"] = "Duo Software Pvt Ltd"
-	authorMap["URL"] = "http://www.duosoftware.com/"
-	versionData["Project Author"] = authorMap
-
-	byteArray, _ := json.Marshal(versionData)
-	output = string(byteArray)
-	return
 }
 
 func (A Auth) ArbiterAuthorize(object map[string]string) {
@@ -907,4 +850,72 @@ func (A Auth) CheckPassword(password string) bool {
 		return false
 	}
 
+}
+
+//------------------------ Version Management --------------------------------
+
+func (A Auth) Verify() (output string) {
+	//output = "{\"name\": \"DuoAuth\",\"version\": \"6.0.24-a\",\"Change Log\":\"Added Check for tenant subscription invitation.\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
+	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
+	cpuCount := strconv.Itoa(runtime.NumCPU())
+
+	versionData := make(map[string]interface{})
+	versionData["API Name"] = "Duo Auth"
+	versionData["API Version"] = "6.1.10"
+
+	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.10"] = [...]string{
+		"Added Toggle Logs and disabled CMD logs at startup. User /ToggleLogs to cycle through different logs.",
+	}
+
+	changeLogs["6.1.09"] = [...]string{
+		"Added new user email templates for events.",
+	}
+
+	changeLogs["6.1.08"] = [...]string{
+		"Added user deny check",
+		"Added User Deactivate if user has no accesible tenants.",
+	}
+
+	changeLogs["6.1.07"] = [...]string{
+		"Added Activation Skip Endpoint for Registration. <InvitedUserRegistration>",
+	}
+
+	changeLogs["6.1.06"] = [...]string{
+		"Commented SecurityToken from AcceptRequest",
+		"Added response codes for ActivateUser method",
+	}
+
+	changeLogs["6.1.05"] = [...]string{
+		"Added New Login password,username message and Activate message",
+		"Added GetTenantAdmin method for auth",
+		"Removed rating engine check for tenant add.",
+	}
+
+	changeLogs["6.1.04"] = [...]string{
+		"Added Activate User Email Check..",
+		"Added Reset Password Check by checking user activated or not",
+	}
+
+	versionData["Change Logs"] = changeLogs
+
+	gitMap := make(map[string]string)
+	gitMap["Type"] = "git"
+	gitMap["URL"] = "https://github.com/DuoSoftware/v6engine/"
+	versionData["Repository"] = gitMap
+
+	statMap := make(map[string]string)
+	statMap["CPU"] = cpuUsage + " (percentage)"
+	statMap["CPU Cores"] = cpuCount
+	versionData["System Usage"] = statMap
+
+	authorMap := make(map[string]string)
+	authorMap["Name"] = "Duo Software Pvt Ltd"
+	authorMap["URL"] = "http://www.duosoftware.com/"
+	versionData["Project Author"] = authorMap
+
+	byteArray, _ := json.Marshal(versionData)
+	output = string(byteArray)
+	return
 }

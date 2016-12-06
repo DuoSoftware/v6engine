@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"duov6.com/duonotifier/messaging"
 	"duov6.com/objectstore/client"
+	"duov6.com/term"
 	"encoding/json"
-	"fmt"
+	//"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -190,7 +191,7 @@ func GetEmailSubject(EmailTemplateId, tenant string) (subject string) {
 		data := make(map[string]interface{})
 		err := json.Unmarshal(bytes, &data)
 		if err != nil {
-			fmt.Println("Get Email Subject Error : " + err.Error())
+			term.Write("Get Email Subject Error : "+err.Error(), term.Error)
 			subject = "NIL"
 		} else {
 			subject = data["Title"].(string)
@@ -203,14 +204,14 @@ func GetEmailSubject(EmailTemplateId, tenant string) (subject string) {
 func GetPhoneNumber(recieverEmail, tenant string) (phone string) {
 	bytes, _ := client.Go("securityToken", tenant, "profile").GetOne().BySearching("Email:" + recieverEmail).Ok()
 	if bytes == nil || len(bytes) <= 4 {
-		fmt.Println("No Phone Number Found!")
+		term.Write("No Phone Number Found. SMS not sent!", term.Information)
 		phone = ""
 	} else {
-		fmt.Println("Record Found in Profile....")
+		term.Write("Record Found in Profile....", term.Debug)
 		var data []map[string]interface{}
 		err := json.Unmarshal(bytes, &data)
 		if err != nil {
-			fmt.Println("Get Phone Number Error : " + err.Error())
+			term.Write("Get Phone Number Error : "+err.Error(), term.Error)
 			phone = ""
 		} else {
 			phone = data[0]["PhoneNumber"].(string)

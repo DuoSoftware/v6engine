@@ -6,11 +6,11 @@ import (
 	"duov6.com/updater"
 	"encoding/json"
 	"fmt"
+	"github.com/fatih/color"
 	"os"
 	"os/exec"
 	"reflect"
-	//"time"
-	"github.com/fatih/color"
+	"time"
 )
 
 const (
@@ -51,7 +51,10 @@ var Config TerminalConfig
 var currentPlugin TermPlugin
 
 func GetConfig() TerminalConfig {
-	b, err := config.Get("Terminal")
+	//Disabling Existing code to make Loggin disabled at start.
+	//Toggle Display to Change this behaviour can be found in AuthLib.
+
+	/*b, err := config.Get("Terminal")
 	if err == nil {
 		json.Unmarshal(b, &Config)
 	} else {
@@ -61,8 +64,27 @@ func GetConfig() TerminalConfig {
 		Config.InformationLine = true
 
 		config.Add(Config, "Terminal")
-	}
+	}*/
+
+	Config.DebugLine = false
+	Config.ErrorLine = true
+	Config.InformationLine = false
 	return Config
+}
+
+func ToggleConfig() (status string) {
+	if !Config.DebugLine && !Config.InformationLine {
+		Config.InformationLine = true
+		status = "Enabled Information Logs."
+	} else if !Config.DebugLine && Config.InformationLine {
+		Config.DebugLine = true
+		status = "Enabled Information and Debug Logs."
+	} else if Config.DebugLine && Config.InformationLine {
+		Config.InformationLine = false
+		Config.DebugLine = false
+		status = "Disabled All Logs other than Error Logs."
+	}
+	return
 }
 
 func SetConfig(c TerminalConfig) {
@@ -124,29 +146,26 @@ func Write(data interface{}, mType int) {
 
 	switch mType {
 	case Error:
-		// if Config.ErrorLine {
-		// 	fmt.Println(time.Now().Format("2006-01-02 15:04:05") + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
-		// }
-		color.Red(Lable)
+		if Config.ErrorLine {
+			// 	fmt.Println(time.Now().Format("2006-01-02 15:04:05") + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
+			color.Red(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+		}
 	case Information:
-		// if Config.InformationLine {
-		// 	fmt.Println(FgGreen + time.Now().Format("2006-01-02 15:04:05") + " Information! " + Lable + Reset)
-		// }
-		color.Yellow(Lable)
+		if Config.InformationLine {
+			// 	fmt.Println(FgGreen + time.Now().Format("2006-01-02 15:04:05") + " Information! " + Lable + Reset)
+			color.Yellow(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+		}
 	case Debug:
-		// if Config.DebugLine {
-		// 	fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Debug! " + Lable + Reset)
-		// }
-		//fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Debug!")
-		color.Green(Lable)
+		if Config.DebugLine {
+			// 	fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Debug! " + Lable + Reset)
+			color.Green(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+		}
 	case Splash:
-		//fmt.Println(FgBlack + BgWhite + Lable + Reset)
+		fmt.Println(FgBlack + BgWhite + Lable + Reset)
 	case Blank:
-		//fmt.Println(Lable)
 		fmt.Println(Lable)
 	default:
-		//fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
-		fmt.Println(Lable)
+		fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
 	}
 
 	if currentPlugin != nil {
