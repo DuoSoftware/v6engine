@@ -647,7 +647,7 @@ func (repository CloudSqlRepository) DeleteMultiple(request *messaging.ObjectReq
 				isError = true
 			} else {
 				if message == "No Rows Changed" {
-					request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
+					request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
 				}
 			}
 		}
@@ -680,7 +680,7 @@ func (repository CloudSqlRepository) DeleteSingle(request *messaging.ObjectReque
 			response.IsSuccess = true
 			response.Message = "Successfully Deleted from CloudSQL repository!"
 			if message == "No Rows Changed" {
-				request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + request.Body.Object[request.Body.Parameters.KeyProperty].(string))
+				request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + request.Body.Object[request.Body.Parameters.KeyProperty].(string))
 			}
 		}
 	} else {
@@ -1162,7 +1162,7 @@ func (repository CloudSqlRepository) ClearCache(request *messaging.ObjectRequest
 func (repository CloudSqlRepository) queryCommon(query string, request *messaging.ObjectRequest, isOne bool) RepositoryResponse {
 	response := RepositoryResponse{}
 
-	request.Log("Info Query : " + query)
+	request.Log("Info : " + query)
 
 	conn, err := repository.GetConnection(request)
 	if err == nil {
@@ -1249,7 +1249,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 					request.Log("Error : " + err.Error())
 				} else {
 					if message == "No Rows Changed" {
-						request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
+						request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
 					}
 					isOkay = true
 				}
@@ -1286,7 +1286,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 										isOkay = false
 									} else {
 										if message == "No Rows Changed" {
-											request.Log("Information : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + singleQueryObject[request.Body.Parameters.KeyProperty].(string))
+											request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + singleQueryObject[request.Body.Parameters.KeyProperty].(string))
 										}
 									}
 								}

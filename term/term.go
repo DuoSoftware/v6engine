@@ -163,7 +163,9 @@ func Write(data interface{}, mType int) {
 	case Splash:
 		fmt.Println(FgBlack + BgWhite + Lable + Reset)
 	case Blank:
-		fmt.Println(Lable)
+		if Config.InformationLine {
+			fmt.Println(Lable)
+		}
 	default:
 		fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
 	}

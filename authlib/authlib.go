@@ -30,19 +30,17 @@ type AuthorizeAppData struct {
 
 type Auth struct {
 	gorest.RestService
-	verify           gorest.EndPoint `method:"GET" path:"/" output:"string"`
-	login            gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
-	noPasswordLogin  gorest.EndPoint `method:"GET" path:"/NoPasswordLogin/{OTP:string}" output:"AuthCertificate"`
-	loginOTP         gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}" output:"string"`
-	loginOTPNoPass   gorest.EndPoint `method:"GET" path:"/LoginOTPNoPass/{username:string}/{domain:string}" output:"string"`
-	getLoginSessions gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
-	authorize        gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
-	getSession       gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
-	getSessionStatic gorest.EndPoint `method:"GET" path:"/GetSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
-	getSecret        gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
-	getAuthCode      gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
-	//Lasith's method - Don't Delete
-	//autherizeApp       gorest.EndPoint `method:"GET" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" output:"bool"`
+	verify                  gorest.EndPoint `method:"GET" path:"/" output:"string"`
+	login                   gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
+	noPasswordLogin         gorest.EndPoint `method:"GET" path:"/NoPasswordLogin/{OTP:string}" output:"AuthCertificate"`
+	loginOTP                gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}" output:"string"`
+	loginOTPNoPass          gorest.EndPoint `method:"GET" path:"/LoginOTPNoPass/{username:string}/{domain:string}" output:"string"`
+	getLoginSessions        gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
+	authorize               gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
+	getSession              gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
+	getSessionStatic        gorest.EndPoint `method:"GET" path:"/GetSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
+	getSecret               gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
+	getAuthCode             gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
 	autherizeApp            gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
 	updateScope             gorest.EndPoint `method:"POST" path:"/UpdateScope/{SecurityToken:string}/{UserID:string}/{ApplicationID:string}" postdata:"AuthorizeAppData"`
 	addUser                 gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
@@ -77,8 +75,9 @@ func GetDataCaps(Domain, UserID string) string {
 	return "#" + Domain + "#" + UserID + "#1#2#4"
 }
 
-//UserActivation Represent activation of the user account
 func (A Auth) UserActivation(token string) bool {
+	//UserActivation Represent activation of the user account
+	term.Write("Executing Method : User Activation", term.Blank)
 	h := newAuthHandler()
 	status := h.UserActivation(token)
 	if status == "alreadyActivated" {
@@ -95,14 +94,14 @@ func (A Auth) UserActivation(token string) bool {
 }
 
 func (A Auth) GetLoginSessions(UserID string) []session.AuthCertificate {
+	//Get Already Logged In Sessions
+	term.Write("Executing Method : Get Login Sessions", term.Blank)
 	return session.GetRunningSession(UserID)
 }
 
-/*func (A Auth) ForceLogout(UserID string) {
-
-}*/
-
 func (A Auth) GetUserByUserId(object []string) {
+	//Get User Information by passing UserID
+	term.Write("Executing Method : Get User By UserID", term.Blank)
 	h := AuthHandler{}
 	userDetails := h.GetMultipleUserDetails(object)
 	objectByteArray, _ := json.Marshal(userDetails)
@@ -111,6 +110,8 @@ func (A Auth) GetUserByUserId(object []string) {
 }
 
 func (A Auth) LogOut(SecurityToken string) bool {
+	//LogOut Session by SecurityToken
+	term.Write("Executing Method : Log Out", term.Blank)
 	h := newAuthHandler()
 
 	c, err := h.GetSession(SecurityToken, "Nil")
@@ -118,19 +119,20 @@ func (A Auth) LogOut(SecurityToken string) bool {
 		go h.LogOut(c)
 		return true
 	}
-
 	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Session or Application not exist.")))
-
 	return false
 }
 
 func (A Auth) ForgotPassword(EmailAddress, RequestCode string) bool {
+	//Rest Password. Sends an Email with New password
+	term.Write("Executing Method : Forgot Password / Reset Password", term.Blank)
 	h := newAuthHandler()
 	return h.ForgetPassword(EmailAddress)
-
 }
 
 func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
+	//Change Password when you already know Old Password
+	term.Write("Executing Method : Change Password", term.Blank)
 	h := newAuthHandler()
 	user, error := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
@@ -146,10 +148,14 @@ func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
 }
 
 func (A Auth) ArbiterAuthorize(object map[string]string) {
+	//Sign up Users from OAuth tokens and Social Media Authrization
+	term.Write("Executing Method : Arbiter Authorize (Social Media and OAuth Sign up) ", term.Blank)
 	var outCrt AuthCertificate
 	issue := object["authority"]
 	th := TenantHandler{}
 	//th.Autherized(domain, user)
+
+	term.Write("Executing Method : SignUp by "+issue+" Token", term.Blank)
 
 	switch issue {
 	case "auth0":
@@ -196,17 +202,20 @@ func (A Auth) ArbiterAuthorize(object map[string]string) {
 		return
 		break
 	}
+
 	x, _ := th.AutherizedUser(outCrt.Domain, outCrt.UserID)
+
 	if !x {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(outCrt.Domain + " Is not autherized for signin.")))
-		//A.Context.Request().
 		return
 	}
+
 	if A.Context.Request().Header.Get("PHP") != "101" {
 		outCrt.ClientIP = A.Context.Request().RemoteAddr
 	} else {
 		outCrt.ClientIP = A.Context.Request().Header.Get("IP")
 	}
+
 	h := AuthHandler{}
 	outCrt.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
 	bytes, _ := client.Go("ignore", outCrt.Domain, "scope").GetOne().ByUniqueKey(outCrt.Domain).Ok() // fetech user autherized
@@ -230,9 +239,7 @@ func (A Auth) ArbiterAuthorize(object map[string]string) {
 	inputParams["@@ClientIP@@"] = outCrt.ClientIP
 	inputParams["@@Domain@@"] = outCrt.Domain
 	inputParams["@@SecurityToken@@"] = outCrt.SecurityToken
-	//Change activation status to true and save
-	//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-	//go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, outCrt.Email)
+
 	go notifier.Notify("ignore", "user_login", outCrt.Email, inputParams, nil)
 	f, _ := json.Marshal(outCrt)
 	A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(f)
@@ -241,32 +248,32 @@ func (A Auth) ArbiterAuthorize(object map[string]string) {
 }
 
 func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) {
+	//Login User
+	term.Write("Executing Method : Login", term.Blank)
 	h := newAuthHandler()
 	c, msg := h.CanLogin(username, domain)
+
 	if !c {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(msg)))
-		//A.Context.Request().
 		return
 	}
 	u, err := h.Login(username, password)
 
-	//if()
 	if err == "" {
-		//fmt.Println("login succeful")
-		//securityToken := common.GetGUID()
 		th := TenantHandler{}
-		//th.Autherized(domain, user)
 		x, _ := th.AutherizedUser(domain, u.UserID)
+
 		if !x {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(domain + " Is not autherized for signin.")))
-			//A.Context.Request().
 			return
 		}
+
 		if A.Context.Request().Header.Get("PHP") != "101" {
 			outCrt.ClientIP = A.Context.Request().RemoteAddr
 		} else {
 			outCrt.ClientIP = A.Context.Request().Header.Get("IP")
 		}
+
 		outCrt.DataCaps = GetDataCaps(domain, u.UserID)
 		outCrt.Email = u.EmailAddress
 		outCrt.UserID = u.UserID
@@ -288,9 +295,11 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		b, _ := json.Marshal(tlist)
 		outCrt.Otherdata["TenentsAccessible"] = strings.Replace(string(b[:]), "\"", "`", -1)
 		//outCrt = AuthCertificate{u.UserID, u.EmailAddress, u.Name, u.EmailAddress, securityToken, "http://192.168.0.58:9000/instaltionpath", "#0so0936#sdasd", "IPhere"}
+
 		if Config.NumberOFUserLogins != 0 {
 			h.LogLoginSessions(username, domain, 1)
 		}
+
 		h.AddSession(outCrt)
 		var inputParams map[string]string
 		inputParams = make(map[string]string)
@@ -300,20 +309,20 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		inputParams["@@ClientIP@@"] = outCrt.ClientIP
 		inputParams["@@Domain@@"] = domain
 		inputParams["@@SecurityToken@@"] = outCrt.SecurityToken
-		//Change activation status to true and save
-		//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-		//go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, u.EmailAddress)
+
 		go notifier.Notify("ignore", "user_login", u.EmailAddress, inputParams, nil)
 		return
 	}
+
 	h.LogFailedAttemts(username, domain, "")
 	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
-	//A.Context.Request().
 	return
 }
 
-// NoPasswordLogin Represent nopassword
 func (A Auth) NoPasswordLogin(OTP string) (outCrt AuthCertificate) {
+	//Login without password. By using one time token.
+	term.Write("Executing Method : No Password Login (Login Using OTP token) ", term.Blank)
+
 	h := newAuthHandler()
 	r := requestHandler{}
 	o, err := r.GetRequestCode(OTP)
@@ -345,9 +354,7 @@ func (A Auth) NoPasswordLogin(OTP string) (outCrt AuthCertificate) {
 			data[key] = value
 		}
 		r.Remove(data)
-		//Change activation status to true and save
-		//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-		//go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "user_login", inputParams, nil, o["Email"])
+
 		go notifier.Notify("ignore", "user_login", o["Email"], inputParams, nil)
 		return
 	} else {
@@ -357,26 +364,24 @@ func (A Auth) NoPasswordLogin(OTP string) (outCrt AuthCertificate) {
 }
 
 func (A Auth) LoginOTP(username, password, domain string) string {
+	//Get One Time Login token
+	term.Write("Executing Method : LoginOTP (Get One Time Login Token) ", term.Blank)
+
 	h := newAuthHandler()
 	c, msg := h.CanLogin(username, domain)
 	if !c {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(msg)))
-		//A.Context.Request().
 		return common.ErrorJson(msg)
 	}
 	u, err := h.Login(username, password)
 
-	//if()
 	if err == "" {
-		//fmt.Println("login succeful")
-		//securityToken := common.GetGUID()
 		r := requestHandler{}
 		th := TenantHandler{}
-		//th.Autherized(domain, user)
+
 		x, _ := th.AutherizedUser(domain, u.UserID)
 		if !x {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(domain + " Is not autherized for signin.")))
-			//A.Context.Request().
 			return common.ErrorJson(domain + " Is not autherized for signin.")
 		}
 		o := make(map[string]string)
@@ -386,6 +391,7 @@ func (A Auth) LoginOTP(username, password, domain string) string {
 		} else {
 			o["ClientIP"] = A.Context.Request().Header.Get("IP")
 		}
+
 		o["DataCaps"] = GetDataCaps(domain, u.UserID)
 		o["Email"] = u.EmailAddress
 		o["UserID"] = u.UserID
@@ -422,41 +428,36 @@ func (A Auth) LoginOTP(username, password, domain string) string {
 		inputParams["@@Domain@@"] = domain
 		//inputParams["@@SecurityToken@@"] = o["UserAgent"]
 		inputParams["@@Code@@"] = code
-		//Change activation status to true and save
-		//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-		//go notifier.Send("ignore", "One time password for user login.", "com.duosoftware.auth", "email", "user_otp", inputParams, nil, u.EmailAddress)
+
 		go notifier.Notify("ignore", "user_otp", u.EmailAddress, inputParams, nil)
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.MsgJson("One time password sent.")))
 		return common.MsgJson("One time password sent.")
 	} else {
 		h.LogFailedAttemts(username, domain, "")
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Invalid user name password.")))
-		//A.Context.Request().
 		return common.ErrorJson("Invalid user name password.")
 	}
 }
 
 func (A Auth) LoginOTPNoPass(username, domain string) string {
+	//Get One Time Login Token
+	term.Write("Executing Method : Login OTP No Pass (Get one time login token) ", term.Blank)
+
 	h := newAuthHandler()
 	c, msg := h.CanLogin(username, domain)
 	if !c {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(msg)))
-		//A.Context.Request().
 		return common.ErrorJson(msg)
 	}
 	u, err := h.GetUser(username)
-	//h.GetUser
-	//if()
+
 	if err == "" {
-		//fmt.Println("login succeful")
-		//securityToken := common.GetGUID()
 		r := requestHandler{}
 		th := TenantHandler{}
 		//th.Autherized(domain, user)
 		x, _ := th.AutherizedUser(domain, u.UserID)
 		if !x {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(domain + " Is not autherized for signin.")))
-			//A.Context.Request().
 			return common.ErrorJson(domain + " Is not autherized for signin.")
 		}
 		o := make(map[string]string)
@@ -466,6 +467,7 @@ func (A Auth) LoginOTPNoPass(username, domain string) string {
 		} else {
 			o["ClientIP"] = A.Context.Request().Header.Get("IP")
 		}
+
 		o["DataCaps"] = GetDataCaps(domain, u.UserID)
 		o["Email"] = u.EmailAddress
 		o["UserID"] = u.UserID
@@ -502,21 +504,21 @@ func (A Auth) LoginOTPNoPass(username, domain string) string {
 		inputParams["@@Domain@@"] = domain
 		//inputParams["@@SecurityToken@@"] = o["UserAgent"]
 		inputParams["@@Code@@"] = code
-		//Change activation status to true and save
-		//term.Write("Activate User  "+u.Name+" Update User "+u.UserID, term.Debug)
-		//go notifier.Send("ignore", "One time password for user login.", "com.duosoftware.auth", "email", "user_otp", inputParams, nil, u.EmailAddress)
+
 		go notifier.Notify("ignore", "user_otp", u.EmailAddress, inputParams, nil)
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.MsgJson("One time password sent.")))
 		return common.MsgJson("One time password sent.")
 	} else {
 		h.LogFailedAttemts(username, domain, "")
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Invalid user name password.")))
-		//A.Context.Request().
 		return common.ErrorJson("Invalid user name password.")
 	}
 }
 
 func (A Auth) BlockUser(email string) bool {
+	//Block User
+	term.Write("Executing Method : Block User", term.Blank)
+
 	_, error := session.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		h := newAuthHandler()
@@ -529,6 +531,9 @@ func (A Auth) BlockUser(email string) bool {
 }
 
 func (A Auth) ReleaseUser(email, b4 string) bool {
+	//Unblock User
+	term.Write("Executing Method : Release User", term.Blank)
+
 	_, error := session.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		h := newAuthHandler()
@@ -537,7 +542,6 @@ func (A Auth) ReleaseUser(email, b4 string) bool {
 			return true
 		}
 		if b4 == "block" {
-			//h.LogFailedAttemts(email, "domain", "release")
 			h.Release(email)
 			return true
 		}
@@ -549,6 +553,9 @@ func (A Auth) ReleaseUser(email, b4 string) bool {
 }
 
 func (A Auth) GetUser(Email string) (outCrt User) {
+	//Get User by Email Address
+	term.Write("Executing Method : Get User (Get User Details by Email Address)", term.Blank)
+
 	h := newAuthHandler()
 	outCrt, err := h.GetUser(Email)
 	if err == "" {
@@ -562,11 +569,17 @@ func (A Auth) GetUser(Email string) (outCrt User) {
 }
 
 func (A Auth) GetSecret(Key string) string {
+	//Get App Secret
+	term.Write("Executing Method : Get Secret (App Secret) ", term.Blank)
+
 	h := newAuthHandler()
 	return h.GetSecretKey(Key)
 }
 
 func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
+	//Get Already Logged In Session by SecurityToken
+	term.Write("Executing Method : Get Session", term.Blank)
+
 	h := newAuthHandler()
 	/*
 		t := new(TenantHandler)
@@ -581,7 +594,7 @@ func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 			}
 		}*/
 	c, err := h.GetSession(SecurityToken, Domain)
-	//fmt.Println(c)
+
 	if err == "" {
 		a = c
 		return a
@@ -593,6 +606,9 @@ func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 }
 
 func (A Auth) GetSessionStatic(SecurityToken string) (a AuthCertificate) {
+	//Get One Time Session if not make existing session a one time session and save and return.
+	term.Write("Executing Method : Get Session Static (Get One Time Session by SecurityToken)", term.Blank)
+
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
 	scope := A.Context.Request().Header.Get("scope")
@@ -625,12 +641,10 @@ func (A Auth) GetSessionStatic(SecurityToken string) (a AuthCertificate) {
 
 }
 
-/*
-func (A Auth) GetSessionTemporary(SecurityToken string, NumberOftries int) (a AuthCertificate) {
-
-}*/
-
 func (A Auth) Authorize(SecurityToken string, ApplicationID string) (a AuthCertificate) {
+	//Authorize an Application by SecurityToken
+	term.Write("Executing Method : Authorize (Authorize an App for a User)", term.Blank)
+
 	h := newAuthHandler()
 	//var a AuthCertificate
 	c, err := h.GetSession(SecurityToken, "Nil")
@@ -639,14 +653,10 @@ func (A Auth) Authorize(SecurityToken string, ApplicationID string) (a AuthCerti
 			return c
 		}
 		if h.AppAutherize(ApplicationID, c.UserID, c.Domain) == true {
-			//var appH applib.Apphanler
-			//application, err := appH.Get(ApplicationID, SecurityToken)
-			//if err != "" {
 			a = c
 			a.ClientIP = A.Context.Request().RemoteAddr
 
 			a.SecurityToken = common.GetGUID()
-			//data := make(map[string]interface{})
 			id := common.GetHash(ApplicationID + c.UserID)
 			bytes, _ := client.Go("ignore", a.Domain, "scope").GetOne().ByUniqueKey(id).Ok() // fetech user autherized
 			//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
@@ -658,11 +668,6 @@ func (A Auth) Authorize(SecurityToken string, ApplicationID string) (a AuthCerti
 			a.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(ApplicationID), payload)
 			h.AddSession(a)
 			return a
-			//} else {
-			//return
-			//A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application ID " + ApplicationID + " not Atherized"))
-
-			//}
 		} else {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Application ID " + ApplicationID + " not Atherized")))
 			return
@@ -670,11 +675,13 @@ func (A Auth) Authorize(SecurityToken string, ApplicationID string) (a AuthCerti
 
 	}
 	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Session or Application not exist.")))
-
 	return
 }
 
 func (A Auth) GetAuthCode(SecurityToken, ApplicationID, URI string) (authCode string) {
+	//Get Authentication Code for User for Application
+	term.Write("Executing Method : Get Auth Code (Get Auth code for User allow Application)", term.Blank)
+
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
@@ -685,24 +692,10 @@ func (A Auth) GetAuthCode(SecurityToken, ApplicationID, URI string) (authCode st
 	return
 }
 
-// ----  FUNCTION BY LASITHA --- DONT DELETE ------------
-
-// func (A Auth) AutherizeApp(SecurityToken, Code, ApplicationID, AppSecret string) bool {
-// 	h := newAuthHandler()
-// 	c, err := h.GetSession(SecurityToken, "Nil")
-// 	if err == "" {
-// 		out, err := h.AutherizeApp(Code, ApplicationID, AppSecret, c.UserID)
-// 		if err != "" {
-// 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
-
-// 		}
-// 		return out
-// 	}
-// 	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Application Not exist."))
-// 	return false
-// }
-
 func (A Auth) GetScope(SecurityToken, Key, Value string) map[string]interface{} {
+	//Returns session for Security Token
+	term.Write("Executing Method : Get Scope (Returns session struct for securityToken)", term.Blank)
+
 	h := newAuthHandler()
 	_, err := h.GetSession(SecurityToken, "Nil")
 	data := make(map[string]interface{})
@@ -714,7 +707,9 @@ func (A Auth) GetScope(SecurityToken, Key, Value string) map[string]interface{} 
 }
 
 func (A Auth) UpdateScope(object AuthorizeAppData, SecurityToken, UserID, ApplicationID string) {
-	//(, AppSecret string) {
+	//Update session scope
+	term.Write("Executing Method : Update Scope", term.Blank)
+
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
@@ -740,11 +735,12 @@ func (A Auth) UpdateScope(object AuthorizeAppData, SecurityToken, UserID, Applic
 }
 
 func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, ApplicationID, AppSecret string) {
+	//Update Scope And Authorize App
+	term.Write("Executing Method : Authorize App (Update Scope and Authorize App)", term.Blank)
+
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
-		term.Write("AutherizeApp ---------------------------", term.Debug)
-		term.Write(object, term.Debug)
 		//Insert Object To Objectore
 		id := common.GetHash(ApplicationID + c.UserID)
 		data := make(map[string]interface{})
@@ -759,7 +755,7 @@ func (A Auth) AutherizeApp(object AuthorizeAppData, SecurityToken, Code, Applica
 		term.Write(data, term.Debug)
 		client.Go("ignore", c.Domain, "scope").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
 		//insert to Objectstore ends here
-		term.Write("AutherizeApp ---------------------------", term.Debug)
+
 		out, err := h.AutherizeApp(Code, ApplicationID, AppSecret, c.UserID, SecurityToken, c.Domain)
 		if err != "" {
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
@@ -776,6 +772,9 @@ func (A Auth) GetGUID() string {
 }
 
 func (A Auth) AddUser(u User) {
+	//Register a User with Default Active Status FALSE
+	term.Write("Executing Method : Register User (Without initial Tenant) ", term.Blank)
+
 	h := newAuthHandler()
 	u, err := h.SaveUser(u, false, "xxx")
 	if err == "" {
@@ -788,15 +787,13 @@ func (A Auth) AddUser(u User) {
 }
 
 func (A Auth) InvitedUserRegistration(u User) {
+	//Register User with Active Status TRUE, for Invited Registrations and Offline Servers.
+	term.Write("Executing Method : Invited User Registration (Without initial Tenant. No Active required) ", term.Blank)
+
 	h := newAuthHandler()
-	//t := TenantHandler{}
-
 	u, err := h.SaveUser(u, false, "invitedUserRegistration")
-
 	if err == "" {
 		b, _ := json.Marshal(u)
-		//x := t.GetTenant(c.Domain)
-		//t.AddUsersToTenant(x.TenantID, x.Name, u.UserID, "User")
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 	} else {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
@@ -805,12 +802,13 @@ func (A Auth) InvitedUserRegistration(u User) {
 }
 
 func (A Auth) RegisterTenantUser(u User) {
+	//Register User and Tenant
+	term.Write("Executing Method : Register Tenant User (With Initial Tenant) ", term.Blank)
+
 	h := newAuthHandler()
 	c, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
-	//c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
 		t := TenantHandler{}
-		//u.EmailAddress=strings.ToLower(u.EmailAddress
 		password := common.RandText(5)
 		u.Password = password
 		u.ConfirmPassword = password
@@ -826,19 +824,17 @@ func (A Auth) RegisterTenantUser(u User) {
 		}
 	} else {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Security Token Incorrect.")))
-		//return
 	}
 
 }
 
 func (A Auth) CheckPassword(password string) bool {
+	//Check If Can Login
+	term.Write("Executing Method : Check Password (To check if CanLogin)", term.Blank)
+
 	h := newAuthHandler()
 	c, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
-	//c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
-		//t := TenantHandler{}
-		//u.EmailAddress=strings.ToLower(u.EmailAddress
-
 		_, err = h.Login(c.Email, password)
 		if err == "" {
 			return true
