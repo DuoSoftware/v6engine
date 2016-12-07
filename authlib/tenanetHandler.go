@@ -403,7 +403,7 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 			if userError == "" {
 				go notifier.Notify("ignore", "tenant_invitation_user_request", user.EmailAddress, inputParams, nil)
 			} else {
-				term.Write("No such UserID exists. Error occured at RequestToTenant()", term.Error)
+				term.Write("No such UserID exists. Error occured at RequestToTenant() : "+userError, term.Error)
 			}
 		}
 
