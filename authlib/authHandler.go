@@ -695,18 +695,18 @@ func (h *AuthHandler) GetUserByID(UserID string) (User, string) {
 	//term.Write(Config.UserName, term.Debug)
 	//email = strings.ToLower(email)
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().BySearching("UserID:" + UserID).Ok()
-	var user User
+	var user []User
 	fmt.Println("----------")
 	fmt.Println(string(bytes))
 	fmt.Println("----------")
 	if err == "" {
 		if bytes != nil {
-			var uList User
+			var uList []User
 			err := json.Unmarshal(bytes, &uList)
 			if err == nil {
 				//uList.Password = "-------------"
 				//uList.ConfirmPassword = "-------------"
-				return uList, ""
+				return uList[0], ""
 			} else {
 				if err != nil {
 					term.Write("Login  user Error "+err.Error(), term.Error)
@@ -717,7 +717,7 @@ func (h *AuthHandler) GetUserByID(UserID string) (User, string) {
 		term.Write("Login  user  Error "+err, term.Error)
 	}
 
-	return user, "Error Validating user"
+	return user[0], "Error Validating user"
 }
 
 // GetUser elps to retrive the User
