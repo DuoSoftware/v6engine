@@ -8,6 +8,7 @@ import (
 	"duov6.com/gorest"
 	"duov6.com/session"
 	"duov6.com/term"
+	//"fmt"
 )
 
 type TenantSvc struct {
@@ -34,7 +35,9 @@ type TenantSvc struct {
 }
 
 func (T TenantSvc) GetTenantAdmin(TenantID string) []string {
-	//fmt.Println(T.Context.Request().Header["SecurityToken"])
+	//Get Tenant Admin by TenantID
+	term.Write("Executing Method : Get Tenant Admin", term.Blank)
+
 	_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		th := TenantHandler{}
@@ -47,13 +50,13 @@ func (T TenantSvc) GetTenantAdmin(TenantID string) []string {
 }
 
 func (T TenantSvc) GetDefaultTenant(UserID string) Tenant {
-	//fmt.Println(T.Context.Request().Header["SecurityToken"])
+	//Get Default tenant for a user
+	term.Write("Executing Method : Get Defaut Tenant", term.Blank)
+
 	_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		th := TenantHandler{}
 		return th.GetDefaultTenant(UserID)
-		//b, _ := json.Marshal(th.GetDefaultTenant(UserID))
-		//T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return Tenant{}
@@ -61,13 +64,13 @@ func (T TenantSvc) GetDefaultTenant(UserID string) Tenant {
 }
 
 func (T TenantSvc) SetDefaultTenant(UserID string, TenantID string) bool {
-	//fmt.Println(T.Context.Request().Header["SecurityToken"])
+	//Set a User's Default Tenant
+	term.Write("Executing Method : Set Default Tenant", term.Blank)
+
 	_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		th := TenantHandler{}
 		return th.SetDefaultTenant(UserID, TenantID)
-		//b, _ := json.Marshal(th.GetDefaultTenant(UserID))
-		//T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return false
@@ -75,7 +78,9 @@ func (T TenantSvc) SetDefaultTenant(UserID string, TenantID string) bool {
 }
 
 func (T TenantSvc) CreateTenant(t Tenant) {
-	//fmt.Println(T.Context.Request().Header["SecurityToken"])
+	//Create a new Tenant
+	term.Write("Executing Method : Create Tenant", term.Blank)
+
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		th := TenantHandler{}
@@ -89,6 +94,9 @@ func (T TenantSvc) CreateTenant(t Tenant) {
 }
 
 func (T TenantSvc) TenantUpgrade(Otherdata map[string]string) {
+	//Upgrade Tenant
+	term.Write("Executing Method : Tenant Upgrade", term.Blank)
+
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		th := TenantHandler{}
@@ -111,6 +119,9 @@ func (T TenantSvc) TenantUpgrade(Otherdata map[string]string) {
 }
 
 func (T TenantSvc) TranferAdmin(email string) bool {
+	//Transfer Admin of Tenant to Email Address in params.
+	term.Write("Executing Method : Transfer Admin", term.Blank)
+
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		auth := AuthHandler{}
@@ -128,10 +139,10 @@ func (T TenantSvc) TranferAdmin(email string) bool {
 }
 
 func (T TenantSvc) Autherized(TenantID string) (outCrt TenantAutherized) {
-	//fmt.Println(T.Context.Request().Header["SecurityToken"])
+	//Check if User is Authorized for Tenant
+	term.Write("Executing Method : Autherized (Check if user is authorized for tenant)", term.Blank)
+
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
-	//outCrt = TenantAutherize{}
-	//TenantID
 	if error == "" {
 		th := TenantHandler{}
 		b, d := th.Autherized(TenantID, user)
@@ -150,10 +161,10 @@ func (T TenantSvc) Autherized(TenantID string) (outCrt TenantAutherized) {
 }
 
 func (T TenantSvc) GetTenant(TenantID string) Tenant {
-	//fmt.Println(T.Context.Request().Header.Get("Securitytoken"))
-	_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
-	//outCrt = TenantAutherize{}
+	//Get Tenant Information
+	term.Write("Executing Method : Get Tenant (Tenant Information)", term.Blank)
 
+	_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		th := TenantHandler{}
 		return th.GetTenant(TenantID)
@@ -164,14 +175,13 @@ func (T TenantSvc) GetTenant(TenantID string) Tenant {
 }
 
 func (T TenantSvc) GetUsers(TenantID string) []string {
-	//fmt.Println(T.Context.Request().Header.Get("Securitytoken"))
+	//Get Users inside a Tenant
+	term.Write("Executing Method : Get Users (Inside a tenant)", term.Blank)
+
 	u, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
-	//outCrt = TenantAutherize{}
-	//ul := []User{}
+
 	if error == "" {
 		th := TenantHandler{}
-		//a := AuthHandler{}
-		//a.GetUser(email)
 		return th.GetUsersForTenant(u, TenantID)
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
@@ -180,7 +190,9 @@ func (T TenantSvc) GetUsers(TenantID string) []string {
 }
 
 func (T TenantSvc) InviteUser(users []InviteUsers) {
-	//fmt.Println(T.Context.Request().Header.Get("Securitytoken"))
+	//Invite User to Tenant
+	term.Write("Executing Method : Invite User (To Tenant)", term.Blank)
+
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		th := TenantHandler{}
@@ -192,7 +204,9 @@ func (T TenantSvc) InviteUser(users []InviteUsers) {
 }
 
 func (T TenantSvc) AddUser(email, level string) bool {
-	//fmt.Println(T.Context.Request().Header.Get("Securitytoken"))
+	//Add User to Tenant
+	term.Write("Executing Method : Add User (To Tenant)", term.Blank)
+
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		auth := AuthHandler{}
@@ -209,7 +223,7 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			inputParams["@@DOMAIN@@"] = user.Domain
 
 			go notifier.Notify("ignore", "tenant_invitation_existing", email, inputParams, nil)
-			//go email.Send("ignore", "Invitation to register !", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
+
 			if th.IncreaseTenantCountInRatingEngine(user.Domain, T.Context.Request().Header.Get("Securitytoken")) {
 				th.AddUsersToTenant(user.Domain, t.Name, a.UserID, level)
 				return true
@@ -239,9 +253,7 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			inputParams["@@DOMAIN@@"] = user.Domain
 			inputParams["@@CODE@@"] = code
 
-			//go notifier.Send("ignore", "User Login Notification.", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
 			go notifier.Notify("ignore", "tenant_invitation", email, inputParams, nil)
-			//go email.Send("ignore", "Invitation to register !", "com.duosoftware.auth", "email", "tenant_invitation", inputParams, nil, email)
 			return true
 		}
 	} else {
@@ -251,7 +263,9 @@ func (T TenantSvc) AddUser(email, level string) bool {
 }
 
 func (T TenantSvc) RemoveUser(email string) bool {
-	//fmt.Println(T.Context.Request().Header.Get("Securitytoken"))
+	//Remove User from Tenant
+	term.Write("Executing Method : Remove User (From Tenant)", term.Blank)
+
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		auth := AuthHandler{}
@@ -284,6 +298,9 @@ func (T TenantSvc) RemoveUser(email string) bool {
 }
 
 func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
+	//Accept Request To Join to Tenant
+	term.Write("Executing Method : Accept Request (To join to tenant)", term.Blank)
+
 	//fmt.Println(T.Context.Request().Header.Get("Securitytoken"))
 	//user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	//if error == "" {
@@ -297,21 +314,21 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 
 	o, _ := tmp.GetRequestCode(RequestToken)
 	th := TenantHandler{}
-	term.Write(o, term.Debug)
+	term.Write(o, term.Blank)
 	term.Write(o["process"], term.Debug)
 
 	inputParams := make(map[string]string)
-
+	//changed domain to Domain
 	switch o["process"] {
 	case "tenant_invitation":
 		auth := AuthHandler{}
 		a, err := auth.GetUser(o["email"])
 		if err == "" {
-			if th.IncreaseTenantCountInRatingEngine(o["domain"], "ignore") {
+			if th.IncreaseTenantCountInRatingEngine(o["Domain"], "ignore") {
 				//if th.IncreaseTenantCountInRatingEngine(o["domain"], T.Context.Request().Header.Get("Securitytoken")) {
-				th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
+				th.AddUsersToTenant(o["Domain"], o["tname"], a.UserID, o["level"])
 				inputParams["@@CNAME@@"] = a.Name
-				inputParams["@@DOMAIN@@"] = o["domain"]
+				inputParams["@@DOMAIN@@"] = o["Domain"]
 				inputParams["@@TENANTID@@"] = o["TenantID"]
 				go notifier.Notify("ignore", "tenant_accepted_success", email, inputParams, nil)
 				go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
@@ -325,17 +342,18 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 		}
 		break
 	case "tenant_useradd":
+
 		auth := AuthHandler{}
 		a, err := auth.GetUser(o["email"])
 		if err == "" {
-			if th.IncreaseTenantCountInRatingEngine(o["domain"], T.Context.Request().Header.Get("Securitytoken")) {
+			if th.IncreaseTenantCountInRatingEngine(o["Domain"], T.Context.Request().Header.Get("Securitytoken")) {
 				th.AddUsersToTenant(o["TenantID"], o["tname"], a.UserID, o["level"])
 				th.RemovePendingRequest(o["TenantID"], a.EmailAddress)
 				inputParams["@@CNAME@@"] = a.Name
-				inputParams["@@DOMAIN@@"] = o["domain"]
+				inputParams["@@DOMAIN@@"] = o["tname"]
 				inputParams["@@TENANTID@@"] = o["TenantID"]
 				go notifier.Notify("ignore", "tenant_accepted_success", email, inputParams, nil)
-				go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
+				//go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
 				return true
 			} else {
 				return false
@@ -359,6 +377,9 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 }
 
 func (T TenantSvc) GetTenants(securityToken string) []TenantMinimum {
+	//Get Tenants for a user.
+	term.Write("Executing Method : Get Tenants (For a User)", term.Blank)
+
 	tns := []TenantMinimum{}
 	user, error := session.GetSession(securityToken, "Nil")
 
@@ -372,8 +393,9 @@ func (T TenantSvc) GetTenants(securityToken string) []TenantMinimum {
 }
 
 func (T TenantSvc) SearchTenants(SearchString string, pageSize, startPoint int) []Tenant {
+	//Search Tenants
+	term.Write("Executing Method : Search Tenants", term.Blank)
 	th := TenantHandler{}
-
 	return th.SearchTenants(SearchString, pageSize, startPoint)
 }
 
@@ -395,6 +417,9 @@ func (T TenantSvc) GetSampleTenantForm() Tenant {
 }
 
 func (T TenantSvc) Subciribe(TenantID string) bool {
+	//Subscribe to a Tenant
+	term.Write("Executing Method : Subscribe (To a Tenant) ", term.Blank)
+
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		//check for available tenants.. If Tenant ID is there.. Reject else continue
@@ -425,6 +450,9 @@ type PendingUserRequest struct {
 }
 
 func (T TenantSvc) GetPendingTenantRequest() (m []PendingUserRequest) {
+	//Get pending tenant requests for a user
+	term.Write("Executing Method : Get Pending Tenant Requests (For a User)", term.Blank)
+
 	var tns []PendingUserRequest
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 
@@ -440,6 +468,9 @@ func (T TenantSvc) GetPendingTenantRequest() (m []PendingUserRequest) {
 }
 
 func (T TenantSvc) GetMyPendingTenantRequest() (m []PendingUserRequest) {
+	//Get My pending tenant requests
+	term.Write("Executing Method : Get My Pending Tenant Requests", term.Blank)
+
 	var tns []PendingUserRequest
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 
