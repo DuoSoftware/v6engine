@@ -397,6 +397,10 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 		th := TenantHandler{}
 		adminUserIDs := th.GetTenantAdmin(TenantID)
 
+		inputParams["@@CNAME@@"] = u.Name
+		inputParams["@@CEMAIL@@"] = u.Email
+		inputParams["@@DOMAIN@@"] = u.Domain
+
 		ah := AuthHandler{}
 		for _, userid := range adminUserIDs {
 			user, userError := ah.GetUserByID(userid)
