@@ -399,7 +399,7 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 
 		inputParams["@@CNAME@@"] = u.Name
 		inputParams["@@CEMAIL@@"] = u.Email
-		inputParams["@@DOMAIN@@"] = u.Domain
+		inputParams["@@DOMAIN@@"] = TenantID
 
 		ah := AuthHandler{}
 		for _, userid := range adminUserIDs {
