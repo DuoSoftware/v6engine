@@ -8,6 +8,7 @@ import (
 	"duov6.com/gorest"
 	"duov6.com/session"
 	"duov6.com/term"
+	"fmt"
 )
 
 type TenantSvc struct {
@@ -330,7 +331,7 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 				inputParams["@@DOMAIN@@"] = o["Domain"]
 				inputParams["@@TENANTID@@"] = o["TenantID"]
 				go notifier.Notify("ignore", "tenant_accepted_success", email, inputParams, nil)
-				//go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
+				go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
 				return true
 			} else {
 				return false
@@ -341,9 +342,16 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 		}
 		break
 	case "tenant_useradd":
+
 		auth := AuthHandler{}
 		a, err := auth.GetUser(o["email"])
 		if err == "" {
+			fmt.Println("**********")
+			fmt.Println(o)
+			fmt.Println("----------------")
+			fmt.Println(a)
+			fmt.Println("***********")
+
 			if th.IncreaseTenantCountInRatingEngine(o["Domain"], T.Context.Request().Header.Get("Securitytoken")) {
 				th.AddUsersToTenant(o["TenantID"], o["tname"], a.UserID, o["level"])
 				th.RemovePendingRequest(o["TenantID"], a.EmailAddress)
@@ -351,7 +359,7 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 				inputParams["@@DOMAIN@@"] = o["Domain"]
 				inputParams["@@TENANTID@@"] = o["TenantID"]
 				go notifier.Notify("ignore", "tenant_accepted_success", email, inputParams, nil)
-				go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
+				//go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
 				return true
 			} else {
 				return false
