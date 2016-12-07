@@ -696,9 +696,6 @@ func (h *AuthHandler) GetUserByID(UserID string) (User, string) {
 	//email = strings.ToLower(email)
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().BySearching("UserID:" + UserID).Ok()
 	var user []User
-	fmt.Println("----------")
-	fmt.Println(string(bytes))
-	fmt.Println("----------")
 	if err == "" {
 		if bytes != nil {
 			var uList []User

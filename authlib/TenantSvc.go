@@ -8,7 +8,7 @@ import (
 	"duov6.com/gorest"
 	"duov6.com/session"
 	"duov6.com/term"
-	"fmt"
+	//"fmt"
 )
 
 type TenantSvc struct {
@@ -346,17 +346,11 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 		auth := AuthHandler{}
 		a, err := auth.GetUser(o["email"])
 		if err == "" {
-			fmt.Println("**********")
-			fmt.Println(o)
-			fmt.Println("----------------")
-			fmt.Println(a)
-			fmt.Println("***********")
-
 			if th.IncreaseTenantCountInRatingEngine(o["Domain"], T.Context.Request().Header.Get("Securitytoken")) {
 				th.AddUsersToTenant(o["TenantID"], o["tname"], a.UserID, o["level"])
 				th.RemovePendingRequest(o["TenantID"], a.EmailAddress)
 				inputParams["@@CNAME@@"] = a.Name
-				inputParams["@@DOMAIN@@"] = o["Domain"]
+				inputParams["@@DOMAIN@@"] = o["tname"]
 				inputParams["@@TENANTID@@"] = o["TenantID"]
 				go notifier.Notify("ignore", "tenant_accepted_success", email, inputParams, nil)
 				//go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
