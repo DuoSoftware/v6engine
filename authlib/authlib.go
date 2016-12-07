@@ -857,9 +857,13 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.10aa"
+	versionData["API Version"] = "6.1.11"
 
 	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.11"] = [...]string{
+		"Fixed few email template issues. JIRA : EX-1085",
+	}
 
 	changeLogs["6.1.10"] = [...]string{
 		"Added Toggle Logs and disabled CMD logs at startup. User /ToggleLogs to cycle through different logs.",
