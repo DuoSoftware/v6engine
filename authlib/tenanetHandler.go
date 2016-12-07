@@ -389,7 +389,23 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 		inputParams["@@FromID@@"] = u.UserID
 		inputParams["@@FromEmail@@"] = u.Email
 
+		//Email To Self
 		go notifier.Notify("ignore", "tenant_subscribe_request", u.Email, inputParams, nil)
+
+		//Email to Tenant Owners
+		//Get UserIDs of Tenant Owners and send email
+		th := TenantHandler{}
+		adminUserIDs := th.GetTenantAdmin(TenantID)
+
+		ah := AuthHandler{}
+		for _, userid := range adminUserIDs {
+			user, userError := ah.GetUserByID(userid)
+			if userError == "" {
+				go notifier.Notify("ignore", "tenant_invitation_user_request", user.EmailAddress, inputParams, nil)
+			} else {
+				term.Write("No such UserID exists. Error occured at RequestToTenant()", term.Error)
+			}
+		}
 
 		return true
 	}

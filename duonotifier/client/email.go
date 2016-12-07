@@ -20,6 +20,8 @@ func Notify(securityToken, TemplateID, recieverEmail string, defaultParams map[s
 	EmailTemplateId := "T_Email_" + TemplateID
 	SmsTemplateId := "T_SMS_" + TemplateID
 
+	term.Write("Sending Email : "+EmailTemplateId, term.Blank)
+
 	var JSON_Document string
 	var SMS_JSON_Document string
 	var EMAIL_JSON_Document string
