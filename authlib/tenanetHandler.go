@@ -725,21 +725,14 @@ func (h *TenantHandler) GetTenantAdmin(TenantID string) []map[string]string {
 		} else {
 			for _, obj := range data {
 				if strings.Contains(obj["SecurityLevel"].(string), "admin") {
-
 					ah := AuthHandler{}
 					usr, errString := ah.GetUserByID(obj["UserID"].(string))
-					if errString != "" {
-						fmt.Println("yaya")
-						fmt.Println(usr)
+					if strings.TrimSpace(errString) == "" {
 						object := make(map[string]string)
 						object["UserID"] = usr.UserID
 						object["EmailAddress"] = usr.EmailAddress
 						object["Name"] = usr.Name
 						adminUsers = append(adminUsers, object)
-						fmt.Println("1 : ")
-						fmt.Println(object)
-					} else {
-						fmt.Println("fek : " + errString)
 					}
 				}
 			}

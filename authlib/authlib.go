@@ -857,9 +857,13 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "Testing A"
+	versionData["API Version"] = "6.1.12"
 
 	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.12"] = [...]string{
+		"Changed GetTenantAdmin to get All Admin data. Fixed tenant invite for existing customer issue.",
+	}
 
 	changeLogs["6.1.11"] = [...]string{
 		"Fixed few email template issues. JIRA : EX-1085",
