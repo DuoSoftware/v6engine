@@ -729,6 +729,8 @@ func (h *TenantHandler) GetTenantAdmin(TenantID string) []map[string]string {
 					ah := AuthHandler{}
 					usr, errString := ah.GetUserByID(obj["UserID"].(string))
 					if errString != "" {
+						fmt.Println("yaya")
+						fmt.Println(usr)
 						object := make(map[string]string)
 						object["UserID"] = usr.UserID
 						object["EmailAddress"] = usr.EmailAddress
@@ -736,6 +738,8 @@ func (h *TenantHandler) GetTenantAdmin(TenantID string) []map[string]string {
 						adminUsers = append(adminUsers, object)
 						fmt.Println("1 : ")
 						fmt.Println(object)
+					} else {
+						fmt.Println("fek : " + errString)
 					}
 				}
 			}
