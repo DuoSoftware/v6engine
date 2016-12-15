@@ -395,19 +395,14 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 		//Email to Tenant Owners
 		//Get UserIDs of Tenant Owners and send email
 		th := TenantHandler{}
-		adminUserIDs := th.GetTenantAdmin(TenantID)
+		adminUsers := th.GetTenantAdmin(TenantID)
 
-		ah := AuthHandler{}
-		for _, userid := range adminUserIDs {
-			user, userError := ah.GetUserByID(userid)
-			if userError == "" {
-				inputParams["@@CNAME@@"] = user.Name
-				inputParams["@@CEMAIL@@"] = u.Email
-				inputParams["@@DOMAIN@@"] = TenantID
-				go notifier.Notify("ignore", "tenant_invitation_user_request", user.EmailAddress, inputParams, nil)
-			} else {
-				term.Write("No such UserID exists. Error occured at RequestToTenant() : "+userError, term.Error)
-			}
+		for _, user := range adminUsers {
+			inputParams["@@CNAME@@"] = user["Name"]
+			inputParams["@@CEMAIL@@"] = u.Email
+			inputParams["@@DOMAIN@@"] = TenantID
+			go notifier.Notify("ignore", "tenant_invitation_user_request", user["EmailAddress"], inputParams, nil)
+
 		}
 
 		return true
@@ -714,9 +709,9 @@ func (h *TenantHandler) SetDefaultTenant(UserID string, TenantID string) bool {
 	return false
 }
 
-func (h *TenantHandler) GetTenantAdmin(TenantID string) []string {
+func (h *TenantHandler) GetTenantAdmin(TenantID string) []map[string]string {
 
-	adminUsers := make([]string, 0)
+	adminUsers := make([]map[string]string, 0)
 
 	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetMany().BySearching("TenantID:" + TenantID).Ok()
 	if err != "" {
@@ -730,7 +725,16 @@ func (h *TenantHandler) GetTenantAdmin(TenantID string) []string {
 		} else {
 			for _, obj := range data {
 				if strings.Contains(obj["SecurityLevel"].(string), "admin") {
-					adminUsers = append(adminUsers, obj["UserID"].(string))
+
+					ah := AuthHandler{}
+					usr, errString := ah.GetUserByID(obj["UserID"].(string))
+					if errString != "" {
+						object := make(map[string]string)
+						object["UserID"] = usr.UserID
+						object["EmailAddress"] = usr.EmailAddress
+						object["Name"] = usr.Name
+						adminUsers = append(adminUsers, object)
+					}
 				}
 			}
 			return adminUsers

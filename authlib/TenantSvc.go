@@ -8,7 +8,7 @@ import (
 	"duov6.com/gorest"
 	"duov6.com/session"
 	"duov6.com/term"
-	//"fmt"
+	"fmt"
 )
 
 type TenantSvc struct {
@@ -31,20 +31,30 @@ type TenantSvc struct {
 	getMyPendingTenantRequest gorest.EndPoint `method:"GET" path:"/tenant/GetMyPendingTenantRequest/" output:"[]PendingUserRequest"`
 	getDefaultTenant          gorest.EndPoint `method:"GET" path:"/tenant/GetDefaultTenant/{UserID:string}" output:"Tenant"`
 	setDefaultTenant          gorest.EndPoint `method:"GET" path:"/tenant/SetDefaultTenant/{UserID:string}/{TenantID:string}" output:"bool"`
-	getTenantAdmin            gorest.EndPoint `method:"GET" path:"/tenant/GetTenantAdmin/{TenantID:string}" output:"[]string"`
+	getTenantAdmin            gorest.EndPoint `method:"GET" path:"/tenant/GetTenantAdmin/{TenantID:string}" output:"[]InviteUsers"`
 }
 
-func (T TenantSvc) GetTenantAdmin(TenantID string) []string {
+func (T TenantSvc) GetTenantAdmin(TenantID string) []InviteUsers {
 	//Get Tenant Admin by TenantID
 	term.Write("Executing Method : Get Tenant Admin", term.Blank)
 
 	_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		th := TenantHandler{}
-		return th.GetTenantAdmin(TenantID)
+		adminUsers := make([]InviteUsers, 0)
+		admins := th.GetTenantAdmin(TenantID)
+		for _, admin := range admins {
+			singleAdmin := InviteUsers{}
+			singleAdmin.UserID = admin["UserID"]
+			singleAdmin.Name = admin["Name"]
+			singleAdmin.Email = admin["EmailAddress"]
+			singleAdmin.SecurityLevel = "Admin"
+			adminUsers = append(adminUsers, singleAdmin)
+		}
+		return adminUsers
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
-		emptyArray := make([]string, 0)
+		emptyArray := make([]InviteUsers, 0)
 		return emptyArray
 	}
 }
@@ -211,8 +221,8 @@ func (T TenantSvc) AddUser(email, level string) bool {
 	if error == "" {
 		auth := AuthHandler{}
 		a, err := auth.GetUser(email)
-		if err == "" {
-
+		emptyUser := User{}
+		if err == "" && a != emptyUser {
 			th := TenantHandler{}
 			t := th.GetTenant(user.Domain)
 			var inputParams map[string]string
@@ -221,6 +231,11 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			inputParams["@@INVEMAIL@@"] = user.Email
 			inputParams["@@NAME@@"] = user.Name
 			inputParams["@@DOMAIN@@"] = user.Domain
+
+			fmt.Println("-----------------------------------------------")
+			fmt.Println("Tenant Invitation Existing ..... ")
+			fmt.Println(inputParams)
+			fmt.Println("-----------------------------------------------")
 
 			go notifier.Notify("ignore", "tenant_invitation_existing", email, inputParams, nil)
 
@@ -252,6 +267,11 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			inputParams["@@NAME@@"] = user.Name
 			inputParams["@@DOMAIN@@"] = user.Domain
 			inputParams["@@CODE@@"] = code
+
+			fmt.Println("-----------------------------------------------")
+			fmt.Println("Tenant Invitation ..... ")
+			fmt.Println(inputParams)
+			fmt.Println("-----------------------------------------------")
 
 			go notifier.Notify("ignore", "tenant_invitation", email, inputParams, nil)
 			return true
