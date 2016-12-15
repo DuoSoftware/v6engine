@@ -43,12 +43,13 @@ func (T TenantSvc) GetTenantAdmin(TenantID string) []InviteUsers {
 		th := TenantHandler{}
 		adminUsers := make([]InviteUsers, 0)
 		admins := th.GetTenantAdmin(TenantID)
+		fmt.Println(admins)
 		for _, admin := range admins {
 			singleAdmin := InviteUsers{}
 			singleAdmin.UserID = admin["UserID"]
 			singleAdmin.Name = admin["Name"]
 			singleAdmin.Email = admin["EmailAddress"]
-			singleAdmin.SecurityLevel = "Admin"
+			singleAdmin.SecurityLevel = "admin"
 			adminUsers = append(adminUsers, singleAdmin)
 		}
 		return adminUsers

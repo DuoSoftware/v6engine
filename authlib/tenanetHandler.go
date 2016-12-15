@@ -734,6 +734,8 @@ func (h *TenantHandler) GetTenantAdmin(TenantID string) []map[string]string {
 						object["EmailAddress"] = usr.EmailAddress
 						object["Name"] = usr.Name
 						adminUsers = append(adminUsers, object)
+						fmt.Println("1 : ")
+						fmt.Println(object)
 					}
 				}
 			}
