@@ -420,6 +420,45 @@ func (h *TenantHandler) RemovePendingRequest(TID string, email string) {
 	client.Go("ignore", "com.duosoftware.tenant", "usersubscriptionreq321").DeleteObject().WithKeyField("TenantID").AndDeleteOne(o).Ok()
 }
 
+func (h *TenantHandler) SavePendingAddUserRequest(request PendingUserRequest) {
+	client.Go("ignore", request.TenantID, "AddUserRequestLogs").StoreObject().WithKeyField("Email").AndStoreOne(request).Ok()
+}
+
+func (h *TenantHandler) RemoveAddUserRequest(email string, tenant string) {
+	o := PendingUserRequest{}
+	o.Email = email
+	client.Go("ignore", tenant, "AddUserRequestLogs").DeleteObject().WithKeyField("Email").AndDeleteOne(o).Ok()
+}
+
+func (h *TenantHandler) GetAddUserRequests(u session.AuthCertificate) ([]PendingUserRequest, string) {
+	//o := make([]map[string]string{}, 0)
+	var o []PendingUserRequest
+	//bytes, err := client.Go("ignore", u.Domain, "usersubscriptionreq321").GetMany().All().Ok() // fetech user autherized
+	bytes, err := client.Go("ignore", u.Domain, "AddUserRequestLogs").GetMany().ByQuerying("*").Ok() // fetech user autherized
+	//term.Write("GetRequestCode "+requestCode+"  ", term.Debug)
+	term.Write(u.Domain, term.Debug)
+	term.Write(string(bytes[:]), term.Debug)
+	if err == "" {
+		if bytes != nil {
+			//var uList LoginSessions
+			//var data []map[string]interface{} // := make(map[string]interface{})
+			err := json.Unmarshal(bytes, &o)
+			if err == nil {
+				//Ttime2 := time.Now().UTC()
+				term.Write("Object Retrived", term.Debug)
+
+				term.Write(o, term.Debug)
+				return o, ""
+			} else {
+				term.Write("GetRequestCode err "+err.Error(), term.Error)
+			}
+		}
+	} else {
+		term.Write("GetRequestCode err "+err, term.Error)
+	}
+	return o, "Incorrect Request Code."
+}
+
 func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]PendingUserRequest, string) {
 	//o := make([]map[string]string{}, 0)
 	var o []PendingUserRequest

@@ -13,25 +13,26 @@ import (
 
 type TenantSvc struct {
 	gorest.RestService
-	autherized                gorest.EndPoint `method:"GET" path:"/tenant/Autherized/{TenantID:string}" output:"TenantAutherized"`
-	getTenant                 gorest.EndPoint `method:"GET" path:"/tenant/GetTenant/{TenantID:string}" output:"Tenant"`
-	acceptRequest             gorest.EndPoint `method:"GET" path:"/tenant/AcceptRequest/{email:string}/{RequestToken:string}" output:"bool"`
-	getTenants                gorest.EndPoint `method:"GET" path:"/tenant/GetTenants/{securityToken:string}" output:"[]TenantMinimum"`
-	getSampleTenantForm       gorest.EndPoint `method:"GET" path:"/tenant/GetSampleTenantForm/" output:"Tenant"`
-	inviteUser                gorest.EndPoint `method:"POST" path:"/tenant/InviteUser/" postdata:"[]InviteUsers"`
-	createTenant              gorest.EndPoint `method:"POST" path:"/tenant/CreateTenant/" postdata:"Tenant"`
-	tenantUpgrade             gorest.EndPoint `method:"POST" path:"/tenant/TenantUpgrad/" postdata:"map[string]string"`
-	searchTenants             gorest.EndPoint `method:"GET" path:"/tenant/SearchTenants/{SearchString:string}/{pagesize:int}/{startPoint:int}" output:"[]Tenant"`
-	subciribe                 gorest.EndPoint `method:"GET" path:"/tenant/Subciribe/{TenantID:string}" output:"bool"`
-	getUsers                  gorest.EndPoint `method:"GET" path:"/tenant/GetUsers/{TenantID:string}" output:"[]string"`
-	addUser                   gorest.EndPoint `method:"GET" path:"/tenant/AddUser/{email:string}/{level:string}" output:"bool"`
-	removeUser                gorest.EndPoint `method:"GET" path:"/tenant/RemoveUser/{email:string}" output:"bool"`
-	tranferAdmin              gorest.EndPoint `method:"GET" path:"/tenant/TranferAdmin/{email:string}" output:"bool"`
-	getPendingTenantRequest   gorest.EndPoint `method:"GET" path:"/tenant/GetPendingTenantRequest/" output:"[]PendingUserRequest"`
-	getMyPendingTenantRequest gorest.EndPoint `method:"GET" path:"/tenant/GetMyPendingTenantRequest/" output:"[]PendingUserRequest"`
-	getDefaultTenant          gorest.EndPoint `method:"GET" path:"/tenant/GetDefaultTenant/{UserID:string}" output:"Tenant"`
-	setDefaultTenant          gorest.EndPoint `method:"GET" path:"/tenant/SetDefaultTenant/{UserID:string}/{TenantID:string}" output:"bool"`
-	getTenantAdmin            gorest.EndPoint `method:"GET" path:"/tenant/GetTenantAdmin/{TenantID:string}" output:"[]InviteUsers"`
+	autherized                  gorest.EndPoint `method:"GET" path:"/tenant/Autherized/{TenantID:string}" output:"TenantAutherized"`
+	getTenant                   gorest.EndPoint `method:"GET" path:"/tenant/GetTenant/{TenantID:string}" output:"Tenant"`
+	acceptRequest               gorest.EndPoint `method:"GET" path:"/tenant/AcceptRequest/{email:string}/{RequestToken:string}" output:"bool"`
+	getTenants                  gorest.EndPoint `method:"GET" path:"/tenant/GetTenants/{securityToken:string}" output:"[]TenantMinimum"`
+	getSampleTenantForm         gorest.EndPoint `method:"GET" path:"/tenant/GetSampleTenantForm/" output:"Tenant"`
+	inviteUser                  gorest.EndPoint `method:"POST" path:"/tenant/InviteUser/" postdata:"[]InviteUsers"`
+	createTenant                gorest.EndPoint `method:"POST" path:"/tenant/CreateTenant/" postdata:"Tenant"`
+	tenantUpgrade               gorest.EndPoint `method:"POST" path:"/tenant/TenantUpgrad/" postdata:"map[string]string"`
+	searchTenants               gorest.EndPoint `method:"GET" path:"/tenant/SearchTenants/{SearchString:string}/{pagesize:int}/{startPoint:int}" output:"[]Tenant"`
+	subciribe                   gorest.EndPoint `method:"GET" path:"/tenant/Subciribe/{TenantID:string}" output:"bool"`
+	getUsers                    gorest.EndPoint `method:"GET" path:"/tenant/GetUsers/{TenantID:string}" output:"[]string"`
+	addUser                     gorest.EndPoint `method:"GET" path:"/tenant/AddUser/{email:string}/{level:string}" output:"bool"`
+	removeUser                  gorest.EndPoint `method:"GET" path:"/tenant/RemoveUser/{email:string}" output:"bool"`
+	tranferAdmin                gorest.EndPoint `method:"GET" path:"/tenant/TranferAdmin/{email:string}" output:"bool"`
+	getPendingTenantRequest     gorest.EndPoint `method:"GET" path:"/tenant/GetPendingTenantRequest/" output:"[]PendingUserRequest"`
+	getMyPendingTenantRequest   gorest.EndPoint `method:"GET" path:"/tenant/GetMyPendingTenantRequest/" output:"[]PendingUserRequest"`
+	getDefaultTenant            gorest.EndPoint `method:"GET" path:"/tenant/GetDefaultTenant/{UserID:string}" output:"Tenant"`
+	setDefaultTenant            gorest.EndPoint `method:"GET" path:"/tenant/SetDefaultTenant/{UserID:string}/{TenantID:string}" output:"bool"`
+	getTenantAdmin              gorest.EndPoint `method:"GET" path:"/tenant/GetTenantAdmin/{TenantID:string}" output:"[]InviteUsers"`
+	getAllPendingTenantRequests gorest.EndPoint `method:"GET" path:"/tenant/GetAllPendingTenantRequests/" output:"PendingRequests"`
 }
 
 func (T TenantSvc) GetTenantAdmin(TenantID string) []InviteUsers {
@@ -57,6 +58,29 @@ func (T TenantSvc) GetTenantAdmin(TenantID string) []InviteUsers {
 		emptyArray := make([]InviteUsers, 0)
 		return emptyArray
 	}
+}
+
+type PendingRequests struct {
+	SubscribeRequests []PendingUserRequest
+	AddUserRequests   []PendingUserRequest
+}
+
+func (T TenantSvc) GetAllPendingTenantRequests() (m PendingRequests) {
+	//Get pending tenant requests for a user
+	term.Write("Executing Method : Get Pending Tenant Requests (For a User)", term.Blank)
+
+	var tns PendingRequests
+	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+
+	if error == "" {
+		th := TenantHandler{}
+		tns.SubscribeRequests, _ = th.GetPendingRequests(user)
+		tns.AddUserRequests,_ = th.GetAddUserRequests(user)
+	} else {
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
+	}
+	m = tns
+	return
 }
 
 func (T TenantSvc) GetDefaultTenant(UserID string) Tenant {
@@ -219,6 +243,8 @@ func (T TenantSvc) AddUser(email, level string) bool {
 
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
+		
+
 		auth := AuthHandler{}
 		a, err := auth.GetUser(email)
 		emptyUser := User{}
@@ -231,6 +257,14 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			inputParams["@@INVEMAIL@@"] = user.Email
 			inputParams["@@NAME@@"] = user.Name
 			inputParams["@@DOMAIN@@"] = user.Domain
+
+			s := PendingUserRequest{}
+			s.UserID   = a.UserID
+			s.Email    = a.EmailAddress
+			s.TenantID = t.TenantID
+			s.Name     = a.Name
+			s.Code     = "Not Available Reason : Tenant_Invitation_Existing"
+			th.SavePendingAddUserRequest(s)
 
 			fmt.Println("-----------------------------------------------")
 			fmt.Println("Tenant Invitation Existing ..... ")
@@ -268,6 +302,14 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			inputParams["@@DOMAIN@@"] = user.Domain
 			inputParams["@@CODE@@"] = code
 
+			s := PendingUserRequest{}
+			s.UserID   = a.UserID
+			s.Email    = a.EmailAddress
+			s.TenantID = t.TenantID
+			s.Name     = a.Name
+			s.Code     = code
+			th.SavePendingAddUserRequest(s)
+
 			fmt.Println("-----------------------------------------------")
 			fmt.Println("Tenant Invitation New User ..... ")
 			fmt.Println(inputParams)
@@ -276,6 +318,8 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			go notifier.Notify("ignore", "tenant_invitation", email, inputParams, nil)
 			return true
 		}
+
+
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return false
@@ -352,6 +396,7 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 				inputParams["@@TENANTID@@"] = o["TenantID"]
 				go notifier.Notify("ignore", "tenant_accepted_success", email, inputParams, nil)
 				go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
+				th.RemoveAddUserRequest(o["email"], o["TenantID"])
 				return true
 			} else {
 				return false
@@ -374,6 +419,7 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 				inputParams["@@TENANTID@@"] = o["TenantID"]
 				go notifier.Notify("ignore", "tenant_accepted_success", email, inputParams, nil)
 				//go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
+				//th.RemoveAddUserRequest(o["email"], o["TenantID"])
 				return true
 			} else {
 				return false
@@ -461,7 +507,7 @@ func (T TenantSvc) Subciribe(TenantID string) bool {
 	}
 }
 
-type PendingUserRequest struct {
+typePendingUserRequest struct {
 	UserID   string
 	Email    string
 	TenantID string
