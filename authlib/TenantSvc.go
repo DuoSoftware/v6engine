@@ -303,7 +303,7 @@ func (T TenantSvc) AddUser(email, level string) bool {
 
 			s := PendingUserRequest{}
 			s.UserID = a.UserID
-			s.Email = a.EmailAddress
+			s.Email = email
 			s.TenantID = t.TenantID
 			s.Name = a.Name
 			s.Code = code
