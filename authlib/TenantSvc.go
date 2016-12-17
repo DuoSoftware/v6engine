@@ -75,7 +75,7 @@ func (T TenantSvc) GetAllPendingTenantRequests() (m PendingRequests) {
 	if error == "" {
 		th := TenantHandler{}
 		tns.SubscribeRequests, _ = th.GetPendingRequests(user)
-		tns.AddUserRequests,_ = th.GetAddUserRequests(user)
+		tns.AddUserRequests, _ = th.GetAddUserRequests(user)
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 	}
@@ -243,7 +243,6 @@ func (T TenantSvc) AddUser(email, level string) bool {
 
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
-		
 
 		auth := AuthHandler{}
 		a, err := auth.GetUser(email)
@@ -259,11 +258,11 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			inputParams["@@DOMAIN@@"] = user.Domain
 
 			s := PendingUserRequest{}
-			s.UserID   = a.UserID
-			s.Email    = a.EmailAddress
+			s.UserID = a.UserID
+			s.Email = a.EmailAddress
 			s.TenantID = t.TenantID
-			s.Name     = a.Name
-			s.Code     = "Not Available Reason : Tenant_Invitation_Existing"
+			s.Name = a.Name
+			s.Code = "Not Available Reason : Tenant_Invitation_Existing"
 			th.SavePendingAddUserRequest(s)
 
 			fmt.Println("-----------------------------------------------")
@@ -303,11 +302,11 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			inputParams["@@CODE@@"] = code
 
 			s := PendingUserRequest{}
-			s.UserID   = a.UserID
-			s.Email    = a.EmailAddress
+			s.UserID = a.UserID
+			s.Email = a.EmailAddress
 			s.TenantID = t.TenantID
-			s.Name     = a.Name
-			s.Code     = code
+			s.Name = a.Name
+			s.Code = code
 			th.SavePendingAddUserRequest(s)
 
 			fmt.Println("-----------------------------------------------")
@@ -318,7 +317,6 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			go notifier.Notify("ignore", "tenant_invitation", email, inputParams, nil)
 			return true
 		}
-
 
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
@@ -507,7 +505,7 @@ func (T TenantSvc) Subciribe(TenantID string) bool {
 	}
 }
 
-typePendingUserRequest struct {
+type PendingUserRequest struct {
 	UserID   string
 	Email    string
 	TenantID string
