@@ -8,8 +8,8 @@ import (
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
 	"duov6.com/objectstore/client"
-	"runtime"
 	//"fmt"
+	"runtime"
 	//"golang.org/x/oauth2"
 	//"crypto/hmac"
 	"duov6.com/session"
@@ -30,34 +30,35 @@ type AuthorizeAppData struct {
 
 type Auth struct {
 	gorest.RestService
-	verify                  gorest.EndPoint `method:"GET" path:"/" output:"string"`
-	login                   gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
-	noPasswordLogin         gorest.EndPoint `method:"GET" path:"/NoPasswordLogin/{OTP:string}" output:"AuthCertificate"`
-	loginOTP                gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}" output:"string"`
-	loginOTPNoPass          gorest.EndPoint `method:"GET" path:"/LoginOTPNoPass/{username:string}/{domain:string}" output:"string"`
-	getLoginSessions        gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
-	authorize               gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
-	getSession              gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
-	getSessionStatic        gorest.EndPoint `method:"GET" path:"/GetSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
-	getSecret               gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
-	getAuthCode             gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
-	autherizeApp            gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
-	updateScope             gorest.EndPoint `method:"POST" path:"/UpdateScope/{SecurityToken:string}/{UserID:string}/{ApplicationID:string}" postdata:"AuthorizeAppData"`
-	addUser                 gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
-	invitedUserRegistration gorest.EndPoint `method:"POST" path:"/InvitedUserRegistration/" postdata:"User"`
-	registerTenantUser      gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
-	userActivation          gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
-	logOut                  gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
-	checkPassword           gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
-	getUser                 gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
-	blockUser               gorest.EndPoint `method:"GET" path:"/BlockUser/{Email:string}" output:"bool"`
-	releaseUser             gorest.EndPoint `method:"GET" path:"/ReleaseUser/{Email:string}/{b4:string}" output:"bool"`
-	getGUID                 gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
-	forgotPassword          gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
-	changePassword          gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
-	arbiterAuthorize        gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
-	getUserByUserId         gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
-	toggleLogs              gorest.EndPoint `method:"GET" path:"/ToggleLogs/" output:"string"`
+	verify                       gorest.EndPoint `method:"GET" path:"/" output:"string"`
+	login                        gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
+	noPasswordLogin              gorest.EndPoint `method:"GET" path:"/NoPasswordLogin/{OTP:string}" output:"AuthCertificate"`
+	loginOTP                     gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}" output:"string"`
+	loginOTPNoPass               gorest.EndPoint `method:"GET" path:"/LoginOTPNoPass/{username:string}/{domain:string}" output:"string"`
+	getLoginSessions             gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
+	authorize                    gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
+	getSession                   gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
+	getSessionStatic             gorest.EndPoint `method:"GET" path:"/GetSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
+	getSecret                    gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
+	getAuthCode                  gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
+	autherizeApp                 gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
+	updateScope                  gorest.EndPoint `method:"POST" path:"/UpdateScope/{SecurityToken:string}/{UserID:string}/{ApplicationID:string}" postdata:"AuthorizeAppData"`
+	addUser                      gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
+	invitedUserRegistration      gorest.EndPoint `method:"POST" path:"/InvitedUserRegistration/" postdata:"User"`
+	registerTenantUser           gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
+	userActivation               gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
+	logOut                       gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
+	checkPassword                gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
+	getUser                      gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
+	blockUser                    gorest.EndPoint `method:"GET" path:"/BlockUser/{Email:string}" output:"bool"`
+	releaseUser                  gorest.EndPoint `method:"GET" path:"/ReleaseUser/{Email:string}/{b4:string}" output:"bool"`
+	getGUID                      gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
+	forgotPassword               gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
+	changePassword               gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
+	arbiterAuthorize             gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
+	getUserByUserId              gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
+	toggleLogs                   gorest.EndPoint `method:"GET" path:"/ToggleLogs/" output:"string"`
+	registerTenantUserWithTenant gorest.EndPoint `method:"POST" path:"/RegisterTenantUserWithTenant/{TenantID:string}" postdata:"User"`
 }
 
 func (A Auth) ToggleLogs() string {
@@ -825,6 +826,34 @@ func (A Auth) RegisterTenantUser(u User) {
 	} else {
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Security Token Incorrect.")))
 	}
+
+}
+
+func (A Auth) RegisterTenantUserWithTenant(u User, TenantID string) {
+	//Register User and Tenant
+	term.Write("Executing Method : Register Tenant User (With Given Tenant) ", term.Blank)
+
+	h := newAuthHandler()
+	// c, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	// if err == "" {
+	t := TenantHandler{}
+	u, err := h.SaveUser(u, false, "tenant")
+
+	if err == "" {
+		b, _ := json.Marshal(u)
+		x := t.GetTenant(TenantID)
+		if x.TenantID == "" {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("No TenantID found : " + TenantID + ". User Registered without an initial tenant."))
+		} else {
+			t.AddUsersToTenant(x.TenantID, x.Name, u.UserID, "User")
+			A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+		}
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
+	}
+	// } else {
+	// 	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Security Token Incorrect.")))
+	// }
 
 }
 
