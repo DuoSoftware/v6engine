@@ -198,14 +198,14 @@ func (T TenantSvc) GetTenant(TenantID string) Tenant {
 	//Get Tenant Information
 	term.Write("Executing Method : Get Tenant (Tenant Information)", term.Blank)
 
-	_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
-	if error == "" {
-		th := TenantHandler{}
-		return th.GetTenant(TenantID)
-	} else {
-		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
-		return Tenant{}
-	}
+	//_, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	//if error == "" {
+	th := TenantHandler{}
+	return th.GetTenant(TenantID)
+	//} else {
+	//	T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
+	//	return Tenant{}
+	//}
 }
 
 func (T TenantSvc) GetUsers(TenantID string) []string {
