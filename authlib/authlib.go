@@ -8,7 +8,7 @@ import (
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
 	"duov6.com/objectstore/client"
-	//"fmt"
+	"fmt"
 	"runtime"
 	//"golang.org/x/oauth2"
 	//"crypto/hmac"
@@ -54,6 +54,7 @@ type Auth struct {
 	releaseUser                  gorest.EndPoint `method:"GET" path:"/ReleaseUser/{Email:string}/{b4:string}" output:"bool"`
 	getGUID                      gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
 	forgotPassword               gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
+	resetPasswordByTenantAdmin   gorest.EndPoint `method:"GET" path:"/ResetPasswordByTenantAdmin/{EmailAddress:string}" output:"bool"`
 	changePassword               gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
 	arbiterAuthorize             gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
 	getUserByUserId              gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
@@ -129,6 +130,68 @@ func (A Auth) ForgotPassword(EmailAddress, RequestCode string) bool {
 	term.Write("Executing Method : Forgot Password / Reset Password", term.Blank)
 	h := newAuthHandler()
 	return h.ForgetPassword(EmailAddress)
+}
+
+// type InviteUsers struct {
+// 	Email         string
+// 	Name          string
+// 	UserID        string
+// 	SecurityLevel string
+// }
+
+func (A Auth) ResetPasswordByTenantAdmin(EmailAddress string) bool {
+	term.Write("Executing Method : Reset Password By Tenant Admin", term.Blank)
+	//Rest Password for any User by only Tenant Admin
+	h := newAuthHandler()
+
+	user, error := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		th := TenantHandler{}
+
+		//Get User for Email
+		ah := AuthHandler{}
+		normalUser, _ := ah.GetUser(EmailAddress)
+		//Get Default Tenant for Normal User
+		defaultTenant := th.GetDefaultTenant(normalUser.UserID)
+		fmt.Println("Default Tenant For User : " + defaultTenant.TenantID)
+		//Get Admin users for that tenant
+		adminUsers := th.GetTenantAdmin(defaultTenant.TenantID)
+		fmt.Println("Admin Users For Default Tenant : ")
+		fmt.Println(adminUsers)
+		//check if requester qalifies
+		isQualify := false
+
+		for _, adminUser := range adminUsers {
+			if adminUser["UserID"] == user.UserID {
+				isQualify = true
+				break
+			}
+		}
+
+		if isQualify {
+			authCert := AuthCertificate{}
+			authCert.Email = EmailAddress
+
+			h := newAuthHandler()
+			password := common.RandText(6)
+
+			status := h.ChangePassword(authCert, password)
+			if status {
+				A.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte("Successfully Completed. New Password : " + password))
+				return true
+			} else {
+				A.ResponseBuilder().SetResponseCode(500).WriteAndOveride([]byte(common.ErrorJson("Error occured Resetting Password!")))
+				return false
+			}
+		} else {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Requester Not Qualified as an Admin user for Email Address's Default Tenant.")))
+			return false
+		}
+
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Session Not Found!")))
+		return false
+	}
 }
 
 func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
@@ -886,9 +949,13 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.14"
+	versionData["API Version"] = "6.1.15"
 
 	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.15"] = [...]string{
+		"Added Reset password by tenant admin.",
+	}
 
 	changeLogs["6.1.14"] = [...]string{
 		"Removed SecurityToken check for GetTenant(), Added sessionless User registration with TenantID.",
