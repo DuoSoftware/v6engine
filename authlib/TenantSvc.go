@@ -387,11 +387,13 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 		auth := AuthHandler{}
 		a, err := auth.GetUser(o["email"])
 		if err == "" {
-			if th.IncreaseTenantCountInRatingEngine(o["Domain"], "ignore") {
+			if th.IncreaseTenantCountInRatingEngine(o["domain"], "ignore") {
 				//if th.IncreaseTenantCountInRatingEngine(o["domain"], T.Context.Request().Header.Get("Securitytoken")) {
-				th.AddUsersToTenant(o["Domain"], o["tname"], a.UserID, o["level"])
+				fmt.Println(o)
+				fmt.Println("Adding User To Tenant Now")
+				th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
 				inputParams["@@CNAME@@"] = a.Name
-				inputParams["@@DOMAIN@@"] = o["Domain"]
+				inputParams["@@DOMAIN@@"] = o["domain"]
 				inputParams["@@TENANTID@@"] = o["TenantID"]
 				go notifier.Notify("ignore", "tenant_accepted_success", email, inputParams, nil)
 				go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
