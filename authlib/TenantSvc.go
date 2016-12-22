@@ -291,6 +291,7 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			o["fromuseremail"] = user.Email
 			o["tname"] = t.Name
 			o["level"] = level
+			o["TenantID"] = t.TenantID
 			//o["userid"] = a.UserID
 			code := tmp.GenerateRequestCode(o)
 			var inputParams map[string]string
