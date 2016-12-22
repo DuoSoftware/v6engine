@@ -143,9 +143,10 @@ func (A Auth) ResetPasswordByTenantAdmin(EmailAddress string) bool {
 	term.Write("Executing Method : Reset Password By Tenant Admin", term.Blank)
 	//Rest Password for any User by only Tenant Admin
 	h := newAuthHandler()
-
+	fmt.Println("SecurityToken : " + A.Context.Request().Header.Get("Securitytoken"))
 	user, error := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
+		fmt.Println(user)
 		th := TenantHandler{}
 
 		//Get User for Email
@@ -189,6 +190,7 @@ func (A Auth) ResetPasswordByTenantAdmin(EmailAddress string) bool {
 		}
 
 	} else {
+		fmt.Println("Error : " + error)
 		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Session Not Found!")))
 		return false
 	}
@@ -949,7 +951,7 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.15"
+	versionData["API Version"] = "6.1.15a"
 
 	changeLogs := make(map[string]interface{})
 
