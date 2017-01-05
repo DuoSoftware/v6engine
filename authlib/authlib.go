@@ -47,6 +47,7 @@ type Auth struct {
 	invitedUserRegistration      gorest.EndPoint `method:"POST" path:"/InvitedUserRegistration/" postdata:"User"`
 	registerTenantUser           gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
 	userActivation               gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
+	userActivationByAdmin        gorest.EndPoint `method:"GET" path:"/userActivationByAdmin/{emailAddress:string}" output:"bool"`
 	logOut                       gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
 	checkPassword                gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
 	getUser                      gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
@@ -93,6 +94,44 @@ func (A Auth) UserActivation(token string) bool {
 		return false
 	}
 	return false
+}
+
+func (A Auth) UserActivationByAdmin(emailAddress string) bool {
+	//UserActivation By Tenant Admin
+	term.Write("Executing Method : User Activation By Tenant Admin", term.Blank)
+	status := false
+
+	h := newAuthHandler()
+	th := TenantHandler{}
+
+	user, error := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		//check if requester is Admin of his tenant
+		isAdmin := false
+		admins := th.GetTenantAdmin(user.Domain)
+		for _, admin := range admins {
+			if admin["UserID"] == user.UserID {
+				isAdmin = true
+				break
+			}
+		}
+		if isAdmin {
+			//check if this user domain matches email domain
+			emailUser, err := h.GetUser(emailAddress)
+			if err == "" {
+				//get default domain for email user
+				defaultTenant := th.GetDefaultTenant(emailUser.UserID)
+				//check if email user domain and requester domain equals
+				if defaultTenant.TenantID == user.Domain {
+					//ACTIVATE
+					h.DirectUserActivation(emailAddress)
+					status = true
+				}
+			}
+		}
+	}
+
+	return status
 }
 
 func (A Auth) GetLoginSessions(UserID string) []session.AuthCertificate {
@@ -902,7 +941,7 @@ func (A Auth) RegisterTenantUserWithTenant(u User, TenantID string) {
 	// c, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
 	// if err == "" {
 	t := TenantHandler{}
-	u, err := h.SaveUser(u, false, "tenant")
+	u, err := h.SaveUser(u, false, "customTenant")
 
 	if err == "" {
 		b, _ := json.Marshal(u)
@@ -951,9 +990,13 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.15a"
+	versionData["API Version"] = "6.1.16a"
 
 	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.16"] = [...]string{
+		"Added User Activation By Tenant Admin and removed auto activation for Custom Tenant User Registration.",
+	}
 
 	changeLogs["6.1.15"] = [...]string{
 		"Added Reset password by tenant admin.",

@@ -602,6 +602,14 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 // 	return false
 // }
 
+func (h *AuthHandler) DirectUserActivation(email string) {
+	u, _ := h.GetUser(email)
+	if !u.Active {
+		u.Active = true
+		client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
+	}
+}
+
 func (h *AuthHandler) UserActivation(token string) string {
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "activation").GetOne().ByUniqueKey(token).Ok()
 	if err == "" {
