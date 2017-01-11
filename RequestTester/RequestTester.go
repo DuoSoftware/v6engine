@@ -8,21 +8,8 @@ import (
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	Splash()
+	fmt.Println("Staring Request Tester...")
 
 	httpServer := endpoints.HTTPService{}
 	httpServer.Start()
-}
-
-func Splash() {
-	fmt.Println()
-	fmt.Println()
-	fmt.Println("______             _    _            _             ")
-	fmt.Println("|  _  \\           | |  | |          | |            ")
-	fmt.Println("| | | |_   _  ___ | |  | | ___  _ __| | _____ _ __ ")
-	fmt.Println("| | | | | | |/ _ \\| |/\\| |/ _ \\| '__| |/ / _ \\ '__|")
-	fmt.Println("| |/ /| |_| | (_) \\  /\\  / (_) | |  |   <  __/ |   ")
-	fmt.Println("|___/  \\__,_|\\___/ \\/  \\/ \\___/|_|  |_|\\_\\___|_|   ")
-	fmt.Println()
-	fmt.Println()
 }
