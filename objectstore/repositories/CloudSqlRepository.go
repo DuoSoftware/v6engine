@@ -10,6 +10,7 @@ import (
 	"duov6.com/queryparser"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
@@ -1226,7 +1227,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 	domain := request.Controls.Namespace
 	class := request.Controls.Class
 
-	isOkay := true
+	var processError error
 
 	if request.Body.Object != nil || len(request.Body.Objects) == 1 {
 
@@ -1241,25 +1242,21 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 		insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, obj, conn)
 		err, _ := repository.ExecuteNonQuery(conn, insertScript, request)
 		if err != nil {
-			if !strings.Contains(err.Error(), "specified twice") {
+			if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
 				updateScript := repository.GetSingleObjectUpdateQuery(request, domain, class, obj, conn)
 				err, message := repository.ExecuteNonQuery(conn, updateScript, request)
 				if err != nil {
-					isOkay = false
+					processError = err
 					request.Log("Error : " + err.Error())
 				} else {
 					if message == "No Rows Changed" {
 						request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
 					}
-					isOkay = true
 				}
 			} else {
-				isOkay = false
+				processError = err
 			}
-		} else {
-			isOkay = true
 		}
-
 	} else {
 
 		//execute insert queries
@@ -1268,11 +1265,10 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 		for x := 0; x < len(scripts); x++ {
 			script := scripts[x]["query"].(string)
 			if err == nil && script != "" {
-
 				err, _ := repository.ExecuteNonQuery(conn, script, request)
 				if err != nil {
 					request.Log("Error : " + err.Error())
-					if strings.Contains(err.Error(), "Duplicate entry") {
+					if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
 						errorBlock := scripts[x]["queryObject"].([]map[string]interface{})
 						for _, singleQueryObject := range errorBlock {
 							insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, singleQueryObject, conn)
@@ -1283,7 +1279,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 									err2, message := repository.ExecuteNonQuery(conn, updateScript, request)
 									if err2 != nil {
 										request.Log("Error : " + err2.Error())
-										isOkay = false
+										processError = err2
 									} else {
 										if message == "No Rows Changed" {
 											request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + singleQueryObject[request.Body.Parameters.KeyProperty].(string))
@@ -1294,27 +1290,31 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 						}
 					} else {
 						//if strings.Contains(err.Error(), "doesn't exist") {
-						isOkay = false
+						processError = err
 						break
 						//}
 					}
 				}
 
 			} else {
-				isOkay = false
-				request.Log("Error : " + err.Error())
+				if err != nil {
+					processError = err
+					request.Log("Error : " + err.Error())
+				} else {
+					processError = errors.New("Error : Empty Multiple Insert Script!")
+				}
 			}
 		}
 
 	}
 
-	if isOkay {
+	if processError == nil {
 		response.IsSuccess = true
 		response.Message = "Successfully stored object(s) in CloudSQL"
 		request.Log("Debug : " + response.Message)
 	} else {
 		response.IsSuccess = false
-		response.Message = "Error storing/updating all object(s) in CloudSQL."
+		response.Message = "Error storing/updating all object(s) in CloudSQL : " + processError.Error()
 		request.Log("Error : " + response.Message)
 	}
 
@@ -2157,3 +2157,111 @@ func (repository CloudSqlRepository) CloseConnection(conn *sql.DB) {
 	// 	request.Log("Connection Closed!")
 	// }
 }
+
+/*
+
+func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+
+	conn, _ := repository.GetConnection(request)
+
+	domain := request.Controls.Namespace
+	class := request.Controls.Class
+
+	isOkay := true
+
+	if request.Body.Object != nil || len(request.Body.Objects) == 1 {
+
+		obj := make(map[string]interface{})
+
+		if request.Body.Object != nil {
+			obj = request.Body.Object
+		} else {
+			obj = request.Body.Objects[0]
+		}
+
+		insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, obj, conn)
+		err, _ := repository.ExecuteNonQuery(conn, insertScript, request)
+		if err != nil {
+			if !strings.Contains(err.Error(), "specified twice") {
+				updateScript := repository.GetSingleObjectUpdateQuery(request, domain, class, obj, conn)
+				err, message := repository.ExecuteNonQuery(conn, updateScript, request)
+				if err != nil {
+					isOkay = false
+					request.Log("Error : " + err.Error())
+				} else {
+					if message == "No Rows Changed" {
+						request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
+					}
+					isOkay = true
+				}
+			} else {
+				isOkay = false
+			}
+		} else {
+			isOkay = true
+		}
+
+	} else {
+
+		//execute insert queries
+		scripts, err := repository.GetMultipleStoreScripts(conn, request)
+
+		for x := 0; x < len(scripts); x++ {
+			script := scripts[x]["query"].(string)
+			if err == nil && script != "" {
+
+				err, _ := repository.ExecuteNonQuery(conn, script, request)
+				if err != nil {
+					request.Log("Error : " + err.Error())
+					if strings.Contains(err.Error(), "Duplicate entry") {
+						errorBlock := scripts[x]["queryObject"].([]map[string]interface{})
+						for _, singleQueryObject := range errorBlock {
+							insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, singleQueryObject, conn)
+							err1, _ := repository.ExecuteNonQuery(conn, insertScript, request)
+							if err1 != nil {
+								if !strings.Contains(err.Error(), "specified twice") {
+									updateScript := repository.GetSingleObjectUpdateQuery(request, domain, class, singleQueryObject, conn)
+									err2, message := repository.ExecuteNonQuery(conn, updateScript, request)
+									if err2 != nil {
+										request.Log("Error : " + err2.Error())
+										isOkay = false
+									} else {
+										if message == "No Rows Changed" {
+											request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + singleQueryObject[request.Body.Parameters.KeyProperty].(string))
+										}
+									}
+								}
+							}
+						}
+					} else {
+						//if strings.Contains(err.Error(), "doesn't exist") {
+						isOkay = false
+						break
+						//}
+					}
+				}
+
+			} else {
+				isOkay = false
+				request.Log("Error : " + err.Error())
+			}
+		}
+
+	}
+
+	if isOkay {
+		response.IsSuccess = true
+		response.Message = "Successfully stored object(s) in CloudSQL"
+		request.Log("Debug : " + response.Message)
+	} else {
+		response.IsSuccess = false
+		response.Message = "Error storing/updating all object(s) in CloudSQL."
+		request.Log("Error : " + response.Message)
+	}
+
+	repository.CloseConnection(conn)
+	return response
+}
+
+*/
