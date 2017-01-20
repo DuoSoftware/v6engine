@@ -61,6 +61,10 @@ type Auth struct {
 	getUserByUserId              gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
 	toggleLogs                   gorest.EndPoint `method:"GET" path:"/ToggleLogs/" output:"string"`
 	registerTenantUserWithTenant gorest.EndPoint `method:"POST" path:"/RegisterTenantUserWithTenant/{TenantID:string}" postdata:"User"`
+
+	//Reset Password methods via URL
+	requestResetPassword gorest.EndPoint `method:"GET" path:"/RequestResetPassword/{EmailAddress:string}" output:"AuthResponse"`
+	resetPassword        gorest.EndPoint `method:"GET" path:"/ResetPassword/{Password:string}/{Token:string}" output:"AuthResponse"`
 }
 
 func (A Auth) ToggleLogs() string {
@@ -169,6 +173,20 @@ func (A Auth) ForgotPassword(EmailAddress, RequestCode string) bool {
 	term.Write("Executing Method : Forgot Password / Reset Password", term.Blank)
 	h := newAuthHandler()
 	return h.ForgetPassword(EmailAddress)
+}
+
+func (A Auth) RequestResetPassword(EmailAddress string) AuthResponse {
+	//Rest Password. Sends an Email with New password
+	term.Write("Executing Method : Request Reset Password By URL", term.Blank)
+	h := newAuthHandler()
+	return h.RequestResetPassword(EmailAddress)
+}
+
+func (A Auth) ResetPassword(Password, Token string) AuthResponse {
+	//Rest Password. Sends an Email with New password
+	term.Write("Executing Method : Reset Password By TOKEN", term.Blank)
+	h := newAuthHandler()
+	return h.ResetPassword(Password, Token)
 }
 
 // type InviteUsers struct {
@@ -990,9 +1008,13 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.16a"
+	versionData["API Version"] = "6.1.17"
 
 	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.17"] = [...]string{
+		"Added URL based Password Reset",
+	}
 
 	changeLogs["6.1.16"] = [...]string{
 		"Added User Activation By Tenant Admin and removed auto activation for Custom Tenant User Registration.",

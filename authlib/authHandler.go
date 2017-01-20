@@ -450,6 +450,146 @@ func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 	return false
 }
 
+func (h *AuthHandler) RequestResetPassword(emailaddress string) AuthResponse {
+	authResponse := AuthResponse{}
+	otherdata := make(map[string]interface{})
+	authResponse.OtherData = otherdata
+	//DB Record Format :  Email(PK), timestamp, ResetRequestCount
+
+	bytesUsers, errR := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(emailaddress).Ok()
+	if errR != "" || len(bytesUsers) < 4 {
+		authResponse.Status = false
+		if errR != "" {
+			authResponse.Message = "Error : " + errR
+		} else {
+			authResponse.Message = "User doesn't exist."
+		}
+		return authResponse
+	}
+
+	//Check DB for record
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "pwd_reset_requests").GetOne().ByUniqueKey(emailaddress).Ok()
+	if err != "" {
+		authResponse.Status = false
+		authResponse.Message = "Error : " + err
+		return authResponse
+	}
+
+	tokenObject := ResetPasswordToken{}
+	tokenObject.Email = emailaddress
+	tokenObject.Token = common.RandText(10)
+
+	requestObj := ResetPasswordRequests{}
+	_ = json.Unmarshal(bytes, &requestObj)
+
+	if requestObj.Email == "" {
+		//New Password Request. Save Request in DB
+		requestObj.Email = emailaddress
+		requestObj.Timestamp = time.Now().UTC().Format(time.RFC3339)
+		requestObj.ResetRequestCount = 1
+		client.Go("ignore", "com.duosoftware.auth", "pwd_reset_requests").StoreObject().WithKeyField("Email").AndStoreOne(requestObj).Ok()
+
+		//Save Token in DB
+		client.Go("ignore", "com.duosoftware.auth", "pwd_reset_tokens").StoreObject().WithKeyField("Email").AndStoreOne(tokenObject).Ok()
+
+		//Send Email with Link+Token
+		inputParams := make(map[string]string)
+		inputParams["@@CODE@@"] = tokenObject.Token
+		go notifier.Notify("ignore", "Password_Reset_Request", emailaddress, inputParams, nil)
+	} else {
+		//Password re-request. Check if number of reset requests in current hour is more than 10
+		//if so Reject. Else proceed.
+		objectTime, _ := time.Parse(time.RFC3339, requestObj.Timestamp)
+		timeDifference := time.Now().UTC().Sub(objectTime)
+		timeDifferenceInHours := int(timeDifference.Hours())
+
+		if requestObj.ResetRequestCount < 10 {
+			//Looks good. Proceed.
+			//increment count and save request again
+			requestObj.ResetRequestCount++
+			client.Go("ignore", "com.duosoftware.auth", "pwd_reset_requests").StoreObject().WithKeyField("Email").AndStoreOne(requestObj).Ok()
+
+			//generate new token. and save in db
+			client.Go("ignore", "com.duosoftware.auth", "pwd_reset_tokens").StoreObject().WithKeyField("Email").AndStoreOne(tokenObject).Ok()
+
+			//Send Email with Link+Token
+			inputParams := make(map[string]string)
+			inputParams["@@CODE@@"] = tokenObject.Token
+			go notifier.Notify("ignore", "Password_Reset_Request", emailaddress, inputParams, nil)
+
+		} else {
+			if timeDifferenceInHours == 0 {
+				//deny
+				authResponse.Status = false
+				authResponse.Message = "Error : Too many password requests received within an hour."
+				return authResponse
+			} else {
+				//reset request count and continue
+				requestObj.ResetRequestCount = 1
+				requestObj.Timestamp = time.Now().UTC().Format(time.RFC3339)
+				client.Go("ignore", "com.duosoftware.auth", "pwd_reset_requests").StoreObject().WithKeyField("Email").AndStoreOne(requestObj).Ok()
+
+				//generate new token. and save in db
+				client.Go("ignore", "com.duosoftware.auth", "pwd_reset_tokens").StoreObject().WithKeyField("Email").AndStoreOne(tokenObject).Ok()
+
+				//Send Email with Link+Token
+				inputParams := make(map[string]string)
+				inputParams["@@CODE@@"] = tokenObject.Token
+				go notifier.Notify("ignore", "Password_Reset_Request", emailaddress, inputParams, nil)
+			}
+		}
+	}
+
+	authResponse.Status = true
+	authResponse.Message = "Password reset link sent to Email Address."
+
+	return authResponse
+}
+
+func (h *AuthHandler) ResetPassword(Password, Token string) AuthResponse {
+	authResponse := AuthResponse{}
+	otherdata := make(map[string]interface{})
+	authResponse.OtherData = otherdata
+
+	//read token
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "pwd_reset_tokens").GetOne().BySearching("Token:" + Token).Ok()
+	if err != "" {
+		authResponse.Status = false
+		authResponse.Message = "Error : " + err
+		return authResponse
+	}
+
+	if len(bytes) < 4 {
+		authResponse.Status = false
+		authResponse.Message = "Error : No such Token exists"
+		return authResponse
+	}
+
+	var tokens []ResetPasswordToken
+	_ = json.Unmarshal(bytes, &tokens)
+	tokenObj := tokens[0]
+
+	u, error := h.GetUser(tokenObj.Email)
+	if error == "" {
+		u.ConfirmPassword = Password
+		u.Password = Password
+		h.SaveUser(u, true, "resetpassword")
+	} else {
+		authResponse.Status = false
+		authResponse.Message = "Error : User associated for Token is either removed or not exists"
+		return authResponse
+	}
+
+	//delete token
+	client.Go("ignore", "com.duosoftware.auth", "pwd_reset_tokens").DeleteObject().WithKeyField("Email").AndDeleteObject(tokenObj).Ok()
+	//delete request
+	client.Go("ignore", "com.duosoftware.auth", "pwd_reset_requests").DeleteObject().WithKeyField("Email").AndDeleteObject(tokenObj).Ok()
+
+	authResponse.Status = true
+	authResponse.Message = "Password Reset Successful."
+	return authResponse
+}
+
 // ChangePassword Changes the password
 func (h *AuthHandler) ChangePassword(a AuthCertificate, newPassword string) bool {
 	u, error := h.GetUser(a.Email)
@@ -514,6 +654,10 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 			case "changepassword":
 				term.Write("Password Changed for "+u.Name, term.Debug)
 				go notifier.Notify("ignore", "ChangePassword", u.EmailAddress, inputParams, nil)
+				break
+			case "resetpassword":
+				term.Write("Password Reset for "+u.Name, term.Debug)
+				go notifier.Notify("ignore", "ResetPassword", u.EmailAddress, inputParams, nil)
 				break
 			default:
 				inputParams["@@CODE@@"] = Activ.Token

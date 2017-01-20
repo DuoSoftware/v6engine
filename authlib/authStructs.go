@@ -72,6 +72,12 @@ type AppAutherize struct {
 	OtherData     map[string]interface{}
 }
 
+type AuthResponse struct {
+	Status    bool
+	Message   string
+	OtherData map[string]interface{}
+}
+
 type AppCertificate struct {
 	AuthKey       string
 	UserID        string
@@ -114,4 +120,15 @@ type AuthCode struct { // Clas starts here
 	Code          string // Code for authendication
 	UserID        string // User ID of the person who is getting activated
 	URI           string // Auth URI
+}
+
+type ResetPasswordRequests struct {
+	Email             string
+	Timestamp         string
+	ResetRequestCount int
+}
+
+type ResetPasswordToken struct {
+	Email string
+	Token string
 }
