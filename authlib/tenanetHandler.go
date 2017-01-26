@@ -654,11 +654,12 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 			client.Go("ignore", "com.duosoftware.tenant", "deniedUserTemp").StoreObject().WithKeyField("UserID").AndStoreOne(denyMap).Ok()
 			//Adding to denied list ends here
 
-			//users are found.... deactive them
+			//users are found.... delete them
 			updateUser := u[0]
 			updateUser.Active = false
 			term.Write("Updating the New user as Disabled since no tenants are remaining : "+updateUser.EmailAddress, term.Debug)
-			client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(updateUser).Ok()
+			//client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(updateUser).Ok()
+			client.Go("ignore", "com.duosoftware.auth", "users").DeleteObject().WithKeyField("EmailAddress").AndDeleteObject(updateUser).Ok()
 
 			//Clear All Sessions
 			sessionBytes, _ := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("UserID:" + updateUser.UserID).Ok()

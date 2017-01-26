@@ -334,10 +334,26 @@ func (T TenantSvc) RemoveUser(email string) bool {
 		auth := AuthHandler{}
 		u, err := auth.GetUser(email)
 		if err == "" {
+			//check if requester is tenant admin
+			isAdmin := false
+			admins := T.GetTenantAdmin(user.Domain)
+			for _, individualadmin := range admins {
+				if individualadmin.Email == user.Email {
+					isAdmin = true
+					break
+				}
+			}
+
+			if !isAdmin {
+				T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("You should be a Tenant Administrator to perform this action.")))
+				return false
+			}
+
 			if user.Email == email {
 				T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Cant remove yourself from the.")))
 				return false
 			}
+
 			th := TenantHandler{}
 			//_, p := th.Autherized(user.Domain, user)
 			//if p.SecurityLevel == "admin" {
@@ -350,7 +366,6 @@ func (T TenantSvc) RemoveUser(email string) bool {
 			//T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Need to have Admin access to tenant to add user"))
 			//return false
 			//}
-
 		} else {
 			return false
 		}
