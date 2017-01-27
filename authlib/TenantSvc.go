@@ -467,7 +467,25 @@ func (T TenantSvc) GetTenants(securityToken string) []TenantMinimum {
 
 	if error == "" {
 		th := TenantHandler{}
-		return th.GetTenantsForUser(user.UserID)
+
+		//get the default tenant for user
+
+		defaultTenant := T.GetDefaultTenant(user.UserID)
+
+		allTenants := th.GetTenantsForUser(user.UserID)
+
+		if len(allTenants) > 1 {
+			for index, singleTenant := range allTenants {
+				if singleTenant.TenantID == defaultTenant.TenantID && index != 0 {
+					tempTenant := allTenants[0]
+					allTenants[0] = singleTenant
+					allTenants[index] = tempTenant
+				}
+			}
+			return allTenants
+		} else {
+			return allTenants
+		}
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 	}
