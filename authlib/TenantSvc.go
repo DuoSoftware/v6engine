@@ -480,6 +480,7 @@ func (T TenantSvc) GetTenants(securityToken string) []TenantMinimum {
 					tempTenant := allTenants[0]
 					allTenants[0] = singleTenant
 					allTenants[index] = tempTenant
+					break
 				}
 			}
 			return allTenants
