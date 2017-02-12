@@ -77,7 +77,7 @@ func main() {
 	term.Write("|     Duo v6 Auth Service 6.0                                  |", term.Splash)
 	term.Write("|     New updat		                                   |", term.Splash)
 	term.Write("================================================================", term.Splash)
-	//term.StartCommandLine()
+
 	forever := make(chan bool)
 	<-forever
 
