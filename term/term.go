@@ -3,12 +3,10 @@ package term
 import (
 	"bufio"
 	"duov6.com/config"
-	"duov6.com/updater"
 	"encoding/json"
 	"fmt"
 	"github.com/fatih/color"
 	"os"
-	"os/exec"
 	"reflect"
 	"time"
 )
