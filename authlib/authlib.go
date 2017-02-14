@@ -1008,9 +1008,13 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.19a"
+	versionData["API Version"] = "6.1.20"
 
 	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.20"] = [...]string{
+		"Removed securityToken check being applied twice at GetTenants. Small fix on GetDefautTenant method.",
+	}
 
 	changeLogs["6.1.19"] = [...]string{
 		"Sorted GetTenant for UserID method to output default tenant in the first index.",
