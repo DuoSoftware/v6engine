@@ -470,7 +470,7 @@ func (T TenantSvc) GetTenants(securityToken string) []TenantMinimum {
 
 		//get the default tenant for user
 
-		defaultTenant := T.GetDefaultTenant(user.UserID)
+		defaultTenant := th.GetDefaultTenant(user.UserID)
 
 		allTenants := th.GetTenantsForUser(user.UserID)
 
