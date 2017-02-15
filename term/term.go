@@ -158,8 +158,8 @@ const (
 	BgCyan    = "\x1b[46m"
 	BgWhite   = "\x1b[47m"
 
-	Error       = 1
 	Information = 0
+	Error       = 1
 	Debug       = 2
 	Splash      = 3
 	Blank       = 4
