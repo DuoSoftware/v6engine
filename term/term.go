@@ -96,7 +96,7 @@ func Write(data interface{}, mType int) {
 			color.Yellow(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
 		}
 	default:
-		color.Blue(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+		color.Cyan(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
 	}
 
 	// if currentPlugin != nil {
