@@ -5,6 +5,7 @@ import (
 	"duov6.com/term"
 	"encoding/json"
 	"strconv"
+	"time"
 )
 
 var Config AuthConfig
@@ -33,7 +34,13 @@ func SetConfig(c AuthConfig) {
 func SetupConfig() {
 
 	Config = GetConfig()
-	if Config.UserName != "" {
+	time.Sleep(1 * time.Second)
+
+	if Config.UserLoginTries != 0 {
+		return
+	}
+
+	/*if Config.UserName != "" {
 		return
 	}
 	term.SplashScreen("setup.art")
@@ -50,12 +57,13 @@ func SetupConfig() {
 	Config.Smtpserver = term.Read("SMTP Server")
 	Config.Smtpusername = term.Read("SMTP Username")
 	Config.Smtppassword = term.Read("SMTP Password")
+	*/
+
 	s, _ := strconv.ParseInt(term.Read("Number of user login Attempts"), 10, 32)
 	x, _ := strconv.ParseInt(term.Read("Number of user login Sessions (0 to Any number of user logins)"), 10, 32)
 	Config.UserLoginTries = s
 	Config.NumberOFUserLogins = x
 	SetConfig(Config)
-
 }
 
 type AppScope struct {
