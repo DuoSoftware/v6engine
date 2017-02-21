@@ -82,12 +82,13 @@ func HTTP_PUT(url string, headers map[string]string, JSON_DATA []byte, isURLPara
 	if err != nil {
 		err = errors.New("Connection Failed!")
 	} else {
+		defer resp.Body.Close()
 		body, _ = ioutil.ReadAll(resp.Body)
 		if resp.StatusCode != 200 {
 			err = errors.New(string(body))
 		}
 	}
-	defer resp.Body.Close()
+	//defer resp.Body.Close()
 	return
 }
 
@@ -123,12 +124,13 @@ func HTTP_DELETE(url string, headers map[string]string, JSON_DATA []byte, isURLP
 	if err != nil {
 		err = errors.New("Connection Failed!")
 	} else {
+		defer resp.Body.Close()
 		body, _ = ioutil.ReadAll(resp.Body)
 		if resp.StatusCode != 200 {
 			err = errors.New(string(body))
 		}
 	}
-	defer resp.Body.Close()
+	// defer resp.Body.Close()
 	return
 }
 
@@ -164,11 +166,12 @@ func HTTP_GET(url string, headers map[string]string, isURLParams bool) (err erro
 	if err != nil {
 		err = errors.New("Connection Failed!")
 	} else {
+		defer resp.Body.Close()
 		body, _ = ioutil.ReadAll(resp.Body)
 		if resp.StatusCode != 200 {
 			err = errors.New(string(body))
 		}
 	}
-	defer resp.Body.Close()
+	// defer resp.Body.Close()
 	return
 }
