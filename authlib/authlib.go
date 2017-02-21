@@ -65,10 +65,42 @@ type Auth struct {
 	//Reset Password methods via URL
 	requestResetPassword gorest.EndPoint `method:"GET" path:"/RequestResetPassword/{EmailAddress:string}" output:"AuthResponse"`
 	resetPassword        gorest.EndPoint `method:"GET" path:"/ResetPassword/{Password:string}/{Token:string}" output:"AuthResponse"`
+
+	//resend email methods
+	resendActivationEmail gorest.EndPoint `method:"GET" path:"/ResendActivationEmail/{EmailAddress:string}/" output:"string"`
 }
 
 func (A Auth) ToggleLogs() string {
 	return term.ToggleConfig()
+}
+
+func (A Auth) ResendActivationEmail(EmailAddress string) string {
+	//Get user for email address
+	ah := AuthHandler{}
+	user, errString := ah.GetUser(EmailAddress)
+	if errString == "" && user.UserID != "" {
+		Activ := ActivationEmail{}
+		Activ.GUUserID = EmailAddress
+		Activ.Token = common.RandText(10)
+
+		inputParams := make(map[string]string)
+		inputParams["@@email@@"] = EmailAddress
+		inputParams["@@name@@"] = user.Name
+		inputParams["@@CEMAIL@@"] = EmailAddress
+		inputParams["@@CNAME@@"] = user.Name
+		inputParams["@@CODE@@"] = Activ.Token
+
+		//save in db
+		client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
+		//send email
+		go notifier.Notify("ignore", "Verification", EmailAddress, inputParams, nil)
+		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.ErrorJson("Successfully resent the email!")))
+		return "Successfully resent the email!"
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("User not found for this emailaddress.")))
+		return "User not found for this emailaddress."
+	}
+	return "Unknown Error"
 }
 
 //GetClientIP Represent to get ClientIP
@@ -1008,9 +1040,13 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.20"
+	versionData["API Version"] = "6.1.21"
 
 	changeLogs := make(map[string]interface{})
+
+	changeLogs["6.1.21"] = [...]string{
+		"Added Resend activation email.",
+	}
 
 	changeLogs["6.1.20"] = [...]string{
 		"Removed securityToken check being applied twice at GetTenants. Small fix on GetDefautTenant method.",
