@@ -263,6 +263,10 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			s.TenantID = t.TenantID
 			s.Name = a.Name
 			s.Code = "Not Available Reason : Tenant_Invitation_Existing"
+
+			fmt.Println("-----------------------")
+			fmt.Println(s)
+			fmt.Println("-----------------------")
 			th.SavePendingAddUserRequest(s)
 
 			fmt.Println("-----------------------------------------------")

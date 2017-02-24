@@ -421,7 +421,12 @@ func (h *TenantHandler) RemovePendingRequest(TID string, email string) {
 }
 
 func (h *TenantHandler) SavePendingAddUserRequest(request PendingUserRequest) {
-	client.Go("ignore", request.TenantID, "AddUserRequestLogs").StoreObject().WithKeyField("Email").AndStoreOne(request).Ok()
+	err := client.Go("ignore", request.TenantID, "AddUserRequestLogs").StoreObject().WithKeyField("Email").AndStoreOne(request).Ok()
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Oooooooooooh yeah")
+	}
 }
 
 func (h *TenantHandler) RemoveAddUserRequest(email string, tenant string) {
