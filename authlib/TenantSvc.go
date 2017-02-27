@@ -9,6 +9,7 @@ import (
 	"duov6.com/session"
 	"duov6.com/term"
 	"fmt"
+	"strings"
 )
 
 type TenantSvc struct {
@@ -241,72 +242,108 @@ func (T TenantSvc) AddUser(email, level string) bool {
 	//Add User to Tenant
 	term.Write("Executing Method : Add User (To Tenant)", term.Blank)
 
-	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	auth := AuthHandler{}
+	th := TenantHandler{}
+
+	addUserType := T.Context.Request().Header.Get("AddUserType")
+
+	inviter, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
+		//no error
+		invitee, err := auth.GetUser(email)
 
-		auth := AuthHandler{}
-		a, err := auth.GetUser(email)
-		emptyUser := User{}
-		if err == "" && a != emptyUser {
-			th := TenantHandler{}
-			t := th.GetTenant(user.Domain)
-			var inputParams map[string]string
-			inputParams = make(map[string]string)
-			inputParams["@@EMAIL@@"] = email
-			inputParams["@@INVEMAIL@@"] = user.Email
-			inputParams["@@NAME@@"] = user.Name
-			inputParams["@@DOMAIN@@"] = user.Domain
+		if err == "" && invitee != (User{}) {
+			//User already exists in system
+			t := th.GetTenant(inviter.Domain)
 
-			s := PendingUserRequest{}
-			s.UserID = a.UserID
-			s.Email = a.EmailAddress
-			s.TenantID = t.TenantID
-			s.Name = a.Name
-			s.Code = "Not Available Reason : Tenant_Invitation_Existing"
-			th.SavePendingAddUserRequest(s)
+			if strings.EqualFold(addUserType, "") {
+				fmt.Println("huehuehue")
+				//send email to confirm. add to tenant from AcceptRequest
+				tmp := tempRequestGenerator{}
+				o := make(map[string]string)
+				o["process"] = "tenant_invitation_existing_request_consent"
+				o["email"] = email
+				o["invitedUserID"] = inviter.UserID
+				o["name"] = inviter.Name
+				o["domain"] = inviter.Domain
+				o["fromuseremail"] = inviter.Email
+				o["tname"] = t.Name
+				o["level"] = level
+				o["TenantID"] = t.TenantID
+				o["inviteeName"] = invitee.Name
+				//o["userid"] = invitee.UserID
+				code := tmp.GenerateRequestCode(o)
+				var inputParams map[string]string
+				inputParams = make(map[string]string)
+				inputParams["@@EMAIL@@"] = email
+				inputParams["@@INVEMAIL@@"] = inviter.Email
+				inputParams["@@NAME@@"] = inviter.Name
+				inputParams["@@DOMAIN@@"] = inviter.Domain
+				inputParams["@@CODE@@"] = code
 
-			fmt.Println("-----------------------------------------------")
-			fmt.Println("Tenant Invitation Existing ..... ")
-			fmt.Println(inputParams)
-			fmt.Println("-----------------------------------------------")
+				fmt.Println("-----------------------------------------------")
+				fmt.Println("Tenant Consent Email to Existing User ..... ")
+				fmt.Println(inputParams)
+				fmt.Println("-----------------------------------------------")
 
-			go notifier.Notify("ignore", "tenant_invitation_existing", email, inputParams, nil)
-
-			if th.IncreaseTenantCountInRatingEngine(user.Domain, T.Context.Request().Header.Get("Securitytoken")) {
-				th.AddUsersToTenant(user.Domain, t.Name, a.UserID, level)
+				go notifier.Notify("ignore", "tenant_invitation_existing_request_consent", email, inputParams, nil)
 				return true
 			} else {
-				return false
+				//send email and add to tenant without consent
+				var inputParams map[string]string
+				inputParams = make(map[string]string)
+				inputParams["@@EMAIL@@"] = email
+				inputParams["@@INVEMAIL@@"] = inviter.Email
+				inputParams["@@NAME@@"] = inviter.Name
+				inputParams["@@DOMAIN@@"] = inviter.Domain
+
+				s := PendingUserRequest{}
+				s.UserID = invitee.UserID
+				s.Email = invitee.EmailAddress
+				s.TenantID = t.TenantID
+				s.Name = invitee.Name
+				s.Code = "Not Available Reason : Tenant_Invitation_Existing"
+				th.SavePendingAddUserRequest(s)
+
+				fmt.Println("-----------------------------------------------")
+				fmt.Println("Tenant Invitation Existing ..... ")
+				fmt.Println(inputParams)
+				fmt.Println("-----------------------------------------------")
+
+				go notifier.Notify("ignore", "tenant_invitation_existing", email, inputParams, nil)
+				//add user to tenant
+				th.AddUsersToTenant(inviter.Domain, t.Name, invitee.UserID, level)
+				return true
 			}
 		} else {
+			//brand new user
 			tmp := tempRequestGenerator{}
-			th := TenantHandler{}
-			t := th.GetTenant(user.Domain)
+			t := th.GetTenant(inviter.Domain)
 			o := make(map[string]string)
 			o["process"] = "tenant_invitation"
 			o["email"] = email
-			o["invitedUserID"] = user.UserID
-			o["name"] = user.Name
-			o["domain"] = user.Domain
-			o["fromuseremail"] = user.Email
+			o["invitedUserID"] = inviter.UserID
+			o["name"] = inviter.Name
+			o["domain"] = inviter.Domain
+			o["fromuseremail"] = inviter.Email
 			o["tname"] = t.Name
 			o["level"] = level
 			o["TenantID"] = t.TenantID
-			//o["userid"] = a.UserID
+			//o["userid"] = invitee.UserID
 			code := tmp.GenerateRequestCode(o)
 			var inputParams map[string]string
 			inputParams = make(map[string]string)
 			inputParams["@@EMAIL@@"] = email
-			inputParams["@@INVEMAIL@@"] = user.Email
-			inputParams["@@NAME@@"] = user.Name
-			inputParams["@@DOMAIN@@"] = user.Domain
+			inputParams["@@INVEMAIL@@"] = inviter.Email
+			inputParams["@@NAME@@"] = inviter.Name
+			inputParams["@@DOMAIN@@"] = inviter.Domain
 			inputParams["@@CODE@@"] = code
 
 			s := PendingUserRequest{}
-			s.UserID = a.UserID
+			s.UserID = invitee.UserID
 			s.Email = email
 			s.TenantID = t.TenantID
-			s.Name = a.Name
+			s.Name = invitee.Name
 			s.Code = code
 			th.SavePendingAddUserRequest(s)
 
@@ -388,6 +425,8 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 	// 	return false
 	// }
 
+	// tenant_invitation_existing_request_consent
+
 	tmp := tempRequestGenerator{}
 
 	o, _ := tmp.GetRequestCode(RequestToken)
@@ -440,6 +479,25 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 			} else {
 				return false
 			}
+		} else {
+			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Email not registered.")))
+			return false
+		}
+		break
+	case "tenant_invitation_existing_request_consent":
+		auth := AuthHandler{}
+		a, err := auth.GetUser(o["email"])
+		if err == "" && a != (User{}) {
+			fmt.Println(o)
+			fmt.Println("Adding User To Tenant Now")
+			th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
+			inputParams["@@CNAME@@"] = o["name"]
+			inputParams["@@INVITEE"] = o["inviteeName"]
+			inputParams["@@DOMAIN@@"] = o["domain"]
+			inputParams["@@TENANTID@@"] = o["TenantID"]
+			//send email to admin that user has agreed to accept the request
+			go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
+			return true
 		} else {
 			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Email not registered.")))
 			return false
