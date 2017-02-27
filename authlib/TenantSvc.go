@@ -256,8 +256,7 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			//User already exists in system
 			t := th.GetTenant(inviter.Domain)
 
-			if strings.EqualFold(addUserType, "") {
-				fmt.Println("huehuehue")
+			if strings.EqualFold(addUserType, "invite") {
 				//send email to confirm. add to tenant from AcceptRequest
 				tmp := tempRequestGenerator{}
 				o := make(map[string]string)
@@ -505,7 +504,7 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 
 			//send email to admin that user has agreed to accept the request
 			go notifier.Notify("ignore", "tenant_invitation_added_success", o["fromuseremail"], inputParams, nil)
-			T.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.ErrorJson("You have been successfully completed tenant invitation process!")))
+			T.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte("You have been successfully completed tenant invitation process. Login and use tenant switcher to switch between avaiable tenants."))
 			return true
 		} else {
 			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Email not registered.")))
