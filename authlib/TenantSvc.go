@@ -281,6 +281,14 @@ func (T TenantSvc) AddUser(email, level string) bool {
 				inputParams["@@DOMAIN@@"] = inviter.Domain
 				inputParams["@@CODE@@"] = code
 
+				s := PendingUserRequest{}
+				s.UserID = invitee.UserID
+				s.Email = invitee.EmailAddress
+				s.TenantID = t.TenantID
+				s.Name = invitee.Name
+				s.Code = "Not Available Reason : Tenant_Invitation_Existing"
+				th.SavePendingAddUserRequest(s)
+
 				fmt.Println("-----------------------------------------------")
 				fmt.Println("Tenant Consent Email to Existing User ..... ")
 				fmt.Println(inputParams)
@@ -296,14 +304,6 @@ func (T TenantSvc) AddUser(email, level string) bool {
 				inputParams["@@INVEMAIL@@"] = inviter.Email
 				inputParams["@@NAME@@"] = inviter.Name
 				inputParams["@@DOMAIN@@"] = inviter.Domain
-
-				s := PendingUserRequest{}
-				s.UserID = invitee.UserID
-				s.Email = invitee.EmailAddress
-				s.TenantID = t.TenantID
-				s.Name = invitee.Name
-				s.Code = "Not Available Reason : Tenant_Invitation_Existing"
-				th.SavePendingAddUserRequest(s)
 
 				fmt.Println("-----------------------------------------------")
 				fmt.Println("Tenant Invitation Existing ..... ")
@@ -492,11 +492,20 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 			fmt.Println("Adding User To Tenant Now")
 			th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
 			inputParams["@@CNAME@@"] = o["name"]
-			inputParams["@@INVITEE"] = o["inviteeName"]
+			inputParams["@@INVITEE@@"] = o["inviteeName"]
 			inputParams["@@DOMAIN@@"] = o["domain"]
 			inputParams["@@TENANTID@@"] = o["TenantID"]
+
+			th.RemoveAddUserRequest(o["email"], o["TenantID"])
+
+			fmt.Println("-----------------------------------------------")
+			fmt.Println("Tenant Invitation accepted mail to ADMIN..... ")
+			fmt.Println(inputParams)
+			fmt.Println("-----------------------------------------------")
+
 			//send email to admin that user has agreed to accept the request
-			go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
+			go notifier.Notify("ignore", "tenant_invitation_added_success", o["fromuseremail"], inputParams, nil)
+			T.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.ErrorJson("You have been successfully completed tenant invitation process!")))
 			return true
 		} else {
 			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Email not registered.")))
