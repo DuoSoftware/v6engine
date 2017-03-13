@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type Tenant struct {
@@ -90,6 +91,11 @@ func (h *TenantHandler) CreateTenant(t Tenant, user session.AuthCertificate, upd
 				term.Write("Auto Gen TID  "+t.TenantID+" New Tenant "+t.Name, term.Debug)
 			}
 			term.Write("Save Tenant saving Tenant  "+t.Name+" New Tenant "+t.Name, term.Debug)
+
+			//Add Created Date and time
+
+			t.OtherData["Timestamp"] = time.Now().UTC().Format(time.RFC3339)
+
 			var inputParams map[string]string
 			inputParams = make(map[string]string)
 			inputParams["@@email@@"] = user.Email

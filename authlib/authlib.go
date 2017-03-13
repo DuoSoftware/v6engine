@@ -868,7 +868,6 @@ func (A Auth) UpdateScope(object AuthorizeAppData, SecurityToken, UserID, Applic
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
-
 		//Insert Object To Objectore
 		id := common.GetHash(ApplicationID + UserID)
 		data := make(map[string]interface{})
@@ -1040,7 +1039,7 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.22"
+	versionData["API Version"] = "6.1.22a"
 
 	changeLogs := make(map[string]interface{})
 
