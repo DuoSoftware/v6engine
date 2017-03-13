@@ -212,6 +212,7 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 	response := RepositoryResponse{}
 	if request.Body.Query.Parameters != "*" {
 		if strings.Contains(request.Body.Query.Type, "Query") {
+			//ObjectStore SQL format
 			parameters := make(map[string]interface{})
 
 			if request.Extras["skip"] != nil {
@@ -243,6 +244,7 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 			query := formattedQuery
 			response = repository.queryCommonMany(query, request)
 		} else if strings.Contains(request.Body.Query.Type, "TSQL") {
+			//Transactional SQL
 			query := request.Body.Query.Parameters
 			conn, _ := repository.GetConnection(request)
 			err, _ := repository.ExecuteNonQuery(conn, query, request)
@@ -253,6 +255,13 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 				response.IsSuccess = true
 				response.Message = "Successfully Executed TSQL Query."
 			}
+		} else if strings.Contains(request.Body.Query.Type, "SSQL") {
+			//Standard SQL
+			request.Log("Warning : Language specific Standard SQL mode. SQL query wont be modified according to repository.")
+			request.Log("Warning : All OrderBy, Skip, Take values by URL Params and Headers will be ignored!")
+
+			query := request.Body.Query.Parameters
+			response = repository.queryCommonMany(query, request)
 		}
 	} else {
 		response = repository.GetAll(request)

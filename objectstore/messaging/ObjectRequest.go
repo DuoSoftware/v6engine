@@ -48,6 +48,11 @@ func (o *ObjectRequest) Log(value interface{}) {
 			o.MessageStack = append(o.MessageStack, message)
 		}
 		term.Write(value, term.Information)
+	} else if strings.Contains(lowerCasedMsg, "warning") {
+		if o.IsLogEnabled {
+			o.MessageStack = append(o.MessageStack, message)
+		}
+		term.Write(value, term.Warning)
 	} else {
 		term.Write(value, term.Blank)
 	}
