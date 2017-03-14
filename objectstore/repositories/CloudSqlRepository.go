@@ -261,7 +261,21 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 			request.Log("Warning : All OrderBy, Skip, Take values by URL Params and Headers will be ignored!")
 
 			query := request.Body.Query.Parameters
-			response = repository.queryCommonMany(query, request)
+			result, _ := repository.ExecuteSSQLQueryMany(request, query)
+
+			bytes, _ := json.Marshal(result)
+
+			if checkEmptyByteArray(bytes) {
+				response.GetResponseWithBody(getEmptyByteObject())
+			} else {
+				bytesInString := string(bytes)
+				bytesInString = strings.Replace(bytesInString, "\\u003e", ">", -1)
+				bytesInString = strings.Replace(bytesInString, "\\u003c", "<", -1)
+				bytesInString = strings.Replace(bytesInString, "u003e", ">", -1)
+				bytesInString = strings.Replace(bytesInString, "u003c", "<", -1)
+				response.GetResponseWithBody([]byte(bytesInString))
+			}
+
 		}
 	} else {
 		response = repository.GetAll(request)
@@ -2276,3 +2290,79 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 }
 
 */
+
+func (repository CloudSqlRepository) ExecuteSSQLQueryMany(request *messaging.ObjectRequest, query string) (result []map[string]interface{}, err error) {
+	conn, _ := repository.GetConnection(request)
+	rows, err := conn.Query(query)
+
+	if err == nil {
+		result, err = repository.SSQLRowsToMap(request, rows)
+	} else {
+		if strings.HasPrefix(err.Error(), "Error 1146") {
+			err = nil
+			result = make([]map[string]interface{}, 0)
+		}
+	}
+
+	return
+}
+
+func (repository CloudSqlRepository) SSQLRowsToMap(request *messaging.ObjectRequest, rows *sql.Rows) (tableMap []map[string]interface{}, err error) {
+
+	columns, _ := rows.Columns()
+	count := len(columns)
+	values := make([]interface{}, count)
+	valuePtrs := make([]interface{}, count)
+
+	for rows.Next() {
+
+		for i, _ := range columns {
+			valuePtrs[i] = &values[i]
+		}
+
+		rows.Scan(valuePtrs...)
+
+		rowMap := make(map[string]interface{})
+
+		for i, col := range columns {
+			if col == "__os_id" || col == "__osHeaders" {
+				continue
+			}
+			var v interface{}
+			val := values[i]
+			b, ok := val.([]byte)
+			if ok {
+				v = repository.GetSSQLInterfaceValue(b)
+			} else {
+				v = val
+			}
+			rowMap[col] = v
+		}
+		tableMap = append(tableMap, rowMap)
+	}
+
+	return
+}
+
+func (repository CloudSqlRepository) GetSSQLInterfaceValue(input []byte) (output interface{}) {
+	inputInString := string(input)
+
+	if boolValue, err := strconv.ParseBool(inputInString); err == nil {
+		output = boolValue
+	} else if intValue, err := strconv.Atoi(inputInString); err == nil {
+		output = intValue
+	} else if floatValue, err := strconv.ParseFloat(inputInString, 64); err == nil {
+		output = floatValue
+	} else if err := json.Unmarshal(input, &output); err == nil {
+		//Unmarshalled to the output variable
+	} else {
+		if inputInString == "\u0000" {
+			output = false
+		} else if inputInString == "\u0001" {
+			output = true
+		} else {
+			output = inputInString
+		}
+	}
+	return
+}
