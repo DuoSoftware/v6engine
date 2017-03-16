@@ -2331,6 +2331,7 @@ func (repository CloudSqlRepository) SSQLRowsToMap(request *messaging.ObjectRequ
 			var v interface{}
 			val := values[i]
 			b, ok := val.([]byte)
+
 			if ok {
 				v = repository.GetSSQLInterfaceValue(b)
 			} else {
@@ -2347,12 +2348,12 @@ func (repository CloudSqlRepository) SSQLRowsToMap(request *messaging.ObjectRequ
 func (repository CloudSqlRepository) GetSSQLInterfaceValue(input []byte) (output interface{}) {
 	inputInString := string(input)
 
-	if boolValue, err := strconv.ParseBool(inputInString); err == nil {
-		output = boolValue
-	} else if intValue, err := strconv.Atoi(inputInString); err == nil {
+	if intValue, err := strconv.Atoi(inputInString); err == nil {
 		output = intValue
 	} else if floatValue, err := strconv.ParseFloat(inputInString, 64); err == nil {
 		output = floatValue
+	} else if boolValue, err := strconv.ParseBool(inputInString); err == nil {
+		output = boolValue
 	} else if err := json.Unmarshal(input, &output); err == nil {
 		//Unmarshalled to the output variable
 	} else {
@@ -2366,3 +2367,20 @@ func (repository CloudSqlRepository) GetSSQLInterfaceValue(input []byte) (output
 	}
 	return
 }
+
+// func (repository CloudSqlRepository) GetSSQLInterfaceValue(input []byte) (output interface{}) {
+
+// 	// var boolValue bool
+// 	// var intValue int
+// 	// var floatValue float64
+// 	//var stringVal string
+// 	// var interfaceValue interface{}
+
+// 	if stringVal, ok := inputVal.(string); ok {
+// 		output = stringVal
+// 	} else {
+// 		fmt.Println("Damn")
+// 	}
+
+// 	return
+// }

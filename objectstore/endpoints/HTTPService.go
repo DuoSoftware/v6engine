@@ -564,7 +564,7 @@ func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Reques
 	//versionDaata := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.4-a\",\"Change Log\":\"Fixed certain alter table issues.\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "ObjectStore"
-	versionData["API Version"] = "6.1.06b"
+	versionData["API Version"] = "6.1.06c"
 
 	changeLogs := make(map[string]interface{})
 
