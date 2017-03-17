@@ -504,7 +504,7 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 
 			//send email to admin that user has agreed to accept the request
 			go notifier.Notify("ignore", "tenant_invitation_added_success", o["fromuseremail"], inputParams, nil)
-			T.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte("You have been successfully completed tenant invitation process. Login and use tenant switcher to switch between avaiable tenants."))
+			T.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.MsgJson("You have been successfully completed tenant invitation process. Login and use tenant switcher to switch between avaiable tenants.")))
 			return true
 		} else {
 			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Email not registered.")))
