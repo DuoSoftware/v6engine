@@ -295,7 +295,7 @@ func ValidateSession(securityToken string) (status bool) {
 
 	if GetSessionState(securityToken) != (time.Time{}) {
 		//securityToken available
-		if time.Now().Sub(GetSessionState(securityToken)).Hours() >= float64(Config.SessionTimeout) {
+		if time.Now().Sub(GetSessionState(securityToken)).Seconds() >= float64(Config.SessionTimeout) {
 			//time out.. clear the map and delete from session db
 			fmt.Println("Time Out")
 			status = false
