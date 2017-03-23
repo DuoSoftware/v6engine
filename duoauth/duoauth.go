@@ -10,6 +10,7 @@ import (
 	"duov6.com/common"
 	"duov6.com/gorest"
 	"duov6.com/pog"
+	"duov6.com/session"
 	//"duov6.com/stat"
 	"duov6.com/statservice"
 	"duov6.com/term"
@@ -64,6 +65,7 @@ func main() {
 
 	authlib.SetupConfig()
 	term.GetConfig()
+	session.GetConfig()
 
 	//go Bingo()
 	//stat.Start()

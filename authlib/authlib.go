@@ -409,7 +409,36 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 	c, msg := h.CanLogin(username, domain)
 
 	if !c {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(msg)))
+		//Number of Login Sessions are over.
+		type SessionError struct {
+			Error    bool
+			Message  string
+			Sessions []string
+		}
+
+		errorObj := SessionError{}
+		errorObj.Error = true
+		errorObj.Message = msg
+
+		//get all sessions for email
+		authcertificates := session.GetRunningSessionByEmail(username)
+		errorObj.Sessions = make([]string, 0)
+
+		if len(authcertificates) > 0 {
+			for key := 0; key < len(authcertificates); key++ {
+				//check for validity
+				if session.ValidateSession(authcertificates[key].SecurityToken) {
+					errorObj.Sessions = append(errorObj.Sessions, authcertificates[key].SecurityToken)
+				} else {
+					session.LogOut(authcertificates[key])
+				}
+
+			}
+		}
+
+		bytess, _ := json.Marshal(errorObj)
+
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride(bytess)
 		return
 	}
 	u, err := h.Login(username, password)
@@ -1039,7 +1068,7 @@ func (A Auth) Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.22d"
+	versionData["API Version"] = "6.1.23a"
 
 	changeLogs := make(map[string]interface{})
 

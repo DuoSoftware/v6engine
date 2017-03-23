@@ -3,14 +3,16 @@ package session
 import (
 	//"duov6.com/applib"
 	"duov6.com/common"
+	"github.com/fatih/color"
 	//"duov6.com/email"
-	//"duov6.com/config"
+	"duov6.com/config"
 	"duov6.com/objectstore/client"
 	"duov6.com/term"
 	"encoding/json"
+	"fmt"
 	"strings"
+	"sync"
 	"time"
-	//"fmt"
 )
 
 type AuthCertificate struct {
@@ -27,22 +29,33 @@ type TenantAutherized struct {
 }
 
 func AddSession(a AuthCertificate) {
+	color.Green("Add Session")
+	nowTime := time.Now()
 	o := make(map[string]interface{})
 	o["ClientIP"] = a.ClientIP
 	o["TenantID"] = a.Domain
 	o["email"] = a.Username
 	o["Name"] = a.Name
-	o["LastLoginDate"] = time.Now().UTC().Format("2006-01-02 15:04:05")
-	o["CreateDate"] = time.Now().UTC().Format("2006-01-02 15:04:05")
+	o["LastLoginDate"] = nowTime.UTC().Format("2006-01-02 15:04:05")
+	o["CreateDate"] = nowTime.UTC().Format("2006-01-02 15:04:05")
 
 	client.Go(a.SecurityToken, "reports.duosoftware.auth", "lastlogin").StoreObject().WithKeyField("TenantID").AndStoreOne(o).Ok()
 	client.Go(a.SecurityToken, "reports.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 
 	client.Go(a.SecurityToken, "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 	term.Write("AddSession for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
+
+	if SessionStateMap == nil {
+		SessionStateMap = make(map[string]time.Time)
+	}
+
+	SetSessionState(a.SecurityToken, nowTime)
+
 }
 
 func RemoveSession(SecurityToken string) {
+	color.Green("Remove Session")
+	RemoveSessionState(SecurityToken)
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().ByUniqueKey(SecurityToken)
 	Activ, err := GetSession(SecurityToken, "Nil")
 	if err == "" {
@@ -103,6 +116,20 @@ func GetRunningSession(UserID string) []AuthCertificate {
 	return c
 }
 
+func GetRunningSessionByEmail(Email string) []AuthCertificate {
+	var c []AuthCertificate
+	bytes, err := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("Email:" + Email).Ok()
+	if err == "" {
+		if bytes != nil {
+			err := json.Unmarshal(bytes, &c)
+			if err != nil {
+				term.Write("GetSession Error "+err.Error(), term.Error)
+			}
+		}
+	}
+	return c
+}
+
 func GetChildSession(Key string) []AuthCertificate {
 	var c []AuthCertificate
 	bytes, err := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("MainST:" + Key).Ok()
@@ -117,6 +144,211 @@ func GetChildSession(Key string) []AuthCertificate {
 	return c
 }
 
+func GetSession(key, Domain string) (AuthCertificate, string) {
+	color.Green("Get Session")
+	bytes, objerr := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKey(key).Ok()
+	term.Write("GetSession For SecurityToken "+key, term.Debug)
+
+	uList := AuthCertificate{}
+	errString := ""
+
+	if objerr != "" || bytes == nil {
+		term.Write("GetSession Error "+objerr, term.Error)
+		errString = "Error Session Not Found"
+	} else {
+		err := json.Unmarshal(bytes, &uList)
+		if err != nil {
+			term.Write("GetSession Error "+err.Error(), term.Error)
+			errString = "GetSession Error " + err.Error()
+		} else {
+			if Domain != "Nil" {
+				if strings.ToLower(uList.Domain) != strings.ToLower(Domain) {
+					x, _ := AutherizedUser(Domain, uList.UserID)
+					if x {
+						uList.Domain = strings.ToLower(Domain)
+						uList.MainST = key
+						uList.SecurityToken = common.GetGUID()
+						uList.Otherdata = make(map[string]string)
+						uList.Otherdata["unused"] = "abc"
+						term.Write("GetSession For SecurityToken "+key+" new key "+uList.SecurityToken, term.Debug)
+					} else {
+						uList = AuthCertificate{}
+						errString = " Session Cound not be Created "
+					}
+				}
+			}
+		}
+	}
+
+	if uList.Email != "" {
+		//check for validity
+		if !ValidateSession(uList.SecurityToken) {
+			LogOut(uList)
+			uList = AuthCertificate{}
+			errString = "Session Timeout. Please Login again."
+		} else {
+			SetSessionState(uList.SecurityToken, time.Now())
+		}
+	}
+
+	return uList, errString
+}
+
+func LogOut(a AuthCertificate) {
+	color.Green("Log Out")
+	RemoveSessionState(a.SecurityToken)
+	client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(a).Ok()
+	LogoutClildSessions(a.SecurityToken)
+
+	if Config.NumberOFUserLogins != 0 {
+		LogLoginSessions(a.Email, a.Domain, -1)
+	}
+}
+
+func LogoutClildSessions(SecurityToken string) {
+	color.Green("Log out Child Sessions")
+	s := GetChildSession(SecurityToken)
+	for _, a := range s {
+		RemoveSessionState(a.SecurityToken)
+		client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(a).Ok()
+		term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
+		LogoutClildSessions(a.SecurityToken)
+	}
+}
+
+type LoginSessions struct {
+	Email  string
+	Domain string
+	Count  int64
+}
+
+func LogLoginSessions(email, domain string, item int64) {
+	color.Green("Update Login Sessions")
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginsessions").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
+	var uList LoginSessions
+	uList.Email = email
+	uList.Domain = domain
+	uList.Count = item
+	//uList.BlockUser = blockstatus
+	term.Write("LogLoginSessions For Login "+email+" Domain "+domain, term.Debug)
+	if err == "" {
+		if bytes != nil {
+			var x LoginSessions
+			fmt.Println("Attem")
+			err := json.Unmarshal(bytes, &x)
+			fmt.Println(err)
+			fmt.Println(string(bytes))
+			if err == nil {
+				fmt.Println(x)
+				x.Count = x.Count + item
+				//x.LastAttemttime = ""
+				if x.Count < 0 {
+					x.Count = 0
+				}
+				uList = x
+			}
+		}
+	}
+
+	//nowTime := time.Now().UTC()
+	//nowTime = nowTime.Add(3 * time.Minute)
+	//uList.LastAttemttime = nowTime.Format("2006-01-02 15:04:05")
+	fmt.Println(uList)
+	client.Go("ignore", "com.duosoftware.auth", "loginsessions").StoreObject().WithKeyField("Email").AndStoreOne(uList).Ok()
+
+}
+
+//----------------------- SESSION STATES --------------------------
+
+var SessionStateMap map[string]time.Time
+var SessionStateMapLock = sync.RWMutex{}
+
+func GetSessionState(index string) (state time.Time) {
+	color.Green("Get Session State")
+	SessionStateMapLock.RLock()
+	defer SessionStateMapLock.RUnlock()
+	state = SessionStateMap[index]
+	return
+}
+
+func SetSessionState(index string, state time.Time) {
+	color.Green("Set Session State")
+	SessionStateMapLock.Lock()
+	defer SessionStateMapLock.Unlock()
+	SessionStateMap[index] = state
+}
+
+func RemoveSessionState(index string) {
+	color.Green("Removing State")
+	SessionStateMapLock.RLock()
+	defer SessionStateMapLock.RUnlock()
+	delete(SessionStateMap, index)
+}
+
+func ValidateSession(securityToken string) (status bool) {
+	color.Green("Valdate Session")
+	if SessionStateMap == nil {
+		SessionStateMap = make(map[string]time.Time)
+	}
+
+	status = true
+
+	if GetSessionState(securityToken) != (time.Time{}) {
+		//securityToken available
+		if time.Now().Sub(GetSessionState(securityToken)).Seconds() >= float64(Config.SessionTimeout) {
+			//time out.. clear the map and delete from session db
+			fmt.Println("Time Out")
+			status = false
+		} else {
+			fmt.Println("All okay")
+			//All okay
+		}
+	} else {
+		fmt.Println("Already Removed from memory or not found.")
+		//Auth has been restarted or memory loophole
+		status = false
+	}
+
+	fmt.Println("Validated :")
+	fmt.Println(status)
+	return
+}
+
+//----------------------- CONFIGS --------------------------
+
+type AuthConfig struct { // Auth Config
+	Cirtifcate         string // ssl cirtificate
+	PrivateKey         string // Private Key
+	Https_Enabled      bool   // Https enabled or not
+	StoreID            string // Store ID
+	Smtpserver         string // Smptp Server Address
+	Smtpusername       string // SMTP Username
+	Smtppassword       string // SMTP password
+	UserName           string // UserName login to advanced service potal
+	Password           string // Password
+	NumberOFUserLogins int64
+	UserLoginTries     int64
+	SessionTimeout     int64
+	ExpairyTime        int64
+}
+
+var Config AuthConfig
+
+func GetConfig() AuthConfig {
+	if Config != (AuthConfig{}) {
+		return Config
+	}
+
+	b, err := config.Get("Auth")
+	if err == nil {
+		json.Unmarshal(b, &Config)
+	} else {
+		Config = AuthConfig{}
+	}
+	return Config
+}
+
+/*
 func GetSession(key, Domain string) (AuthCertificate, string) {
 	bytes, err := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKey(key).Ok()
 	//bytes, err := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKeyCache(key, 3600).Ok()
@@ -164,3 +396,4 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 
 	return c, "Error Session Not Found"
 }
+*/

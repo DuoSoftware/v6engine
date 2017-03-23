@@ -61,8 +61,10 @@ func SetupConfig() {
 
 	s, _ := strconv.ParseInt(term.Read("Number of user login Attempts"), 10, 32)
 	x, _ := strconv.ParseInt(term.Read("Number of user login Sessions (0 to Any number of user logins)"), 10, 32)
+	v, _ := strconv.ParseInt(term.Read("Session Timeout Period (hours) : "), 10, 32)
 	Config.UserLoginTries = s
 	Config.NumberOFUserLogins = x
+	Config.SessionTimeout = v
 	SetConfig(Config)
 }
 
@@ -119,6 +121,7 @@ type AuthConfig struct { // Auth Config
 	Password           string // Password
 	NumberOFUserLogins int64
 	UserLoginTries     int64
+	SessionTimeout     int64
 	ExpairyTime        int64
 }
 

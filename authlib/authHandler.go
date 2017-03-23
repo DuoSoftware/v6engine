@@ -122,8 +122,8 @@ func (h *AuthHandler) CheckLoginConcurrency(email string) (bool, string) {
 				var uList LoginSessions
 				err := json.Unmarshal(bytes, &uList)
 				if err == nil {
-					fmt.Println("Concurrency Object : ")
-					fmt.Println(uList)
+					fmt.Println("Concurrency Count from Object : ")
+					fmt.Println(uList.Count)
 					fmt.Print("Allowed User Login Count :")
 					fmt.Println(Config.NumberOFUserLogins)
 					if uList.Count >= Config.NumberOFUserLogins {
@@ -188,6 +188,9 @@ func (a *AuthHandler) LogFailedAttemts(email, domain, blockstatus string) {
 			if err == nil {
 				fmt.Println(x)
 				x.Count = x.Count + 1
+				if x.Count < 0 {
+					x.Count = 0
+				}
 				//x.LastAttemttime = ""
 				uList = x
 			}
@@ -203,6 +206,7 @@ func (a *AuthHandler) LogFailedAttemts(email, domain, blockstatus string) {
 }
 
 func (a *AuthHandler) LogLoginSessions(email, domain string, item int64) {
+	fmt.Println("FUKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginsessions").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 	var uList LoginSessions
 	uList.Email = email
@@ -299,7 +303,7 @@ func (h *AuthHandler) AddSession(a AuthCertificate) {
 
 // LogOut make you logout,
 func (h *AuthHandler) LogOut(a AuthCertificate) {
-	//client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().ByUniqueKey(a.SecurityToken)
+	/*//client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().ByUniqueKey(a.SecurityToken)
 	client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(a).Ok()
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 	h.LogoutClildSessions(a.SecurityToken)
@@ -308,7 +312,25 @@ func (h *AuthHandler) LogOut(a AuthCertificate) {
 	}
 	term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
 	//h.Release(a.Email)
-	//return true
+	//return true*/
+
+	sessionCert := session.AuthCertificate{}
+	sessionCert.UserID = a.UserID
+	sessionCert.Username = a.Username
+	sessionCert.Name = a.Name
+	sessionCert.Email = a.Email
+	sessionCert.SecurityToken = a.SecurityToken
+	sessionCert.Domain = a.Domain
+	sessionCert.DataCaps = a.DataCaps
+	sessionCert.ClientIP = a.ClientIP
+	sessionCert.MainST = ""
+	sessionCert.Otherdata = a.Otherdata
+
+	session.LogOut(sessionCert)
+	// if Config.NumberOFUserLogins != 0 {
+	// 	h.LogLoginSessions(a.Email, a.Domain, -1)
+	// }
+	term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
 }
 
 func (h *AuthHandler) LogoutClildSessions(SecurityToken string) {
