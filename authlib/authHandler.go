@@ -128,8 +128,15 @@ func (h *AuthHandler) CheckLoginConcurrency(email string) (bool, string) {
 					if uList.Count >= Config.NumberOFUserLogins {
 						return false, "Login Exceeeded please logout your sessions."
 					}
+				} else {
+					fmt.Println("Error : " + err.Error())
 				}
+			} else {
+				fmt.Println("Nil Bytes!" + string(bytes))
 			}
+
+		} else {
+			fmt.Println("Error : " + err)
 		}
 
 	}
