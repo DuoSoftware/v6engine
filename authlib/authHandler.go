@@ -113,6 +113,7 @@ func (h *AuthHandler) CanLogin(email, domain string) (bool, string) {
 //CheckLoginConcurrency helps to check and block the concurrent user logins
 func (h *AuthHandler) CheckLoginConcurrency(email string) (bool, string) {
 	fmt.Println("Checking Login Concurrency : " + email)
+	fmt.Println(Config)
 	if Config.NumberOFUserLogins != 0 {
 		bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginsessions").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 		term.Write("CanLogin For Login "+email+" Domain ", term.Debug)
@@ -138,7 +139,8 @@ func (h *AuthHandler) CheckLoginConcurrency(email string) (bool, string) {
 		} else {
 			fmt.Println("Error : " + err)
 		}
-
+	} else {
+		fmt.Println("No Number of Logins found.")
 	}
 
 	return true, ""
