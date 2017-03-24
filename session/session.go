@@ -180,7 +180,7 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 		}
 	}
 
-	if uList.Email != "" {
+	if uList.Email != "" && Config.SessionTimeout > 0 {
 		//check for validity
 		if !ValidateSession(uList.SecurityToken) {
 			LogOut(uList)
@@ -264,6 +264,9 @@ var SessionStateMap map[string]time.Time
 var SessionStateMapLock = sync.RWMutex{}
 
 func GetSessionState(index string) (state time.Time) {
+	if Config.SessionTimeout == 0 {
+		return
+	}
 	color.Green("Get Session State")
 	SessionStateMapLock.RLock()
 	defer SessionStateMapLock.RUnlock()
@@ -272,6 +275,9 @@ func GetSessionState(index string) (state time.Time) {
 }
 
 func SetSessionState(index string, state time.Time) {
+	if Config.SessionTimeout == 0 {
+		return
+	}
 	color.Green("Set Session State")
 	SessionStateMapLock.Lock()
 	defer SessionStateMapLock.Unlock()
@@ -279,6 +285,9 @@ func SetSessionState(index string, state time.Time) {
 }
 
 func RemoveSessionState(index string) {
+	if Config.SessionTimeout == 0 {
+		return
+	}
 	color.Green("Removing State")
 	SessionStateMapLock.RLock()
 	defer SessionStateMapLock.RUnlock()
@@ -286,6 +295,9 @@ func RemoveSessionState(index string) {
 }
 
 func ValidateSession(securityToken string) (status bool) {
+	if Config.SessionTimeout == 0 {
+		return true
+	}
 	color.Green("Valdate Session")
 	if SessionStateMap == nil {
 		SessionStateMap = make(map[string]time.Time)
@@ -295,7 +307,7 @@ func ValidateSession(securityToken string) (status bool) {
 
 	if GetSessionState(securityToken) != (time.Time{}) {
 		//securityToken available
-		if time.Now().Sub(GetSessionState(securityToken)).Seconds() >= float64(Config.SessionTimeout) {
+		if time.Now().Sub(GetSessionState(securityToken)).Hours() >= float64(Config.SessionTimeout) {
 			//time out.. clear the map and delete from session db
 			fmt.Println("Time Out")
 			status = false
