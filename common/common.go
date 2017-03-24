@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/twinj/uuid"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -195,5 +196,21 @@ func GetProcessorUsage() (value float64) {
 	} else {
 		value = 0
 	}
+	return
+}
+
+func VerifyConfigFiles() (config map[string]interface{}) {
+	config = make(map[string]interface{})
+	content, err := ioutil.ReadFile("agent.config")
+	if err != nil {
+		//Agent File not Available
+		config["cebUrl"] = "localhost:5000"
+		config["canMonitorOutput"] = true
+		byteArray, _ := json.Marshal(config)
+		_ = ioutil.WriteFile("agent.config", byteArray, 0666)
+	} else {
+		_ = json.Unmarshal(content, &config)
+	}
+
 	return
 }

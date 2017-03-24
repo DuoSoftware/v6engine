@@ -337,3 +337,7 @@ func (client *CEBClient) AddConfigMetadata(m ConfigMetadata) {
 func (client *CEBClient) UpdateStats(statInterface interface{}) {
 	client.ClientCommand(client.ListenerName, "stat", "test", statInterface)
 }
+
+func (client *CEBClient) GetAgentName() string {
+	return client.agentName
+}

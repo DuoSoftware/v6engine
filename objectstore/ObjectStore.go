@@ -2,14 +2,17 @@ package main
 
 import (
 	"duov6.com/cebadapter"
+	"duov6.com/common"
 	"duov6.com/objectstore/endpoints"
 	"duov6.com/objectstore/unittesting"
+	"duov6.com/term"
 	"fmt"
 	"github.com/fatih/color"
 	"runtime"
 )
 
 func main() {
+	term.GetConfig()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	var isUnitTestMode bool = false
 
@@ -22,6 +25,8 @@ func main() {
 }
 
 func initialize() {
+
+	common.VerifyConfigFiles()
 
 	cebadapter.Attach("ObjectStore", func(s bool) {
 		cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {

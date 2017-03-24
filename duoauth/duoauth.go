@@ -7,8 +7,10 @@ import (
 	"duov6.com/cebadapter"
 	"duov6.com/config"
 	//"duov6.com/email"
+	"duov6.com/common"
 	"duov6.com/gorest"
 	"duov6.com/pog"
+	"duov6.com/session"
 	//"duov6.com/stat"
 	"duov6.com/statservice"
 	"duov6.com/term"
@@ -43,6 +45,7 @@ func GetConfig() ServiceConfig {
 func main() {
 	//runRestFul()
 	//term.Read("Lable")
+	common.VerifyConfigFiles()
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	cebadapter.Attach("DuoAuth", func(s bool) {
@@ -62,6 +65,7 @@ func main() {
 
 	authlib.SetupConfig()
 	term.GetConfig()
+	session.GetConfig()
 
 	//go Bingo()
 	//stat.Start()
@@ -75,7 +79,7 @@ func main() {
 	term.Write("|     Duo v6 Auth Service 6.0                                  |", term.Splash)
 	term.Write("|     New updat		                                   |", term.Splash)
 	term.Write("================================================================", term.Splash)
-	//term.StartCommandLine()
+
 	forever := make(chan bool)
 	<-forever
 

@@ -312,6 +312,20 @@ func ResetSearchResultCache(request *messaging.ObjectRequest, database int) (err
 			}
 		}
 
+		keyPattern := namespace + "." + class + ".*"
+
+		if keySet, err := client.Keys(keyPattern); err == nil {
+			for _, keyValue := range keySet {
+				//reply, err := client.ExecuteCommand("DEL", keyValue)
+				//err = reply.OKValue()
+				_, err = client.Expire(keyValue, 0)
+				if err != nil {
+					//client.ClosePool()
+					return err
+				}
+			}
+		}
+
 		if err != nil {
 			term.Write("Resetted the pattern Key Set in Cache!", term.Debug)
 		}

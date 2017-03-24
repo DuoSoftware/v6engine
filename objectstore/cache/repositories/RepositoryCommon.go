@@ -13,6 +13,11 @@ func getNoSqlKeyById(request *messaging.ObjectRequest, obj map[string]interface{
 
 func getNoSqlKey(request *messaging.ObjectRequest) string {
 	key := request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
+
+	if request.Extras["timezone"] != nil {
+		key += "." + request.Extras["timezone"].(string)
+	}
+
 	return key
 }
 
@@ -40,6 +45,7 @@ func getSearchResultKey(request *messaging.ObjectRequest) string {
 	orderBy := "orderyBy="
 	orderByDsc := "orderByDsc="
 	keyword := "keyword=" + request.Body.Query.Parameters
+	timezone := "timezone:N/A"
 
 	if request.Extras["skip"] != nil {
 		skip = "skip=" + request.Extras["skip"].(string)
@@ -55,10 +61,14 @@ func getSearchResultKey(request *messaging.ObjectRequest) string {
 		orderByDsc = "orderByDsc=" + request.Extras["orderbydsc"].(string)
 	}
 
+	if request.Extras["timezone"] != nil {
+		timezone = "timezone=" + request.Extras["timezone"].(string)
+	}
+
 	namespace := request.Controls.Namespace
 	class := request.Controls.Class
 
-	url := namespace + ":" + class + ":" + keyword + ":" + skip + ":" + take + ":" + orderBy + ":" + orderByDsc
+	url := namespace + ":" + class + ":" + keyword + ":" + skip + ":" + take + ":" + orderBy + ":" + orderByDsc + ":" + timezone
 
 	return url
 }
@@ -72,6 +82,7 @@ func getQueryResultKey(request *messaging.ObjectRequest) string {
 	take := "1000000"
 	orderby := "orderyBy=none"
 	orderbydsc := "orderByDsc=none"
+	timezone := "timezone:N/A"
 
 	if request.Extras["skip"] != nil {
 		if request.Extras["skip"].(string) != "" {
@@ -103,8 +114,12 @@ func getQueryResultKey(request *messaging.ObjectRequest) string {
 		orderbydsc = "orderByDsc=" + request.Extras["orderbydsc"].(string)
 	}
 
+	if request.Extras["timezone"] != nil {
+		timezone = "timezone=" + request.Extras["timezone"].(string)
+	}
+
 	queryPart := " limit " + take
-	queryPart += " offset " + skip + " " + ":" + orderby + ":" + orderbydsc
+	queryPart += " offset " + skip + " " + ":" + orderby + ":" + orderbydsc + ":" + timezone
 
 	query = strings.Replace(query, ";", "", -1)
 	query += queryPart + ";"
