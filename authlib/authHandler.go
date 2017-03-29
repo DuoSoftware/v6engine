@@ -389,7 +389,6 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 	a, err := session.GetSession(key, Domain)
 	var c AuthCertificate
 	if err == "" {
-
 		c.ClientIP = a.ClientIP
 		c.DataCaps = a.DataCaps
 		c.Domain = a.Domain
@@ -436,7 +435,7 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 		term.Write("GetSession Error "+err, term.Error)
 	}
 	term.Write("GetSession No Session for SecurityToken "+key, term.Debug)
-	return c, "Error Session Not Found"
+	return c, err
 }
 
 func (h *AuthHandler) GetSecretKey(key string) string {

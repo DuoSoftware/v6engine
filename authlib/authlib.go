@@ -769,19 +769,14 @@ func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 	term.Write("Executing Method : Get Session", term.Blank)
 
 	h := newAuthHandler()
-	/*
-		t := new(TenantHandler)
-		//var a AuthCertificate
-		//h.GetSession(key, Domain)
-		if Domain != "nil" {
-			user, _ := h.GetSession(SecurityToken, "nil")
-			x, _ := t.Autherized(Domain, user)
-			if !x {
-				A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(Domain + "Not Authorized"))
-				return
-			}
-		}*/
+
 	c, err := h.GetSession(SecurityToken, Domain)
+
+	fmt.Println("---------------- Get Sesssion ---------------------")
+	fmt.Println(SecurityToken)
+	fmt.Println(Domain)
+	fmt.Println(err)
+	fmt.Println("---------------------------------------------------")
 
 	if err == "" {
 		a = c
