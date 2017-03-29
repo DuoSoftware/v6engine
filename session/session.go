@@ -303,6 +303,8 @@ func ValidateSession(securityToken string) (status bool) {
 		SessionStateMap = make(map[string]time.Time)
 	}
 
+	fmt.Println(SessionStateMap)
+
 	status = true
 
 	if GetSessionState(securityToken) != (time.Time{}) {
@@ -321,7 +323,7 @@ func ValidateSession(securityToken string) (status bool) {
 		status = false
 	}
 
-	fmt.Println("Validated :")
+	fmt.Print("Validated :")
 	fmt.Println(status)
 	return
 }
