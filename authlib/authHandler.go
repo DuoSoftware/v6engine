@@ -122,7 +122,7 @@ func (h *AuthHandler) CheckLoginConcurrency(email string) (bool, string) {
 				var uList LoginSessions
 				err := json.Unmarshal(bytes, &uList)
 				if err == nil {
-					fmt.Println("Concurrency Count from Object : ")
+					fmt.Print("Concurrency Count from Object : ")
 					fmt.Println(uList.Count)
 					fmt.Print("Allowed User Login Count :")
 					fmt.Println(Config.NumberOFUserLogins)
@@ -206,7 +206,6 @@ func (a *AuthHandler) LogFailedAttemts(email, domain, blockstatus string) {
 }
 
 func (a *AuthHandler) LogLoginSessions(email, domain string, item int64) {
-	fmt.Println("FUKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginsessions").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 	var uList LoginSessions
 	uList.Email = email
@@ -220,7 +219,7 @@ func (a *AuthHandler) LogLoginSessions(email, domain string, item int64) {
 			fmt.Println("Attem")
 			err := json.Unmarshal(bytes, &x)
 			fmt.Println(err)
-			fmt.Println(string(bytes))
+			//fmt.Println(string(bytes))
 			if err == nil {
 				fmt.Println(x)
 				x.Count = x.Count + item

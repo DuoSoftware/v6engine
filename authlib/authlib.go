@@ -772,12 +772,6 @@ func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 
 	c, err := h.GetSession(SecurityToken, Domain)
 
-	fmt.Println("---------------- Get Sesssion ---------------------")
-	fmt.Println(SecurityToken)
-	fmt.Println(Domain)
-	fmt.Println(err)
-	fmt.Println("---------------------------------------------------")
-
 	if err == "" {
 		a = c
 		return a

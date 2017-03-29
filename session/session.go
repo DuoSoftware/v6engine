@@ -3,7 +3,7 @@ package session
 import (
 	//"duov6.com/applib"
 	"duov6.com/common"
-	"github.com/fatih/color"
+	//"github.com/fatih/color"
 	//"duov6.com/email"
 	"duov6.com/config"
 	"duov6.com/objectstore/client"
@@ -29,7 +29,7 @@ type TenantAutherized struct {
 }
 
 func AddSession(a AuthCertificate) {
-	color.Green("Add Session")
+	//color.Green("Add Session")
 	nowTime := time.Now()
 	o := make(map[string]interface{})
 	o["ClientIP"] = a.ClientIP
@@ -54,7 +54,7 @@ func AddSession(a AuthCertificate) {
 }
 
 func RemoveSession(SecurityToken string) {
-	color.Green("Remove Session")
+	//color.Green("Remove Session")
 	RemoveSessionState(SecurityToken)
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().ByUniqueKey(SecurityToken)
 	Activ, err := GetSession(SecurityToken, "Nil")
@@ -145,7 +145,7 @@ func GetChildSession(Key string) []AuthCertificate {
 }
 
 func GetSession(key, Domain string) (AuthCertificate, string) {
-	color.Green("Get Session")
+	//color.Green("Get Session")
 	bytes, objerr := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKey(key).Ok()
 	term.Write("GetSession For SecurityToken "+key, term.Debug)
 
@@ -195,7 +195,7 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 }
 
 func LogOut(a AuthCertificate) {
-	color.Green("Log Out")
+	//color.Green("Log Out")
 	RemoveSessionState(a.SecurityToken)
 	client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(a).Ok()
 	LogoutClildSessions(a.SecurityToken)
@@ -206,7 +206,7 @@ func LogOut(a AuthCertificate) {
 }
 
 func LogoutClildSessions(SecurityToken string) {
-	color.Green("Log out Child Sessions")
+	//color.Green("Log out Child Sessions")
 	s := GetChildSession(SecurityToken)
 	for _, a := range s {
 		RemoveSessionState(a.SecurityToken)
@@ -223,7 +223,7 @@ type LoginSessions struct {
 }
 
 func LogLoginSessions(email, domain string, item int64) {
-	color.Green("Update Login Sessions")
+	//color.Green("Update Login Sessions")
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginsessions").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 	var uList LoginSessions
 	uList.Email = email
@@ -267,7 +267,7 @@ func GetSessionState(index string) (state time.Time) {
 	if Config.SessionTimeout == 0 {
 		return
 	}
-	color.Green("Get Session State")
+	//color.Green("Get Session State")
 	SessionStateMapLock.RLock()
 	defer SessionStateMapLock.RUnlock()
 	state = SessionStateMap[index]
@@ -278,7 +278,7 @@ func SetSessionState(index string, state time.Time) {
 	if Config.SessionTimeout == 0 {
 		return
 	}
-	color.Green("Set Session State")
+	//color.Green("Set Session State")
 	SessionStateMapLock.Lock()
 	defer SessionStateMapLock.Unlock()
 	SessionStateMap[index] = state
@@ -288,7 +288,7 @@ func RemoveSessionState(index string) {
 	if Config.SessionTimeout == 0 {
 		return
 	}
-	color.Green("Removing State")
+	//color.Green("Removing State")
 	SessionStateMapLock.RLock()
 	defer SessionStateMapLock.RUnlock()
 	delete(SessionStateMap, index)
@@ -298,16 +298,16 @@ func ValidateSession(securityToken string) (status bool) {
 	if Config.SessionTimeout == 0 {
 		return true
 	}
-	color.Green("Valdate Session")
+	//color.Green("Valdate Session")
 	if SessionStateMap == nil {
 		SessionStateMap = make(map[string]time.Time)
 	}
 
-	fmt.Println("------------------------------")
-	fmt.Println(securityToken)
-	fmt.Println(SessionStateMap)
-	fmt.Println(GetSessionState(securityToken))
-	fmt.Println("--------------------------------")
+	//fmt.Println("------------------------------")
+	//fmt.Println(securityToken)
+	//fmt.Println(SessionStateMap)
+	//fmt.Println(GetSessionState(securityToken))
+	//fmt.Println("--------------------------------")
 
 	status = true
 
@@ -315,14 +315,14 @@ func ValidateSession(securityToken string) (status bool) {
 		//securityToken available
 		if time.Now().Sub(GetSessionState(securityToken)).Hours() >= float64(Config.SessionTimeout) {
 			//time out.. clear the map and delete from session db
-			fmt.Println("Time Out")
+			fmt.Println("Validate Session : Time Out")
 			status = false
 		} else {
-			fmt.Println("All okay")
+			fmt.Println("Validate Session : Valid")
 			//All okay
 		}
 	} else {
-		fmt.Println("Already Removed from memory or not found.")
+		fmt.Println("Validate Session : Not Found.")
 		//Auth has been restarted or memory loophole
 		status = false
 	}
