@@ -182,7 +182,7 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 
 	if uList.Email != "" && Config.SessionTimeout > 0 {
 		//check for validity
-		if !ValidateSession(uList.SecurityToken) {
+		if !ValidateSession(key) {
 			LogOut(uList)
 			uList = AuthCertificate{}
 			errString = "Session Timeout. Please Login again."
