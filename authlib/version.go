@@ -16,10 +16,12 @@ func Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.25"
+	versionData["API Version"] = "6.1.26"
 
 	changeLogs := make(map[string]interface{})
 
+	changeLogs["6.1.26"] = "Changed response for login errors"
+	changeLogs["6.1.25"] = "Changed log behaviors for login process."
 	changeLogs["6.1.24"] = "Added checks for non session timeout instances."
 	changeLogs["6.1.23"] = "Automatic Session Timeouts."
 	changeLogs["6.1.22"] = "Added invite based tenant regs"

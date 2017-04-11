@@ -410,13 +410,13 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 	if !c {
 		//Number of Login Sessions are over.
 		type SessionError struct {
-			Error    bool
+			Success  bool
 			Message  string
 			Sessions []string
 		}
 
 		errorObj := SessionError{}
-		errorObj.Error = true
+		errorObj.Success = true
 		errorObj.Message = msg
 
 		//get all sessions for email
@@ -438,6 +438,7 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 		if len(errorObj.Sessions) == 0 {
 			//Can Proceed with login
 		} else {
+			errorObj.Success = false
 			bytess, _ := json.Marshal(errorObj)
 			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride(bytess)
 			return
