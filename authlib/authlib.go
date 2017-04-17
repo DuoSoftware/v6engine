@@ -435,6 +435,13 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 			}
 		}
 
+		_, err := h.Login(username, password)
+		if err != "" {
+			h.LogFailedAttemts(username, domain, "")
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
+			return
+		}
+
 		if len(errorObj.Data) == 0 {
 			//Can Proceed with login
 		} else {
