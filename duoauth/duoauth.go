@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime"
+	"time"
 )
 
 // A ServiceConfig represents a configuration for galang
@@ -46,6 +47,7 @@ func main() {
 	//runRestFul()
 	//term.Read("Lable")
 	common.VerifyConfigFiles()
+	authlib.StartTime = time.Now()
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	cebadapter.Attach("DuoAuth", func(s bool) {
