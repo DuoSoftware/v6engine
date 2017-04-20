@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"runtime"
 	"strconv"
+	"time"
 )
 
 //------------------------ Version Management --------------------------------
+
+var StartTime time.Time
 
 func Verify() (output string) {
 	//output = "{\"name\": \"DuoAuth\",\"version\": \"6.0.24-a\",\"Change Log\":\"Added Check for tenant subscription invitation.\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
@@ -16,10 +19,11 @@ func Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.25a"
+	versionData["API Version"] = "6.1.26"
 
 	changeLogs := make(map[string]interface{})
 
+	changeLogs["6.1.26"] = "Added more metrics."
 	changeLogs["6.1.25"] = "Added response changes."
 	changeLogs["6.1.24"] = "Added checks for non session timeout instances."
 	changeLogs["6.1.23"] = "Automatic Session Timeouts."
@@ -37,34 +41,26 @@ func Verify() (output string) {
 	changeLogs["6.1.11"] = "Fixed few email template issues. JIRA : EX-1085"
 	changeLogs["6.1.10"] = "Added Toggle Logs and disabled CMD logs at startup. User /ToggleLogs to cycle through different logs."
 	changeLogs["6.1.09"] = "Added new user email templates for events."
-	changeLogs["6.1.08"] = [...]string{
-		"Added user deny check",
-		"Added User Deactivate if user has no accesible tenants.",
-	}
+	changeLogs["6.1.08"] = "Added user deny check, Added User Deactivate if user has no accesible tenants."
 	changeLogs["6.1.07"] = "Added Activation Skip Endpoint for Registration. <InvitedUserRegistration>"
-	changeLogs["6.1.06"] = [...]string{
-		"Commented SecurityToken from AcceptRequest",
-		"Added response codes for ActivateUser method",
-	}
-	changeLogs["6.1.05"] = [...]string{
-		"Added New Login password,username message and Activate message",
-		"Added GetTenantAdmin method for auth",
-		"Removed rating engine check for tenant add.",
-	}
-	changeLogs["6.1.04"] = [...]string{
-		"Added Activate User Email Check..",
-		"Added Reset Password Check by checking user activated or not",
-	}
+	changeLogs["6.1.06"] = "Commented SecurityToken from AcceptRequest, Added response codes for ActivateUser method"
+	changeLogs["6.1.05"] = "Added New Login password,username message and Activate message, Added GetTenantAdmin method for auth, Removed rating engine check for tenant add."
+	changeLogs["6.1.04"] = "Added Activate User Email Check. , Added Reset Password Check by checking user activated or not"
 	versionData["Change Logs"] = changeLogs
-	gitMap := make(map[string]string)
-	gitMap["Type"] = "git"
-	gitMap["URL"] = "https://github.com/DuoSoftware/v6engine/"
-	versionData["Repository"] = gitMap
 
 	statMap := make(map[string]string)
 	statMap["CPU"] = cpuUsage + " (percentage)"
 	statMap["CPU Cores"] = cpuCount
-	versionData["System Usage"] = statMap
+	nowTime := time.Now()
+	elapsedTime := nowTime.Sub(StartTime)
+	statMap["Time Started"] = StartTime.UTC().Add(330 * time.Minute).Format(time.RFC1123)
+	statMap["Time Elapsed"] = elapsedTime.String()
+	versionData["Metrics"] = statMap
+
+	gitMap := make(map[string]string)
+	gitMap["Type"] = "git"
+	gitMap["URL"] = "https://github.com/DuoSoftware/v6engine/"
+	versionData["Repository"] = gitMap
 
 	authorMap := make(map[string]string)
 	authorMap["Name"] = "Duo Software Pvt Ltd"
