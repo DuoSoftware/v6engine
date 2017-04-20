@@ -4,7 +4,6 @@ import (
 	"duov6.com/FileServer"
 	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
-	"duov6.com/common"
 	"duov6.com/objectstore/JSON_Purifier"
 	"duov6.com/objectstore/backup"
 	"duov6.com/objectstore/cache"
@@ -21,8 +20,6 @@ import (
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
-	"runtime"
-	"strconv"
 	"strings"
 )
 
@@ -559,57 +556,5 @@ func CheckRedisAvailability(request *messaging.ObjectRequest) (status bool) {
 //------------------ Version Management -----------------------
 
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
-	cpuCount := strconv.Itoa(runtime.NumCPU())
-	//versionDaata := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.4-a\",\"Change Log\":\"Fixed certain alter table issues.\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
-	versionData := make(map[string]interface{})
-	versionData["API Name"] = "ObjectStore"
-	versionData["API Version"] = "6.1.06c"
-
-	changeLogs := make(map[string]interface{})
-
-	changeLogs["6.1.01"] = [...]string{
-		"Added timezone compatibility",
-	}
-
-	changeLogs["6.1.02"] = [...]string{
-		"Added redis key update clear call",
-	}
-
-	changeLogs["6.1.03"] = [...]string{
-		"Added MySQL JSON store.",
-	}
-
-	changeLogs["6.1.04"] = [...]string{
-		"Removed TimeZone compatability temporarily.",
-	}
-
-	changeLogs["6.1.05"] = [...]string{
-		"Added Toggle Logs and Removed Log header requirement.",
-	}
-
-	changeLogs["6.1.06"] = [...]string{
-		"Added test version for replying error messages.",
-	}
-
-	versionData["Change Logs"] = changeLogs
-
-	gitMap := make(map[string]string)
-	gitMap["Type"] = "git"
-	gitMap["URL"] = "https://github.com/DuoSoftware/v6engine/"
-	versionData["Repository"] = gitMap
-
-	statMap := make(map[string]string)
-	statMap["CPU"] = cpuUsage + " (percentage)"
-	statMap["CPU Cores"] = cpuCount
-	versionData["System Usage"] = statMap
-
-	authorMap := make(map[string]string)
-	authorMap["Name"] = "Duo Software Pvt Ltd"
-	authorMap["URL"] = "http://www.duosoftware.com/"
-	versionData["Project Author"] = authorMap
-
-	byteArray, _ := json.Marshal(versionData)
-
-	fmt.Fprintf(w, string(byteArray))
+	fmt.Fprintf(w, GetVersion())
 }
