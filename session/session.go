@@ -29,6 +29,7 @@ type TenantAutherized struct {
 }
 
 func AddSession(a AuthCertificate) {
+	fmt.Println("ADDING AN SESSION............................")
 	//color.Green("Add Session")
 	nowTime := time.Now()
 	o := make(map[string]interface{})
