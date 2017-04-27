@@ -163,7 +163,7 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 			errString = "GetSession Error " + err.Error()
 		} else {
 			if Domain != "Nil" {
-				if strings.ToLower(uList.Domain) != strings.ToLower(Domain) {
+				if !strings.EqualFold(uList.Domain, Domain) {
 					x, _ := AutherizedUser(Domain, uList.UserID)
 					if x {
 						uList.Domain = strings.ToLower(Domain)
@@ -171,6 +171,7 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 						fmt.Println("FEKKED")
 						fmt.Println("|" + strings.ToLower(uList.Domain) + "|")
 						fmt.Println("|" + strings.ToLower(Domain) + "|")
+						fmt.Println(strings.EqualFold(uList.Domain, Domain))
 						uList.SecurityToken = common.GetGUID()
 						uList.Otherdata = make(map[string]string)
 						uList.Otherdata["unused"] = "abc"
