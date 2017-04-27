@@ -42,7 +42,7 @@ func AddSession(a AuthCertificate) {
 
 	client.Go(a.SecurityToken, "reports.duosoftware.auth", "lastlogin").StoreObject().WithKeyField("TenantID").AndStoreOne(o).Ok()
 	client.Go(a.SecurityToken, "reports.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
-
+	fmt.Println(a.SecurityToken)
 	client.Go(a.SecurityToken, "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 	term.Write("AddSession for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
 
@@ -168,6 +168,9 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 					if x {
 						uList.Domain = strings.ToLower(Domain)
 						uList.MainST = key
+						fmt.Println("FEKKED")
+						fmt.Println(strings.ToLower(uList.Domain))
+						fmt.Println(strings.ToLower(Domain))
 						uList.SecurityToken = common.GetGUID()
 						uList.Otherdata = make(map[string]string)
 						uList.Otherdata["unused"] = "abc"
