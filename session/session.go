@@ -163,7 +163,11 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 			errString = "GetSession Error " + err.Error()
 		} else {
 			if Domain != "Nil" {
-				if !strings.EqualFold(uList.Domain, Domain) {
+				isEqual := strings.EqualFold(uList.Domain, Domain)
+				fmt.Println("--------")
+				fmt.Println(isEqual)
+				fmt.Println("--------")
+				if !isEqual {
 					x, _ := AutherizedUser(Domain, uList.UserID)
 					if x {
 						uList.Domain = strings.ToLower(Domain)
