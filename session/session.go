@@ -146,6 +146,7 @@ func GetChildSession(Key string) []AuthCertificate {
 }
 
 func GetSession(key, Domain string) (AuthCertificate, string) {
+	fmt.Println("Calling GetSession Token : " + key + " Domain : " + Domain)
 	//color.Green("Get Session")
 	bytes, objerr := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKey(key).Ok()
 	term.Write("GetSession For SecurityToken "+key, term.Debug)
