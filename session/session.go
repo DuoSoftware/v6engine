@@ -172,15 +172,14 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 					if x {
 						uList.Domain = strings.ToLower(Domain)
 						uList.MainST = key
-						fmt.Println("FEKKED")
-						fmt.Println("|" + strings.ToLower(uList.Domain) + "|")
-						fmt.Println("|" + strings.ToLower(Domain) + "|")
+						fmt.Println("Fek1")
 						fmt.Println(strings.EqualFold(uList.Domain, Domain))
 						uList.SecurityToken = common.GetGUID()
 						uList.Otherdata = make(map[string]string)
 						uList.Otherdata["unused"] = "abc"
 						term.Write("GetSession For SecurityToken "+key+" new key "+uList.SecurityToken, term.Debug)
 					} else {
+						fmt.Println("Fek2")
 						uList = AuthCertificate{}
 						errString = " Session Cound not be Created "
 					}
