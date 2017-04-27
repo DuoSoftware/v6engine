@@ -166,6 +166,8 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 				isEqual := strings.EqualFold(uList.Domain, Domain)
 				fmt.Println("--------")
 				fmt.Println(isEqual)
+				fmt.Println(uList.Domain)
+				fmt.Println(Domain)
 				fmt.Println("--------")
 				if !isEqual {
 					x, _ := AutherizedUser(Domain, uList.UserID)
