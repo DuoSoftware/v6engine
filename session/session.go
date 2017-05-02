@@ -171,9 +171,9 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 						uList.Domain = strings.ToLower(Domain)
 						uList.MainST = key
 						//commenting following temporarily
-						//uList.SecurityToken = common.GetGUID()
-						//uList.Otherdata = make(map[string]string)
-						//uList.Otherdata["unused"] = "abc"
+						uList.SecurityToken = common.GetGUID()
+						uList.Otherdata = make(map[string]string)
+						uList.Otherdata["unused"] = "abc"
 						term.Write("GetSession For SecurityToken "+key+" new key "+uList.SecurityToken, term.Debug)
 					} else {
 						uList = AuthCertificate{}
