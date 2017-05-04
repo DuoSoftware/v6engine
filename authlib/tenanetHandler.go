@@ -662,7 +662,7 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 
 			//users are found.... delete them
 			updateUser := u[0]
-			updateUser.Active = false
+			updateUser.Status = false
 			term.Write("Updating the New user as Disabled since no tenants are remaining : "+updateUser.EmailAddress, term.Debug)
 			//client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(updateUser).Ok()
 			client.Go("ignore", "com.duosoftware.auth", "users").DeleteObject().WithKeyField("EmailAddress").AndDeleteObject(updateUser).Ok()

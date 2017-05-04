@@ -8,6 +8,7 @@ import (
 	"duov6.com/session"
 	//"duov6.com/config"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -651,6 +652,7 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 		term.Write("SaveUser saving user retrived", term.Debug)
 		if err != nil || uList.UserID == "" {
 			u.Active = false
+			u.Status = true
 			u.UserID = common.GetGUID()
 			term.Write("SaveUser saving user  "+u.Name+" New User "+u.UserID, term.Debug)
 			password := u.Password
@@ -850,6 +852,10 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 				//fmt.Println(uList)
 				if uList.Password == common.GetHash(password) && strings.ToLower(uList.EmailAddress) == strings.ToLower(email) {
 					if uList.Active {
+						//check for account status
+						if !uList.Status {
+							return user, "This account is deactivated. Please reactivate before logging in."
+						}
 						return uList, ""
 					} else {
 						bytess, _ := client.Go("ignore", "com.duosoftware.tenant", "deniedUserTemp").GetOne().ByUniqueKey(uList.UserID).Ok()
@@ -956,4 +962,168 @@ func (h *AuthHandler) GetMultipleUserDetails(UserIDs []string) (users []map[stri
 
 func SendNotification(u User, Message string) {
 
+}
+
+func (a *AuthHandler) ActivateAccount(email, password string) (err error) {
+	//login
+	_, errString := a.Login(email, password)
+
+	if errString == "" {
+		//no error..
+		return
+	}
+
+	if strings.Contains(errString, "deactivated. Please reactivate") {
+		//no error
+		bytes, _ := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(email).Ok()
+		user := User{}
+		_ = json.Unmarshal(bytes, &user)
+		user.Status = true
+		client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(user).Ok()
+	} else {
+		err = errors.New(errString)
+	}
+
+	return
+}
+
+func (a *AuthHandler) DeactivateAccount(cert AuthCertificate) (err error) {
+	//getUser
+	bytes, _ := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(cert.Email).Ok()
+	user := User{}
+	_ = json.Unmarshal(bytes, &user)
+
+	if user.EmailAddress != "" {
+		//update user
+		user.Status = false
+		client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(user).Ok()
+	} else {
+		err = errors.New("No User Found.")
+	}
+
+	return
+}
+
+func (a *AuthHandler) DeleteAccount(cert AuthCertificate) (err error) {
+	//get user
+	bytes, _ := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(cert.Email).Ok()
+	user := User{}
+	_ = json.Unmarshal(bytes, &user)
+	u := session.AuthCertificate{}
+
+	if user.EmailAddress != "" {
+		//get tenants.. if more than one tenants.. and only user is you.. delete.. otherwise fail.
+		th := TenantHandler{}
+		tenants := th.GetTenantsForUser(user.UserID)
+
+		isSafeToDelete := true
+		isSafeToDeleteError := ""
+
+		//Checking for safety
+		for _, tenant := range tenants {
+			//check if admin
+			admins := th.GetTenantAdmin(tenant.TenantID)
+			isAdmin := false
+			//check if im an admin.
+			for _, admin := range admins {
+				if user.EmailAddress == admin["EmailAddress"] {
+					//im an admin
+					isAdmin = true
+					break
+				}
+			}
+
+			if isAdmin {
+				//im an admin.. check if there are any other admins.
+				if len(admins) > 1 {
+					//yes.. don't delete tenant. just remove myself
+					//h.RemoveUserFromTenant(user.UserID, tenant.TenantID)
+				} else {
+					//im the only tenant admin. check if many users.
+					//get users for tenant..
+					users := th.GetUsersForTenant(u, tenant.TenantID)
+					if len(users) == 1 {
+						//safe to delete tenant and remove myself.
+					} else {
+						//have to give tenant ownership to someone.... fail!
+						isSafeToDelete = false
+						isSafeToDeleteError = "Failed to delete user. This user is only Admin to Tenant : " + tenant.TenantID + ". Transfer admin ownership before deleting user."
+						break
+					}
+				}
+			} else {
+				//not an admin.. remove myself from tenant
+				//th.RemoveUserFromTenant(user.UserID, tenant.TenantID)
+			}
+
+		}
+
+		if isSafeToDelete {
+			for _, tenant := range tenants {
+				//check if admin
+				admins := th.GetTenantAdmin(tenant.TenantID)
+				isAdmin := false
+				//check if im an admin.
+				for _, admin := range admins {
+					if user.EmailAddress == admin["EmailAddress"] {
+						//im an admin
+						isAdmin = true
+						break
+					}
+				}
+
+				if isAdmin {
+					//im an admin.. check if there are any other admins.
+					if len(admins) > 1 {
+						//yes.. don't delete tenant. just remove myself
+						th.RemoveUserFromTenant(user.UserID, tenant.TenantID)
+					} else {
+						//im the only tenant admin. check if many users.
+						//get users for tenant..
+						users := th.GetUsersForTenant(u, tenant.TenantID)
+						if len(users) == 1 {
+							//remove myself.
+							th.RemoveUserFromTenant(user.UserID, tenant.TenantID)
+							//delete tenant
+							client.Go("ignore", "com.duosoftware.tenant", "tenants").DeleteObject().WithKeyField("TenantID").AndDeleteObject(tenant).Ok()
+						}
+					}
+				} else {
+					//not an admin.. remove myself from tenant
+					th.RemoveUserFromTenant(user.UserID, tenant.TenantID)
+				}
+
+			}
+
+			//deleting finished..
+			//remove from default tenant.
+			client.Go("ignore", "com.duosoftware.tenant", "defaulttenant").DeleteObject().WithKeyField("UserID").AndDeleteObject(user).Ok()
+			//remove user
+			client.Go("ignore", "com.duosoftware.auth", "users").DeleteObject().WithKeyField("EmailAddress").AndDeleteObject(user).Ok()
+			//clear login sessions
+			loginSession := LoginSessions{}
+			loginSession.Email = user.EmailAddress
+			client.Go("ignore", "com.duosoftware.auth", "loginsessions").DeleteObject().WithKeyField("Email").AndDeleteObject(loginSession).Ok()
+			//clear login attempts
+			attempt := LoginAttemts{}
+			attempt.Email = user.EmailAddress
+			client.Go("ignore", "s.duosoftware.auth", "loginattemts").DeleteObject().WithKeyField("Email").AndDeleteObject(attempt).Ok()
+			//get all sessions
+			bytes, _ := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("Email:" + user.EmailAddress).Ok()
+			var sessions []session.AuthCertificate
+			_ = json.Unmarshal(bytes, &sessions)
+			if len(sessions) > 0 {
+				//drop all sessions
+				for _, session := range sessions {
+					client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(session).Ok()
+				}
+			}
+		} else {
+			err = errors.New(isSafeToDeleteError)
+		}
+
+	} else {
+		err = errors.New("No User Found.")
+	}
+	return
 }
