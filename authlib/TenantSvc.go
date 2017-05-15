@@ -247,6 +247,10 @@ func (T TenantSvc) AddUser(email, level string) bool {
 
 	addUserType := T.Context.Request().Header.Get("AddUserType")
 
+	fmt.Println("----------------------------------")
+	fmt.Println("Add User Type : " + addUserType)
+	fmt.Println("----------------------------------")
+
 	inviter, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		//no error
