@@ -430,6 +430,13 @@ func (h *TenantHandler) SavePendingAddUserRequest(request PendingUserRequest) {
 	client.Go("ignore", request.TenantID, "AddUserRequestLogs").StoreObject().WithKeyField("Email").AndStoreOne(request).Ok()
 }
 
+func (t *TenantHandler) GetPendingAddUserRequest(email, tenant string) PendingUserRequest {
+	request := PendingUserRequest{}
+	bytes, _ := client.Go("ignore", tenant, "AddUserRequestLogs").GetOne().ByUniqueKey(email).Ok()
+	_ = json.Unmarshal(bytes, &request)
+	return request
+}
+
 func (h *TenantHandler) RemoveAddUserRequest(email string, tenant string) {
 	o := PendingUserRequest{}
 	o.Email = email
