@@ -34,6 +34,7 @@ type TenantSvc struct {
 	setDefaultTenant            gorest.EndPoint `method:"GET" path:"/tenant/SetDefaultTenant/{UserID:string}/{TenantID:string}" output:"bool"`
 	getTenantAdmin              gorest.EndPoint `method:"GET" path:"/tenant/GetTenantAdmin/{TenantID:string}" output:"[]InviteUsers"`
 	getAllPendingTenantRequests gorest.EndPoint `method:"GET" path:"/tenant/GetAllPendingTenantRequests/" output:"PendingRequests"`
+	cancelAddTenantUser         gorest.EndPoint `method:"GET" path:"/tenant/CancelAddUser/{email:string}/" output:"bool"`
 }
 
 func (T TenantSvc) GetTenantAdmin(TenantID string) []InviteUsers {
@@ -238,6 +239,35 @@ func (T TenantSvc) InviteUser(users []InviteUsers) {
 	}
 }
 
+func (T TenantSvc) CancelAddTenantUser(email string) bool {
+	//Add User to Tenant
+	term.Write("Executing Method : Cancel Add User", term.Blank)
+	th := TenantHandler{}
+
+	u, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		//Get pending add user requst
+		addRequest := th.GetPendingAddUserRequest(email, u.Domain)
+		if addRequest == (PendingUserRequest{}) {
+			T.ResponseBuilder().SetResponseCode(500).WriteAndOveride([]byte(common.ErrorJson("Error : Tenant request in Domain : " + u.Domain + " for User : " + email + " not cound.")))
+			return false
+		}
+
+		code := addRequest.Code
+		tmp := tempRequestGenerator{}
+
+		tmpObj := make(map[string]interface{})
+		tmpObj["id"] = code
+		tmp.Remove(tmpObj)
+		th.RemoveAddUserRequest(email, addRequest.TenantID)
+		T.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.MsgJson("Successfully removed tenant invitation.")))
+		return true
+	} else {
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
+		return false
+	}
+}
+
 func (T TenantSvc) AddUser(email, level string) bool {
 	//Add User to Tenant
 	term.Write("Executing Method : Add User (To Tenant)", term.Blank)
@@ -289,7 +319,8 @@ func (T TenantSvc) AddUser(email, level string) bool {
 				s.Email = invitee.EmailAddress
 				s.TenantID = t.TenantID
 				s.Name = invitee.Name
-				s.Code = "Not Available Reason : Tenant_Invitation_Existing"
+				//s.Code = "Not Available Reason : Tenant_Invitation_Existing"
+				s.Code = code
 				th.SavePendingAddUserRequest(s)
 
 				fmt.Println("-----------------------------------------------")
