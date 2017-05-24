@@ -11,6 +11,9 @@ import (
 	"duov6.com/gorest"
 	"duov6.com/pog"
 	"duov6.com/session"
+	"fmt"
+	"io/ioutil"
+	"os"
 	//"duov6.com/stat"
 	"duov6.com/statservice"
 	"duov6.com/term"
@@ -47,6 +50,7 @@ func main() {
 	//runRestFul()
 	//term.Read("Lable")
 	common.VerifyConfigFiles()
+	initializeSettingsFile()
 	authlib.StartTime = time.Now()
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -127,4 +131,28 @@ func runRestFul() {
 		}
 	}
 
+}
+
+func initializeSettingsFile() {
+	From := os.Getenv("SMTP_ADDRESS")
+	content, err := ioutil.ReadFile("settings.config")
+	if err != nil {
+		data := make(map[string]interface{})
+		if From == "" {
+			data["From"] = "DuoWorld.com <mail-noreply@duoworld.com>"
+		} else {
+			data["From"] = From
+		}
+		dataBytes, _ := json.Marshal(data)
+		_ = ioutil.WriteFile("settings.config", dataBytes, 0666)
+	} else {
+		vv := make(map[string]interface{})
+		_ = json.Unmarshal(content, &vv)
+		if From != "" {
+			vv["From"] = From
+		}
+		dataBytes, _ := json.Marshal(vv)
+		_ = ioutil.WriteFile("settings.config", dataBytes, 0666)
+		fmt.Println(vv)
+	}
 }
