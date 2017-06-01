@@ -29,6 +29,7 @@ type TenantAutherized struct {
 }
 
 func AddSession(a AuthCertificate) {
+	fmt.Println("ADDING AN SESSION............................")
 	//color.Green("Add Session")
 	nowTime := time.Now()
 	o := make(map[string]interface{})
@@ -41,7 +42,7 @@ func AddSession(a AuthCertificate) {
 
 	client.Go(a.SecurityToken, "reports.duosoftware.auth", "lastlogin").StoreObject().WithKeyField("TenantID").AndStoreOne(o).Ok()
 	client.Go(a.SecurityToken, "reports.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
-
+	fmt.Println(a.SecurityToken)
 	client.Go(a.SecurityToken, "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 	term.Write("AddSession for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
 
@@ -145,6 +146,7 @@ func GetChildSession(Key string) []AuthCertificate {
 }
 
 func GetSession(key, Domain string) (AuthCertificate, string) {
+	fmt.Println("Calling GetSession Token : " + key + " Domain : " + Domain)
 	//color.Green("Get Session")
 	bytes, objerr := client.Go(key, "s.duosoftware.auth", "sessions").GetOne().ByUniqueKey(key).Ok()
 	term.Write("GetSession For SecurityToken "+key, term.Debug)
@@ -162,11 +164,13 @@ func GetSession(key, Domain string) (AuthCertificate, string) {
 			errString = "GetSession Error " + err.Error()
 		} else {
 			if Domain != "Nil" {
-				if strings.ToLower(uList.Domain) != strings.ToLower(Domain) {
+				isEqual := strings.EqualFold(uList.Domain, Domain)
+				if !isEqual {
 					x, _ := AutherizedUser(Domain, uList.UserID)
 					if x {
 						uList.Domain = strings.ToLower(Domain)
 						uList.MainST = key
+						//commenting following temporarily
 						uList.SecurityToken = common.GetGUID()
 						uList.Otherdata = make(map[string]string)
 						uList.Otherdata["unused"] = "abc"

@@ -47,7 +47,7 @@ func (m *DeleteModifier) AndDeleteOne(obj interface{}) *DeleteModifier {
 
 func (m *DeleteModifier) AndDeleteMany(objs []interface{}) *DeleteModifier {
 	m.Request.Controls.Operation = "delete"
-	m.Request.Controls.Multiplicity = "single"
+	m.Request.Controls.Multiplicity = "multiple"
 
 	s := reflect.ValueOf(objs)
 	var interfaceList []map[string]interface{}

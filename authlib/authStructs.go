@@ -13,7 +13,7 @@ var Config AuthConfig
 //var configRead
 
 func NewUser(userID, EmailAddress, Name, Password string) User {
-	return User{userID, EmailAddress, Name, Password, Password, false}
+	return User{userID, EmailAddress, Name, Password, Password, false, true}
 }
 
 func GetConfig() AuthConfig {
@@ -103,6 +103,7 @@ type User struct {
 	Password        string
 	ConfirmPassword string
 	Active          bool
+	Status          bool
 	//UserName        string
 	//MobileNo        string
 	//OtherData       map[string]string

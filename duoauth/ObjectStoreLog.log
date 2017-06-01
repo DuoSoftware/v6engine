@@ -65499,3 +65499,18 @@ Starting replicated storage engine
 2016-04-06 @ 13:15:27  Starting replicated storage engine
 2016-04-06 @ 13:15:27  Getting settings for single insert
 2016-04-06 @ 13:15:27  Successfully stored object(s) in CloudSQL
+2017-05-04 @ 14:12:07  ------------------- Default Request -------------------
+URL : /com.duosoftware.tenant/defaulttenant
+Request Body : {"Parameters":{"KeyProperty":"UserID","KeyValue":"","AutoIncrement":false,"GUIDKey":false,"TransactionID":""},"Query":{"Type":"","Parameters":""},"Special":{"Type":"","Extras":null,"Parameters":""},"Object":{"Active":true,"ConfirmPassword":"202cb962ac59075b964b07152d234b70","EmailAddress":"gg@gmail.com","Name":"huetesthue","Password":"202cb962ac59075b964b07152d234b70","Status":true,"UserID":"99b85030309908c622a8bb387323bf6c"},"Objects":null,"Transaction":{"Type":"","Parameters":null,"Extras":null}}
+S-0 : Error : Transaction failed Rollbacking!!!
+
+2017-05-04 @ 14:36:36  ------------------- Default Request -------------------
+URL : /com.duosoftware.tenant/defaulttenant
+Request Body : {"Parameters":{"KeyProperty":"UserID","KeyValue":"","AutoIncrement":false,"GUIDKey":false,"TransactionID":""},"Query":{"Type":"","Parameters":""},"Special":{"Type":"","Extras":null,"Parameters":""},"Object":{"Active":true,"ConfirmPassword":"202cb962ac59075b964b07152d234b70","EmailAddress":"gg@gmail.com","Name":"huetesthue","Password":"202cb962ac59075b964b07152d234b70","Status":true,"UserID":"e44967e2b8ae4f9f16dc6158c5482519"},"Objects":null,"Transaction":{"Type":"","Parameters":null,"Extras":null}}
+S-0 : Error : Transaction failed Rollbacking!!!
+
+2017-05-04 @ 14:36:37  ------------------- Default Request -------------------
+URL : /s.duosoftware.auth/loginattemts
+Request Body : {"Parameters":{"KeyProperty":"Email","KeyValue":"","AutoIncrement":false,"GUIDKey":false,"TransactionID":""},"Query":{"Type":"","Parameters":""},"Special":{"Type":"","Extras":null,"Parameters":""},"Object":{"BlockUser":"","Count":0,"Domain":"","Email":"gg@gmail.com","LastAttemttime":""},"Objects":null,"Transaction":{"Type":"","Parameters":null,"Extras":null}}
+S-0 : Error : Transaction failed Rollbacking!!!
+

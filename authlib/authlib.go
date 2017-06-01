@@ -67,6 +67,11 @@ type Auth struct {
 
 	//resend email methods
 	resendActivationEmail gorest.EndPoint `method:"GET" path:"/ResendActivationEmail/{EmailAddress:string}/" output:"string"`
+
+	//Account deactivation, reactivation and deletion
+	activateAccount   gorest.EndPoint `method:"GET" path:"/ActivateAccount/{EmailAddress:string}/{Password:string}" output:"AuthResponse"`
+	deactivateAccount gorest.EndPoint `method:"GET" path:"/DeactivateAccount/" output:"AuthResponse"`
+	deleteAccount     gorest.EndPoint `method:"GET" path:"/DeleteAccount/" output:"AuthResponse"`
 }
 
 func (A Auth) ToggleLogs() string {
@@ -1057,6 +1062,76 @@ func (A Auth) CheckPassword(password string) bool {
 		return false
 	}
 
+}
+
+func (A Auth) ActivateAccount(EmailAddress string, Password string) AuthResponse {
+	//Activate account after a deactivation
+	term.Write("Executing Method : Activate Account", term.Blank)
+	response := AuthResponse{}
+	h := newAuthHandler()
+
+	err := h.ActivateAccount(EmailAddress, Password)
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+		A.ResponseBuilder().SetResponseCode(500)
+	} else {
+		response.Status = true
+		response.Message = "Successfully activated account."
+		A.ResponseBuilder().SetResponseCode(200)
+	}
+
+	return response
+}
+
+func (A Auth) DeactivateAccount() AuthResponse {
+	//Temporary deactivation of account
+	term.Write("Executing Method : Deactivate Account", term.Blank)
+	response := AuthResponse{}
+	h := newAuthHandler()
+	c, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if err == "" {
+		err := h.DeactivateAccount(c)
+		if err != nil {
+			response.Status = false
+			response.Message = err.Error()
+			A.ResponseBuilder().SetResponseCode(500)
+		} else {
+			response.Status = true
+			response.Message = "Successfully deactivated account."
+			A.ResponseBuilder().SetResponseCode(200)
+		}
+	} else {
+		response.Status = false
+		response.Message = "Not Authenticated to perform account deactivation."
+		A.ResponseBuilder().SetResponseCode(401)
+	}
+	return response
+}
+
+func (A Auth) DeleteAccount() AuthResponse {
+	//Deleting user account
+	term.Write("Executing Method : Delete Account", term.Blank)
+	response := AuthResponse{}
+	h := newAuthHandler()
+	c, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if err == "" {
+		err := h.DeleteAccount(c)
+		if err != nil {
+			response.Status = false
+			response.Message = err.Error()
+			A.ResponseBuilder().SetResponseCode(500)
+		} else {
+			response.Status = true
+			response.Message = "Successfully deleted account."
+			A.ResponseBuilder().SetResponseCode(200)
+		}
+	} else {
+		response.Status = false
+		response.Message = "Not Authenticated to perform account deletion."
+		A.ResponseBuilder().SetResponseCode(401)
+	}
+	return response
 }
 
 //------------------------ Version Management --------------------------------

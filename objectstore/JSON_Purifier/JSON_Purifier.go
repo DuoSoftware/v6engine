@@ -12,6 +12,7 @@ func Purify(input []byte) (output []byte) {
 	err := json.Unmarshal(input, &requestBody)
 
 	if err != nil {
+		output = input
 		return
 	}
 
