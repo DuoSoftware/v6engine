@@ -49,6 +49,7 @@ type Auth struct {
 	userActivationByAdmin        gorest.EndPoint `method:"GET" path:"/userActivationByAdmin/{emailAddress:string}" output:"bool"`
 	logOut                       gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
 	checkPassword                gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
+	checkLogin                   gorest.EndPoint `method:"GET" path:"/checklogin/{email:string}/{password:string}" output:"bool"`
 	getUser                      gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
 	blockUser                    gorest.EndPoint `method:"GET" path:"/BlockUser/{Email:string}" output:"bool"`
 	releaseUser                  gorest.EndPoint `method:"GET" path:"/ReleaseUser/{Email:string}/{b4:string}" output:"bool"`
@@ -1042,6 +1043,19 @@ func (A Auth) RegisterTenantUserWithTenant(u User, TenantID string) {
 	// 	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Security Token Incorrect.")))
 	// }
 
+}
+
+func (A Auth) CheckLogin(email, password string) bool {
+	//Check If Can Login
+	term.Write("Executing Method : Check Login (To check if CanLogin)", term.Blank)
+
+	h := newAuthHandler()
+	_, err := h.Login(email, password)
+	if err == "" {
+		return true
+	} else {
+		return false
+	}
 }
 
 func (A Auth) CheckPassword(password string) bool {
