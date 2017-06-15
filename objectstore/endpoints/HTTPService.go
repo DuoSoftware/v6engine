@@ -4,6 +4,7 @@ import (
 	"duov6.com/FileServer"
 	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
+	"duov6.com/common"
 	"duov6.com/objectstore/JSON_Purifier"
 	"duov6.com/objectstore/backup"
 	"duov6.com/objectstore/cache"
@@ -37,57 +38,59 @@ var isJsonStack bool
 var isFlusherActivated bool
 
 func (h *HTTPService) Start() {
-	term.Write("Object Store Listening on Port : 3000", 2)
-	m := martini.Classic()
-	m.Use(cors.Allow(&cors.Options{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-		AllowHeaders:     []string{"securityToken", "Content-Type"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-	}))
-	//Read Version
-	m.Get("/", versionHandler)
-	//READ BY KEY
-	m.Get("/:namespace/:class/:id", handleRequest)
-	//READ BY KEYWORD
-	m.Get("/:namespace/:class", handleRequest)
-	//Get all classes
-	m.Post("/:namespace", handleRequest)
-	//READ ADVANCED, INSERT
-	m.Post("/:namespace/:class", handleRequest)
+	if common.VerifyGlobalConfig() {
+		term.Write("Object Store Listening on Port : 3000", 2)
+		m := martini.Classic()
+		m.Use(cors.Allow(&cors.Options{
+			AllowOrigins:     []string{"*"},
+			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+			AllowHeaders:     []string{"securityToken", "Content-Type"},
+			ExposeHeaders:    []string{"Content-Length"},
+			AllowCredentials: true,
+		}))
+		//Read Version
+		m.Get("/", versionHandler)
+		//READ BY KEY
+		m.Get("/:namespace/:class/:id", handleRequest)
+		//READ BY KEYWORD
+		m.Get("/:namespace/:class", handleRequest)
+		//Get all classes
+		m.Post("/:namespace", handleRequest)
+		//READ ADVANCED, INSERT
+		m.Post("/:namespace/:class", handleRequest)
 
-	//FILE RECIEVER
-	m.Post("/:namespace/:class/:id", uploadHandler)
-	//UPDATE
-	m.Put("/:namespace/:class", handleRequest)
-	//DELETE
-	m.Delete("/:namespace/:class", handleRequest)
+		//FILE RECIEVER
+		m.Post("/:namespace/:class/:id", uploadHandler)
+		//UPDATE
+		m.Put("/:namespace/:class", handleRequest)
+		//DELETE
+		m.Delete("/:namespace/:class", handleRequest)
 
-	//------- Utility End Points -------------
+		//------- Utility End Points -------------
 
-	//Get All Error Post Logs
-	m.Get("/ErrorLogs", logHandler)
+		//Get All Error Post Logs
+		m.Get("/ErrorLogs", logHandler)
 
-	//Sync Increment Keys with DomainClassAttributes
-	m.Get("/SyncRedisKeys", syncHandler)
+		//Sync Increment Keys with DomainClassAttributes
+		m.Get("/SyncRedisKeys", syncHandler)
 
-	//Flush Cache
-	m.Get("/ClearCache", cacheHandler)
+		//Flush Cache
+		m.Get("/ClearCache", cacheHandler)
 
-	//View All Logs
-	m.Get("/ViewLogs")
+		//View All Logs
+		m.Get("/ViewLogs")
 
-	//Enable or Disable Terminal View For Request Body
-	m.Get("/ToggleLogs", viewLogHandler)
+		//Enable or Disable Terminal View For Request Body
+		m.Get("/ToggleLogs", viewLogHandler)
 
-	//Enable or Disable logging Requests to Disk
-	m.Get("/ToggleStack", jsonStackHandler)
+		//Enable or Disable logging Requests to Disk
+		m.Get("/ToggleStack", jsonStackHandler)
 
-	//5.1 silverlight access
-	// m.Get("/crossdomain.xml", Crossdomain)
-	// m.Get("/clientaccesspolicy.xml", Clientaccesspolicy)
-	m.Run()
+		//5.1 silverlight access
+		// m.Get("/crossdomain.xml", Crossdomain)
+		// m.Get("/clientaccesspolicy.xml", Clientaccesspolicy)
+		m.Run()
+	}
 }
 
 func startKeyFlusher(request *messaging.ObjectRequest) {

@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"duov6.com/common"
 	"duov6.com/duonotifier/client"
 	"duov6.com/duonotifier/messaging"
 	"encoding/json"
@@ -15,19 +16,21 @@ type HTTPService struct {
 }
 
 func (h *HTTPService) Start() {
-	fmt.Println("DuoNotifier Listening on Port : 7000")
-	m := martini.Classic()
-	m.Use(cors.Allow(&cors.Options{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST"},
-		AllowHeaders:     []string{"securityToken", "Content-Type"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-	}))
+	if common.VerifyGlobalConfig() {
+		fmt.Println("DuoNotifier Listening on Port : 7000")
+		m := martini.Classic()
+		m.Use(cors.Allow(&cors.Options{
+			AllowOrigins:     []string{"*"},
+			AllowMethods:     []string{"GET", "POST"},
+			AllowHeaders:     []string{"securityToken", "Content-Type"},
+			ExposeHeaders:    []string{"Content-Length"},
+			AllowCredentials: true,
+		}))
 
-	m.Get("/", versionHandler)
-	m.Post("/:namespace", handleRequest)
-	m.RunOnAddr(":7000")
+		m.Get("/", versionHandler)
+		m.Post("/:namespace", handleRequest)
+		m.RunOnAddr(":7000")
+	}
 }
 
 func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request) {
