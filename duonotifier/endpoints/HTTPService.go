@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"duov6.com/cebadapter"
 	"duov6.com/common"
 	"duov6.com/duonotifier/client"
 	"duov6.com/duonotifier/messaging"
@@ -28,6 +29,10 @@ func (h *HTTPService) Start() {
 		}))
 
 		m.Get("/", versionHandler)
+
+		//Get Store Configurations
+		m.Get("/config", getConfigHandler)
+
 		m.Post("/:namespace", handleRequest)
 		m.RunOnAddr(":7000")
 	}
@@ -70,4 +75,10 @@ func getTemplateRequest(body []byte) messaging.TemplateRequest {
 
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, GetVersion())
+}
+
+func getConfigHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	configAll := cebadapter.GetGlobalConfig("StoreConfig")
+	byteArray, _ := json.Marshal(configAll)
+	fmt.Fprintf(w, string(byteArray))
 }

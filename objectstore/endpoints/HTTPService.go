@@ -4,6 +4,7 @@ import (
 	"duov6.com/FileServer"
 	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
+	"duov6.com/cebadapter"
 	"duov6.com/common"
 	"duov6.com/objectstore/JSON_Purifier"
 	"duov6.com/objectstore/backup"
@@ -77,6 +78,9 @@ func (h *HTTPService) Start() {
 		//Flush Cache
 		m.Get("/ClearCache", cacheHandler)
 
+		//Get Store Configurations
+		m.Get("/config", getConfigHandler)
+
 		//View All Logs
 		m.Get("/ViewLogs")
 
@@ -149,6 +153,12 @@ func logHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, message)
+}
+
+func getConfigHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	configAll := cebadapter.GetGlobalConfig("StoreConfig")
+	byteArray, _ := json.Marshal(configAll)
+	fmt.Fprintf(w, string(byteArray))
 }
 
 func cacheHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {

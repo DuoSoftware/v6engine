@@ -4,6 +4,7 @@ import (
 	//"duov6.com/applib"
 	"encoding/json"
 
+	"duov6.com/cebadapter"
 	"duov6.com/common"
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
@@ -30,6 +31,7 @@ type AuthorizeAppData struct {
 type Auth struct {
 	gorest.RestService
 	verify                       gorest.EndPoint `method:"GET" path:"/" output:"string"`
+	getConfig                    gorest.EndPoint `method:"GET" path:"/config" output:"string"`
 	login                        gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
 	noPasswordLogin              gorest.EndPoint `method:"GET" path:"/NoPasswordLogin/{OTP:string}" output:"AuthCertificate"`
 	loginOTP                     gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}" output:"string"`
@@ -1153,4 +1155,10 @@ func (A Auth) DeleteAccount() AuthResponse {
 func (A Auth) Verify() (output string) {
 	output = Verify()
 	return
+}
+
+func (A Auth) GetConfig() (output string) {
+	configAll := cebadapter.GetGlobalConfig("StoreConfig")
+	byteArray, _ := json.Marshal(configAll)
+	return string(byteArray)
 }
