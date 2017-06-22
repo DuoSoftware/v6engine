@@ -723,6 +723,11 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 	domain := repository.GetDatabaseName(request.Controls.Namespace)
 
 	switch queryType {
+	case "getguid":
+		guid := common.GetGUID()
+		response.IsSuccess = true
+		response.Body = []byte(guid)
+		return response
 	case "getfields":
 		request.Log("Debug : Starting GET-FIELDS sub routine!")
 		query := "EXPLAIN " + domain + "." + request.Controls.Class + ";"
