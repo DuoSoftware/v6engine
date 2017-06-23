@@ -40,6 +40,7 @@ type Auth struct {
 	authorize                    gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
 	getSession                   gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
 	getSessionStatic             gorest.EndPoint `method:"GET" path:"/GetSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
+	updateSessionStatic          gorest.EndPoint `method:"GET" path:"/UpdateSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
 	getSecret                    gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
 	getAuthCode                  gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
 	autherizeApp                 gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
@@ -823,6 +824,29 @@ func (A Auth) GetSessionStatic(SecurityToken string) (a AuthCertificate) {
 		} else {
 			c.ClientIP = A.Context.Request().Header.Get("IP")
 		}
+		h.AddSession(c)
+		a = c
+		return a
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Not Autherized Err:" + err)))
+		return
+	}
+
+}
+
+func (A Auth) UpdateSessionStatic(SecurityToken string) (a AuthCertificate) {
+	//Get One Time Session if not make existing session a one time session and save and return.
+	term.Write("Executing Method : Update Session Static (Update One Time Session by SecurityToken)", term.Blank)
+
+	h := newAuthHandler()
+	c, err := h.GetSession(SecurityToken, "Nil")
+	scope := A.Context.Request().Header.Get("scope")
+
+	//fmt.Println(c)
+	if err == "" && c.Otherdata["OneTimeToken"] == "yes" {
+		payload := common.JWTPayload(c.Domain, c.SecurityToken, c.UserID, c.Email, c.Domain, []byte(scope))
+		c.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(c.Domain), payload)
+		c.Otherdata["Scope"] = strings.Replace(scope, "\"", "`", -1)
 		h.AddSession(c)
 		a = c
 		return a
