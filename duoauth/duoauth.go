@@ -1,9 +1,9 @@
 package main
 
 import (
-	"duov6.com/authlib"
 	"duov6.com/cebadapter"
 	"duov6.com/common"
+	"duov6.com/duoauth/api"
 	"duov6.com/term"
 	"encoding/json"
 	"fmt"
@@ -18,7 +18,7 @@ import (
 func main() {
 	common.VerifyConfigFiles()
 	initializeSettingsFile()
-	authlib.StartTime = time.Now()
+	api.StartTime = time.Now()
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	cebadapter.Attach("DuoAuth", func(s bool) {
@@ -36,14 +36,14 @@ func main() {
 		term.Write("Successfully registered in CEB", term.Information)
 	})
 
-	authlib.SetupConfig()
+	api.SetupConfig()
 	term.GetConfig()
 
 	go runRestFul()
 
 	term.Write("================================================================", term.Splash)
 	term.Write("|     https RestFul Service running on :3048                   |", term.Splash)
-	term.Write("|     Duo v6 Auth Service 6.0                                  |", term.Splash)
+	term.Write("|     Duo v6 Auth Service ( Azure AD backend for SmoothFlow)   |", term.Splash)
 	term.Write("================================================================", term.Splash)
 
 	forever := make(chan bool)
@@ -53,10 +53,10 @@ func main() {
 
 func runRestFul() {
 	if common.VerifyGlobalConfig() {
-		gorest.RegisterService(new(authlib.Auth))
-		gorest.RegisterService(new(authlib.TenantSvc))
+		gorest.RegisterService(new(api.Auth))
+		gorest.RegisterService(new(api.TenantSvc))
 
-		c := authlib.GetConfig()
+		c := api.GetConfig()
 
 		if c.Https_Enabled {
 			err := http.ListenAndServeTLS(":3048", c.Certificate, c.PrivateKey, gorest.Handle())
