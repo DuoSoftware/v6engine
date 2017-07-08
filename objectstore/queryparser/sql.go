@@ -20,12 +20,11 @@ func ConvertToTSQLTags(queryString string) (whereTags map[string]string, selectT
 	fmt.Println("Class : " + class)
 
 	//where clauses
-
 	whereArr := strings.Split(queryString, "where")
 
 	//whereTags = make(map[string]string)
 	//whereTags = GetTags(whereArr[1])
-	
+
 	if len(whereArr) > 1 {
 		whereTags = make(map[string]string)
 		whereTags = GetTags(whereArr[1])

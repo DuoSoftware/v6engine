@@ -46,7 +46,7 @@ func SetupConfig() {
 	term.SplashScreen("setup.art")
 	if term.Read("Https Enabled (y/n)") == "y" {
 		Config.Https_Enabled = true
-		Config.Cirtifcate = term.Read("Cirtifcate filename")
+		Config.Certificate = term.Read("Certificate filename")
 		Config.PrivateKey = term.Read("PrivateKey filename")
 	} else {
 		Config.Https_Enabled = false
@@ -111,7 +111,7 @@ type User struct {
 
 // A AuthConfig represents a authconfig for Configuration For Auth Service.
 type AuthConfig struct { // Auth Config
-	Cirtifcate         string // ssl cirtificate
+	Certificate        string // ssl cirtificate
 	PrivateKey         string // Private Key
 	Https_Enabled      bool   // Https enabled or not
 	StoreID            string // Store ID

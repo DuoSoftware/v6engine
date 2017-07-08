@@ -1,82 +1,72 @@
 package authlib
 
 import (
-	//"duov6.com/applib"
-	"encoding/json"
-
 	"duov6.com/cebadapter"
-	"duov6.com/common"
-	notifier "duov6.com/duonotifier/client"
-	"duov6.com/gorest"
-	"duov6.com/objectstore/client"
-	"fmt"
-	//"golang.org/x/oauth2"
-	//"crypto/hmac"
-	"duov6.com/session"
-	"duov6.com/term"
-	"strconv"
-	"strings"
-	///"strings"
+	// "duov6.com/common"
+	// notifier "duov6.com/duonotifier/client"
+	// "duov6.com/objectstore/client"
+	// "duov6.com/session"
+	// "duov6.com/term"
+	"encoding/json"
+	// "fmt"
+	"github.com/SiyaDlamini/gorest"
+	// "strconv"
+	// "strings"
 )
-
-type AuthCertificate struct {
-	UserID, Username, Name, Email, SecurityToken, Domain, DataCaps, ClientIP string
-	Otherdata                                                                map[string]string
-}
-
-type AuthorizeAppData struct {
-	Object map[string]interface{}
-}
 
 type Auth struct {
 	gorest.RestService
-	verify                       gorest.EndPoint `method:"GET" path:"/" output:"string"`
-	getConfig                    gorest.EndPoint `method:"GET" path:"/config" output:"string"`
-	login                        gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
-	noPasswordLogin              gorest.EndPoint `method:"GET" path:"/NoPasswordLogin/{OTP:string}" output:"AuthCertificate"`
-	loginOTP                     gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}" output:"string"`
-	loginOTPNoPass               gorest.EndPoint `method:"GET" path:"/LoginOTPNoPass/{username:string}/{domain:string}" output:"string"`
-	getLoginSessions             gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
-	authorize                    gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
-	getSession                   gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
-	getSessionStatic             gorest.EndPoint `method:"GET" path:"/GetSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
-	updateSessionStatic          gorest.EndPoint `method:"GET" path:"/UpdateSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
-	getSecret                    gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
-	getAuthCode                  gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
-	autherizeApp                 gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
-	updateScope                  gorest.EndPoint `method:"POST" path:"/UpdateScope/{SecurityToken:string}/{UserID:string}/{ApplicationID:string}" postdata:"AuthorizeAppData"`
-	addUser                      gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
-	invitedUserRegistration      gorest.EndPoint `method:"POST" path:"/InvitedUserRegistration/" postdata:"User"`
-	registerTenantUser           gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
-	userActivation               gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
-	userActivationByAdmin        gorest.EndPoint `method:"GET" path:"/userActivationByAdmin/{emailAddress:string}" output:"bool"`
-	logOut                       gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
-	checkPassword                gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
-	checkLogin                   gorest.EndPoint `method:"GET" path:"/checklogin/{email:string}/{password:string}" output:"bool"`
-	getUser                      gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
-	blockUser                    gorest.EndPoint `method:"GET" path:"/BlockUser/{Email:string}" output:"bool"`
-	releaseUser                  gorest.EndPoint `method:"GET" path:"/ReleaseUser/{Email:string}/{b4:string}" output:"bool"`
-	getGUID                      gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
-	forgotPassword               gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
-	resetPasswordByTenantAdmin   gorest.EndPoint `method:"GET" path:"/ResetPasswordByTenantAdmin/{EmailAddress:string}" output:"bool"`
-	changePassword               gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
-	arbiterAuthorize             gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
-	getUserByUserId              gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
-	toggleLogs                   gorest.EndPoint `method:"GET" path:"/ToggleLogs/" output:"string"`
-	registerTenantUserWithTenant gorest.EndPoint `method:"POST" path:"/RegisterTenantUserWithTenant/{TenantID:string}" postdata:"User"`
+	verify    gorest.EndPoint `method:"GET" path:"/" output:"string"`
+	getConfig gorest.EndPoint `method:"GET" path:"/config" output:"string"`
+	/*
+		login                        gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
+		noPasswordLogin              gorest.EndPoint `method:"GET" path:"/NoPasswordLogin/{OTP:string}" output:"AuthCertificate"`
+		loginOTP                     gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}" output:"string"`
+		loginOTPNoPass               gorest.EndPoint `method:"GET" path:"/LoginOTPNoPass/{username:string}/{domain:string}" output:"string"`
+		getLoginSessions             gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
+		authorize                    gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
+		getSession                   gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
+		getSessionStatic             gorest.EndPoint `method:"GET" path:"/GetSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
+		updateSessionStatic          gorest.EndPoint `method:"GET" path:"/UpdateSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
+		getSecret                    gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
+		getAuthCode                  gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
+		autherizeApp                 gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
+		updateScope                  gorest.EndPoint `method:"POST" path:"/UpdateScope/{SecurityToken:string}/{UserID:string}/{ApplicationID:string}" postdata:"AuthorizeAppData"`
+		addUser                      gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
+		invitedUserRegistration      gorest.EndPoint `method:"POST" path:"/InvitedUserRegistration/" postdata:"User"`
+		registerTenantUser           gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
+		userActivation               gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
+		userActivationByAdmin        gorest.EndPoint `method:"GET" path:"/userActivationByAdmin/{emailAddress:string}" output:"bool"`
+		logOut                       gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
+		checkPassword                gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
+		checkLogin                   gorest.EndPoint `method:"GET" path:"/checklogin/{email:string}/{password:string}" output:"bool"`
+		getUser                      gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
+		blockUser                    gorest.EndPoint `method:"GET" path:"/BlockUser/{Email:string}" output:"bool"`
+		releaseUser                  gorest.EndPoint `method:"GET" path:"/ReleaseUser/{Email:string}/{b4:string}" output:"bool"`
+		getGUID                      gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
+		forgotPassword               gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
+		resetPasswordByTenantAdmin   gorest.EndPoint `method:"GET" path:"/ResetPasswordByTenantAdmin/{EmailAddress:string}" output:"bool"`
+		changePassword               gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
+		arbiterAuthorize             gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
+		getUserByUserId              gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
+		toggleLogs                   gorest.EndPoint `method:"GET" path:"/ToggleLogs/" output:"string"`
+		registerTenantUserWithTenant gorest.EndPoint `method:"POST" path:"/RegisterTenantUserWithTenant/{TenantID:string}" postdata:"User"`
 
-	//Reset Password methods via URL
-	requestResetPassword gorest.EndPoint `method:"GET" path:"/RequestResetPassword/{EmailAddress:string}" output:"AuthResponse"`
-	resetPassword        gorest.EndPoint `method:"GET" path:"/ResetPassword/{Password:string}/{Token:string}" output:"AuthResponse"`
+		//Reset Password methods via URL
+		requestResetPassword gorest.EndPoint `method:"GET" path:"/RequestResetPassword/{EmailAddress:string}" output:"AuthResponse"`
+		resetPassword        gorest.EndPoint `method:"GET" path:"/ResetPassword/{Password:string}/{Token:string}" output:"AuthResponse"`
 
-	//resend email methods
-	resendActivationEmail gorest.EndPoint `method:"GET" path:"/ResendActivationEmail/{EmailAddress:string}/" output:"string"`
+		//resend email methods
+		resendActivationEmail gorest.EndPoint `method:"GET" path:"/ResendActivationEmail/{EmailAddress:string}/" output:"string"`
 
-	//Account deactivation, reactivation and deletion
-	activateAccount   gorest.EndPoint `method:"GET" path:"/ActivateAccount/{EmailAddress:string}/{Password:string}" output:"AuthResponse"`
-	deactivateAccount gorest.EndPoint `method:"GET" path:"/DeactivateAccount/" output:"AuthResponse"`
-	deleteAccount     gorest.EndPoint `method:"GET" path:"/DeleteAccount/" output:"AuthResponse"`
+		//Account deactivation, reactivation and deletion
+		activateAccount   gorest.EndPoint `method:"GET" path:"/ActivateAccount/{EmailAddress:string}/{Password:string}" output:"AuthResponse"`
+		deactivateAccount gorest.EndPoint `method:"GET" path:"/DeactivateAccount/" output:"AuthResponse"`
+		deleteAccount     gorest.EndPoint `method:"GET" path:"/DeleteAccount/" output:"AuthResponse"`
+	*/
 }
+
+/*
 
 func (A Auth) ToggleLogs() string {
 	return term.ToggleConfig()
@@ -1176,13 +1166,15 @@ func (A Auth) DeleteAccount() AuthResponse {
 
 //------------------------ Version Management --------------------------------
 
-func (A Auth) Verify() (output string) {
-	output = Verify()
-	return
-}
+*/
 
 func (A Auth) GetConfig() (output string) {
 	configAll := cebadapter.GetGlobalConfig("StoreConfig")
 	byteArray, _ := json.Marshal(configAll)
 	return string(byteArray)
+}
+
+func (A Auth) Verify() (output string) {
+	output = Verify()
+	return
 }

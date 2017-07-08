@@ -1,20 +1,18 @@
 package authlib
 
 import (
-	"encoding/json"
-
-	"duov6.com/common"
-	notifier "duov6.com/duonotifier/client"
-	"duov6.com/gorest"
-	"duov6.com/session"
-	"duov6.com/term"
-	"fmt"
-	"strings"
+	// "encoding/json"
+	// "duov6.com/common"
+	// notifier "duov6.com/duonotifier/client"
+	// "duov6.com/term"
+	// "fmt"
+	"github.com/SiyaDlamini/gorest"
+	// "strings"
 )
 
 type TenantSvc struct {
 	gorest.RestService
-	autherized                  gorest.EndPoint `method:"GET" path:"/tenant/Autherized/{TenantID:string}" output:"TenantAutherized"`
+	/*autherized                  gorest.EndPoint `method:"GET" path:"/tenant/Autherized/{TenantID:string}" output:"TenantAutherized"`
 	getTenant                   gorest.EndPoint `method:"GET" path:"/tenant/GetTenant/{TenantID:string}" output:"Tenant"`
 	acceptRequest               gorest.EndPoint `method:"GET" path:"/tenant/AcceptRequest/{email:string}/{RequestToken:string}" output:"bool"`
 	getTenants                  gorest.EndPoint `method:"GET" path:"/tenant/GetTenants/{securityToken:string}" output:"[]TenantMinimum"`
@@ -34,8 +32,10 @@ type TenantSvc struct {
 	setDefaultTenant            gorest.EndPoint `method:"GET" path:"/tenant/SetDefaultTenant/{UserID:string}/{TenantID:string}" output:"bool"`
 	getTenantAdmin              gorest.EndPoint `method:"GET" path:"/tenant/GetTenantAdmin/{TenantID:string}" output:"[]InviteUsers"`
 	getAllPendingTenantRequests gorest.EndPoint `method:"GET" path:"/tenant/GetAllPendingTenantRequests/" output:"PendingRequests"`
-	cancelAddTenantUser         gorest.EndPoint `method:"GET" path:"/tenant/CancelAddUser/{email:string}/" output:"bool"`
+	cancelAddTenantUser         gorest.EndPoint `method:"GET" path:"/tenant/CancelAddUser/{email:string}/" output:"bool"`*/
 }
+
+/*
 
 func (T TenantSvc) GetTenantAdmin(TenantID string) []InviteUsers {
 	//Get Tenant Admin by TenantID
@@ -686,3 +686,6 @@ func (T TenantSvc) GetMyPendingTenantRequest() (m []PendingUserRequest) {
 	m = tns
 	return
 }
+
+
+*/
