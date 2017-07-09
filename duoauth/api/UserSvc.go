@@ -2,13 +2,14 @@ package api
 
 import (
 	"duov6.com/cebadapter"
-	// "duov6.com/common"
+	//"duov6.com/common"
+	"duov6.com/duoauth/azureapi"
 	// notifier "duov6.com/duonotifier/client"
 	// "duov6.com/objectstore/client"
 	// "duov6.com/session"
 	"duov6.com/term"
 	"encoding/json"
-	// "fmt"
+	"fmt"
 	"github.com/SiyaDlamini/gorest"
 	// "strconv"
 	// "strings"
@@ -38,6 +39,23 @@ func (A Auth) GetSession() AuthResponse {
 func (A Auth) GetUser(Email string) AuthResponse {
 	term.Write("Executing Method : Get User", term.Blank)
 	response := AuthResponse{}
+
+	id_token := A.Context.Request().Header.Get("Securitytoken")
+	if id_token != "" {
+		fmt.Println(id_token)
+	} else {
+		fmt.Println("Id token not found")
+	}
+
+	access_token, err := azureapi.GetGraphApiToken()
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+	} else {
+		//token is good. proceed.
+		fmt.Println(access_token)
+	}
+
 	return response
 }
 

@@ -42,7 +42,7 @@ func HTTP_POST(url string, headers map[string]string, JSON_DATA []byte, isURLPar
 	} else {
 		defer resp.Body.Close()
 		body, _ = ioutil.ReadAll(resp.Body)
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != 200 && resp.StatusCode != 204 {
 			err = errors.New(string(body))
 		}
 	}
@@ -84,7 +84,7 @@ func HTTP_PUT(url string, headers map[string]string, JSON_DATA []byte, isURLPara
 	} else {
 		defer resp.Body.Close()
 		body, _ = ioutil.ReadAll(resp.Body)
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != 200 && resp.StatusCode != 204 {
 			err = errors.New(string(body))
 		}
 	}
@@ -126,7 +126,7 @@ func HTTP_DELETE(url string, headers map[string]string, JSON_DATA []byte, isURLP
 	} else {
 		defer resp.Body.Close()
 		body, _ = ioutil.ReadAll(resp.Body)
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != 200 && resp.StatusCode != 204 {
 			err = errors.New(string(body))
 		}
 	}
@@ -168,7 +168,7 @@ func HTTP_GET(url string, headers map[string]string, isURLParams bool) (err erro
 	} else {
 		defer resp.Body.Close()
 		body, _ = ioutil.ReadAll(resp.Body)
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != 200 && resp.StatusCode != 204 {
 			err = errors.New(string(body))
 		}
 	}
