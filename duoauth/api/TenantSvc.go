@@ -75,6 +75,7 @@ func (T TenantSvc) GetTenant(tid string) AuthResponse {
 	if err != nil {
 		response.Status = false
 		response.Message = err.Error()
+		response.Data = Tenant{}
 	}
 
 	return response
