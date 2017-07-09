@@ -1,16 +1,19 @@
 package api
 
 import (
-	// "duov6.com/common"
+	"duov6.com/common"
 	// notifier "duov6.com/duonotifier/client"
 	// "duov6.com/objectstore/client"
 	// "duov6.com/session"
+	"duov6.com/duoauth/azureapi"
 	"duov6.com/term"
 	"encoding/json"
-	// "fmt"
+	"fmt"
 	"github.com/SiyaDlamini/gorest"
+	"net/url"
 	// "strconv"
 	// "strings"
+	"errors"
 )
 
 type TenantSvc struct {
@@ -36,6 +39,44 @@ func (T TenantSvc) GetAllTenants() AuthResponse {
 func (T TenantSvc) GetTenant(tid string) AuthResponse {
 	term.Write("Executing Method : Get Tenant Info", term.Blank)
 	response := AuthResponse{}
+
+	access_token, err := azureapi.GetGraphApiToken()
+	if err == nil {
+		fmt.Println("1")
+		//token is good. proceed.
+		graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/groups?api-version=1.6&$filter=" + url.QueryEscape("displayName eq '"+tid+"'")
+		headers := make(map[string]string)
+		headers["Authorization"] = "Bearer " + access_token
+		headers["Content-Type"] = "application/json"
+
+		var body []byte
+		err, body = common.HTTP_GET(graphUrl, headers, false)
+		if err == nil {
+			data := make(map[string]interface{})
+			_ = json.Unmarshal(body, &data)
+
+			if len(data["value"].([]interface{})) > 0 {
+				//tenant found.
+				descriptionString := (((data["value"].([]interface{}))[0]).(map[string]interface{}))["description"].(string)
+				tenant := Tenant{}
+				if err = json.Unmarshal([]byte(descriptionString), &tenant); err == nil {
+					tenant.TenantID = tid
+					response.Status = true
+					response.Message = "Successfully retrieved tenant information."
+					response.Data = tenant
+				}
+			} else {
+				//tenant not found
+				err = errors.New("Tenant not found.")
+			}
+		}
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+	}
+
 	return response
 }
 

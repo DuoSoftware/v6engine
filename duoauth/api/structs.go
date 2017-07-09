@@ -23,11 +23,10 @@ type UserTenant struct {
 }
 
 type Tenant struct {
-	TenantID   string
-	TenantName string
-	Owner      string
-	Location   string
-	Type       string
+	TenantID string
+	Admin    string
+	Country  string
+	Type     string
 }
 
 type UserCreateInfo struct {
