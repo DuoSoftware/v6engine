@@ -21,6 +21,7 @@ type TenantSvc struct {
 	updateTenant         gorest.EndPoint `method:"PUT" path:"/tenants" postdata:"Tenant"`
 	deleteTenant         gorest.EndPoint `method:"DELETE" path:"/tenants/{tid:string}"`
 	getTenantUsers       gorest.EndPoint `method:"GET" path:"/tenants/{tid:string}/users" output:"AuthResponse"`
+	getUserTenants       gorest.EndPoint `method:"GET" path:"/tenants/{userid:string}/getall" output:"AuthResponse"`
 	deleteUserFromTenant gorest.EndPoint `method:"DELETE" path:"/tenants/{tid:string}/removeuser/{Email:string}"`
 	getUserDefaultTenant gorest.EndPoint `method:"GET" path:"/tenants/{userid:string}/getdefault" output:"AuthResponse"`
 	setUserDefaultTenant gorest.EndPoint `method:"GET" path:"/tenants/{userid:string}/setdefault/{tid:string}" output:"AuthResponse"`
@@ -61,6 +62,12 @@ func (T TenantSvc) DeleteTenant(tid string) {
 }
 
 func (T TenantSvc) GetTenantUsers(tid string) AuthResponse {
+	term.Write("Executing Method : Get Tenant Users", term.Blank)
+	response := AuthResponse{}
+	return response
+}
+
+func (T TenantSvc) GetUserTenants(userid string) AuthResponse {
 	term.Write("Executing Method : Get Tenant Users", term.Blank)
 	response := AuthResponse{}
 	return response
