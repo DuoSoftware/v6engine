@@ -42,7 +42,7 @@ func HTTP_POST(url string, headers map[string]string, JSON_DATA []byte, isURLPar
 	} else {
 		defer resp.Body.Close()
 		body, _ = ioutil.ReadAll(resp.Body)
-		if resp.StatusCode != 200 && resp.StatusCode != 204 {
+		if resp.StatusCode != 200 && resp.StatusCode != 204 && resp.StatusCode != 201 {
 			err = errors.New(string(body))
 		}
 	}

@@ -84,8 +84,34 @@ func (T TenantSvc) GetTenant(tid string) AuthResponse {
 func (T TenantSvc) CreateTenant(tenant Tenant) {
 	term.Write("Executing Method : Create a tenant.", term.Blank)
 	response := AuthResponse{}
-	b, _ := json.Marshal(response)
-	T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+
+	access_token, err := azureapi.GetGraphApiToken()
+	if err == nil {
+		graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/groups?api-version=1.6"
+		headers := make(map[string]string)
+		headers["Authorization"] = "Bearer " + access_token
+		headers["Content-Type"] = "application/json"
+
+		jsonString := `{"displayName": "` + tenant.TenantID + `","mailNickname": "` + tenant.TenantID + `","mailEnabled": false,"securityEnabled": true,"description": "{\"Admin\":\"` + tenant.Admin + `\",\"Country\":\"` + tenant.Country + `\",\"Type\":\"` + tenant.Type + `\"}"}`
+
+		err, _ = common.HTTP_POST(graphUrl, headers, []byte(jsonString), false)
+		if err == nil {
+			response.Status = true
+			response.Message = "Tenant created successfully."
+			response.Data = tenant
+		}
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+		response.Data = Tenant{}
+		b, _ := json.Marshal(response)
+		T.ResponseBuilder().SetResponseCode(500).WriteAndOveride(b)
+	} else {
+		b, _ := json.Marshal(response)
+		T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	}
 }
 
 func (T TenantSvc) UpdateTenant(tenant Tenant) {

@@ -13,12 +13,13 @@ type User struct {
 	EmailAddress string
 	Name         string
 	Country      string
+	Scopes       []string
 	Tenants      []UserTenant
 }
 
 type UserTenant struct {
-	IsDefault string
-	IsAdmin   string
+	IsDefault bool
+	IsAdmin   bool
 	TenantID  string
 }
 
