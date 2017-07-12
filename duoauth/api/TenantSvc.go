@@ -203,6 +203,9 @@ func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
 				whichExtension := 0
 				whichExtensionText := ""
 
+				tData := ""
+				oldData := "" //for rollback process
+
 				if isNewUser {
 					whichExtension = 0
 					whichExtensionText = ""
@@ -229,14 +232,19 @@ func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
 						whichExtensionText = "4"
 					}
 
-					if len(userData["extension_Tenant"+whichExtensionText].(string)) > 240 && whichExtension == 4 { //safe buffer for 256 char limit on field
-						whichExtension = (-1)
-						whichExtensionText = "invalid"
-					} else if len(userData["extension_Tenant"+whichExtensionText].(string)) > 240 && whichExtension < 4 {
-						whichExtension += 1
-						whichExtensionText = strconv.Itoa(whichExtension)
-					} else if len(userData["extension_Tenant"+whichExtensionText].(string)) <= 240 && whichExtension <= 4 {
-						//nothing to be changed
+					if !isNewUser {
+						if len(userData["extension_Tenant"+whichExtensionText].(string)) > 240 && whichExtension == 4 { //safe buffer for 256 char limit on field
+							whichExtension = (-1)
+							whichExtensionText = "invalid"
+						} else if len(userData["extension_Tenant"+whichExtensionText].(string)) > 240 && whichExtension < 4 {
+							whichExtension += 1
+							whichExtensionText = strconv.Itoa(whichExtension)
+						} else if len(userData["extension_Tenant"+whichExtensionText].(string)) <= 240 && whichExtension <= 4 {
+							//nothing to be changed
+						}
+
+						tData = userData["extension_Tenant"+whichExtensionText].(string)
+						oldData = tData //for rollbackprocess
 					}
 				}
 
@@ -244,8 +252,6 @@ func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
 					access_token, err := azureapi.GetGraphApiToken()
 					if err == nil {
 						//append the new tenant
-						tData := userData["extension_Tenant"+whichExtensionText].(string)
-						oldData := tData //for rollbackprocess
 
 						if isNewUser && !isInvitedRegistration {
 							//normally registered new user
