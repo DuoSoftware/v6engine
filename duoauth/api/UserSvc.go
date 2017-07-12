@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/SiyaDlamini/gorest"
 	// "strconv"
+	"errors"
 	"strings"
 )
 
@@ -26,7 +27,7 @@ type Auth struct {
 	deleteUser gorest.EndPoint `method:"DELETE" path:"/users/{Email:string}"`
 
 	//scope management
-	assignUserScopes gorest.EndPoint `method:"POST" path:"/users/scopes" postdata:"[]string"`
+	assignUserScopes gorest.EndPoint `method:"POST" path:"/users/scopes/{Email:string}" postdata:"[]string"`
 	//logs
 	toggleLogs gorest.EndPoint `method:"GET" path:"/togglelogs/" output:"string"`
 }
@@ -99,8 +100,25 @@ func (A Auth) GetUser(Email string) AuthResponse {
 					user.Country = data["country"].(string)
 					user.ObjectID = data["objectId"].(string)
 					user.Scopes = strings.Split(data["jobTitle"].(string), "-")
-					//change this to fetch from all 5 later.
-					alltenants := strings.Split(data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"].(string), "-")
+
+					tenantString := ""
+					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"] != nil {
+						tenantString += data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"].(string)
+					}
+					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"] != nil {
+						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"].(string)
+					}
+					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"] != nil {
+						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"].(string)
+					}
+					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"] != nil {
+						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"].(string)
+					}
+					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"] != nil {
+						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"].(string)
+					}
+
+					alltenants := strings.Split(tenantString, "-")
 					userTenant := make([]UserTenant, len(alltenants))
 					for x := 0; x < len(alltenants); x++ {
 						entry := alltenants[x]
@@ -161,21 +179,70 @@ func (A Auth) DeleteUser(Email string) {
 	A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 }
 
-func (A Auth) AssignUserScopes(scopes []string) {
-	term.Write("Executing Method : Get User", term.Blank)
+func (A Auth) AssignUserScopes(scopes []string, Email string) {
+	term.Write("Executing Method : Assign User Scope", term.Blank)
 	response := AuthResponse{}
 
-	fmt.Println(scopes)
-
-	id_token := A.Context.Request().Header.Get("Securitytoken")
-	if id_token != "" {
-		fmt.Println(id_token)
-	} else {
-		fmt.Println("Id token not found")
+	scopeMap := make(map[string]interface{})
+	for x := 0; x < len(scopes); x++ {
+		scopeMap[scopes[x]] = "ignoreValue"
 	}
 
-	b, _ := json.Marshal(response)
-	A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	var err error
+	id_token := A.Context.Request().Header.Get("Securitytoken")
+	if id_token != "" {
+		access_token, err := azureapi.GetGraphApiToken()
+		if err == nil {
+			//fetch user
+			getUserResponse := A.GetUser(Email)
+			if !getUserResponse.Status {
+				err = errors.New(getUserResponse.Message)
+			} else {
+				currentScopes := (getUserResponse.Data).(User).Scopes
+				if len(currentScopes) != 0 {
+					for x := 0; x < len(currentScopes); x++ {
+						if scopeMap[currentScopes[x]] == nil {
+							scopeMap[currentScopes[x]] = "ignoreValue"
+						}
+					}
+				}
+
+				scopeString := ""
+				for key, _ := range scopeMap {
+					scopeString += "-" + key
+				}
+
+				scopeString = strings.TrimPrefix(scopeString, "-")
+
+				//update the user
+				graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + (getUserResponse.Data).(User).ObjectID + "?api-version=1.6"
+
+				headers := make(map[string]string)
+				headers["Authorization"] = "Bearer " + access_token
+				headers["Content-Type"] = "application/json"
+
+				jsonString := `{"jobTitle": "` + scopeString + `"}`
+
+				err, _ = common.HTTP_PATCH(graphUrl, headers, []byte(jsonString), false)
+				if err == nil {
+					response.Status = true
+					response.Message = "Profile scopes assigned successfully."
+				}
+			}
+		}
+	} else {
+		err = errors.New("No Securitytoken found in header.")
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+		b, _ := json.Marshal(response)
+		A.ResponseBuilder().SetResponseCode(500).WriteAndOveride(b)
+	} else {
+		b, _ := json.Marshal(response)
+		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	}
 }
 
 //.......................................
