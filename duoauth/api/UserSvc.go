@@ -78,72 +78,77 @@ func (A Auth) GetUser(Email string) AuthResponse {
 		//get session..
 		var sessionResponse AuthResponse
 		sessionResponse = A.GetSession()
-		//check if email and session email is same.
-		sessionResponse = sessionResponse.Data.(AuthResponse)
-		if Email == ((sessionResponse.Data.(map[string]interface{})["emails"]).([]interface{})[0]).(string) {
-			//correct request.. fetch profile from AAD
-			access_token, err := azureapi.GetGraphApiToken()
-			if err == nil {
-				graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + (sessionResponse.Data.(map[string]interface{})["oid"]).(string) + "?api-version=1.6"
-				headers := make(map[string]string)
-				headers["Authorization"] = "Bearer " + access_token
-				headers["Content-Type"] = "application/json"
-
-				var body []byte
-				err, body = common.HTTP_GET(graphUrl, headers, false)
+		if sessionResponse.Status {
+			//check if email and session email is same.
+			sessionResponse = sessionResponse.Data.(AuthResponse)
+			if Email == ((sessionResponse.Data.(map[string]interface{})["emails"]).([]interface{})[0]).(string) {
+				//correct request.. fetch profile from AAD
+				access_token, err := azureapi.GetGraphApiToken()
 				if err == nil {
-					data := make(map[string]interface{})
-					_ = json.Unmarshal(body, &data)
-					user := User{}
-					user.EmailAddress = Email
-					user.Name = data["displayName"].(string)
-					user.Country = data["country"].(string)
-					user.ObjectID = data["objectId"].(string)
-					user.Scopes = strings.Split(data["jobTitle"].(string), "-")
+					graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + (sessionResponse.Data.(map[string]interface{})["oid"]).(string) + "?api-version=1.6"
+					headers := make(map[string]string)
+					headers["Authorization"] = "Bearer " + access_token
+					headers["Content-Type"] = "application/json"
 
-					tenantString := ""
-					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"] != nil {
-						tenantString += data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"].(string)
-					}
-					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"] != nil {
-						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"].(string)
-					}
-					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"] != nil {
-						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"].(string)
-					}
-					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"] != nil {
-						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"].(string)
-					}
-					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"] != nil {
-						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"].(string)
-					}
+					var body []byte
+					err, body = common.HTTP_GET(graphUrl, headers, false)
+					if err == nil {
+						data := make(map[string]interface{})
+						_ = json.Unmarshal(body, &data)
+						user := User{}
+						user.EmailAddress = Email
+						user.Name = data["displayName"].(string)
+						user.Country = data["country"].(string)
+						user.ObjectID = data["objectId"].(string)
+						user.Scopes = strings.Split(data["jobTitle"].(string), "-")
 
-					alltenants := strings.Split(tenantString, "-")
-					userTenant := make([]UserTenant, len(alltenants))
-					for x := 0; x < len(alltenants); x++ {
-						entry := alltenants[x]
-						singleTenant := UserTenant{}
-						if strings.Contains(entry, "default#") {
-							singleTenant.IsDefault = true
-							entry = strings.Replace(entry, "default#", "", -1)
+						tenantString := ""
+						if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"] != nil {
+							tenantString += data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"].(string)
 						}
-						if strings.Contains(entry, "admin#") {
-							singleTenant.IsAdmin = true
-							entry = strings.Replace(entry, "admin#", "", -1)
+						if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"] != nil {
+							tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"].(string)
 						}
-						singleTenant.TenantID = entry
-						userTenant[x] = singleTenant
-					}
-					user.Tenants = userTenant
+						if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"] != nil {
+							tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"].(string)
+						}
+						if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"] != nil {
+							tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"].(string)
+						}
+						if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"] != nil {
+							tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"].(string)
+						}
 
-					response.Status = true
-					response.Message = "User profile recieved successfully."
-					response.Data = user
+						alltenants := strings.Split(tenantString, "-")
+						userTenant := make([]UserTenant, len(alltenants))
+						for x := 0; x < len(alltenants); x++ {
+							entry := alltenants[x]
+							singleTenant := UserTenant{}
+							if strings.Contains(entry, "default#") {
+								singleTenant.IsDefault = true
+								entry = strings.Replace(entry, "default#", "", -1)
+							}
+							if strings.Contains(entry, "admin#") {
+								singleTenant.IsAdmin = true
+								entry = strings.Replace(entry, "admin#", "", -1)
+							}
+							singleTenant.TenantID = entry
+							userTenant[x] = singleTenant
+						}
+						user.Tenants = userTenant
+
+						response.Status = true
+						response.Message = "User profile recieved successfully."
+						response.Data = user
+					}
 				}
+			} else {
+				response.Status = false
+				response.Message = "Requested user and Securitytoken doesn't match."
 			}
 		} else {
 			response.Status = false
-			response.Message = "Requested user and Securitytoken doesn't match."
+			response.Message = sessionResponse.Message
 		}
 	} else {
 		response.Status = false

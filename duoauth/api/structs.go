@@ -24,6 +24,7 @@ type UserTenant struct {
 }
 
 type Tenant struct {
+	ObjectID string
 	TenantID string
 	Admin    string
 	Country  string
