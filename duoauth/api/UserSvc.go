@@ -32,15 +32,26 @@ type Auth struct {
 	toggleLogs gorest.EndPoint `method:"GET" path:"/togglelogs/" output:"string"`
 }
 
+var agentConfig map[string]interface{}
+
 func (A Auth) GetSession() AuthResponse {
 	term.Write("Executing Method : Get Session ", term.Blank)
 	response := AuthResponse{}
 
 	var err error
 
+	if agentConfig == nil {
+		agentConfig = make(map[string]interface{})
+		agentConfig = common.VerifyConfigFiles()
+	}
+
 	id_token := A.Context.Request().Header.Get("Securitytoken")
 	if id_token != "" {
-		graphUrl := "https://azure.smoothflow.io/auth/GetSession"
+		urlFragment := agentConfig["authUrl"].(string)
+		urlFragment = strings.Replace(urlFragment, "https://", "", -1)
+		urlFragment = strings.Replace(urlFragment, "http://", "", -1)
+		graphUrl := "https://" + urlFragment + "/auth/GetSession"
+		fmt.Println(graphUrl)
 
 		headers := make(map[string]string)
 		headers["Securitytoken"] = id_token
