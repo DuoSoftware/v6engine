@@ -100,7 +100,10 @@ func (A Auth) GetUser(Email string) AuthResponse {
 						user.Name = data["displayName"].(string)
 						user.Country = data["country"].(string)
 						user.ObjectID = data["objectId"].(string)
-						user.Scopes = strings.Split(data["jobTitle"].(string), "-")
+
+						if data["jobTitle"] != nil {
+							user.Scopes = strings.Split(data["jobTitle"].(string), "-")
+						}
 
 						tenantString := ""
 						if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"] != nil {
@@ -217,6 +220,8 @@ func (A Auth) AssignUserScopes(scopes []string, Email string) {
 					scopeString += "-" + key
 				}
 
+				fmt.Println(scopeString)
+
 				scopeString = strings.TrimPrefix(scopeString, "-")
 
 				//update the user
@@ -240,6 +245,7 @@ func (A Auth) AssignUserScopes(scopes []string, Email string) {
 	}
 
 	if err != nil {
+		fmt.Println(err.Error())
 		response.Status = false
 		response.Message = err.Error()
 		b, _ := json.Marshal(response)
