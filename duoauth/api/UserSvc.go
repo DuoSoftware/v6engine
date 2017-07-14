@@ -48,6 +48,7 @@ func (A Auth) GetSession() AuthResponse {
 	id_token := A.Context.Request().Header.Get("Securitytoken")
 	if id_token != "" {
 		urlFragment := agentConfig["objUrl"].(string)
+		urlFragment = strings.Replace(urlFragment, ":3000", "", -1)
 		urlFragment = strings.Replace(urlFragment, "https://", "", -1)
 		urlFragment = strings.Replace(urlFragment, "http://", "", -1)
 		graphUrl := "https://" + urlFragment + "/auth/GetSession"
