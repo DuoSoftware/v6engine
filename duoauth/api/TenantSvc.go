@@ -35,7 +35,53 @@ type TenantSvc struct {
 func (T TenantSvc) GetAllTenants() AuthResponse {
 	term.Write("Executing Method : Get All Tenants", term.Blank)
 	response := AuthResponse{}
-	//id_token := T.Context.Request().Header.Get("Securitytoken")
+
+	var err error
+	id_token := T.Context.Request().Header.Get("Securitytoken")
+
+	if id_token != "" {
+		var access_token string
+		access_token, err = azureapi.GetGraphApiToken()
+		if err == nil {
+			graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/groups?api-version=1.6"
+			headers := make(map[string]string)
+			headers["Authorization"] = "Bearer " + access_token
+			headers["Content-Type"] = "application/json"
+
+			var body []byte
+			err, body = common.HTTP_GET(graphUrl, headers, false)
+			if err == nil {
+				data := make(map[string]interface{})
+				_ = json.Unmarshal(body, &data)
+
+				var allTenants []Tenant
+				tenantsAsObjects := data["value"].([]interface{})
+
+				for x := 0; x < len(tenantsAsObjects); x++ {
+					singleObject := tenantsAsObjects[x].(map[string]interface{})
+					descriptionString := (singleObject["description"].(string))
+					tenant := Tenant{}
+					if err = json.Unmarshal([]byte(descriptionString), &tenant); err == nil {
+						tenant.TenantID = singleObject["displayName"].(string)
+						tenant.ObjectID = singleObject["objectId"].(string)
+					}
+					allTenants = append(allTenants, tenant)
+				}
+				response.Status = true
+				response.Message = "Successfully retrieved tenant information."
+				response.Data = allTenants
+			}
+		}
+	} else {
+		err = errors.New("Securitytoken not found in header.")
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+		response.Data = Tenant{}
+	}
+
 	return response
 }
 
@@ -133,13 +179,17 @@ func (T TenantSvc) CreateTenant(tenant Tenant) {
 func (T TenantSvc) UpdateTenant(tenant Tenant) {
 	term.Write("Executing Method : Update Tenant.", term.Blank)
 	response := AuthResponse{}
+	response.Status = false
+	response.Message = "Not implemented yet."
 	b, _ := json.Marshal(response)
-	T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	T.ResponseBuilder().SetResponseCode(501).WriteAndOveride(b)
 }
 
 func (T TenantSvc) DeleteTenant(tid string) {
 	term.Write("Executing Method : Delete Tenant.", term.Blank)
 	response := AuthResponse{}
+	response.Status = false
+	response.Message = "Not implemented yet."
 	b, _ := json.Marshal(response)
 	T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 }
@@ -147,6 +197,96 @@ func (T TenantSvc) DeleteTenant(tid string) {
 func (T TenantSvc) GetTenantUsers(tid string) AuthResponse {
 	term.Write("Executing Method : Get Tenant Users", term.Blank)
 	response := AuthResponse{}
+
+	var err error
+	id_token := T.Context.Request().Header.Get("Securitytoken")
+
+	if id_token != "" {
+		var access_token string
+		access_token, err = azureapi.GetGraphApiToken()
+		if err == nil {
+			//get the tenant...
+			tResp := T.GetTenant(tid)
+			tenant := tResp.Data.(Tenant)
+			if tResp.Status {
+				graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/groups/" + tenant.ObjectID + "/members?api-version=1.6"
+				headers := make(map[string]string)
+				headers["Authorization"] = "Bearer " + access_token
+				headers["Content-Type"] = "application/json"
+
+				var body []byte
+				err, body = common.HTTP_GET(graphUrl, headers, false)
+				if err == nil {
+					data := make(map[string]interface{})
+					_ = json.Unmarshal(body, &data)
+
+					var allUsers []User
+					tenantsAsObjects := data["value"].([]interface{})
+
+					for x := 0; x < len(tenantsAsObjects); x++ {
+						singleObject := tenantsAsObjects[x].(map[string]interface{})
+						user := User{}
+						user.ObjectID = singleObject["objectId"].(string)
+						user.EmailAddress = singleObject["otherMails"].([]interface{})[0].(string)
+						user.Name = singleObject["displayName"].(string)
+						user.Country = singleObject["country"].(string)
+						user.Scopes = strings.Split(singleObject["jobTitle"].(string), "-")
+
+						tenantString := ""
+						if singleObject["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"] != nil {
+							tenantString += singleObject["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"].(string)
+						}
+						if singleObject["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"] != nil {
+							tenantString += "-" + singleObject["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"].(string)
+						}
+						if singleObject["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"] != nil {
+							tenantString += "-" + singleObject["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"].(string)
+						}
+						if singleObject["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"] != nil {
+							tenantString += "-" + singleObject["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"].(string)
+						}
+						if singleObject["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"] != nil {
+							tenantString += "-" + singleObject["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"].(string)
+						}
+
+						alltenants := strings.Split(tenantString, "-")
+						userTenant := make([]UserTenant, len(alltenants))
+						for x := 0; x < len(alltenants); x++ {
+							entry := alltenants[x]
+							singleTenant := UserTenant{}
+							if strings.Contains(entry, "default#") {
+								singleTenant.IsDefault = true
+								entry = strings.Replace(entry, "default#", "", -1)
+							}
+							if strings.Contains(entry, "admin#") {
+								singleTenant.IsAdmin = true
+								entry = strings.Replace(entry, "admin#", "", -1)
+							}
+							singleTenant.TenantID = entry
+							userTenant[x] = singleTenant
+						}
+
+						user.Tenants = userTenant
+
+						allUsers = append(allUsers, user)
+					}
+					response.Status = true
+					response.Message = "Successfully retrieved all users for tenant."
+					response.Data = allUsers
+				}
+			} else {
+				err = errors.New(tResp.Message)
+			}
+		}
+	} else {
+		err = errors.New("Securitytoken not found in header.")
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+		response.Data = Tenant{}
+	}
 	return response
 }
 
@@ -157,6 +297,13 @@ func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
 	var err error
 	A := Auth{}
 	A.RestService.Context = T.Context
+
+	access_token, err := azureapi.GetGraphApiToken()
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+		return response
+	}
 
 	if T.IsServiceReferral || id_token != "" {
 		//check if newuser, or invited registration or tenant invitation
@@ -178,7 +325,97 @@ func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
 		}
 
 		if T.IsServiceReferral {
+			//get user and user id,
+			graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/?api-version=1.6&$filter=otherMails/any" + url.QueryEscape("(o: o eq '"+Email+"')")
+			headers := make(map[string]string)
+			headers["Authorization"] = "Bearer " + access_token
+			headers["Content-Type"] = "application/json"
 
+			var body []byte
+			err, body = common.HTTP_GET(graphUrl, headers, false)
+			if err == nil {
+				data := make(map[string]interface{})
+				_ = json.Unmarshal(body, &data)
+
+				userData := make(map[string]interface{})
+				userData = data["value"].([]interface{})[0].(map[string]interface{})
+
+				if userData["objectId"] != nil {
+
+					userObjectID = userData["objectId"].(string)
+					//extension_9239d4f1848b43dda66014d3c4f990b9_Tenant
+					//check if user already available...
+
+					if userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"] != nil {
+						tenantString += userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"].(string)
+					}
+					if userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"] != nil {
+						tenantString += "-" + userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"].(string)
+					}
+					if userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"] != nil {
+						tenantString += "-" + userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"].(string)
+					}
+					if userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"] != nil {
+						tenantString += "-" + userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"].(string)
+					}
+					if userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"] != nil {
+						tenantString += "-" + userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"].(string)
+					}
+
+					if tenantString == "" {
+						isNewUser = true
+					}
+
+					if T.Context.Request().Header.Get("Nounce") != "defaultNonce" {
+						isInvitedRegistration = true
+					}
+
+					if isNewUser {
+						whichExtension = 0
+						whichExtensionText = ""
+					} else {
+						//elect which extension should be updated
+						if userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"] != nil {
+							whichExtension = 0
+							whichExtensionText = ""
+						}
+						if userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"] != nil {
+							whichExtension = 1
+							whichExtensionText = "1"
+						}
+						if userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"] != nil {
+							whichExtension = 2
+							whichExtensionText = "2"
+						}
+						if userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"] != nil {
+							whichExtension = 3
+							whichExtensionText = "3"
+						}
+						if userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"] != nil {
+							whichExtension = 4
+							whichExtensionText = "4"
+						}
+
+						if !isNewUser {
+							if len(userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"+whichExtensionText].(string)) > 240 && whichExtension == 4 { //safe buffer for 256 char limit on field
+								whichExtension = (-1)
+								whichExtensionText = "invalid"
+							} else if len(userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"+whichExtensionText].(string)) > 240 && whichExtension < 4 {
+								whichExtension += 1
+								whichExtensionText = strconv.Itoa(whichExtension)
+							} else if len(userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"+whichExtensionText].(string)) <= 240 && whichExtension <= 4 {
+								//nothing to be changed
+							}
+
+							tData = userData["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"+whichExtensionText].(string)
+							oldData = tData //for rollbackprocess
+						}
+					}
+				} else {
+					err = errors.New("No user found with email : " + Email)
+				}
+
+			}
 		} else {
 			//get session..
 			var sessionResponse AuthResponse
@@ -272,62 +509,60 @@ func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
 		}
 
 		if whichExtension >= 0 {
-			access_token, err := azureapi.GetGraphApiToken()
-			if err == nil {
-				//append the new tenant
+			//append the new tenant
 
-				if isNewUser && !isInvitedRegistration {
-					//normally registered new user
-					tData += "default#admin#" + tid
-				} else if isNewUser && isInvitedRegistration {
-					//a new user came to sf from an invite
-					tData += "default#" + tid
-				} else if isTenantInvite {
-					tData += "-" + tid
-				} else { //remove this else when going live
-					tData += "-" + tid
+			if isNewUser && !isInvitedRegistration {
+				//normally registered new user
+				tData += "default#admin#" + tid
+			} else if isNewUser && isInvitedRegistration {
+				//a new user came to sf from an invite
+				tData += "default#" + tid
+			} else if isTenantInvite {
+				tData += "-" + tid
+			} else { //remove this else when going live
+				tData += "-" + tid
+			}
+
+			tData = strings.TrimPrefix(tData, "-")
+
+			//update user.
+			graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + userObjectID + "?api-version=1.6"
+			headers := make(map[string]string)
+			headers["Authorization"] = "Bearer " + access_token
+			headers["Content-Type"] = "application/json"
+			postString := `{"extension_9239d4f1848b43dda66014d3c4f990b9_Tenant` + whichExtensionText + `":"` + tData + `"}`
+
+			err, _ = common.HTTP_PATCH(graphUrl, headers, []byte(postString), false)
+			if err == nil {
+				isRollBack := false
+				getTenantResponse := T.GetTenant(tid)
+				if getTenantResponse.Status { //no error
+					//add user to the group
+					tObjectID := getTenantResponse.Data.(Tenant).ObjectID
+					graphUrl = "https://graph.windows.net/smoothflowio.onmicrosoft.com/groups/" + tObjectID + "/$links/members?api-version=1.6"
+					postString = `{"url": "https://graph.windows.net/smoothflowio.onmicrosoft.com/directoryObjects/` + userObjectID + `"}`
+					err, _ = common.HTTP_POST(graphUrl, headers, []byte(postString), false)
+					if err != nil {
+						fmt.Println(err.Error())
+						isRollBack = true
+					} else {
+						response.Status = true
+						response.Message = "User assigned to tenant successfully."
+					}
+				} else {
+					err = errors.New(getTenantResponse.Message)
+					isRollBack = true
 				}
 
-				tData = strings.TrimPrefix(tData, "-")
-
-				//update user.
-				graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + userObjectID + "?api-version=1.6"
-				headers := make(map[string]string)
-				headers["Authorization"] = "Bearer " + access_token
-				headers["Content-Type"] = "application/json"
-				postString := `{"extension_9239d4f1848b43dda66014d3c4f990b9_Tenant` + whichExtensionText + `":"` + tData + `"}`
-
-				err, _ = common.HTTP_PATCH(graphUrl, headers, []byte(postString), false)
-				if err == nil {
-					isRollBack := false
-					getTenantResponse := T.GetTenant(tid)
-					if getTenantResponse.Status { //no error
-						//add user to the group
-						tObjectID := getTenantResponse.Data.(Tenant).ObjectID
-						graphUrl = "https://graph.windows.net/smoothflowio.onmicrosoft.com/groups/" + tObjectID + "/$links/members?api-version=1.6"
-						postString = `{"url": "https://graph.windows.net/smoothflowio.onmicrosoft.com/directoryObjects/` + userObjectID + `"}`
-						err, _ = common.HTTP_POST(graphUrl, headers, []byte(postString), false)
-						if err != nil {
-							fmt.Println(err.Error())
-							isRollBack = true
-						} else {
-							response.Status = true
-							response.Message = "User assigned to tenant successfully."
-						}
-					} else {
-						err = errors.New(getTenantResponse.Message)
-						isRollBack = true
-					}
-
-					if isRollBack {
-						//rollback user change
-						fmt.Println("Rollbacking user change.")
-						graphUrl = "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + userObjectID + "?api-version=1.6"
-						postString = `{"extension_9239d4f1848b43dda66014d3c4f990b9_Tenant` + whichExtensionText + `":"` + oldData + `"}`
-						_, _ = common.HTTP_PATCH(graphUrl, headers, []byte(postString), false)
-					}
+				if isRollBack {
+					//rollback user change
+					fmt.Println("Rollbacking user change.")
+					graphUrl = "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + userObjectID + "?api-version=1.6"
+					postString = `{"extension_9239d4f1848b43dda66014d3c4f990b9_Tenant` + whichExtensionText + `":"` + oldData + `"}`
+					_, _ = common.HTTP_PATCH(graphUrl, headers, []byte(postString), false)
 				}
 			}
+
 		} else {
 			err = errors.New("User has reached limits of joining new tenants..")
 		}
@@ -347,19 +582,25 @@ func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
 func (T TenantSvc) DeleteUserFromTenant(tid, Email string) {
 	term.Write("Executing Method : Delete Tenant.", term.Blank)
 	response := AuthResponse{}
+	response.Status = false
+	response.Message = "Not implemented yet."
 	b, _ := json.Marshal(response)
-	T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	T.ResponseBuilder().SetResponseCode(501).WriteAndOveride(b)
 }
 
 func (T TenantSvc) GetUserDefaultTenant(userid string) AuthResponse {
 	term.Write("Executing Method : Get users default tenant", term.Blank)
 	response := AuthResponse{}
+	response.Status = false
+	response.Message = "Not implemented yet."
 	return response
 }
 
 func (T TenantSvc) SetUserDefaultTenant(userid, tid string) AuthResponse {
 	term.Write("Executing Method : Set users default tenant", term.Blank)
 	response := AuthResponse{}
+	response.Status = false
+	response.Message = "Not implemented yet."
 	return response
 }
 

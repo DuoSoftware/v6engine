@@ -18,11 +18,11 @@ func Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth ( Azure AD )"
-	versionData["API Version"] = "1.0.0f"
+	versionData["API Version"] = "1.0.0"
 
 	changeLogs := make(map[string]interface{})
 
-	changeLogs["1.0.0"] = "Revamped begining of Azure AD DuoAuth."
+	changeLogs["1.0.0"] = "Initial working release."
 	versionData["Change Logs"] = changeLogs
 
 	statMap := make(map[string]string)
