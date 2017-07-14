@@ -19,6 +19,7 @@ import (
 
 type TenantSvc struct {
 	gorest.RestService
+	IsServiceReferral    bool            // if the referal is a service based one dont check for session
 	getAllTenants        gorest.EndPoint `method:"GET" path:"/tenants" output:"AuthResponse"`
 	getTenant            gorest.EndPoint `method:"GET" path:"/tenants/{tid:string}" output:"AuthResponse"`
 	createTenant         gorest.EndPoint `method:"POST" path:"/tenants" postdata:"Tenant"`
@@ -43,7 +44,7 @@ func (T TenantSvc) GetTenant(tid string) AuthResponse {
 	response := AuthResponse{}
 	var err error
 	id_token := T.Context.Request().Header.Get("Securitytoken")
-	if id_token != "" {
+	if T.IsServiceReferral || id_token != "" {
 		var access_token string
 		access_token, err = azureapi.GetGraphApiToken()
 		if err == nil {
@@ -95,7 +96,7 @@ func (T TenantSvc) CreateTenant(tenant Tenant) {
 	var err error
 
 	id_token := T.Context.Request().Header.Get("Securitytoken")
-	if id_token != "" {
+	if T.IsServiceReferral || id_token != "" {
 		var access_token string
 		access_token, err = azureapi.GetGraphApiToken()
 		if err == nil {
@@ -149,6 +150,220 @@ func (T TenantSvc) GetTenantUsers(tid string) AuthResponse {
 	return response
 }
 
+func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
+	term.Write("Executing Method : Add user to Tenant", term.Blank)
+	response := AuthResponse{}
+	id_token := T.Context.Request().Header.Get("Securitytoken")
+	var err error
+	A := Auth{}
+	A.RestService.Context = T.Context
+
+	if T.IsServiceReferral || id_token != "" {
+		//check if newuser, or invited registration or tenant invitation
+		isNewUser := false
+		isTenantInvite := false
+		isInvitedRegistration := false
+		tenantString := ""
+
+		whichExtension := 0
+		whichExtensionText := ""
+
+		tData := ""
+		oldData := "" //for rollback process
+
+		userObjectID := ""
+
+		if T.Context.Request().Header.Get("Invitetype") == "invitation" || T.Context.Request().Header.Get("Invitetype") == "subscription" {
+			isTenantInvite = true
+		}
+
+		if T.IsServiceReferral {
+
+		} else {
+			//get session..
+			var sessionResponse AuthResponse
+			sessionResponse = A.GetSession()
+			if sessionResponse.Status {
+				//correct request.. update user
+				sessionResponse = sessionResponse.Data.(AuthResponse)
+				userData := sessionResponse.Data.(map[string]interface{})
+
+				userObjectID = userData["oid"].(string)
+
+				//check if user already available...
+
+				if userData["extension_Tenant"] != nil {
+					tenantString += userData["extension_Tenant"].(string)
+				}
+				if userData["extension_Tenant1"] != nil {
+					tenantString += "-" + userData["extension_Tenant1"].(string)
+				}
+				if userData["extension_Tenant2"] != nil {
+					tenantString += "-" + userData["extension_Tenant2"].(string)
+				}
+				if userData["extension_Tenant3"] != nil {
+					tenantString += "-" + userData["extension_Tenant3"].(string)
+				}
+				if userData["extension_Tenant4"] != nil {
+					tenantString += "-" + userData["extension_Tenant4"].(string)
+				}
+
+				if userData["newUser"] != nil {
+					isNewUser = true
+				}
+				if userData["nonce"].(string) != "defaultNonce" {
+					isInvitedRegistration = true
+				}
+
+				if isNewUser {
+					whichExtension = 0
+					whichExtensionText = ""
+				} else {
+					//elect which extension should be updated
+					if userData["extension_Tenant"] != nil {
+						whichExtension = 0
+						whichExtensionText = ""
+					}
+					if userData["extension_Tenant1"] != nil {
+						whichExtension = 1
+						whichExtensionText = "1"
+					}
+					if userData["extension_Tenant2"] != nil {
+						whichExtension = 2
+						whichExtensionText = "2"
+					}
+					if userData["extension_Tenant3"] != nil {
+						whichExtension = 3
+						whichExtensionText = "3"
+					}
+					if userData["extension_Tenant4"] != nil {
+						whichExtension = 4
+						whichExtensionText = "4"
+					}
+
+					if !isNewUser {
+						if len(userData["extension_Tenant"+whichExtensionText].(string)) > 240 && whichExtension == 4 { //safe buffer for 256 char limit on field
+							whichExtension = (-1)
+							whichExtensionText = "invalid"
+						} else if len(userData["extension_Tenant"+whichExtensionText].(string)) > 240 && whichExtension < 4 {
+							whichExtension += 1
+							whichExtensionText = strconv.Itoa(whichExtension)
+						} else if len(userData["extension_Tenant"+whichExtensionText].(string)) <= 240 && whichExtension <= 4 {
+							//nothing to be changed
+						}
+
+						tData = userData["extension_Tenant"+whichExtensionText].(string)
+						oldData = tData //for rollbackprocess
+					}
+				}
+
+			} else {
+				err = errors.New(sessionResponse.Message)
+				response.Status = false
+				response.Message = err.Error()
+				return response
+			}
+		}
+
+		if !isNewUser && strings.Contains(tenantString, tid) {
+			response.Status = false
+			response.Message = "User already a member in this tenant."
+			return response
+		}
+
+		if whichExtension >= 0 {
+			access_token, err := azureapi.GetGraphApiToken()
+			if err == nil {
+				//append the new tenant
+
+				if isNewUser && !isInvitedRegistration {
+					//normally registered new user
+					tData += "default#admin#" + tid
+				} else if isNewUser && isInvitedRegistration {
+					//a new user came to sf from an invite
+					tData += "default#" + tid
+				} else if isTenantInvite {
+					tData += "-" + tid
+				} else { //remove this else when going live
+					tData += "-" + tid
+				}
+
+				tData = strings.TrimPrefix(tData, "-")
+
+				//update user.
+				graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + userObjectID + "?api-version=1.6"
+				headers := make(map[string]string)
+				headers["Authorization"] = "Bearer " + access_token
+				headers["Content-Type"] = "application/json"
+				postString := `{"extension_9239d4f1848b43dda66014d3c4f990b9_Tenant` + whichExtensionText + `":"` + tData + `"}`
+
+				err, _ = common.HTTP_PATCH(graphUrl, headers, []byte(postString), false)
+				if err == nil {
+					isRollBack := false
+					getTenantResponse := T.GetTenant(tid)
+					if getTenantResponse.Status { //no error
+						//add user to the group
+						tObjectID := getTenantResponse.Data.(Tenant).ObjectID
+						graphUrl = "https://graph.windows.net/smoothflowio.onmicrosoft.com/groups/" + tObjectID + "/$links/members?api-version=1.6"
+						postString = `{"url": "https://graph.windows.net/smoothflowio.onmicrosoft.com/directoryObjects/` + userObjectID + `"}`
+						err, _ = common.HTTP_POST(graphUrl, headers, []byte(postString), false)
+						if err != nil {
+							fmt.Println(err.Error())
+							isRollBack = true
+						} else {
+							response.Status = true
+							response.Message = "User assigned to tenant successfully."
+						}
+					} else {
+						err = errors.New(getTenantResponse.Message)
+						isRollBack = true
+					}
+
+					if isRollBack {
+						//rollback user change
+						fmt.Println("Rollbacking user change.")
+						graphUrl = "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + userObjectID + "?api-version=1.6"
+						postString = `{"extension_9239d4f1848b43dda66014d3c4f990b9_Tenant` + whichExtensionText + `":"` + oldData + `"}`
+						_, _ = common.HTTP_PATCH(graphUrl, headers, []byte(postString), false)
+					}
+				}
+			}
+		} else {
+			err = errors.New("User has reached limits of joining new tenants..")
+		}
+
+	} else {
+		err = errors.New("Securitytoken not found in header.")
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+	}
+
+	return response
+}
+
+func (T TenantSvc) DeleteUserFromTenant(tid, Email string) {
+	term.Write("Executing Method : Delete Tenant.", term.Blank)
+	response := AuthResponse{}
+	b, _ := json.Marshal(response)
+	T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+}
+
+func (T TenantSvc) GetUserDefaultTenant(userid string) AuthResponse {
+	term.Write("Executing Method : Get users default tenant", term.Blank)
+	response := AuthResponse{}
+	return response
+}
+
+func (T TenantSvc) SetUserDefaultTenant(userid, tid string) AuthResponse {
+	term.Write("Executing Method : Set users default tenant", term.Blank)
+	response := AuthResponse{}
+	return response
+}
+
+/*
 func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
 	term.Write("Executing Method : Add user to Tenant", term.Blank)
 	response := AuthResponse{}
@@ -326,22 +541,4 @@ func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
 
 	return response
 }
-
-func (T TenantSvc) DeleteUserFromTenant(tid, Email string) {
-	term.Write("Executing Method : Delete Tenant.", term.Blank)
-	response := AuthResponse{}
-	b, _ := json.Marshal(response)
-	T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
-}
-
-func (T TenantSvc) GetUserDefaultTenant(userid string) AuthResponse {
-	term.Write("Executing Method : Get users default tenant", term.Blank)
-	response := AuthResponse{}
-	return response
-}
-
-func (T TenantSvc) SetUserDefaultTenant(userid, tid string) AuthResponse {
-	term.Write("Executing Method : Set users default tenant", term.Blank)
-	response := AuthResponse{}
-	return response
-}
+*/

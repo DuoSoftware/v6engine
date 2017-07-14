@@ -180,8 +180,71 @@ func (A Auth) GetUser(Email string) AuthResponse {
 func (A Auth) CreateUser(u UserCreateInfo) {
 	term.Write("Executing Method : Create a local user.", term.Blank)
 	response := AuthResponse{}
-	b, _ := json.Marshal(response)
-	A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	access_token, err := azureapi.GetGraphApiToken()
+	if err == nil {
+		//create local user
+		graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users?api-version=1.6"
+		headers := make(map[string]string)
+		headers["Authorization"] = "Bearer " + access_token
+		headers["Content-Type"] = "application/json"
+
+		if u.Password == "" {
+			u.Password = common.GetGUID()
+		}
+
+		jsonString := `{
+  "accountEnabled": true,
+  "creationType": "LocalAccount",
+  "displayName": "` + u.Name + `",
+  "country": "` + u.Country + `",
+  "passwordProfile": {
+    "password": "` + u.Password + `",
+    "forceChangePasswordNextLogin": false
+  },
+  "signInNames": [
+    {
+      "type": "userName",
+      "value": "` + u.Name + `"
+    },
+    {
+      "type": "emailAddress",
+      "value": "` + u.Email + `"
+    }
+  ]
+}`
+
+		err, _ = common.HTTP_POST(graphUrl, headers, []byte(jsonString), false)
+
+		if err == nil && u.TenantID != "" { //if user creation success and tenantid is not nil
+			//assign to tenant if available.
+			//tData := "default#" + u.TenantID
+
+			//get tenant objectID
+			T := TenantSvc{}
+			T.RestService.Context = A.Context
+			T.IsServiceReferral = true
+			tenantResp := T.GetTenant(u.TenantID)
+			if tenantResp.Status {
+				tenantData := tenantResp.Data.(Tenant)
+				fmt.Println(tenantData.ObjectID)
+			} else {
+				if tenantResp.Message == "Tenant not found." {
+					//this is first time. //create the tenant
+				}
+			}
+		}
+	}
+
+	if err != nil {
+		fmt.Println(err.Error())
+		response.Status = false
+		response.Message = err.Error()
+		b, _ := json.Marshal(response)
+		A.ResponseBuilder().SetResponseCode(500).WriteAndOveride(b)
+	} else {
+		b, _ := json.Marshal(response)
+		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	}
 }
 
 func (A Auth) UpdateUser(u UserCreateInfo) {
