@@ -27,7 +27,7 @@ type Auth struct {
 	createUser        gorest.EndPoint `method:"POST" path:"/users" postdata:"UserCreateInfo"`
 	updateUser        gorest.EndPoint `method:"PUT" path:"/users" postdata:"UserCreateInfo"`
 	deleteUser        gorest.EndPoint `method:"DELETE" path:"/users/{Email:string}"`
-
+	noIdpProcess      gorest.EndPoint `method:"GET" path:"/users/noidp" output:"AuthResponse"`
 	//scope management
 	assignUserScopes gorest.EndPoint `method:"POST" path:"/users/scopes/{Email:string}" postdata:"[]string"`
 	//logs
@@ -78,6 +78,52 @@ func (A Auth) GetSession() AuthResponse {
 	} else {
 		response.Status = false
 		response.Message = "SecurityToken not found in header."
+	}
+
+	return response
+}
+
+func (A Auth) NoIdpProcess() AuthResponse {
+	term.Write("Executing Method : Process No IDP user", term.Blank)
+	response := AuthResponse{}
+
+	var err error
+	id_token := A.Context.Request().Header.Get("Securitytoken")
+	if id_token != "" {
+		//get session
+		sesResp := A.GetSession()
+		if sesResp.Status {
+			//correct request.. fetch profile from AAD
+			access_token, err := azureapi.GetGraphApiToken()
+			if err == nil {
+				objectID := sesResp.Data.(map[string]interface{})["oid"].(string)
+				email := sesResp.Data.(map[string]interface{})["emails"].([]interface{})[0].(string)
+
+				graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + objectID + "?api-version=1.6"
+				headers := make(map[string]string)
+				headers["Authorization"] = "Bearer " + access_token
+				headers["Content-Type"] = "application/json"
+
+				//update email
+				jsonData := `"otherMails": ["` + email + `"]`
+
+				err, _ = common.HTTP_PATCH(graphUrl, headers, []byte(jsonData), false)
+				if err == nil {
+					response.Status = true
+					response.Message = "Successfullt processed no idp user."
+				}
+			}
+		} else {
+			err = errors.New(sesResp.Message)
+		}
+
+	} else {
+		err = errors.New("Securitytoken not found in header.")
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
 	}
 
 	return response
