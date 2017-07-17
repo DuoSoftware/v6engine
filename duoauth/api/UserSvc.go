@@ -96,8 +96,8 @@ func (A Auth) NoIdpProcess() AuthResponse {
 			//correct request.. fetch profile from AAD
 			access_token, err := azureapi.GetGraphApiToken()
 			if err == nil {
-				objectID := sesResp.Data.(map[string]interface{})["oid"].(string)
-				email := sesResp.Data.(map[string]interface{})["emails"].([]interface{})[0].(string)
+				objectID := sesResp.Data.(AuthResponse).Data.(map[string]interface{})["oid"].(string)
+				email := sesResp.Data.(AuthResponse).Data.(map[string]interface{})["emails"].([]interface{})[0].(string)
 
 				graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + objectID + "?api-version=1.6"
 				headers := make(map[string]string)
