@@ -105,7 +105,7 @@ func (A Auth) NoIdpProcess() AuthResponse {
 				headers["Content-Type"] = "application/json"
 
 				//update email
-				jsonData := `"otherMails": ["` + email + `"]`
+				jsonData := `{"otherMails": ["` + email + `"]}`
 
 				err, _ = common.HTTP_PATCH(graphUrl, headers, []byte(jsonData), false)
 				if err == nil {
