@@ -15,6 +15,7 @@ type User struct {
 	Country      string
 	Scopes       []string
 	Tenants      []UserTenant
+	Avatar       string
 }
 
 type UserTenant struct {

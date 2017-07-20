@@ -28,6 +28,7 @@ type Auth struct {
 	updateUser        gorest.EndPoint `method:"PUT" path:"/users" postdata:"UserCreateInfo"`
 	deleteUser        gorest.EndPoint `method:"DELETE" path:"/users/{Email:string}"`
 	noIdpProcess      gorest.EndPoint `method:"GET" path:"/users/noidp" output:"AuthResponse"`
+	getAccessToken    gorest.EndPoint `method:"GET" path:"/accesstoken" output:"AuthResponse"`
 	//scope management
 	assignUserScopes gorest.EndPoint `method:"POST" path:"/users/scopes/{Email:string}" postdata:"[]string"`
 	//logs
@@ -35,6 +36,31 @@ type Auth struct {
 }
 
 var agentConfig map[string]interface{}
+
+func (A Auth) GetAccessToken() AuthResponse {
+	term.Write("Executing Method : Get Access Token ", term.Blank)
+	response := AuthResponse{}
+
+	var err error
+	id_token := A.Context.Request().Header.Get("Securitytoken")
+	if id_token != "" {
+		access_token, err := azureapi.GetGraphApiToken()
+		if err == nil {
+			response.Status = true
+			response.Message = "Successfully recieved Access Token."
+			response.Data = access_token
+		}
+	} else {
+		err = errors.New("SecurityToken not found in header.")
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+	}
+
+	return response
+}
 
 func (A Auth) GetSession() AuthResponse {
 	term.Write("Executing Method : Get Session ", term.Blank)
@@ -155,6 +181,7 @@ func (A Auth) GetUser(Email string) AuthResponse {
 				user.Name = data["displayName"].(string)
 				user.Country = data["country"].(string)
 				user.ObjectID = data["objectId"].(string)
+				user.Avatar = A.GetProfileImage(data["objectId"].(string))
 
 				if data["jobTitle"] != nil {
 					user.Scopes = strings.Split(data["jobTitle"].(string), "-")
@@ -446,6 +473,27 @@ func (A Auth) AssignUserScopes(scopes []string, Email string) {
 		b, _ := json.Marshal(response)
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 	}
+}
+
+func (a Auth) GetProfileImage(userObjectID string) (output string) {
+	//retrieve image...
+	access_token, err := azureapi.GetGraphApiToken()
+	if err == nil {
+		graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + userObjectID + "/thumbnailPhoto?api-version=1.6"
+		headers := make(map[string]string)
+		headers["Authorization"] = "Bearer " + access_token
+		headers["Content-Type"] = "application/json"
+
+		var body []byte
+		err, body = common.HTTP_GET(graphUrl, headers, false)
+		output = string(body)
+	}
+
+	if err != nil {
+		output = "N/A"
+	}
+
+	return
 }
 
 //.......................................
