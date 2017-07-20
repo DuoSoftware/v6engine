@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/SiyaDlamini/gorest"
+	"duov6.com/gorest"
 	//"fmt"
 )
 

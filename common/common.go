@@ -44,16 +44,6 @@ func GetGUID() string {
 	}
 }
 
-func GetErrorMsg(msg string, data interface{}) string {
-	bytes, _ := json.Marshal(data)
-	return "{\"Status\":false,\"Message\":\"" + msg + "\",\"Data\":" + string(bytes) + "}"
-}
-
-func GetSuccessMsg(msg string, data interface{}) string {
-	bytes, _ := json.Marshal(data)
-	return "{\"Status\":true,\"Message\":\"" + msg + "\",\"Data\":" + string(bytes) + "}"
-}
-
 func ErrorJson(message string) string {
 	return "{\"Error\":true,\"Message\":\"" + message + "\"}"
 }
