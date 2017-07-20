@@ -3,7 +3,6 @@ package endpoints
 import (
 	"duov6.com/FileServer"
 	FileServerMessaging "duov6.com/FileServer/messaging"
-	"duov6.com/authlib"
 	"duov6.com/cebadapter"
 	"duov6.com/common"
 	"duov6.com/objectstore/JSON_Purifier"
@@ -542,19 +541,6 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 	} else {
 		message = "Missing attributes in request header : " + missingFields
 	}
-	return
-}
-
-func validateSecurityToken(token string, domain string) (isValidated bool, cert authlib.AuthCertificate) {
-	isValidated = true
-
-	handler := authlib.AuthHandler{}
-	cert, error := handler.GetSession(token, domain)
-
-	if len(error) != 0 {
-		isValidated = false
-	}
-
 	return
 }
 
