@@ -27,7 +27,7 @@ type Auth struct {
 	createUser        gorest.EndPoint `method:"POST" path:"/users" postdata:"UserCreateInfo"`
 	updateUser        gorest.EndPoint `method:"PUT" path:"/users" postdata:"UserCreateInfo"`
 	deleteUser        gorest.EndPoint `method:"DELETE" path:"/users/{Email:string}"`
-	noIdpProcess      gorest.EndPoint `method:"GET" path:"/users/noidp" output:"AuthResponse"`
+	noIdpProcess      gorest.EndPoint `method:"GET" path:"/users/process/noidp" output:"AuthResponse"`
 	getAccessToken    gorest.EndPoint `method:"GET" path:"/accesstoken" output:"AuthResponse"`
 	//scope management
 	assignUserScopes gorest.EndPoint `method:"POST" path:"/users/scopes/{Email:string}" postdata:"[]string"`
@@ -151,7 +151,6 @@ func (A Auth) NoIdpProcess() AuthResponse {
 		response.Status = false
 		response.Message = err.Error()
 	}
-
 	return response
 }
 
