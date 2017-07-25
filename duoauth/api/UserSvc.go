@@ -307,7 +307,7 @@ func (A Auth) CreateUser(u UserCreateInfo) {
 					tenant.Admin = u.Email
 					tenant.Country = u.Country
 					tenant.TenantID = u.TenantID
-					tenant.Type = "JIRA"
+					tenant.Type = u.TenantType
 					T.CreateTenant(tenant)
 					//assign user to tenant.
 					T.RestService.Context.Request().Header.Set("Nounce", "defaultNonce")

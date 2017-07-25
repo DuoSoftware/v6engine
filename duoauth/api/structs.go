@@ -33,9 +33,10 @@ type Tenant struct {
 }
 
 type UserCreateInfo struct {
-	Name     string
-	Email    string
-	Country  string
-	Password string
-	TenantID string
+	Name       string
+	Email      string
+	Country    string
+	Password   string
+	TenantID   string
+	TenantType string
 }
