@@ -152,6 +152,16 @@ func (T TenantSvc) CreateTenant(tenant Tenant) {
 	var err error
 
 	id_token := T.Context.Request().Header.Get("Securitytoken")
+	studioCrowdToken := T.Context.Request().Header.Get("studio.crowd.tokenkey")
+	jSession := T.Context.Request().Header.Get("JSESSIONID")
+	xsrfToken := T.Context.Request().Header.Get("atlassian.xsrf.token")
+	sessionToken := T.Context.Request().Header.Get("cloud.session.token")
+
+	if studioCrowdToken != "" && jSession != "" && xsrfToken != "" && sessionToken != "" {
+		//Jira Request
+		T.IsServiceReferral = true
+	}
+
 	if T.IsServiceReferral || id_token != "" {
 		var access_token string
 		access_token, err = azureapi.GetGraphApiToken()
