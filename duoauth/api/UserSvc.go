@@ -184,60 +184,66 @@ func (A Auth) GetUser(Email string) AuthResponse {
 			if err == nil {
 				data := make(map[string]interface{})
 				_ = json.Unmarshal(body, &data)
-				data = data["value"].([]interface{})[0].(map[string]interface{})
-				user := User{}
-				user.EmailAddress = Email
-				user.Name = data["displayName"].(string)
-				user.Country = data["country"].(string)
-				user.ObjectID = data["objectId"].(string)
-				user.Avatar = A.GetProfileImage(data["objectId"].(string))
+				if len(data["value"].([]interface{})) == 0 {
+					err = errors.New("No user found.")
+					response.Status = false
+					response.Message = err.Error()
+					return response
+				} else {
+					data = data["value"].([]interface{})[0].(map[string]interface{})
+					user := User{}
+					user.EmailAddress = Email
+					user.Name = data["displayName"].(string)
+					user.Country = data["country"].(string)
+					user.ObjectID = data["objectId"].(string)
+					user.Avatar = A.GetProfileImage(data["objectId"].(string))
 
-				if data["jobTitle"] != nil {
-					user.Scopes = strings.Split(data["jobTitle"].(string), "-")
-				}
-
-				tenantString := ""
-				if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"] != nil {
-					tenantString += data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"].(string)
-				}
-				if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"] != nil {
-					tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"].(string)
-				}
-				if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"] != nil {
-					tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"].(string)
-				}
-				if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"] != nil {
-					tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"].(string)
-				}
-				if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"] != nil {
-					tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"].(string)
-				}
-
-				if strings.TrimSpace(tenantString) != "" {
-					alltenants := strings.Split(tenantString, "-")
-					userTenant := make([]UserTenant, len(alltenants))
-					for x := 0; x < len(alltenants); x++ {
-						entry := alltenants[x]
-						singleTenant := UserTenant{}
-						if strings.Contains(entry, "default#") {
-							singleTenant.IsDefault = true
-							entry = strings.Replace(entry, "default#", "", -1)
-						}
-						if strings.Contains(entry, "admin#") {
-							singleTenant.IsAdmin = true
-							entry = strings.Replace(entry, "admin#", "", -1)
-						}
-						singleTenant.TenantID = entry
-						userTenant[x] = singleTenant
+					if data["jobTitle"] != nil {
+						user.Scopes = strings.Split(data["jobTitle"].(string), "-")
 					}
-					user.Tenants = userTenant
+
+					tenantString := ""
+					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"] != nil {
+						tenantString += data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"].(string)
+					}
+					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"] != nil {
+						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"].(string)
+					}
+					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"] != nil {
+						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"].(string)
+					}
+					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"] != nil {
+						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"].(string)
+					}
+					if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"] != nil {
+						tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"].(string)
+					}
+
+					if strings.TrimSpace(tenantString) != "" {
+						alltenants := strings.Split(tenantString, "-")
+						userTenant := make([]UserTenant, len(alltenants))
+						for x := 0; x < len(alltenants); x++ {
+							entry := alltenants[x]
+							singleTenant := UserTenant{}
+							if strings.Contains(entry, "default#") {
+								singleTenant.IsDefault = true
+								entry = strings.Replace(entry, "default#", "", -1)
+							}
+							if strings.Contains(entry, "admin#") {
+								singleTenant.IsAdmin = true
+								entry = strings.Replace(entry, "admin#", "", -1)
+							}
+							singleTenant.TenantID = entry
+							userTenant[x] = singleTenant
+						}
+						user.Tenants = userTenant
+					}
+					response.Status = true
+					response.Message = "User profile recieved successfully."
+					response.Data = user
 				}
-				response.Status = true
-				response.Message = "User profile recieved successfully."
-				response.Data = user
 			}
 		}
-
 	} else {
 		response.Status = false
 		response.Message = "Securitytoken not found in header."
