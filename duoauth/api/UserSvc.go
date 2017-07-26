@@ -160,7 +160,17 @@ func (A Auth) GetUser(Email string) AuthResponse {
 
 	var err error
 	id_token := A.Context.Request().Header.Get("Securitytoken")
-	if id_token != "" {
+	studioCrowdToken := A.Context.Request().Header.Get("studio.crowd.tokenkey")
+	jSession := A.Context.Request().Header.Get("JSESSIONID")
+	xsrfToken := A.Context.Request().Header.Get("atlassian.xsrf.token")
+	sessionToken := A.Context.Request().Header.Get("cloud.session.token")
+
+	if studioCrowdToken != "" && jSession != "" && xsrfToken != "" && sessionToken != "" {
+		//Jira Request
+		A.IsServiceReferral = true
+	}
+
+	if A.IsServiceReferral || id_token != "" {
 		//correct request.. fetch profile from AAD
 		access_token, err := azureapi.GetGraphApiToken()
 		if err == nil {
