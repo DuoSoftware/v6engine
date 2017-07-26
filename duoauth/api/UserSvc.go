@@ -352,6 +352,9 @@ func (A Auth) CreateUser(u UserCreateInfo) {
 		b, _ := json.Marshal(response)
 		A.ResponseBuilder().SetResponseCode(500).WriteAndOveride(b)
 	} else {
+		response = AuthResponse{}
+		response.Status = true
+		response.Message = "User and tenant created successfully and added to tenant."
 		b, _ := json.Marshal(response)
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 	}
