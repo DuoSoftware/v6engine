@@ -213,24 +213,25 @@ func (A Auth) GetUser(Email string) AuthResponse {
 					tenantString += "-" + data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"].(string)
 				}
 
-				alltenants := strings.Split(tenantString, "-")
-				userTenant := make([]UserTenant, len(alltenants))
-				for x := 0; x < len(alltenants); x++ {
-					entry := alltenants[x]
-					singleTenant := UserTenant{}
-					if strings.Contains(entry, "default#") {
-						singleTenant.IsDefault = true
-						entry = strings.Replace(entry, "default#", "", -1)
+				if strings.TrimSpace(tenantString) != "" {
+					alltenants := strings.Split(tenantString, "-")
+					userTenant := make([]UserTenant, len(alltenants))
+					for x := 0; x < len(alltenants); x++ {
+						entry := alltenants[x]
+						singleTenant := UserTenant{}
+						if strings.Contains(entry, "default#") {
+							singleTenant.IsDefault = true
+							entry = strings.Replace(entry, "default#", "", -1)
+						}
+						if strings.Contains(entry, "admin#") {
+							singleTenant.IsAdmin = true
+							entry = strings.Replace(entry, "admin#", "", -1)
+						}
+						singleTenant.TenantID = entry
+						userTenant[x] = singleTenant
 					}
-					if strings.Contains(entry, "admin#") {
-						singleTenant.IsAdmin = true
-						entry = strings.Replace(entry, "admin#", "", -1)
-					}
-					singleTenant.TenantID = entry
-					userTenant[x] = singleTenant
+					user.Tenants = userTenant
 				}
-				user.Tenants = userTenant
-
 				response.Status = true
 				response.Message = "User profile recieved successfully."
 				response.Data = user
