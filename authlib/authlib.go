@@ -154,24 +154,36 @@ func (A Auth) UserActivationByAdmin(emailAddress string) bool {
 		isAdmin := false
 		admins := th.GetTenantAdmin(user.Domain)
 		for _, admin := range admins {
+			fmt.Println("Admin : " + admin["EmailAddress"])
 			if admin["UserID"] == user.UserID {
 				isAdmin = true
 				break
 			}
 		}
+
 		if isAdmin {
+			fmt.Println("Admin...")
 			//check if this user domain matches email domain
 			emailUser, err := h.GetUser(emailAddress)
 			if err == "" {
 				//get default domain for email user
 				defaultTenant := th.GetDefaultTenant(emailUser.UserID)
 				//check if email user domain and requester domain equals
+				fmt.Println("===================")
+				fmt.Println(defaultTenant)
+				fmt.Println(user.Domain)
+				fmt.Println("===================")
 				if defaultTenant.TenantID == user.Domain {
+					fmt.Println("yay")
 					//ACTIVATE
 					h.DirectUserActivation(emailAddress)
 					status = true
 				}
+			} else {
+				fmt.Println(err)
 			}
+		} else {
+			fmt.Println("Not An admin")
 		}
 	}
 
