@@ -110,8 +110,10 @@ func viewLogHandler(params martini.Params, w http.ResponseWriter, r *http.Reques
 	msg := term.ToggleConfig()
 	if strings.Contains(msg, "Enabled") {
 		isLoggable = true
+		martini.IsOSLogEnabled = true
 	} else {
 		isLoggable = false
+		martini.IsOSLogEnabled = false
 	}
 	fmt.Fprintf(w, msg)
 }
