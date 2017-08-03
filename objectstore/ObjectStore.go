@@ -49,8 +49,8 @@ func initialize() {
 	httpServer := endpoints.HTTPService{}
 	go httpServer.Start()
 
-	bulkService := endpoints.BulkTransferService{}
-	go bulkService.Start()
+	//bulkService := endpoints.BulkTransferService{}
+	//go bulkService.Start()
 
 	forever := make(chan bool)
 	<-forever
