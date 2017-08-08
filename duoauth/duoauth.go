@@ -103,35 +103,42 @@ func webServer() {
 }
 
 func runRestFul() {
-	if common.VerifyGlobalConfig() {
-		gorest.RegisterService(new(authlib.Auth))
-		gorest.RegisterService(new(authlib.TenantSvc))
-		gorest.RegisterService(new(authlib.UserSVC))
-		gorest.RegisterService(new(pog.POGSvc))
-		gorest.RegisterService(new(applib.AppSvc))
-		gorest.RegisterService(new(config.ConfigSvc))
-		gorest.RegisterService(new(statservice.StatSvc))
-		gorest.RegisterService(new(apisvc.ApiSvc))
-
-		c := authlib.GetConfig()
-		//email.EmailAddress = c.Smtpusername
-		//email.Password = c.Smtppassword
-		//email.SMTPServer = c.Smtpserver
-
-		if c.Https_Enabled {
-			err := http.ListenAndServeTLS(":3048", c.Cirtifcate, c.PrivateKey, gorest.Handle())
-			if err != nil {
-				term.Write(err.Error(), term.Error)
-				return
-			}
-		} else {
-			err := http.ListenAndServe(":3048", gorest.Handle())
-			if err != nil {
-				term.Write(err.Error(), term.Error)
-				return
-			}
+	if !common.VerifyGlobalConfig() {
+		//GetConfigs from REST...
+		if status := cebadapter.GetGlobalConfigFromREST("StoreConfig"); !status {
+			fmt.Println("Error retrieving configurations from CEB... Exiting...")
+			os.Exit(1)
 		}
 	}
+
+	gorest.RegisterService(new(authlib.Auth))
+	gorest.RegisterService(new(authlib.TenantSvc))
+	gorest.RegisterService(new(authlib.UserSVC))
+	gorest.RegisterService(new(pog.POGSvc))
+	gorest.RegisterService(new(applib.AppSvc))
+	gorest.RegisterService(new(config.ConfigSvc))
+	gorest.RegisterService(new(statservice.StatSvc))
+	gorest.RegisterService(new(apisvc.ApiSvc))
+
+	c := authlib.GetConfig()
+	//email.EmailAddress = c.Smtpusername
+	//email.Password = c.Smtppassword
+	//email.SMTPServer = c.Smtpserver
+
+	if c.Https_Enabled {
+		err := http.ListenAndServeTLS(":3048", c.Cirtifcate, c.PrivateKey, gorest.Handle())
+		if err != nil {
+			term.Write(err.Error(), term.Error)
+			return
+		}
+	} else {
+		err := http.ListenAndServe(":3048", gorest.Handle())
+		if err != nil {
+			term.Write(err.Error(), term.Error)
+			return
+		}
+	}
+
 }
 
 func initializeSettingsFile() {

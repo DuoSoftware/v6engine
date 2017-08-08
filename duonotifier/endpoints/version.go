@@ -16,9 +16,10 @@ func GetVersion() string {
 	//versionDaata := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.4-a\",\"Change Log\":\"Fixed certain alter table issues.\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Notifier"
-	versionData["API Version"] = "6.1.02"
+	versionData["API Version"] = "6.1.03"
 
 	changeLogs := make(map[string]interface{})
+	changeLogs["6.1.03"] = "Added REST CEB configuration retrieval."
 	changeLogs["6.1.02"] = "Added wait for config before starting webservice."
 	changeLogs["6.1.01"] = "Added metrics and Environment variable Settings file generation."
 	changeLogs["6.1.00"] = "Started new versioning with 6.1.00, Added agent.config to reflect localhost if agent.config not found"

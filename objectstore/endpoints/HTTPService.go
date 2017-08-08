@@ -22,6 +22,7 @@ import (
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -39,62 +40,69 @@ var isJsonStack bool
 var isFlusherActivated bool
 
 func (h *HTTPService) Start() {
-	if common.VerifyGlobalConfig() {
-		term.Write("Object Store Listening on Port : 3000", 2)
-		m := martini.Classic()
-		m.Use(cors.Allow(&cors.Options{
-			AllowOrigins:     []string{"*"},
-			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-			AllowHeaders:     []string{"securityToken", "Content-Type"},
-			ExposeHeaders:    []string{"Content-Length"},
-			AllowCredentials: true,
-		}))
-		//Read Version
-		m.Get("/", versionHandler)
-		//READ BY KEY
-		m.Get("/:namespace/:class/:id", handleRequest)
-		//READ BY KEYWORD
-		m.Get("/:namespace/:class", handleRequest)
-		//Get all classes
-		m.Post("/:namespace", handleRequest)
-		//READ ADVANCED, INSERT
-		m.Post("/:namespace/:class", handleRequest)
-
-		//FILE RECIEVER
-		m.Post("/:namespace/:class/:id", uploadHandler)
-		//UPDATE
-		m.Put("/:namespace/:class", handleRequest)
-		//DELETE
-		m.Delete("/:namespace/:class", handleRequest)
-
-		//------- Utility End Points -------------
-
-		//Get All Error Post Logs
-		m.Get("/ErrorLogs", logHandler)
-
-		//Sync Increment Keys with DomainClassAttributes
-		m.Get("/SyncRedisKeys", syncHandler)
-
-		//Flush Cache
-		m.Get("/ClearCache", cacheHandler)
-
-		//Get Store Configurations
-		m.Get("/config", getConfigHandler)
-
-		//View All Logs
-		m.Get("/ViewLogs")
-
-		//Enable or Disable Terminal View For Request Body
-		m.Get("/ToggleLogs", viewLogHandler)
-
-		//Enable or Disable logging Requests to Disk
-		m.Get("/ToggleStack", jsonStackHandler)
-
-		//5.1 silverlight access
-		// m.Get("/crossdomain.xml", Crossdomain)
-		// m.Get("/clientaccesspolicy.xml", Clientaccesspolicy)
-		m.Run()
+	if !common.VerifyGlobalConfig() {
+		//GetConfigs from REST...
+		if status := cebadapter.GetGlobalConfigFromREST("StoreConfig"); !status {
+			fmt.Println("Error retrieving configurations from CEB... Exiting...")
+			os.Exit(1)
+		}
 	}
+
+	term.Write("Object Store Listening on Port : 3000", 2)
+	m := martini.Classic()
+	m.Use(cors.Allow(&cors.Options{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"securityToken", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
+	//Read Version
+	m.Get("/", versionHandler)
+	//READ BY KEY
+	m.Get("/:namespace/:class/:id", handleRequest)
+	//READ BY KEYWORD
+	m.Get("/:namespace/:class", handleRequest)
+	//Get all classes
+	m.Post("/:namespace", handleRequest)
+	//READ ADVANCED, INSERT
+	m.Post("/:namespace/:class", handleRequest)
+
+	//FILE RECIEVER
+	m.Post("/:namespace/:class/:id", uploadHandler)
+	//UPDATE
+	m.Put("/:namespace/:class", handleRequest)
+	//DELETE
+	m.Delete("/:namespace/:class", handleRequest)
+
+	//------- Utility End Points -------------
+
+	//Get All Error Post Logs
+	m.Get("/ErrorLogs", logHandler)
+
+	//Sync Increment Keys with DomainClassAttributes
+	m.Get("/SyncRedisKeys", syncHandler)
+
+	//Flush Cache
+	m.Get("/ClearCache", cacheHandler)
+
+	//Get Store Configurations
+	m.Get("/config", getConfigHandler)
+
+	//View All Logs
+	m.Get("/ViewLogs")
+
+	//Enable or Disable Terminal View For Request Body
+	m.Get("/ToggleLogs", viewLogHandler)
+
+	//Enable or Disable logging Requests to Disk
+	m.Get("/ToggleStack", jsonStackHandler)
+
+	//5.1 silverlight access
+	// m.Get("/crossdomain.xml", Crossdomain)
+	// m.Get("/clientaccesspolicy.xml", Clientaccesspolicy)
+	m.Run()
+
 }
 
 func startKeyFlusher(request *messaging.ObjectRequest) {
