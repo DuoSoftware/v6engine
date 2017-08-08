@@ -11,6 +11,7 @@ import (
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
+	"os"
 )
 
 type HTTPService struct {
