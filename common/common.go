@@ -250,14 +250,21 @@ func VerifyConfigFiles() (config map[string]interface{}) {
 	return
 }
 
+var confTryTime int
+
 func VerifyGlobalConfig() (status bool) {
 	_, err := ioutil.ReadFile("globalConfig.StoreConfig.config")
 	if err == nil {
 		fmt.Println("Configuration has been verified.")
 	} else {
-		fmt.Println("Configuration not verified. Waiting 1 seconds...")
-		time.Sleep(1 * time.Second)
-		return VerifyGlobalConfig()
+		if confTryTime == 3 {
+			return false //lost hope...
+		} else {
+			fmt.Println("Configuration not verified. Waiting 1 seconds...")
+			time.Sleep(1 * time.Second)
+			confTryTime += 1
+			return VerifyGlobalConfig()
+		}
 	}
 	status = true
 	return

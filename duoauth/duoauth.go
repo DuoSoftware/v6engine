@@ -52,26 +52,32 @@ func main() {
 }
 
 func runRestFul() {
-	if common.VerifyGlobalConfig() {
-		gorest.RegisterService(new(api.Auth))
-		gorest.RegisterService(new(api.TenantSvc))
-
-		c := api.GetConfig()
-
-		if c.Https_Enabled {
-			err := http.ListenAndServeTLS(":3048", c.Certificate, c.PrivateKey, gorest.Handle())
-			if err != nil {
-				term.Write(err.Error(), term.Error)
-				return
-			}
-		} else {
-			err := http.ListenAndServe(":3048", gorest.Handle())
-			if err != nil {
-				term.Write(err.Error(), term.Error)
-				return
-			}
+	if !common.VerifyGlobalConfig() {
+		//GetConfigs from REST...
+		if status := cebadapter.GetGlobalConfigFromREST("StoreConfig"); !status {
+			fmt.Println("Error retrieving configurations from CEB... Exiting...")
+			os.Exit(1)
 		}
 	}
+	gorest.RegisterService(new(api.Auth))
+	gorest.RegisterService(new(api.TenantSvc))
+
+	c := api.GetConfig()
+
+	if c.Https_Enabled {
+		err := http.ListenAndServeTLS(":3048", c.Certificate, c.PrivateKey, gorest.Handle())
+		if err != nil {
+			term.Write(err.Error(), term.Error)
+			return
+		}
+	} else {
+		err := http.ListenAndServe(":3048", gorest.Handle())
+		if err != nil {
+			term.Write(err.Error(), term.Error)
+			return
+		}
+	}
+
 }
 
 func initializeSettingsFile() {

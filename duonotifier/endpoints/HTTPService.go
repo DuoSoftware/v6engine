@@ -11,31 +11,38 @@ import (
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
+	"os"
 )
 
 type HTTPService struct {
 }
 
 func (h *HTTPService) Start() {
-	if common.VerifyGlobalConfig() {
-		fmt.Println("DuoNotifier Listening on Port : 7000")
-		m := martini.Classic()
-		m.Use(cors.Allow(&cors.Options{
-			AllowOrigins:     []string{"*"},
-			AllowMethods:     []string{"GET", "POST"},
-			AllowHeaders:     []string{"securityToken", "Content-Type"},
-			ExposeHeaders:    []string{"Content-Length"},
-			AllowCredentials: true,
-		}))
-
-		m.Get("/", versionHandler)
-
-		//Get Store Configurations
-		m.Get("/config", getConfigHandler)
-
-		m.Post("/:namespace", handleRequest)
-		m.RunOnAddr(":7000")
+	if !common.VerifyGlobalConfig() {
+		//GetConfigs from REST...
+		if status := cebadapter.GetGlobalConfigFromREST("StoreConfig"); !status {
+			fmt.Println("Error retrieving configurations from CEB... Exiting...")
+			os.Exit(1)
+		}
 	}
+	fmt.Println("DuoNotifier Listening on Port : 7000")
+	m := martini.Classic()
+	m.Use(cors.Allow(&cors.Options{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST"},
+		AllowHeaders:     []string{"securityToken", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
+
+	m.Get("/", versionHandler)
+
+	//Get Store Configurations
+	m.Get("/config", getConfigHandler)
+
+	m.Post("/:namespace", handleRequest)
+	m.RunOnAddr(":7000")
+
 }
 
 func handleRequest(params martini.Params, w http.ResponseWriter, r *http.Request) {
