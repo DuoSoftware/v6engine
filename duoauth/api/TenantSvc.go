@@ -677,17 +677,30 @@ func (T TenantSvc) InviteToTenant(email, tid string) AuthResponse {
 				//check if user from email exists...
 				userResponse = A.GetUser(email)
 				if userResponse.Status {
-					//User already exists
-					term.Write("Existing User : Sending tenant join invitation", term.Information)
-					inputParams := make(map[string]string)
-					inputParams["@@DOMAIN@@"] = tid
-					tokenMgr := TokenManager{}
-					tokenData := make(map[string]interface{})
-					tokenData["inviter"] = inviterEmail
-					tokenData["invitee"] = email
-					tokenData["tenant"] = tid
-					inputParams["@@TOKEN@@"] = tokenMgr.Generate(tokenData)
-					go notifier.Notify("ignore", "tenant_invite_oldUser", email, inputParams, nil)
+					//User already exists... check if user is already in that tenant or not...
+					isTenantAlreadyAvailable := false
+					for _, userTenant := range userResponse.Data.(User).Tenants {
+						if userTenant.TenantID == tid {
+							isTenantAlreadyAvailable = true
+							break
+						}
+					}
+
+					if isTenantAlreadyAvailable {
+						term.Write("This user is already part of the tenant. no need of inviting", term.Information)
+						err = errors.New("User is already a member of this tenant.")
+					} else {
+						term.Write("Existing User : Sending tenant join invitation", term.Information)
+						inputParams := make(map[string]string)
+						inputParams["@@DOMAIN@@"] = tid
+						tokenMgr := TokenManager{}
+						tokenData := make(map[string]interface{})
+						tokenData["inviter"] = inviterEmail
+						tokenData["invitee"] = email
+						tokenData["tenant"] = tid
+						inputParams["@@TOKEN@@"] = tokenMgr.Generate(tokenData)
+						go notifier.Notify("ignore", "tenant_invite_oldUser", email, inputParams, nil)
+					}
 				} else {
 					//User not exists..send and email asking to register
 					term.Write("New User : Sending tenant invite for new user", term.Information)
