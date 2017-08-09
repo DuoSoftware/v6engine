@@ -398,7 +398,7 @@ func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
 						isNewUser = true
 					}
 
-					if T.Context.Request().Header.Get("Nounce") != "defaultNonce" {
+					if T.Context.Request().Header.Get("Nonce") != "defaultNonce" {
 						isInvitedRegistration = true
 					}
 

@@ -309,7 +309,7 @@ func (A Auth) CreateUser(u UserCreateInfo) {
 			T.IsServiceReferral = true
 			tenantResp := T.GetTenant(u.TenantID)
 			if tenantResp.Status {
-				T.RestService.Context.Request().Header.Set("Nounce", u.TenantID)
+				T.RestService.Context.Request().Header.Set("Nonce", u.TenantID)
 				addUserResp := T.AddUserToTenant(u.TenantID, u.Email)
 				if addUserResp.Status {
 					response.Status = true
@@ -327,7 +327,7 @@ func (A Auth) CreateUser(u UserCreateInfo) {
 					tenant.Type = u.TenantType
 					T.CreateTenant(tenant)
 					//assign user to tenant.
-					T.RestService.Context.Request().Header.Set("Nounce", "defaultNonce")
+					T.RestService.Context.Request().Header.Set("Nonce", "defaultNonce")
 					addUserResp := T.AddUserToTenant(u.TenantID, u.Email)
 					if addUserResp.Status {
 						response.Status = true
