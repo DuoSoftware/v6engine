@@ -723,28 +723,23 @@ func (T TenantSvc) AcceptInviteToTenant(token string) AuthResponse {
 	response := AuthResponse{}
 
 	var err error
-	id_token := T.Context.Request().Header.Get("Securitytoken")
 
 	A := Auth{}
 	A.RestService.Context = T.Context
 
-	if id_token != "" {
-		//get request
-		tokenMgr := TokenManager{}
-		tokenData := tokenMgr.Get(token)
-		if tokenData["inviter"] == nil || tokenData["invitee"] == nil || tokenData["tenant"] == nil {
-			err = errors.New("Invalid token.")
-		} else {
-			tenantID := tokenData["tenant"].(string)
-			invitee := tokenData["invitee"].(string)
-			T.IsServiceReferral = true
-			response = T.AddUserToTenant(tenantID, invitee)
-			if response.Status {
-				tokenMgr.Delete(tokenData["id"].(string))
-			}
-		}
+	//get request
+	tokenMgr := TokenManager{}
+	tokenData := tokenMgr.Get(token)
+	if tokenData["inviter"] == nil || tokenData["invitee"] == nil || tokenData["tenant"] == nil {
+		err = errors.New("Invalid token.")
 	} else {
-		err = errors.New("Securitytoken not found in header.")
+		tenantID := tokenData["tenant"].(string)
+		invitee := tokenData["invitee"].(string)
+		T.IsServiceReferral = true
+		response = T.AddUserToTenant(tenantID, invitee)
+		if response.Status {
+			tokenMgr.Delete(tokenData["id"].(string))
+		}
 	}
 
 	if err != nil {

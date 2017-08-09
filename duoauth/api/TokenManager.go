@@ -34,5 +34,5 @@ func (r *TokenManager) Get(requestCode string) map[string]interface{} {
 func (r *TokenManager) Delete(id string) {
 	o := make(map[string]interface{})
 	o["id"] = id
-	client.Go("ignore", "com.duosoftware.auth", "tmprequestcodes").DeleteObject().WithKeyField("id").AndDeleteOne(o).Ok()
+	client.Go("ignore", "com.duosoftware.auth", "tmprequestcodes").DeleteObject().WithKeyField("id").AndDeleteObject(o).Ok()
 }
