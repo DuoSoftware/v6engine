@@ -75,7 +75,7 @@ func (A Auth) GetSession() AuthResponse {
 
 	id_token := A.Context.Request().Header.Get("Securitytoken")
 	if id_token != "" {
-		urlFragment := "azure.smoothflow.io"
+		urlFragment := "dev.smoothflow.io"
 		//urlFragment := agentConfig["objUrl"].(string)
 		urlFragment = strings.Replace(urlFragment, ":3000", "", -1)
 		urlFragment = strings.Replace(urlFragment, "https://", "", -1)

@@ -6,6 +6,7 @@ import (
 	// "duov6.com/objectstore/client"
 	// "duov6.com/session"
 	"duov6.com/duoauth/azureapi"
+	notifier "duov6.com/duonotifier/client"
 	"duov6.com/term"
 	"encoding/json"
 	"fmt"
@@ -30,6 +31,10 @@ type TenantSvc struct {
 	deleteUserFromTenant gorest.EndPoint `method:"DELETE" path:"/tenants/{tid:string}/removeuser/{Email:string}"`
 	getUserDefaultTenant gorest.EndPoint `method:"GET" path:"/tenants/{userid:string}/getdefault" output:"AuthResponse"`
 	setUserDefaultTenant gorest.EndPoint `method:"GET" path:"/tenants/{userid:string}/setdefault/{tid:string}" output:"AuthResponse"`
+
+	//tenant invites
+	inviteToTenant       gorest.EndPoint `method:"GET" path:"/tenants/invite/{email:string}/{tid:string}" output:"AuthResponse"`
+	acceptInviteToTenant gorest.EndPoint `method:"GET" path:"/tenants/acceptinvite/{token:string}" output:"AuthResponse"`
 }
 
 func (T TenantSvc) GetAllTenants() AuthResponse {
@@ -633,6 +638,120 @@ func (T TenantSvc) SetUserDefaultTenant(userid, tid string) AuthResponse {
 	response := AuthResponse{}
 	response.Status = false
 	response.Message = "Not implemented yet."
+	return response
+}
+
+//Tenant Invite stuff
+
+func (T TenantSvc) InviteToTenant(email, tid string) AuthResponse {
+	term.Write("Executing Method : Invite to tenant", term.Blank)
+	response := AuthResponse{}
+
+	var err error
+	id_token := T.Context.Request().Header.Get("Securitytoken")
+
+	A := Auth{}
+	A.RestService.Context = T.Context
+
+	if id_token != "" {
+
+		//check if inviter is admin of that tenant.
+		userResponse := AuthResponse{}
+		userResponse = A.GetSession()
+
+		if userResponse.Status {
+			inviterEmail := userResponse.Data.(AuthResponse).Data.(map[string]interface{})["emails"].([]interface{})[0].(string)
+			//get user
+			userResponse = A.GetUser(inviterEmail)
+			inviterTenants := userResponse.Data.(User).Tenants
+			isInvitingAllowed := false
+			for _, value := range inviterTenants {
+				if value.TenantID == tid && value.IsAdmin == true {
+					//all okay
+					isInvitingAllowed = true
+					break
+				}
+			}
+
+			if isInvitingAllowed {
+				//check if user from email exists...
+				userResponse = A.GetUser(email)
+				if userResponse.Status {
+					//User already exists
+					term.Write("Existing User : Sending tenant join invitation", term.Information)
+					inputParams := make(map[string]string)
+					inputParams["@@DOMAIN@@"] = tid
+					tokenMgr := TokenManager{}
+					tokenData := make(map[string]interface{})
+					tokenData["inviter"] = inviterEmail
+					tokenData["invitee"] = email
+					tokenData["tenant"] = tid
+					inputParams["@@TOKEN@@"] = tokenMgr.Generate(tokenData)
+					go notifier.Notify("ignore", "tenant_invite_oldUser", email, inputParams, nil)
+				} else {
+					//User not exists..send and email asking to register
+					term.Write("New User : Sending tenant invite for new user", term.Information)
+					inputParams := make(map[string]string)
+					inputParams["@@DOMAIN@@"] = tid
+					go notifier.Notify("ignore", "tenant_invite_newUser", email, inputParams, nil)
+				}
+			} else {
+				err = errors.New("User registered via : " + inviterEmail + " is not an administrator of Tenant : " + tid + " hence tenant invite is not authorized.")
+			}
+
+		} else {
+			err = errors.New("Invalid session. Please relogin.")
+		}
+
+	} else {
+		err = errors.New("Securitytoken not found in header.")
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+	} else {
+		response.Status = true
+		response.Message = "Successfully sent tenant invitation."
+	}
+
+	return response
+}
+
+func (T TenantSvc) AcceptInviteToTenant(token string) AuthResponse {
+	term.Write("Executing Method : Accept Invite to tenant", term.Blank)
+	response := AuthResponse{}
+
+	var err error
+	id_token := T.Context.Request().Header.Get("Securitytoken")
+
+	A := Auth{}
+	A.RestService.Context = T.Context
+
+	if id_token != "" {
+		//get request
+		tokenMgr := TokenManager{}
+		tokenData := tokenMgr.Get(token)
+		if tokenData["inviter"] == nil || tokenData["invitee"] == nil || tokenData["tenant"] == nil {
+			err = errors.New("Invalid token.")
+		} else {
+			tenantID := tokenData["tenant"].(string)
+			invitee := tokenData["invitee"].(string)
+			T.IsServiceReferral = true
+			response = T.AddUserToTenant(tenantID, invitee)
+			if response.Status {
+				tokenMgr.Delete(tokenData["id"].(string))
+			}
+		}
+	} else {
+		err = errors.New("Securitytoken not found in header.")
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+	}
+
 	return response
 }
 
