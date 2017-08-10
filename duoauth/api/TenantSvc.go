@@ -180,6 +180,11 @@ func (T TenantSvc) CreateTenant(tenant Tenant) {
 
 			err, _ = common.HTTP_POST(graphUrl, headers, []byte(jsonString), false)
 			if err == nil {
+				//send email
+				inputParams := make(map[string]string)
+				inputParams["@@tenantID@@"] = tenant.TenantID
+				go notifier.Notify("ignore", "T_Email_tenant_creation", tenant.Admin, inputParams, nil)
+
 				response.Status = true
 				response.Message = "Tenant created successfully."
 				response.Data = tenant

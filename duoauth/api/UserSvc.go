@@ -7,6 +7,7 @@ import (
 	// notifier "duov6.com/duonotifier/client"
 	// "duov6.com/objectstore/client"
 	// "duov6.com/session"
+	notifier "duov6.com/duonotifier/client"
 	"duov6.com/term"
 	"encoding/json"
 	"fmt"
@@ -33,6 +34,9 @@ type Auth struct {
 	assignUserScopes gorest.EndPoint `method:"POST" path:"/users/scopes/{Email:string}" postdata:"[]string"`
 	//logs
 	toggleLogs gorest.EndPoint `method:"GET" path:"/togglelogs/" output:"string"`
+	//Notifications
+	notifyAccCreation gorest.EndPoint `method:"GET" path:"/notify/accountcreation/{email:string}/{name:string}" output:"AuthResponse"`
+	notifyUserLogin   gorest.EndPoint `method:"GET" path:"/notify/userlogin/{email:string}/{name:string}/{tid:string}/{host:string}/{broswer:string}" output:"AuthResponse"`
 }
 
 var agentConfig map[string]interface{}
@@ -296,6 +300,11 @@ func (A Auth) CreateUser(u UserCreateInfo) {
 
 		err, _ = common.HTTP_POST(graphUrl, headers, []byte(jsonString), false)
 
+		if err == nil {
+			//send user create email
+			A.NotifyAccCreation(u.Email, u.Name)
+		}
+
 		if err == nil && u.TenantID != "" { //if user creation success and tenantid is not nil
 			//assign user scopes
 			A.IsServiceReferral = true
@@ -513,6 +522,39 @@ func (a Auth) GetProfileImage(userObjectID string) (output string) {
 	}
 
 	return
+}
+
+// notifications
+
+func (a Auth) NotifyAccCreation(email, name string) AuthResponse {
+	term.Write("Executing Method : Sending Registration Email.", term.Blank)
+	response := AuthResponse{}
+
+	inputParams := make(map[string]string)
+	inputParams["@@CNAME@@"] = name
+	go notifier.Notify("ignore", "AccountCreation", email, inputParams, nil)
+
+	response.Status = true
+	response.Message = "User creation notified successfully."
+	return response
+}
+
+func (a Auth) NotifyUserLogin(email, name, tid, host, broswer string) AuthResponse {
+	term.Write("Executing Method : Sending Login Email.", term.Blank)
+	response := AuthResponse{}
+
+	inputParams := make(map[string]string)
+	inputParams["@@email@@"] = email
+	inputParams["@@name@@"] = name
+	inputParams["@@Domain@@"] = tid
+	inputParams["@@ClientIP@@"] = host
+	inputParams["@@UserAgent@@"] = broswer
+	fmt.Println(inputParams)
+	go notifier.Notify("ignore", "user_login", email, inputParams, nil)
+
+	response.Status = true
+	response.Message = "Login notified successfully."
+	return response
 }
 
 //.......................................
