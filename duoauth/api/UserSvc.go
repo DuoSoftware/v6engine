@@ -531,7 +531,7 @@ func (a Auth) NotifyAccCreation(email, name string) AuthResponse {
 	response := AuthResponse{}
 
 	inputParams := make(map[string]string)
-	inputParams["@@CNAME@@"] = name
+	inputParams["@@CNAME@@"] = strings.Replace(name, "_", " ", -1)
 	go notifier.Notify("ignore", "AccountCreation", email, inputParams, nil)
 
 	response.Status = true
@@ -545,10 +545,10 @@ func (a Auth) NotifyUserLogin(email, name, tid, host, broswer string) AuthRespon
 
 	inputParams := make(map[string]string)
 	inputParams["@@email@@"] = email
-	inputParams["@@name@@"] = name
-	inputParams["@@Domain@@"] = tid
-	inputParams["@@ClientIP@@"] = host
-	inputParams["@@UserAgent@@"] = broswer
+	inputParams["@@name@@"] = strings.Replace(name, "_", " ", -1)
+	inputParams["@@Domain@@"] = strings.Replace(tid, "_", " ", -1)
+	inputParams["@@ClientIP@@"] = strings.Replace(host, "_", " ", -1)
+	inputParams["@@UserAgent@@"] = strings.Replace(broswer, "_", " ", -1)
 	fmt.Println(inputParams)
 	go notifier.Notify("ignore", "user_login", email, inputParams, nil)
 
