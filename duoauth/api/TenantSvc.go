@@ -183,7 +183,7 @@ func (T TenantSvc) CreateTenant(tenant Tenant) {
 				//send email
 				inputParams := make(map[string]string)
 				inputParams["@@tenantID@@"] = tenant.TenantID
-				go notifier.Notify("ignore", "T_Email_tenant_creation", tenant.Admin, inputParams, nil)
+				go notifier.Notify("ignore", "tenant_creation", tenant.Admin, inputParams, nil)
 
 				response.Status = true
 				response.Message = "Tenant created successfully."
