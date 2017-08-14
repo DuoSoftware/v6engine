@@ -624,10 +624,160 @@ func (T TenantSvc) AddUserToTenant(tid, Email string) AuthResponse {
 func (T TenantSvc) DeleteUserFromTenant(tid, Email string) {
 	term.Write("Executing Method : Delete Tenant.", term.Blank)
 	response := AuthResponse{}
-	response.Status = false
-	response.Message = "Not implemented yet."
-	b, _ := json.Marshal(response)
-	T.ResponseBuilder().SetResponseCode(501).WriteAndOveride(b)
+
+	var err error
+	id_token := T.Context.Request().Header.Get("Securitytoken")
+	A := Auth{}
+	A.RestService.Context = T.Context
+
+	if id_token != "" {
+		//check if inviter is admin of that tenant.
+		userResponse := AuthResponse{}
+		userResponse = A.GetSession()
+
+		if userResponse.Status {
+			inviterEmail := userResponse.Data.(AuthResponse).Data.(map[string]interface{})["emails"].([]interface{})[0].(string)
+			//get user
+			userResponse = A.GetUser(inviterEmail)
+			inviterTenants := userResponse.Data.(User).Tenants
+			isInvitingAllowed := false
+			for _, value := range inviterTenants {
+				if value.TenantID == tid && value.IsAdmin {
+					isInvitingAllowed = true
+					break
+				}
+			}
+
+			if isInvitingAllowed {
+				//get tenant
+				tenantResp := T.GetTenant(tid)
+				if tenantResp.Status {
+					tenantObjectID := tenantResp.Data.(Tenant).ObjectID
+					//get user
+					var access_token string
+					access_token, err = azureapi.GetGraphApiToken()
+					if err == nil {
+						graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users?api-version=1.6&$filter=otherMails/any" + url.QueryEscape("(o: o eq '"+Email+"')")
+						headers := make(map[string]string)
+						headers["Authorization"] = "Bearer " + access_token
+						headers["Content-Type"] = "application/json"
+
+						var body []byte
+						err, body = common.HTTP_GET(graphUrl, headers, false)
+						if err == nil {
+							data := make(map[string]interface{})
+							_ = json.Unmarshal(body, &data)
+							if len(data["value"].([]interface{})) == 0 {
+								err = errors.New("No user found by email : " + Email)
+							} else {
+								data = data["value"].([]interface{})[0].(map[string]interface{})
+
+								userObjectID := data["objectId"].(string)
+
+								changedExtensionName := ""
+								changedExtensionValue := ""
+
+								if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"] != nil {
+									if strings.Contains(data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"].(string), tid) {
+										changedExtensionName = "extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"
+										changedExtensionValue = data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"].(string)
+
+									}
+								}
+								if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"] != nil {
+									if strings.Contains(data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"].(string), tid) {
+										changedExtensionName = "extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"
+										changedExtensionValue = data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant1"].(string)
+									}
+								}
+								if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"] != nil {
+									if strings.Contains(data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"].(string), tid) {
+										changedExtensionName = "extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"
+										changedExtensionValue = data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant2"].(string)
+									}
+								}
+								if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"] != nil {
+									if strings.Contains(data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"].(string), tid) {
+										changedExtensionName = "extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"
+										changedExtensionValue = data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant3"].(string)
+									}
+								}
+								if data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"] != nil {
+									if strings.Contains(data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"].(string), tid) {
+										changedExtensionName = "extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"
+										changedExtensionValue = data["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant4"].(string)
+									}
+								}
+
+								if changedExtensionName != "" && changedExtensionValue != "" {
+									//update user
+									valueTokens := strings.Split(changedExtensionValue, "-")
+
+									newExtensionValue := ""
+
+									if len(valueTokens) == 1 && strings.Contains(valueTokens[0], tid) {
+										newExtensionValue = ""
+									} else {
+
+										for x := 0; x < len(valueTokens); x++ {
+											if !strings.Contains(valueTokens[x], tid) {
+												newExtensionValue = newExtensionValue + valueTokens[x] + "-"
+											}
+										}
+
+										newExtensionValue = strings.TrimSuffix(newExtensionValue, "-")
+									}
+
+									graphUrl = "https://graph.windows.net/smoothflowio.onmicrosoft.com/users/" + userObjectID + "?api-version=1.6"
+									headers = make(map[string]string)
+									headers["Authorization"] = "Bearer " + access_token
+									headers["Content-Type"] = "application/json"
+
+									jsonString := `{"` + changedExtensionName + `":"` + newExtensionValue + `"}`
+									err, _ = common.HTTP_PATCH(graphUrl, headers, []byte(jsonString), false)
+									if err == nil {
+										//user updated. delete user from the tenant...
+										graphUrl = "https://graph.windows.net/smoothflowio.onmicrosoft.com/groups/" + tenantObjectID + "/$links/members/" + userObjectID + "?api-version=1.6"
+										headers = make(map[string]string)
+										headers["Authorization"] = "Bearer " + access_token
+										headers["Content-Type"] = "application/json"
+
+										err, _ = common.HTTP_DELETE(graphUrl, headers, nil, false)
+										if err == nil {
+											response.Status = true
+											response.Message = "Successfully deleted user from tenant."
+										}
+									}
+								} else {
+									err = errors.New("User is not a member of tenant : " + tid)
+								}
+							}
+						}
+					}
+				} else {
+					err = errors.New(tenantResp.Message)
+				}
+
+			} else {
+				err = errors.New("User registered via : " + inviterEmail + " is not an administrator of Tenant : " + tid + " hence tenant invite is not authorized.")
+			}
+
+		} else {
+			err = errors.New("Invalid session. Please relogin.")
+		}
+	} else {
+		err = errors.New("Securitytoken not found in header.")
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+		b, _ := json.Marshal(response)
+		T.ResponseBuilder().SetResponseCode(500).WriteAndOveride(b)
+	} else {
+		b, _ := json.Marshal(response)
+		T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	}
 }
 
 func (T TenantSvc) GetUserDefaultTenant(userid string) AuthResponse {
