@@ -379,20 +379,20 @@ func (A Auth) UpdateUser(u UserCreateInfo) {
 	if id_token != "" {
 		sessionResponse := A.GetSession()
 		if sessionResponse.Status {
-			data := sessionResponse.Data.(AuthResponse).Data.(map[string]interface{})
-			userObjectID := data["oid"].(string)
-			name := ""
-			country := ""
-			if u.Name != "" {
-				name = u.Name
-			}
-			if u.Country != "" {
-				country = u.Country
-			}
-
-			if (name == "" && country == "") || (name == data["name"].(string) && name == data["country"].(string)) {
+			if u.Name == "" && u.Country == "" {
 				err = errors.New("No new information to be updated.")
 			} else {
+				data := sessionResponse.Data.(AuthResponse).Data.(map[string]interface{})
+				userObjectID := data["oid"].(string)
+				name := data["name"].(string)
+				country := data["country"].(string)
+				if u.Name != "" {
+					name = u.Name
+				}
+				if u.Country != "" {
+					country = u.Country
+				}
+
 				var access_token string
 				access_token, err = azureapi.GetGraphApiToken()
 				if err == nil {
@@ -420,6 +420,8 @@ func (A Auth) UpdateUser(u UserCreateInfo) {
 		b, _ := json.Marshal(response)
 		A.ResponseBuilder().SetResponseCode(500).WriteAndOveride(b)
 	} else {
+		response.Status = true
+		response.Message = "Successfully updated user details."
 		b, _ := json.Marshal(response)
 		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 	}
