@@ -26,7 +26,7 @@ type Auth struct {
 	getSession        gorest.EndPoint `method:"GET" path:"/getsession" output:"AuthResponse"`
 	getUser           gorest.EndPoint `method:"GET" path:"/users/{Email:string}" output:"AuthResponse"`
 	createUser        gorest.EndPoint `method:"POST" path:"/users" postdata:"UserCreateInfo"`
-	updateUser        gorest.EndPoint `method:"PUT" path:"/users" postdata:"UserCreateInfo"`
+	updateUser        gorest.EndPoint `method:"POST" path:"/users/update/{Email:string}" postdata:"UserCreateInfo"`
 	deleteUser        gorest.EndPoint `method:"DELETE" path:"/users/{Email:string}"`
 	noIdpProcess      gorest.EndPoint `method:"GET" path:"/users/process/noidp" output:"AuthResponse"`
 	getAccessToken    gorest.EndPoint `method:"GET" path:"/accesstoken" output:"AuthResponse"`
@@ -369,8 +369,8 @@ func (A Auth) CreateUser(u UserCreateInfo) {
 	}
 }
 
-func (A Auth) UpdateUser(u UserCreateInfo) {
-	term.Write("Executing Method : Update local user.", term.Blank)
+func (A Auth) UpdateUser(u UserCreateInfo, Email string) {
+	term.Write("Executing Method : Update local user for "+Email, term.Blank)
 	response := AuthResponse{}
 
 	var err error
