@@ -202,7 +202,11 @@ func (A Auth) GetUser(Email string) AuthResponse {
 					user.Country = data["country"].(string)
 					user.ObjectID = data["objectId"].(string)
 					//user.Avatar = A.GetProfileImage(data["objectId"].(string))
-					user.Avatar = "Use [GET] /users/{email}/avatar method."
+
+					user.Avatar = "N/A"
+					if data["postalCode"] != nil {
+						user.Avatar = data["postalCode"].(string)
+					}
 
 					if data["jobTitle"] != nil {
 						user.Scopes = strings.Split(data["jobTitle"].(string), "-")
@@ -266,7 +270,9 @@ func (A Auth) GetUser(Email string) AuthResponse {
 func (A Auth) GetUserAvatar(Email string) AuthResponse {
 	term.Write("Executing Method : Get User", term.Blank)
 	response := AuthResponse{}
-
+	response.Status = false
+	response.Message = "Depricated method. Use GetUser method instead."
+	return response
 	var err error
 	id_token := A.Context.Request().Header.Get("Securitytoken")
 	studioCrowdToken := A.Context.Request().Header.Get("studio.crowd.tokenkey")
@@ -439,18 +445,27 @@ func (A Auth) UpdateUser(u UserCreateInfo, Email string) {
 	if id_token != "" {
 		sessionResponse := A.GetSession()
 		if sessionResponse.Status {
-			if u.Name == "" && u.Country == "" {
+			if u.Name == "" && u.Country == "" && u.AvatarUrl == "" {
 				err = errors.New("No new information to be updated.")
 			} else {
 				data := sessionResponse.Data.(AuthResponse).Data.(map[string]interface{})
 				userObjectID := data["oid"].(string)
 				name := data["name"].(string)
 				country := data["country"].(string)
+				avatar := "N/A"
+
+				if data["postalCode"] != nil {
+					avatar = data["postalCode"].(string)
+				}
+
 				if u.Name != "" {
 					name = u.Name
 				}
 				if u.Country != "" {
 					country = u.Country
+				}
+				if u.AvatarUrl != "" {
+					avatar = u.AvatarUrl
 				}
 
 				var access_token string
@@ -461,7 +476,7 @@ func (A Auth) UpdateUser(u UserCreateInfo, Email string) {
 					headers["Authorization"] = "Bearer " + access_token
 					headers["Content-Type"] = "application/json"
 
-					jsonString := `{"displayName":"` + name + `", "country":"` + country + `"}`
+					jsonString := `{"displayName":"` + name + `", "postalCode":"` + avatar + `" ,"country":"` + country + `"}`
 					err, _ = common.HTTP_PATCH(graphUrl, headers, []byte(jsonString), false)
 				}
 			}

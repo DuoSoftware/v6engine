@@ -39,4 +39,5 @@ type UserCreateInfo struct {
 	Password   string
 	TenantID   string
 	TenantType string
+	AvatarUrl  string
 }
