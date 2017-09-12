@@ -18,10 +18,11 @@ func Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth ( Azure AD )"
-	versionData["API Version"] = "1.0.1j"
+	versionData["API Version"] = "1.0.2"
 
 	changeLogs := make(map[string]interface{})
 
+	changeLogs["1.0.2"] = "Added separate method for user avatar."
 	changeLogs["1.0.1"] = "Added user avatar support."
 	changeLogs["1.0.0"] = "Initial working release."
 	versionData["Change Logs"] = changeLogs

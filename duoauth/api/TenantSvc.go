@@ -261,8 +261,9 @@ func (T TenantSvc) GetTenantUsers(tid string) AuthResponse {
 						user.Name = singleObject["displayName"].(string)
 						user.Country = singleObject["country"].(string)
 						user.Scopes = strings.Split(singleObject["jobTitle"].(string), "-")
-						A := Auth{}
-						user.Avatar = A.GetProfileImage(singleObject["objectId"].(string))
+						//A := Auth{}
+						//user.Avatar = A.GetProfileImage(singleObject["objectId"].(string))
+						user.Avatar = "Use [GET] /users/{email}/avatar method."
 
 						tenantString := ""
 						if singleObject["extension_9239d4f1848b43dda66014d3c4f990b9_Tenant"] != nil {

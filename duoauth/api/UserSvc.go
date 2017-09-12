@@ -25,6 +25,7 @@ type Auth struct {
 	getConfig         gorest.EndPoint `method:"GET" path:"/config" output:"string"`
 	getSession        gorest.EndPoint `method:"GET" path:"/getsession" output:"AuthResponse"`
 	getUser           gorest.EndPoint `method:"GET" path:"/users/{Email:string}" output:"AuthResponse"`
+	getUserAvatar     gorest.EndPoint `method:"GET" path:"/users/{Email:string}/avatar" output:"AuthResponse"`
 	createUser        gorest.EndPoint `method:"POST" path:"/users" postdata:"UserCreateInfo"`
 	updateUser        gorest.EndPoint `method:"POST" path:"/users/update/{Email:string}" postdata:"UserCreateInfo"`
 	deleteUser        gorest.EndPoint `method:"DELETE" path:"/users/{Email:string}"`
@@ -200,7 +201,8 @@ func (A Auth) GetUser(Email string) AuthResponse {
 					user.Name = data["displayName"].(string)
 					user.Country = data["country"].(string)
 					user.ObjectID = data["objectId"].(string)
-					user.Avatar = A.GetProfileImage(data["objectId"].(string))
+					//user.Avatar = A.GetProfileImage(data["objectId"].(string))
+					user.Avatar = "Use [GET] /users/{email}/avatar method."
 
 					if data["jobTitle"] != nil {
 						user.Scopes = strings.Split(data["jobTitle"].(string), "-")
@@ -245,6 +247,64 @@ func (A Auth) GetUser(Email string) AuthResponse {
 					response.Status = true
 					response.Message = "User profile recieved successfully."
 					response.Data = user
+				}
+			}
+		}
+	} else {
+		response.Status = false
+		response.Message = "Securitytoken not found in header."
+	}
+
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+	}
+
+	return response
+}
+
+func (A Auth) GetUserAvatar(Email string) AuthResponse {
+	term.Write("Executing Method : Get User", term.Blank)
+	response := AuthResponse{}
+
+	var err error
+	id_token := A.Context.Request().Header.Get("Securitytoken")
+	studioCrowdToken := A.Context.Request().Header.Get("studio.crowd.tokenkey")
+	jSession := A.Context.Request().Header.Get("JSESSIONID")
+	xsrfToken := A.Context.Request().Header.Get("atlassian.xsrf.token")
+	sessionToken := A.Context.Request().Header.Get("cloud.session.token")
+
+	if studioCrowdToken != "" && jSession != "" && xsrfToken != "" && sessionToken != "" {
+		//Jira Request
+		A.IsServiceReferral = true
+	}
+
+	if A.IsServiceReferral || id_token != "" {
+		//correct request.. fetch profile from AAD
+		access_token, err := azureapi.GetGraphApiToken()
+		if err == nil {
+			graphUrl := "https://graph.windows.net/smoothflowio.onmicrosoft.com/users?api-version=1.6&$filter=otherMails/any" + url.QueryEscape("(o: o eq '"+Email+"')")
+			headers := make(map[string]string)
+			headers["Authorization"] = "Bearer " + access_token
+			headers["Content-Type"] = "application/json"
+
+			var body []byte
+			err, body = common.HTTP_GET(graphUrl, headers, false)
+			if err == nil {
+				data := make(map[string]interface{})
+				_ = json.Unmarshal(body, &data)
+				if len(data["value"].([]interface{})) == 0 {
+					err = errors.New("No user found.")
+					response.Status = false
+					response.Message = err.Error()
+					return response
+				} else {
+					data = data["value"].([]interface{})[0].(map[string]interface{})
+					file := A.GetProfileImage(data["objectId"].(string))
+
+					response.Status = true
+					response.Message = "User profile recieved successfully."
+					response.Data = common.EncodeToBase64(file)
 				}
 			}
 		}
