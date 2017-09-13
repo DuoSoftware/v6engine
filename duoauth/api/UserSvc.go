@@ -204,8 +204,8 @@ func (A Auth) GetUser(Email string) AuthResponse {
 					//user.Avatar = A.GetProfileImage(data["objectId"].(string))
 
 					user.Avatar = "N/A"
-					if data["postalCode"] != nil {
-						user.Avatar = data["postalCode"].(string)
+					if data["streetAddress"] != nil {
+						user.Avatar = data["streetAddress"].(string)
 					}
 
 					if data["jobTitle"] != nil {
@@ -454,8 +454,8 @@ func (A Auth) UpdateUser(u UserCreateInfo, Email string) {
 				country := data["country"].(string)
 				avatar := "N/A"
 
-				if data["postalCode"] != nil {
-					avatar = data["postalCode"].(string)
+				if data["streetAddress"] != nil {
+					avatar = data["streetAddress"].(string)
 				}
 
 				if u.Name != "" {
@@ -476,7 +476,7 @@ func (A Auth) UpdateUser(u UserCreateInfo, Email string) {
 					headers["Authorization"] = "Bearer " + access_token
 					headers["Content-Type"] = "application/json"
 
-					jsonString := `{"displayName":"` + name + `", "postalCode":"` + avatar + `" ,"country":"` + country + `"}`
+					jsonString := `{"displayName":"` + name + `", "streetAddress":"` + avatar + `" ,"country":"` + country + `"}`
 					err, _ = common.HTTP_PATCH(graphUrl, headers, []byte(jsonString), false)
 				}
 			}

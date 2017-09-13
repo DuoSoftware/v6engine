@@ -265,8 +265,8 @@ func (T TenantSvc) GetTenantUsers(tid string) AuthResponse {
 						//user.Avatar = A.GetProfileImage(singleObject["objectId"].(string))
 						user.Avatar = "N/A"
 
-						if singleObject["postalCode"] != nil {
-							user.Avatar = singleObject["postalCode"].(string)
+						if singleObject["streetAddress"] != nil {
+							user.Avatar = singleObject["streetAddress"].(string)
 						}
 
 						tenantString := ""
