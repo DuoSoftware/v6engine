@@ -246,22 +246,42 @@ func (T TenantSvc) CancelAddTenantUser(email string) bool {
 
 	u, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
-		//Get pending add user requst
-		addRequest := th.GetPendingAddUserRequest(email, u.Domain)
-		if addRequest == (PendingUserRequest{}) {
-			T.ResponseBuilder().SetResponseCode(500).WriteAndOveride([]byte(common.ErrorJson("Error : Tenant request in Domain : " + u.Domain + " for User : " + email + " not cound.")))
-			return false
+
+		//check if requester is Admin of his tenant
+		isAdmin := false
+		admins := th.GetTenantAdmin(u.Domain)
+		for _, admin := range admins {
+			fmt.Println("Admin : " + admin["EmailAddress"])
+			if admin["UserID"] == u.UserID {
+				isAdmin = true
+				break
+			}
 		}
 
-		code := addRequest.Code
-		tmp := tempRequestGenerator{}
+		if isAdmin {
 
-		tmpObj := make(map[string]interface{})
-		tmpObj["id"] = code
-		tmp.Remove(tmpObj)
-		th.RemoveAddUserRequest(email, addRequest.TenantID)
-		T.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.MsgJson("Successfully removed tenant invitation.")))
-		return true
+			//Get pending add user requst
+			addRequest := th.GetPendingAddUserRequest(email, u.Domain)
+			if addRequest == (PendingUserRequest{}) {
+				T.ResponseBuilder().SetResponseCode(500).WriteAndOveride([]byte(common.ErrorJson("Error : Tenant request in Domain : " + u.Domain + " for User : " + email + " not cound.")))
+				return false
+			}
+
+			code := addRequest.Code
+			tmp := tempRequestGenerator{}
+
+			tmpObj := make(map[string]interface{})
+			tmpObj["id"] = code
+			tmp.Remove(tmpObj)
+			th.RemoveAddUserRequest(email, addRequest.TenantID)
+			//Remove any tokens in tmprequest from a email
+			tmp.RemoveByEmail(email)
+			T.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.MsgJson("Successfully removed tenant invitation.")))
+			return true
+		} else {
+			T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Access Denied. Not an tenant administrator.")))
+			return false
+		}
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return false
@@ -431,7 +451,25 @@ func (T TenantSvc) RemoveUser(email string) bool {
 			//t := th.GetTenant(user.Domain)
 			//th.AddUsersToTenant(user.Domain, t.Name, a.UserID, "level")
 			//th := TenantHandler{}
-			return th.RemoveUserFromTenant(u.UserID, user.Domain)
+			status := th.RemoveUserFromTenant(u.UserID, user.Domain)
+			if status {
+				//switch the person if default tenant is this tenant
+				defT := th.GetDefaultTenant(u.UserID)
+				if defT.TenantID == user.Domain {
+					//Change the default tenant
+					//get all tenants for user
+					allTenants := th.GetTenantsForUser(u.UserID)
+					for _, tenant := range allTenants {
+						if tenant.TenantID != user.Domain {
+							th.SetDefaultTenant(u.UserID, tenant.TenantID)
+							break
+						}
+					}
+				}
+			} else {
+				//do nothing for now. add email later?
+			}
+			return status
 			//return true
 			//} else {
 			//T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("Need to have Admin access to tenant to add user"))

@@ -6,6 +6,7 @@ import (
 	"duov6.com/objectstore/client"
 	"duov6.com/term"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -61,4 +62,23 @@ func (r *tempRequestGenerator) GetRequestCode(requestCode string) (map[string]st
 func (r *tempRequestGenerator) Remove(o map[string]interface{}) {
 	term.Write(o, term.Debug)
 	client.Go("ignore", "com.duosoftware.auth", "tmprequestcodes").DeleteObject().WithKeyField("id").AndDeleteOne(o).Ok()
+}
+
+func (r *tempRequestGenerator) RemoveByEmail(email string) {
+	fmt.Println("Removing all request tokens for email : " + email)
+	for _, value := range r.GetTmpCodesByEmail(email) {
+		fmt.Println(value["id"])
+		client.Go("ignore", "com.duosoftware.auth", "tmprequestcodes").DeleteObject().WithKeyField("id").AndDeleteOne(value).Ok()
+	}
+}
+
+func (r *tempRequestGenerator) GetTmpCodesByEmail(Email string) (codes []map[string]string) {
+	codes = make([]map[string]string, 0)
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "tmprequestcodes").GetMany().BySearching("email:" + Email).Ok()
+	if err == "" {
+		if bytes != nil {
+			_ = json.Unmarshal(bytes, &codes)
+		}
+	}
+	return
 }
