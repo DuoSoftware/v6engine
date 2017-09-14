@@ -937,8 +937,7 @@ func (h *AuthHandler) GetUser(email string) (User, string) {
 	return user, "Error Validating user"
 }
 
-func (h *AuthHandler) GetMultipleUserDetails(UserIDs []string) (users []map[string]interface{}) {
-	users = make([]map[string]interface{}, 0)
+func (h *AuthHandler) GetMultipleUserDetails(UserIDs []string) (users []User) {
 
 	for x := 0; x < len(UserIDs); x++ {
 		bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetMany().BySearching("UserID:" + UserIDs[x]).Ok()
@@ -947,11 +946,7 @@ func (h *AuthHandler) GetMultipleUserDetails(UserIDs []string) (users []map[stri
 				var uList []User
 				err := json.Unmarshal(bytes, &uList)
 				if err == nil {
-					singleUser := make(map[string]interface{})
-					singleUser["UserID"] = uList[0].UserID
-					singleUser["Name"] = uList[0].Name
-					singleUser["EmailAddress"] = uList[0].EmailAddress
-					users = append(users, singleUser)
+					users = append(users, uList[0])
 				}
 			}
 		}

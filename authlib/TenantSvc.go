@@ -25,6 +25,7 @@ type TenantSvc struct {
 	searchTenants               gorest.EndPoint `method:"GET" path:"/tenant/SearchTenants/{SearchString:string}/{pagesize:int}/{startPoint:int}" output:"[]Tenant"`
 	subciribe                   gorest.EndPoint `method:"GET" path:"/tenant/Subciribe/{TenantID:string}" output:"bool"`
 	getUsers                    gorest.EndPoint `method:"GET" path:"/tenant/GetUsers/{TenantID:string}" output:"[]string"`
+	getUserDetails              gorest.EndPoint `method:"GET" path:"/tenant/GetUserDetails/{TenantID:string}" output:"[]User"`
 	addUser                     gorest.EndPoint `method:"GET" path:"/tenant/AddUser/{email:string}/{level:string}" output:"bool"`
 	removeUser                  gorest.EndPoint `method:"GET" path:"/tenant/RemoveUser/{email:string}" output:"bool"`
 	tranferAdmin                gorest.EndPoint `method:"GET" path:"/tenant/TranferAdmin/{email:string}" output:"bool"`
@@ -35,6 +36,7 @@ type TenantSvc struct {
 	getTenantAdmin              gorest.EndPoint `method:"GET" path:"/tenant/GetTenantAdmin/{TenantID:string}" output:"[]InviteUsers"`
 	getAllPendingTenantRequests gorest.EndPoint `method:"GET" path:"/tenant/GetAllPendingTenantRequests/" output:"PendingRequests"`
 	cancelAddTenantUser         gorest.EndPoint `method:"GET" path:"/tenant/CancelAddUser/{email:string}/" output:"bool"`
+	validateCode                gorest.EndPoint `method:"GET" path:"/tenant/verifytoken/{token:string}" output:"bool"`
 }
 
 func (T TenantSvc) GetTenantAdmin(TenantID string) []InviteUsers {
@@ -210,6 +212,21 @@ func (T TenantSvc) GetTenant(TenantID string) Tenant {
 	//}
 }
 
+func (T TenantSvc) ValidateCode(token string) bool {
+	//Get Users inside a Tenant
+	term.Write("Executing Method : Validate Code)", term.Blank)
+
+	tmp := tempRequestGenerator{}
+	o, _ := tmp.GetRequestCode(token)
+
+	if o["id"] == "" {
+		return false
+	} else {
+		return true
+	}
+
+}
+
 func (T TenantSvc) GetUsers(TenantID string) []string {
 	//Get Users inside a Tenant
 	term.Write("Executing Method : Get Users (Inside a tenant)", term.Blank)
@@ -222,6 +239,21 @@ func (T TenantSvc) GetUsers(TenantID string) []string {
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return []string{}
+	}
+}
+
+func (T TenantSvc) GetUserDetails(TenantID string) []User {
+	//Get Users inside a Tenant
+	term.Write("Executing Method : Get Users Details (Inside a tenant)", term.Blank)
+
+	u, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+
+	if error == "" {
+		th := TenantHandler{}
+		return th.GetUsersForTenantInDetail(u, TenantID)
+	} else {
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
+		return []User{}
 	}
 }
 

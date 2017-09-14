@@ -325,6 +325,25 @@ func (h *TenantHandler) GetUsersForTenant(u session.AuthCertificate, TenantID st
 	}
 }
 
+func (h *TenantHandler) GetUsersForTenantInDetail(u session.AuthCertificate, TenantID string) []User {
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "users").GetOne().ByUniqueKey(TenantID).Ok()
+	var t TenantUsers
+	if err == "" {
+		err := json.Unmarshal(bytes, &t)
+		if err == nil {
+			ah := AuthHandler{}
+			return ah.GetMultipleUserDetails(t.Users)
+			//return t.Users
+		} else {
+			return []User{}
+			//return []string{}
+		}
+	} else {
+		return []User{}
+		//return []string{}
+	}
+}
+
 func (h *TenantHandler) AddUserToTenant(u session.AuthCertificate, users []InviteUsers) {
 	for _, user := range users {
 		var inputParams map[string]string
