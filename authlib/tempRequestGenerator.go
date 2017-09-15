@@ -64,17 +64,18 @@ func (r *tempRequestGenerator) Remove(o map[string]interface{}) {
 	client.Go("ignore", "com.duosoftware.auth", "tmprequestcodes").DeleteObject().WithKeyField("id").AndDeleteOne(o).Ok()
 }
 
-func (r *tempRequestGenerator) RemoveByEmail(email string) {
+func (r *tempRequestGenerator) RemoveByEmail(email, tid string) {
 	fmt.Println("Removing all request tokens for email : " + email)
-	for _, value := range r.GetTmpCodesByEmail(email) {
+	for _, value := range r.GetTmpCodesByEmail(email, tid) {
 		fmt.Println(value["id"])
 		client.Go("ignore", "com.duosoftware.auth", "tmprequestcodes").DeleteObject().WithKeyField("id").AndDeleteOne(value).Ok()
 	}
 }
 
-func (r *tempRequestGenerator) GetTmpCodesByEmail(Email string) (codes []map[string]string) {
+func (r *tempRequestGenerator) GetTmpCodesByEmail(Email, tid string) (codes []map[string]string) {
 	codes = make([]map[string]string, 0)
-	bytes, err := client.Go("ignore", "com.duosoftware.auth", "tmprequestcodes").GetMany().BySearching("email:" + Email).Ok()
+	//("Select * From usersubscriptionreq321 where Email ='" + u.Email + "'")
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "tmprequestcodes").GetMany().ByQuerying("Select * From tmprequestcodes where Email ='" + Email + "' AND TenantID='" + tid + "';").Ok()
 	if err == "" {
 		if bytes != nil {
 			_ = json.Unmarshal(bytes, &codes)

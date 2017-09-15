@@ -307,7 +307,7 @@ func (T TenantSvc) CancelAddTenantUser(email string) bool {
 			tmp.Remove(tmpObj)
 			th.RemoveAddUserRequest(email, addRequest.TenantID)
 			//Remove any tokens in tmprequest from a email
-			tmp.RemoveByEmail(email)
+			tmp.RemoveByEmail(email, addRequest.TenantID)
 			T.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.MsgJson("Successfully removed tenant invitation.")))
 			return true
 		} else {
