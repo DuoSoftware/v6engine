@@ -568,15 +568,19 @@ func (A Auth) AssignUserScopes(scopes []string, Email string) {
 		err = errors.New("No Securitytoken found in header.")
 	}
 
-	if err != nil {
-		fmt.Println(err.Error())
-		response.Status = false
-		response.Message = err.Error()
-		b, _ := json.Marshal(response)
-		A.ResponseBuilder().SetResponseCode(500).WriteAndOveride(b)
+	if A.IsServiceReferral {
+		//Do nothing for now
 	} else {
-		b, _ := json.Marshal(response)
-		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+		if err != nil {
+			fmt.Println(err.Error())
+			response.Status = false
+			response.Message = err.Error()
+			b, _ := json.Marshal(response)
+			A.ResponseBuilder().SetResponseCode(500).WriteAndOveride(b)
+		} else {
+			b, _ := json.Marshal(response)
+			A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+		}
 	}
 }
 

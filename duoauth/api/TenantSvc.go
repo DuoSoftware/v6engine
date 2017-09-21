@@ -194,15 +194,19 @@ func (T TenantSvc) CreateTenant(tenant Tenant) {
 		err = errors.New("Securitytoken not found in header.")
 	}
 
-	if err != nil {
-		response.Status = false
-		response.Message = err.Error()
-		response.Data = Tenant{}
-		b, _ := json.Marshal(response)
-		T.ResponseBuilder().SetResponseCode(500).WriteAndOveride(b)
+	if T.IsServiceReferral {
+		//Do nothing for now
 	} else {
-		b, _ := json.Marshal(response)
-		T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+		if err != nil {
+			response.Status = false
+			response.Message = err.Error()
+			response.Data = Tenant{}
+			b, _ := json.Marshal(response)
+			T.ResponseBuilder().SetResponseCode(500).WriteAndOveride(b)
+		} else {
+			b, _ := json.Marshal(response)
+			T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+		}
 	}
 }
 
