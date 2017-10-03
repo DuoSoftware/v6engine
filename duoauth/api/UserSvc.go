@@ -4,6 +4,7 @@ import (
 	"duov6.com/cebadapter"
 	"duov6.com/common"
 	"duov6.com/duoauth/azureapi"
+	"strconv"
 	// notifier "duov6.com/duonotifier/client"
 	// "duov6.com/objectstore/client"
 	// "duov6.com/session"
@@ -338,8 +339,15 @@ func (A Auth) CreateUser(u UserCreateInfo) {
 		headers["Authorization"] = "Bearer " + access_token
 		headers["Content-Type"] = "application/json"
 
+		isGeneratePwd := false
+
 		if u.Password == "" {
-			u.Password = common.GetGUID()
+			isGeneratePwd = true
+			u.Password = A.GeneratePassword()
+		}
+
+		if u.TenantType == "JIRA" {
+			isGeneratePwd = true
 		}
 
 		jsonString := `{
@@ -369,6 +377,10 @@ func (A Auth) CreateUser(u UserCreateInfo) {
 		if err == nil {
 			//send user create email
 			A.NotifyAccCreation(u.Email, u.Name)
+			if isGeneratePwd {
+				//send password email.
+				A.NotifyTempPwd(email, u)
+			}
 		}
 
 		if err == nil && u.TenantID != "" { //if user creation success and tenantid is not nil
@@ -607,6 +619,20 @@ func (a Auth) GetProfileImage(userObjectID string) (output string) {
 
 // notifications
 
+func (a Auth) NotifyTempPwd(email string, u UserCreateInfo) AuthResponse {
+	term.Write("Executing Method : Sending Temporary Email.", term.Blank)
+	response := AuthResponse{}
+
+	inputParams := make(map[string]string)
+	inputParams["@@CNAME@@"] = u.Name
+	inputParams["@@PASSWORD"] = u.Password
+	go notifier.Notify("ignore", "TempPwdAccCreation", email, inputParams, nil)
+
+	response.Status = true
+	response.Message = "User teporary pwd notified successfully."
+	return response
+}
+
 func (a Auth) NotifyAccCreation(email, name string) AuthResponse {
 	term.Write("Executing Method : Sending Registration Email.", term.Blank)
 	response := AuthResponse{}
@@ -636,6 +662,17 @@ func (a Auth) NotifyUserLogin(email, name, tid, host, broswer string) AuthRespon
 	response.Status = true
 	response.Message = "Login notified successfully."
 	return response
+}
+
+func (a Auth) GeneratePassword() (pwd string) {
+	strPart := common.RandText(10)
+	intPart := strconv.Itoa(common.RandomInteger(0, 1000))
+	symbolArray := "@#$%^&*-_+=[]{}|:',?/`~()"
+	symbolPart := symbolArray[common.RandomInteger(0, len(symbolArray))]
+	strPart[common.RandomInteger(0, len(strPart))] = intPart
+	strPart[common.RandomInteger(0, len(strPart))] = symbolPart
+	strPart[common.RandomInteger(0, len(strPart))] = strings.ToUpper(common.RandText(1))
+	return
 }
 
 //.......................................

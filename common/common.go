@@ -76,6 +76,10 @@ func RandomString(l int) string {
 	return string(bytes)
 }
 
+func RandomInteger(min, max int) int {
+	return randInt(min, max)
+}
+
 func randInt(min int, max int) int {
 	return min + rand.Intn(max-min)
 }
