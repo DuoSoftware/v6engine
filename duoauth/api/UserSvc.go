@@ -379,7 +379,7 @@ func (A Auth) CreateUser(u UserCreateInfo) {
 			A.NotifyAccCreation(u.Email, u.Name)
 			if isGeneratePwd {
 				//send password email.
-				A.NotifyTempPwd(email, u)
+				A.NotifyTempPwd(u.Email, u)
 			}
 		}
 
@@ -665,13 +665,15 @@ func (a Auth) NotifyUserLogin(email, name, tid, host, broswer string) AuthRespon
 }
 
 func (a Auth) GeneratePassword() (pwd string) {
-	strPart := common.RandText(10)
+	pwd = common.RandText(10)
 	intPart := strconv.Itoa(common.RandomInteger(0, 1000))
-	symbolArray := "@#$%^&*-_+=[]{}|:',?/`~()"
-	symbolPart := symbolArray[common.RandomInteger(0, len(symbolArray))]
-	strPart[common.RandomInteger(0, len(strPart))] = intPart
-	strPart[common.RandomInteger(0, len(strPart))] = symbolPart
-	strPart[common.RandomInteger(0, len(strPart))] = strings.ToUpper(common.RandText(1))
+	symbolArray := "@,#,$,%,^,&,*,-,_,+,=,[,],{,},|,:,?,/~,(,)"
+	tokens := strings.Split(symbolArray, ",")
+	symbolPart := tokens[common.RandomInteger(0, len(tokens))]
+	pwd += intPart
+	pwd += symbolPart
+	pwd += strings.ToUpper(common.RandText(1))
+	fmt.Println("Generated Password : " + pwd)
 	return
 }
 
