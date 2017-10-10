@@ -72,31 +72,33 @@ func Write(data interface{}, mType int) {
 		Lable = string(byteArray)
 	}
 
+	nowTimeStr := time.Now().Format("2006-01-02 15:04:05.000")
+
 	switch mType {
 	case Error:
 		if Config.ErrorLine {
-			color.Red(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+			color.Red(nowTimeStr + " [Error] " + Lable)
 		}
 	case Information:
 		if Config.InformationLine {
-			color.Cyan(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+			color.Cyan(nowTimeStr + " [Info] " + Lable)
 		}
 	case Debug:
 		if Config.DebugLine {
-			color.Green(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+			color.Green(nowTimeStr + " [Debug] " + Lable)
 		}
 	case Splash:
 		fmt.Println(FgBlack + BgWhite + Lable + Reset)
 	case Blank:
 		if Config.InformationLine {
-			color.Magenta(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+			color.Magenta(nowTimeStr + " [Log] " + Lable)
 		}
 	case Warning:
 		if Config.InformationLine {
-			color.Yellow(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+			color.Yellow(nowTimeStr + " [Warn] " + Lable)
 		}
 	default:
-		color.Cyan(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+		color.Cyan(nowTimeStr + " [Log] " + Lable)
 	}
 
 	// if currentPlugin != nil {
