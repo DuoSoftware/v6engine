@@ -596,7 +596,8 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 			fmt.Println("Adding User To Tenant Now")
 			th.AddUsersToTenant(o["domain"], o["tname"], a.UserID, o["level"])
 			inputParams["@@CNAME@@"] = o["name"]
-			inputParams["@@INVITEE@@"] = o["inviteeName"]
+			//inputParams["@@INVITEE@@"] = o["inviteeName"]
+			inputParams["@@INVITEE@@"] = o["email"]
 			inputParams["@@DOMAIN@@"] = o["domain"]
 			inputParams["@@TENANTID@@"] = o["TenantID"]
 
