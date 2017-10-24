@@ -555,6 +555,10 @@ func (T TenantSvc) AcceptRequest(email, RequestToken string) bool {
 				inputParams["@@INVITEE@@"] = o["email"]
 				inputParams["@@TENANTID@@"] = o["TenantID"]
 				//go notifier.Notify("ignore", "tenant_accepted_success", email, inputParams, nil)
+				fmt.Println("-----------------------------------")
+				fmt.Println(email)
+				fmt.Println(o["email"])
+				fmt.Println("-----------------------------------")
 				go notifier.Notify("ignore", "tenant_invitation_added_success", email, inputParams, nil)
 				th.RemoveAddUserRequest(o["email"], o["TenantID"])
 				return true
