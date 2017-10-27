@@ -7,6 +7,7 @@ environment_variables:
     GIT_PASSWORD: "DuoS1235"
     GO_VERSION: "1.7.4"
     GO: "/usr/local/go/bin"
+    BuildOutPath: "$PWD"
 
 phases:
   install:
@@ -15,12 +16,16 @@ phases:
 
 pre_build:
   commands:
-    - scripts/deploy-prebuild.sh
+    - rm -r "pkg" 
+    - mkdir "bin" && mkdir "pkg" && mkdir "src" 
+    - export PATH=$PATH:/usr/local/go/bin;
+    - export GOPATH=$PWD;
+    - git clone https://github.com/DuoSoftware/v6engine-deps $GOPATH/src
 
 build:
   commands:
-    - scripts/build.sh
+    - go build duoauth/duoauth.go
 artifacts:
   files:
-    - DuoAuth
+    - duoauth
 
