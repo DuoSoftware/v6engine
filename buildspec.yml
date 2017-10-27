@@ -20,5 +20,7 @@ pre_build:
 build:
   commands:
     - scripts/build.sh
-
+artifacts:
+  files:
+    - DuoAuth
 
