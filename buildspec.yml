@@ -1,0 +1,24 @@
+version: 0.1
+
+environment_variables:
+   plaintext:
+    GIT_USERNAME: "duobuilduser"
+    GIT_EMAIL: "duobuilduser@duosoftware.com"
+    GIT_PASSWORD: "DuoS1235"
+    GO_VERSION: "1.7.4"
+    GO: "/usr/local/go/bin"
+
+phases:
+  install:
+    commands:
+      - apt-get -y update && apt-get install -y python-software-properties
+
+pre_build:
+  commands:
+    - scripts/deploy-prebuild.sh
+
+build:
+  commands:
+    - scripts/build.sh
+
+
