@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha256"
+	//"duov6.com/cebadapter"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -200,17 +201,62 @@ func GetProcessorUsage() (value float64) {
 }
 
 func VerifyConfigFiles() (config map[string]interface{}) {
+	fmt.Println("Reading Environmental Variables...")
+
+	objOsUrl := os.Getenv("OBJECTSTORE_URL")
+	authOsUrl := os.Getenv("AUTH_URL")
+	cebOsUrl := os.Getenv("CEB_URL")
+	logOsUrl := os.Getenv("LOGSTASH_URL")
+
 	config = make(map[string]interface{})
+
 	content, err := ioutil.ReadFile("agent.config")
-	if err != nil {
-		//Agent File not Available
-		config["cebUrl"] = "localhost:5000"
-		config["canMonitorOutput"] = true
-		byteArray, _ := json.Marshal(config)
-		_ = ioutil.WriteFile("agent.config", byteArray, 0666)
-	} else {
+	if err == nil {
 		_ = json.Unmarshal(content, &config)
 	}
 
+	if config["cebUrl"] == nil {
+		config["cebUrl"] = "localhost:5000"
+	}
+
+	if cebOsUrl != "" {
+		config["cebUrl"] = cebOsUrl
+	}
+	if objOsUrl != "" {
+		config["objUrl"] = objOsUrl
+	}
+	if authOsUrl != "" {
+		config["authUrl"] = authOsUrl
+	}
+	if logOsUrl != "" {
+		config["logstashUrl"] = logOsUrl
+	}
+	config["canMonitorOutput"] = true
+
+	byteArray, _ := json.Marshal(config)
+	_ = ioutil.WriteFile("agent.config", byteArray, 0666)
+
+	fmt.Println(config)
+
+	return
+}
+
+var confTryTime int
+
+func VerifyGlobalConfig() (status bool) {
+	_, err := ioutil.ReadFile("globalConfig.StoreConfig.config")
+	if err == nil {
+		fmt.Println("Configuration has been verified.")
+	} else {
+		if confTryTime == 3 {
+			return false //lost hope...
+		} else {
+			fmt.Println("Configuration not verified. Waiting 1 seconds...")
+			time.Sleep(1 * time.Second)
+			confTryTime += 1
+			return VerifyGlobalConfig()
+		}
+	}
+	status = true
 	return
 }

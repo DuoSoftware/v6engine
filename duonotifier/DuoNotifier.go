@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"time"
 )
 
 func main() {
@@ -17,21 +19,32 @@ func main() {
 }
 
 func initializeCEBConfig() {
+	endpoints.StartTime = time.Now()
 	common.VerifyConfigFiles()
 	initializeSettingsFile()
 	inititalizeObjectStoreConfig()
 }
 
 func initializeSettingsFile() {
+	From := os.Getenv("SMTP_ADDRESS")
 	content, err := ioutil.ReadFile("settings.config")
 	if err != nil {
 		data := make(map[string]interface{})
-		data["From"] = "DuoWorld.com <mail-noreply@duoworld.com>"
+		if From == "" {
+			data["From"] = "DuoWorld.com <mail-noreply@duoworld.com>"
+		} else {
+			data["From"] = From
+		}
 		dataBytes, _ := json.Marshal(data)
 		_ = ioutil.WriteFile("settings.config", dataBytes, 0666)
 	} else {
 		vv := make(map[string]interface{})
 		_ = json.Unmarshal(content, &vv)
+		if From != "" {
+			vv["From"] = From
+		}
+		dataBytes, _ := json.Marshal(vv)
+		_ = ioutil.WriteFile("settings.config", dataBytes, 0666)
 		fmt.Println(vv)
 	}
 }

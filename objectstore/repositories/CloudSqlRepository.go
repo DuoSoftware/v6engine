@@ -10,6 +10,7 @@ import (
 	"duov6.com/queryparser"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
@@ -211,6 +212,7 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 	response := RepositoryResponse{}
 	if request.Body.Query.Parameters != "*" {
 		if strings.Contains(request.Body.Query.Type, "Query") {
+			//ObjectStore SQL format
 			parameters := make(map[string]interface{})
 
 			if request.Extras["skip"] != nil {
@@ -242,6 +244,7 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 			query := formattedQuery
 			response = repository.queryCommonMany(query, request)
 		} else if strings.Contains(request.Body.Query.Type, "TSQL") {
+			//Transactional SQL
 			query := request.Body.Query.Parameters
 			conn, _ := repository.GetConnection(request)
 			err, _ := repository.ExecuteNonQuery(conn, query, request)
@@ -252,6 +255,27 @@ func (repository CloudSqlRepository) GetQuery(request *messaging.ObjectRequest) 
 				response.IsSuccess = true
 				response.Message = "Successfully Executed TSQL Query."
 			}
+		} else if strings.Contains(request.Body.Query.Type, "SSQL") {
+			//Standard SQL
+			request.Log("Warning : Language specific Standard SQL mode. SQL query wont be modified according to repository.")
+			request.Log("Warning : All OrderBy, Skip, Take values by URL Params and Headers will be ignored!")
+
+			query := request.Body.Query.Parameters
+			result, _ := repository.ExecuteSSQLQueryMany(request, query)
+
+			bytes, _ := json.Marshal(result)
+
+			if checkEmptyByteArray(bytes) {
+				response.GetResponseWithBody(getEmptyByteObject())
+			} else {
+				bytesInString := string(bytes)
+				bytesInString = strings.Replace(bytesInString, "\\u003e", ">", -1)
+				bytesInString = strings.Replace(bytesInString, "\\u003c", "<", -1)
+				bytesInString = strings.Replace(bytesInString, "u003e", ">", -1)
+				bytesInString = strings.Replace(bytesInString, "u003c", "<", -1)
+				response.GetResponseWithBody([]byte(bytesInString))
+			}
+
 		}
 	} else {
 		response = repository.GetAll(request)
@@ -699,6 +723,11 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 	domain := repository.GetDatabaseName(request.Controls.Namespace)
 
 	switch queryType {
+	case "getguid":
+		guid := common.GetGUID()
+		response.IsSuccess = true
+		response.Body = []byte(guid)
+		return response
 	case "getfields":
 		request.Log("Debug : Starting GET-FIELDS sub routine!")
 		query := "EXPLAIN " + domain + "." + request.Controls.Class + ";"
@@ -970,6 +999,9 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 				if CheckRedisAvailability(request) {
 					id := keygenerator.GetTentativeID(request, "CLOUDSQL", value)
 
+					intVal, _ := strconv.Atoi(id)
+					id = strconv.Itoa(intVal + 1)
+
 					for x := 0; x < len(request.Controls.Class); x++ {
 						if (len(prefix) + len(id)) < len(request.Controls.Class) {
 							prefix += "0"
@@ -978,9 +1010,8 @@ func (repository CloudSqlRepository) Special(request *messaging.ObjectRequest) R
 						}
 					}
 
-					intVal, _ := strconv.Atoi(id)
-					id = strconv.Itoa(intVal + 1)
 					id = prefix + id
+
 					response.Body = []byte(id)
 					response.IsSuccess = true
 					response.Message = "Successfully Completed!"
@@ -1226,7 +1257,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 	domain := request.Controls.Namespace
 	class := request.Controls.Class
 
-	isOkay := true
+	var processError error
 
 	if request.Body.Object != nil || len(request.Body.Objects) == 1 {
 
@@ -1241,25 +1272,21 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 		insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, obj, conn)
 		err, _ := repository.ExecuteNonQuery(conn, insertScript, request)
 		if err != nil {
-			if !strings.Contains(err.Error(), "specified twice") {
+			if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
 				updateScript := repository.GetSingleObjectUpdateQuery(request, domain, class, obj, conn)
 				err, message := repository.ExecuteNonQuery(conn, updateScript, request)
 				if err != nil {
-					isOkay = false
+					processError = err
 					request.Log("Error : " + err.Error())
 				} else {
 					if message == "No Rows Changed" {
 						request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
 					}
-					isOkay = true
 				}
 			} else {
-				isOkay = false
+				processError = err
 			}
-		} else {
-			isOkay = true
 		}
-
 	} else {
 
 		//execute insert queries
@@ -1268,11 +1295,10 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 		for x := 0; x < len(scripts); x++ {
 			script := scripts[x]["query"].(string)
 			if err == nil && script != "" {
-
 				err, _ := repository.ExecuteNonQuery(conn, script, request)
 				if err != nil {
 					request.Log("Error : " + err.Error())
-					if strings.Contains(err.Error(), "Duplicate entry") {
+					if strings.Contains(err.Error(), "Error 1062: Duplicate entry") {
 						errorBlock := scripts[x]["queryObject"].([]map[string]interface{})
 						for _, singleQueryObject := range errorBlock {
 							insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, singleQueryObject, conn)
@@ -1283,7 +1309,7 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 									err2, message := repository.ExecuteNonQuery(conn, updateScript, request)
 									if err2 != nil {
 										request.Log("Error : " + err2.Error())
-										isOkay = false
+										processError = err2
 									} else {
 										if message == "No Rows Changed" {
 											request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + singleQueryObject[request.Body.Parameters.KeyProperty].(string))
@@ -1294,27 +1320,31 @@ func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest
 						}
 					} else {
 						//if strings.Contains(err.Error(), "doesn't exist") {
-						isOkay = false
+						processError = err
 						break
 						//}
 					}
 				}
 
 			} else {
-				isOkay = false
-				request.Log("Error : " + err.Error())
+				if err != nil {
+					processError = err
+					request.Log("Error : " + err.Error())
+				} else {
+					processError = errors.New("Error : Empty Multiple Insert Script!")
+				}
 			}
 		}
 
 	}
 
-	if isOkay {
+	if processError == nil {
 		response.IsSuccess = true
 		response.Message = "Successfully stored object(s) in CloudSQL"
 		request.Log("Debug : " + response.Message)
 	} else {
 		response.IsSuccess = false
-		response.Message = "Error storing/updating all object(s) in CloudSQL."
+		response.Message = "Error storing/updating all object(s) in CloudSQL : " + processError.Error()
 		request.Log("Error : " + response.Message)
 	}
 
@@ -2157,3 +2187,205 @@ func (repository CloudSqlRepository) CloseConnection(conn *sql.DB) {
 	// 	request.Log("Connection Closed!")
 	// }
 }
+
+/*
+
+func (repository CloudSqlRepository) queryStore(request *messaging.ObjectRequest) RepositoryResponse {
+	response := RepositoryResponse{}
+
+	conn, _ := repository.GetConnection(request)
+
+	domain := request.Controls.Namespace
+	class := request.Controls.Class
+
+	isOkay := true
+
+	if request.Body.Object != nil || len(request.Body.Objects) == 1 {
+
+		obj := make(map[string]interface{})
+
+		if request.Body.Object != nil {
+			obj = request.Body.Object
+		} else {
+			obj = request.Body.Objects[0]
+		}
+
+		insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, obj, conn)
+		err, _ := repository.ExecuteNonQuery(conn, insertScript, request)
+		if err != nil {
+			if !strings.Contains(err.Error(), "specified twice") {
+				updateScript := repository.GetSingleObjectUpdateQuery(request, domain, class, obj, conn)
+				err, message := repository.ExecuteNonQuery(conn, updateScript, request)
+				if err != nil {
+					isOkay = false
+					request.Log("Error : " + err.Error())
+				} else {
+					if message == "No Rows Changed" {
+						request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + obj[request.Body.Parameters.KeyProperty].(string))
+					}
+					isOkay = true
+				}
+			} else {
+				isOkay = false
+			}
+		} else {
+			isOkay = true
+		}
+
+	} else {
+
+		//execute insert queries
+		scripts, err := repository.GetMultipleStoreScripts(conn, request)
+
+		for x := 0; x < len(scripts); x++ {
+			script := scripts[x]["query"].(string)
+			if err == nil && script != "" {
+
+				err, _ := repository.ExecuteNonQuery(conn, script, request)
+				if err != nil {
+					request.Log("Error : " + err.Error())
+					if strings.Contains(err.Error(), "Duplicate entry") {
+						errorBlock := scripts[x]["queryObject"].([]map[string]interface{})
+						for _, singleQueryObject := range errorBlock {
+							insertScript := repository.GetSingleObjectInsertQuery(request, domain, class, singleQueryObject, conn)
+							err1, _ := repository.ExecuteNonQuery(conn, insertScript, request)
+							if err1 != nil {
+								if !strings.Contains(err.Error(), "specified twice") {
+									updateScript := repository.GetSingleObjectUpdateQuery(request, domain, class, singleQueryObject, conn)
+									err2, message := repository.ExecuteNonQuery(conn, updateScript, request)
+									if err2 != nil {
+										request.Log("Error : " + err2.Error())
+										isOkay = false
+									} else {
+										if message == "No Rows Changed" {
+											request.Log("Info : No Rows Changed for : " + request.Body.Parameters.KeyProperty + " = " + singleQueryObject[request.Body.Parameters.KeyProperty].(string))
+										}
+									}
+								}
+							}
+						}
+					} else {
+						//if strings.Contains(err.Error(), "doesn't exist") {
+						isOkay = false
+						break
+						//}
+					}
+				}
+
+			} else {
+				isOkay = false
+				request.Log("Error : " + err.Error())
+			}
+		}
+
+	}
+
+	if isOkay {
+		response.IsSuccess = true
+		response.Message = "Successfully stored object(s) in CloudSQL"
+		request.Log("Debug : " + response.Message)
+	} else {
+		response.IsSuccess = false
+		response.Message = "Error storing/updating all object(s) in CloudSQL."
+		request.Log("Error : " + response.Message)
+	}
+
+	repository.CloseConnection(conn)
+	return response
+}
+
+*/
+
+func (repository CloudSqlRepository) ExecuteSSQLQueryMany(request *messaging.ObjectRequest, query string) (result []map[string]interface{}, err error) {
+	conn, _ := repository.GetConnection(request)
+	rows, err := conn.Query(query)
+
+	if err == nil {
+		result, err = repository.SSQLRowsToMap(request, rows)
+	} else {
+		if strings.HasPrefix(err.Error(), "Error 1146") {
+			err = nil
+			result = make([]map[string]interface{}, 0)
+		}
+	}
+
+	return
+}
+
+func (repository CloudSqlRepository) SSQLRowsToMap(request *messaging.ObjectRequest, rows *sql.Rows) (tableMap []map[string]interface{}, err error) {
+
+	columns, _ := rows.Columns()
+	count := len(columns)
+	values := make([]interface{}, count)
+	valuePtrs := make([]interface{}, count)
+
+	for rows.Next() {
+
+		for i, _ := range columns {
+			valuePtrs[i] = &values[i]
+		}
+
+		rows.Scan(valuePtrs...)
+
+		rowMap := make(map[string]interface{})
+
+		for i, col := range columns {
+			if col == "__os_id" || col == "__osHeaders" {
+				continue
+			}
+			var v interface{}
+			val := values[i]
+			b, ok := val.([]byte)
+
+			if ok {
+				v = repository.GetSSQLInterfaceValue(b)
+			} else {
+				v = val
+			}
+			rowMap[col] = v
+		}
+		tableMap = append(tableMap, rowMap)
+	}
+
+	return
+}
+
+func (repository CloudSqlRepository) GetSSQLInterfaceValue(input []byte) (output interface{}) {
+	inputInString := string(input)
+
+	if intValue, err := strconv.Atoi(inputInString); err == nil {
+		output = intValue
+	} else if floatValue, err := strconv.ParseFloat(inputInString, 64); err == nil {
+		output = floatValue
+	} else if boolValue, err := strconv.ParseBool(inputInString); err == nil {
+		output = boolValue
+	} else if err := json.Unmarshal(input, &output); err == nil {
+		//Unmarshalled to the output variable
+	} else {
+		if inputInString == "\u0000" {
+			output = false
+		} else if inputInString == "\u0001" {
+			output = true
+		} else {
+			output = inputInString
+		}
+	}
+	return
+}
+
+// func (repository CloudSqlRepository) GetSSQLInterfaceValue(input []byte) (output interface{}) {
+
+// 	// var boolValue bool
+// 	// var intValue int
+// 	// var floatValue float64
+// 	//var stringVal string
+// 	// var interfaceValue interface{}
+
+// 	if stringVal, ok := inputVal.(string); ok {
+// 		output = stringVal
+// 	} else {
+// 		fmt.Println("Damn")
+// 	}
+
+// 	return
+// }

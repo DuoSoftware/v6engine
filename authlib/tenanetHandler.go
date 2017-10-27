@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type Tenant struct {
@@ -90,6 +91,11 @@ func (h *TenantHandler) CreateTenant(t Tenant, user session.AuthCertificate, upd
 				term.Write("Auto Gen TID  "+t.TenantID+" New Tenant "+t.Name, term.Debug)
 			}
 			term.Write("Save Tenant saving Tenant  "+t.Name+" New Tenant "+t.Name, term.Debug)
+
+			//Add Created Date and time
+
+			t.OtherData["Timestamp"] = time.Now().UTC().Format(time.RFC3339)
+
 			var inputParams map[string]string
 			inputParams = make(map[string]string)
 			inputParams["@@email@@"] = user.Email
@@ -319,6 +325,25 @@ func (h *TenantHandler) GetUsersForTenant(u session.AuthCertificate, TenantID st
 	}
 }
 
+func (h *TenantHandler) GetUsersForTenantInDetail(u session.AuthCertificate, TenantID string) []User {
+	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "users").GetOne().ByUniqueKey(TenantID).Ok()
+	var t TenantUsers
+	if err == "" {
+		err := json.Unmarshal(bytes, &t)
+		if err == nil {
+			ah := AuthHandler{}
+			return ah.GetMultipleUserDetails(t.Users)
+			//return t.Users
+		} else {
+			return []User{}
+			//return []string{}
+		}
+	} else {
+		return []User{}
+		//return []string{}
+	}
+}
+
 func (h *TenantHandler) AddUserToTenant(u session.AuthCertificate, users []InviteUsers) {
 	for _, user := range users {
 		var inputParams map[string]string
@@ -395,19 +420,14 @@ func (h *TenantHandler) RequestToTenant(u session.AuthCertificate, TenantID stri
 		//Email to Tenant Owners
 		//Get UserIDs of Tenant Owners and send email
 		th := TenantHandler{}
-		adminUserIDs := th.GetTenantAdmin(TenantID)
+		adminUsers := th.GetTenantAdmin(TenantID)
 
-		ah := AuthHandler{}
-		for _, userid := range adminUserIDs {
-			user, userError := ah.GetUserByID(userid)
-			if userError == "" {
-				inputParams["@@CNAME@@"] = user.Name
-				inputParams["@@CEMAIL@@"] = u.Email
-				inputParams["@@DOMAIN@@"] = TenantID
-				go notifier.Notify("ignore", "tenant_invitation_user_request", user.EmailAddress, inputParams, nil)
-			} else {
-				term.Write("No such UserID exists. Error occured at RequestToTenant() : "+userError, term.Error)
-			}
+		for _, user := range adminUsers {
+			inputParams["@@CNAME@@"] = user["Name"]
+			inputParams["@@CEMAIL@@"] = u.Email
+			inputParams["@@DOMAIN@@"] = TenantID
+			go notifier.Notify("ignore", "tenant_invitation_user_request", user["EmailAddress"], inputParams, nil)
+
 		}
 
 		return true
@@ -423,6 +443,52 @@ func (h *TenantHandler) RemovePendingRequest(TID string, email string) {
 	o.TenantID = TID
 	client.Go("ignore", TID, "usersubscriptionreq321").DeleteObject().WithKeyField("Email").AndDeleteOne(o).Ok()
 	client.Go("ignore", "com.duosoftware.tenant", "usersubscriptionreq321").DeleteObject().WithKeyField("TenantID").AndDeleteOne(o).Ok()
+}
+
+func (h *TenantHandler) SavePendingAddUserRequest(request PendingUserRequest) {
+	client.Go("ignore", request.TenantID, "AddUserRequestLogs").StoreObject().WithKeyField("Email").AndStoreOne(request).Ok()
+}
+
+func (t *TenantHandler) GetPendingAddUserRequest(email, tenant string) PendingUserRequest {
+	request := PendingUserRequest{}
+	bytes, _ := client.Go("ignore", tenant, "AddUserRequestLogs").GetOne().ByUniqueKey(email).Ok()
+	_ = json.Unmarshal(bytes, &request)
+	return request
+}
+
+func (h *TenantHandler) RemoveAddUserRequest(email string, tenant string) {
+	o := PendingUserRequest{}
+	o.Email = email
+	client.Go("ignore", tenant, "AddUserRequestLogs").DeleteObject().WithKeyField("Email").AndDeleteOne(o).Ok()
+}
+
+func (h *TenantHandler) GetAddUserRequests(u session.AuthCertificate) ([]PendingUserRequest, string) {
+	//o := make([]map[string]string{}, 0)
+	var o []PendingUserRequest
+	//bytes, err := client.Go("ignore", u.Domain, "usersubscriptionreq321").GetMany().All().Ok() // fetech user autherized
+	bytes, err := client.Go("ignore", u.Domain, "AddUserRequestLogs").GetMany().ByQuerying("*").Ok() // fetech user autherized
+	//term.Write("GetRequestCode "+requestCode+"  ", term.Debug)
+	term.Write(u.Domain, term.Debug)
+	term.Write(string(bytes[:]), term.Debug)
+	if err == "" {
+		if bytes != nil {
+			//var uList LoginSessions
+			//var data []map[string]interface{} // := make(map[string]interface{})
+			err := json.Unmarshal(bytes, &o)
+			if err == nil {
+				//Ttime2 := time.Now().UTC()
+				term.Write("Object Retrived", term.Debug)
+
+				term.Write(o, term.Debug)
+				return o, ""
+			} else {
+				term.Write("GetRequestCode err "+err.Error(), term.Error)
+			}
+		}
+	} else {
+		term.Write("GetRequestCode err "+err, term.Error)
+	}
+	return o, "Incorrect Request Code."
 }
 
 func (h *TenantHandler) GetPendingRequests(u session.AuthCertificate) ([]PendingUserRequest, string) {
@@ -620,11 +686,12 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 			client.Go("ignore", "com.duosoftware.tenant", "deniedUserTemp").StoreObject().WithKeyField("UserID").AndStoreOne(denyMap).Ok()
 			//Adding to denied list ends here
 
-			//users are found.... deactive them
+			//users are found.... delete them
 			updateUser := u[0]
-			updateUser.Active = false
+			updateUser.Status = false
 			term.Write("Updating the New user as Disabled since no tenants are remaining : "+updateUser.EmailAddress, term.Debug)
-			client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(updateUser).Ok()
+			//client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(updateUser).Ok()
+			client.Go("ignore", "com.duosoftware.auth", "users").DeleteObject().WithKeyField("EmailAddress").AndDeleteObject(updateUser).Ok()
 
 			//Clear All Sessions
 			sessionBytes, _ := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("UserID:" + updateUser.UserID).Ok()
@@ -680,7 +747,10 @@ func (h *TenantHandler) GetDefaultTenant(UserID string) Tenant {
 		bytes1, _ := client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").GetOne().ByUniqueKey(UserID).Ok()
 		_ = json.Unmarshal(bytes1, &data)
 
-		teanantID := data.TenantIDs[0].TenantID
+		var teanantID string
+		if len(data.TenantIDs) > 0 {
+			teanantID = data.TenantIDs[0].TenantID
+		}
 
 		if teanantID != "" {
 
@@ -714,9 +784,9 @@ func (h *TenantHandler) SetDefaultTenant(UserID string, TenantID string) bool {
 	return false
 }
 
-func (h *TenantHandler) GetTenantAdmin(TenantID string) []string {
+func (h *TenantHandler) GetTenantAdmin(TenantID string) []map[string]string {
 
-	adminUsers := make([]string, 0)
+	adminUsers := make([]map[string]string, 0)
 
 	bytes, err := client.Go("ignore", "com.duosoftware.tenant", "authorized").GetMany().BySearching("TenantID:" + TenantID).Ok()
 	if err != "" {
@@ -730,7 +800,15 @@ func (h *TenantHandler) GetTenantAdmin(TenantID string) []string {
 		} else {
 			for _, obj := range data {
 				if strings.Contains(obj["SecurityLevel"].(string), "admin") {
-					adminUsers = append(adminUsers, obj["UserID"].(string))
+					ah := AuthHandler{}
+					usr, errString := ah.GetUserByID(obj["UserID"].(string))
+					if strings.TrimSpace(errString) == "" {
+						object := make(map[string]string)
+						object["UserID"] = usr.UserID
+						object["EmailAddress"] = usr.EmailAddress
+						object["Name"] = usr.Name
+						adminUsers = append(adminUsers, object)
+					}
 				}
 			}
 			return adminUsers

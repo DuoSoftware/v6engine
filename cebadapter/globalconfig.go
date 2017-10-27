@@ -1,10 +1,15 @@
 package cebadapter
 
 import (
-"duov6.com/ceb"
-"duov6.com/config"
-"encoding/json"
-"fmt"
+	"bytes"
+	"duov6.com/ceb"
+	"duov6.com/config"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
 )
 
 var globalConfigs map[string][]interface{}
@@ -17,7 +22,7 @@ func GetLatestGlobalConfig(name string, fn func(data []interface{})) {
 
 	if globalConfigs[name] == nil {
 
-		if (checkLocalCache(name)){
+		if checkLocalCache(name) {
 			fmt.Println("Store Configuration loaded from LOCAL CACHE!!!!!!!")
 			fn(globalConfigs[name])
 			return
@@ -40,10 +45,10 @@ func GetLatestGlobalConfig(name string, fn func(data []interface{})) {
 func checkLocalCache(name string) bool {
 	isLoadedFromCache := false
 
-	bytes,err := config.Get("globalConfig." + name)
+	bytes, err := config.Get("globalConfig." + name)
 	if err == nil {
 		isLoadedFromCache = true
-		configData := make([]interface{},0)
+		configData := make([]interface{}, 0)
 		err = json.Unmarshal(bytes, &configData)
 		globalConfigs[name] = configData
 	}
@@ -51,14 +56,53 @@ func checkLocalCache(name string) bool {
 	return isLoadedFromCache
 }
 
+func GetGlobalConfigFromREST(name string) bool {
+	if globalConfigs == nil {
+		globalConfigs = make(map[string][]interface{})
+	}
 
-func setLocalCache(name string, data []interface{}){
+	//get ceb url...
+	var cebUrl string
+	data, err := ioutil.ReadFile("./agent.config")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+
+	settings := make(map[string]interface{})
+	_ = json.Unmarshal(data, &settings)
+	cebUrl = settings["cebUrl"].(string)
+
+	//Read Configs
+	url := cebUrl + "/command/getglobalconfig/"
+	postBody := `{"class":"` + name + `"}`
+
+	url = strings.Replace(url, "5000", "3500", -1)
+	url = "http://" + url
+	fmt.Println(url)
+	var body []byte
+	err, body = GetConfigRest(url, []byte(postBody))
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+
+	restData := make(map[string]interface{})
+	_ = json.Unmarshal(body, &restData)
+
+	configData := restData["data"].(map[string]interface{})["data"].(map[string]interface{})["config"].([]interface{})
+	SetGlobalConfig(name, configData)
+	return true
+}
+
+func setLocalCache(name string, data []interface{}) {
 	dataset, err := json.Marshal(data)
 
-	if err ==nil {
+	if err == nil {
 		plainString := string(dataset[:len(dataset)])
-		config.Save("globalConfig." + name, plainString)
-	}else{
+		config.Save("globalConfig."+name, plainString)
+	} else {
 		fmt.Println(err.Error())
 	}
 }
@@ -79,4 +123,23 @@ func SetGlobalConfig(key string, value []interface{}) {
 		delete(funcQueue, key)
 
 	}
+}
+
+//helper functions
+func GetConfigRest(url string, JSON_DATA []byte) (err error, body []byte) {
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(JSON_DATA))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("SecurityToken", "ignore")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		err = errors.New("Connection Failed!")
+	} else {
+		defer resp.Body.Close()
+		body, _ = ioutil.ReadAll(resp.Body)
+		if resp.StatusCode != 200 {
+			err = errors.New(string(body))
+		}
+	}
+	return
 }

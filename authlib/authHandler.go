@@ -8,6 +8,7 @@ import (
 	"duov6.com/session"
 	//"duov6.com/config"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -112,6 +113,8 @@ func (h *AuthHandler) CanLogin(email, domain string) (bool, string) {
 
 //CheckLoginConcurrency helps to check and block the concurrent user logins
 func (h *AuthHandler) CheckLoginConcurrency(email string) (bool, string) {
+	fmt.Println("Checking Login Concurrency : " + email)
+	fmt.Println(Config)
 	if Config.NumberOFUserLogins != 0 {
 		bytes, err := client.Go("ignore", "com.duosoftware.auth", "loginsessions").GetOne().ByUniqueKey(email).Ok() // fetech user autherized
 		term.Write("CanLogin For Login "+email+" Domain ", term.Debug)
@@ -120,13 +123,25 @@ func (h *AuthHandler) CheckLoginConcurrency(email string) (bool, string) {
 				var uList LoginSessions
 				err := json.Unmarshal(bytes, &uList)
 				if err == nil {
+					fmt.Print("Concurrency Count from Object : ")
+					fmt.Println(uList.Count)
+					fmt.Print("Allowed User Login Count :")
+					fmt.Println(Config.NumberOFUserLogins)
 					if uList.Count >= Config.NumberOFUserLogins {
 						return false, "Login Exceeeded please logout your sessions."
 					}
+				} else {
+					fmt.Println("Error : " + err.Error())
 				}
+			} else {
+				fmt.Println("Nil Bytes!" + string(bytes))
 			}
-		}
 
+		} else {
+			fmt.Println("Error : " + err)
+		}
+	} else {
+		fmt.Println("No Number of Logins found.")
 	}
 
 	return true, ""
@@ -174,6 +189,9 @@ func (a *AuthHandler) LogFailedAttemts(email, domain, blockstatus string) {
 			if err == nil {
 				fmt.Println(x)
 				x.Count = x.Count + 1
+				if x.Count < 0 {
+					x.Count = 0
+				}
 				//x.LastAttemttime = ""
 				uList = x
 			}
@@ -202,7 +220,7 @@ func (a *AuthHandler) LogLoginSessions(email, domain string, item int64) {
 			fmt.Println("Attem")
 			err := json.Unmarshal(bytes, &x)
 			fmt.Println(err)
-			fmt.Println(string(bytes))
+			//fmt.Println(string(bytes))
 			if err == nil {
 				fmt.Println(x)
 				x.Count = x.Count + item
@@ -285,7 +303,7 @@ func (h *AuthHandler) AddSession(a AuthCertificate) {
 
 // LogOut make you logout,
 func (h *AuthHandler) LogOut(a AuthCertificate) {
-	//client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().ByUniqueKey(a.SecurityToken)
+	/*//client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().ByUniqueKey(a.SecurityToken)
 	client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(a).Ok()
 	//client.Go("ignore", "s.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 	h.LogoutClildSessions(a.SecurityToken)
@@ -294,7 +312,25 @@ func (h *AuthHandler) LogOut(a AuthCertificate) {
 	}
 	term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
 	//h.Release(a.Email)
-	//return true
+	//return true*/
+
+	sessionCert := session.AuthCertificate{}
+	sessionCert.UserID = a.UserID
+	sessionCert.Username = a.Username
+	sessionCert.Name = a.Name
+	sessionCert.Email = a.Email
+	sessionCert.SecurityToken = a.SecurityToken
+	sessionCert.Domain = a.Domain
+	sessionCert.DataCaps = a.DataCaps
+	sessionCert.ClientIP = a.ClientIP
+	sessionCert.MainST = ""
+	sessionCert.Otherdata = a.Otherdata
+
+	session.LogOut(sessionCert)
+	// if Config.NumberOFUserLogins != 0 {
+	// 	h.LogLoginSessions(a.Email, a.Domain, -1)
+	// }
+	term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
 }
 
 func (h *AuthHandler) LogoutClildSessions(SecurityToken string) {
@@ -353,7 +389,6 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 	a, err := session.GetSession(key, Domain)
 	var c AuthCertificate
 	if err == "" {
-
 		c.ClientIP = a.ClientIP
 		c.DataCaps = a.DataCaps
 		c.Domain = a.Domain
@@ -400,7 +435,7 @@ func (h *AuthHandler) GetSession(key, Domain string) (AuthCertificate, string) {
 		term.Write("GetSession Error "+err, term.Error)
 	}
 	term.Write("GetSession No Session for SecurityToken "+key, term.Debug)
-	return c, "Error Session Not Found"
+	return c, err
 }
 
 func (h *AuthHandler) GetSecretKey(key string) string {
@@ -450,6 +485,146 @@ func (h *AuthHandler) ForgetPassword(emailaddress string) bool {
 	return false
 }
 
+func (h *AuthHandler) RequestResetPassword(emailaddress string) AuthResponse {
+	authResponse := AuthResponse{}
+	otherdata := make(map[string]interface{})
+	authResponse.OtherData = otherdata
+	//DB Record Format :  Email(PK), timestamp, ResetRequestCount
+
+	bytesUsers, errR := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(emailaddress).Ok()
+	if errR != "" || len(bytesUsers) < 4 {
+		authResponse.Status = false
+		if errR != "" {
+			authResponse.Message = "Error : " + errR
+		} else {
+			authResponse.Message = "User doesn't exist."
+		}
+		return authResponse
+	}
+
+	//Check DB for record
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "pwd_reset_requests").GetOne().ByUniqueKey(emailaddress).Ok()
+	if err != "" {
+		authResponse.Status = false
+		authResponse.Message = "Error : " + err
+		return authResponse
+	}
+
+	tokenObject := ResetPasswordToken{}
+	tokenObject.Email = emailaddress
+	tokenObject.Token = common.RandText(10)
+
+	requestObj := ResetPasswordRequests{}
+	_ = json.Unmarshal(bytes, &requestObj)
+
+	if requestObj.Email == "" {
+		//New Password Request. Save Request in DB
+		requestObj.Email = emailaddress
+		requestObj.Timestamp = time.Now().UTC().Format(time.RFC3339)
+		requestObj.ResetRequestCount = 1
+		client.Go("ignore", "com.duosoftware.auth", "pwd_reset_requests").StoreObject().WithKeyField("Email").AndStoreOne(requestObj).Ok()
+
+		//Save Token in DB
+		client.Go("ignore", "com.duosoftware.auth", "pwd_reset_tokens").StoreObject().WithKeyField("Email").AndStoreOne(tokenObject).Ok()
+
+		//Send Email with Link+Token
+		inputParams := make(map[string]string)
+		inputParams["@@CODE@@"] = tokenObject.Token
+		go notifier.Notify("ignore", "Password_Reset_Request", emailaddress, inputParams, nil)
+	} else {
+		//Password re-request. Check if number of reset requests in current hour is more than 10
+		//if so Reject. Else proceed.
+		objectTime, _ := time.Parse(time.RFC3339, requestObj.Timestamp)
+		timeDifference := time.Now().UTC().Sub(objectTime)
+		timeDifferenceInHours := int(timeDifference.Hours())
+
+		if requestObj.ResetRequestCount < 10 {
+			//Looks good. Proceed.
+			//increment count and save request again
+			requestObj.ResetRequestCount++
+			client.Go("ignore", "com.duosoftware.auth", "pwd_reset_requests").StoreObject().WithKeyField("Email").AndStoreOne(requestObj).Ok()
+
+			//generate new token. and save in db
+			client.Go("ignore", "com.duosoftware.auth", "pwd_reset_tokens").StoreObject().WithKeyField("Email").AndStoreOne(tokenObject).Ok()
+
+			//Send Email with Link+Token
+			inputParams := make(map[string]string)
+			inputParams["@@CODE@@"] = tokenObject.Token
+			go notifier.Notify("ignore", "Password_Reset_Request", emailaddress, inputParams, nil)
+
+		} else {
+			if timeDifferenceInHours == 0 {
+				//deny
+				authResponse.Status = false
+				authResponse.Message = "Error : Too many password requests received within an hour."
+				return authResponse
+			} else {
+				//reset request count and continue
+				requestObj.ResetRequestCount = 1
+				requestObj.Timestamp = time.Now().UTC().Format(time.RFC3339)
+				client.Go("ignore", "com.duosoftware.auth", "pwd_reset_requests").StoreObject().WithKeyField("Email").AndStoreOne(requestObj).Ok()
+
+				//generate new token. and save in db
+				client.Go("ignore", "com.duosoftware.auth", "pwd_reset_tokens").StoreObject().WithKeyField("Email").AndStoreOne(tokenObject).Ok()
+
+				//Send Email with Link+Token
+				inputParams := make(map[string]string)
+				inputParams["@@CODE@@"] = tokenObject.Token
+				go notifier.Notify("ignore", "Password_Reset_Request", emailaddress, inputParams, nil)
+			}
+		}
+	}
+
+	authResponse.Status = true
+	authResponse.Message = "Password reset link sent to Email Address."
+
+	return authResponse
+}
+
+func (h *AuthHandler) ResetPassword(Password, Token string) AuthResponse {
+	authResponse := AuthResponse{}
+	otherdata := make(map[string]interface{})
+	authResponse.OtherData = otherdata
+
+	//read token
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "pwd_reset_tokens").GetOne().BySearching("Token:" + Token).Ok()
+	if err != "" {
+		authResponse.Status = false
+		authResponse.Message = "Error : " + err
+		return authResponse
+	}
+
+	if len(bytes) < 4 {
+		authResponse.Status = false
+		authResponse.Message = "Error : No such Token exists"
+		return authResponse
+	}
+
+	var tokens []ResetPasswordToken
+	_ = json.Unmarshal(bytes, &tokens)
+	tokenObj := tokens[0]
+
+	u, error := h.GetUser(tokenObj.Email)
+	if error == "" {
+		u.ConfirmPassword = Password
+		u.Password = Password
+		h.SaveUser(u, true, "resetpassword")
+	} else {
+		authResponse.Status = false
+		authResponse.Message = "Error : User associated for Token is either removed or not exists"
+		return authResponse
+	}
+
+	//delete token
+	client.Go("ignore", "com.duosoftware.auth", "pwd_reset_tokens").DeleteObject().WithKeyField("Email").AndDeleteObject(tokenObj).Ok()
+	//delete request
+	client.Go("ignore", "com.duosoftware.auth", "pwd_reset_requests").DeleteObject().WithKeyField("Email").AndDeleteObject(tokenObj).Ok()
+
+	authResponse.Status = true
+	authResponse.Message = "Password Reset Successful."
+	return authResponse
+}
+
 // ChangePassword Changes the password
 func (h *AuthHandler) ChangePassword(a AuthCertificate, newPassword string) bool {
 	u, error := h.GetUser(a.Email)
@@ -477,6 +652,7 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 		term.Write("SaveUser saving user retrived", term.Debug)
 		if err != nil || uList.UserID == "" {
 			u.Active = false
+			u.Status = true
 			u.UserID = common.GetGUID()
 			term.Write("SaveUser saving user  "+u.Name+" New User "+u.UserID, term.Debug)
 			password := u.Password
@@ -514,6 +690,10 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 			case "changepassword":
 				term.Write("Password Changed for "+u.Name, term.Debug)
 				go notifier.Notify("ignore", "ChangePassword", u.EmailAddress, inputParams, nil)
+				break
+			case "resetpassword":
+				term.Write("Password Reset for "+u.Name, term.Debug)
+				go notifier.Notify("ignore", "ResetPassword", u.EmailAddress, inputParams, nil)
 				break
 			default:
 				inputParams["@@CODE@@"] = Activ.Token
@@ -602,6 +782,14 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 // 	return false
 // }
 
+func (h *AuthHandler) DirectUserActivation(email string) {
+	u, _ := h.GetUser(email)
+	if !u.Active {
+		u.Active = true
+		client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
+	}
+}
+
 func (h *AuthHandler) UserActivation(token string) string {
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "activation").GetOne().ByUniqueKey(token).Ok()
 	if err == "" {
@@ -664,6 +852,10 @@ func (h *AuthHandler) Login(email, password string) (User, string) {
 				//fmt.Println(uList)
 				if uList.Password == common.GetHash(password) && strings.ToLower(uList.EmailAddress) == strings.ToLower(email) {
 					if uList.Active {
+						//check for account status
+						if !uList.Status {
+							return user, "This account is deactivated. Please reactivate before logging in."
+						}
 						return uList, ""
 					} else {
 						bytess, _ := client.Go("ignore", "com.duosoftware.tenant", "deniedUserTemp").GetOne().ByUniqueKey(uList.UserID).Ok()
@@ -745,8 +937,7 @@ func (h *AuthHandler) GetUser(email string) (User, string) {
 	return user, "Error Validating user"
 }
 
-func (h *AuthHandler) GetMultipleUserDetails(UserIDs []string) (users []map[string]interface{}) {
-	users = make([]map[string]interface{}, 0)
+func (h *AuthHandler) GetMultipleUserDetails(UserIDs []string) (users []User) {
 
 	for x := 0; x < len(UserIDs); x++ {
 		bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetMany().BySearching("UserID:" + UserIDs[x]).Ok()
@@ -755,11 +946,7 @@ func (h *AuthHandler) GetMultipleUserDetails(UserIDs []string) (users []map[stri
 				var uList []User
 				err := json.Unmarshal(bytes, &uList)
 				if err == nil {
-					singleUser := make(map[string]interface{})
-					singleUser["UserID"] = uList[0].UserID
-					singleUser["Name"] = uList[0].Name
-					singleUser["EmailAddress"] = uList[0].EmailAddress
-					users = append(users, singleUser)
+					users = append(users, uList[0])
 				}
 			}
 		}
@@ -770,4 +957,168 @@ func (h *AuthHandler) GetMultipleUserDetails(UserIDs []string) (users []map[stri
 
 func SendNotification(u User, Message string) {
 
+}
+
+func (a *AuthHandler) ActivateAccount(email, password string) (err error) {
+	//login
+	_, errString := a.Login(email, password)
+
+	if errString == "" {
+		//no error..
+		return
+	}
+
+	if strings.Contains(errString, "deactivated. Please reactivate") {
+		//no error
+		bytes, _ := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(email).Ok()
+		user := User{}
+		_ = json.Unmarshal(bytes, &user)
+		user.Status = true
+		client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(user).Ok()
+	} else {
+		err = errors.New(errString)
+	}
+
+	return
+}
+
+func (a *AuthHandler) DeactivateAccount(cert AuthCertificate) (err error) {
+	//getUser
+	bytes, _ := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(cert.Email).Ok()
+	user := User{}
+	_ = json.Unmarshal(bytes, &user)
+
+	if user.EmailAddress != "" {
+		//update user
+		user.Status = false
+		client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(user).Ok()
+	} else {
+		err = errors.New("No User Found.")
+	}
+
+	return
+}
+
+func (a *AuthHandler) DeleteAccount(cert AuthCertificate) (err error) {
+	//get user
+	bytes, _ := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().ByUniqueKey(cert.Email).Ok()
+	user := User{}
+	_ = json.Unmarshal(bytes, &user)
+	u := session.AuthCertificate{}
+
+	if user.EmailAddress != "" {
+		//get tenants.. if more than one tenants.. and only user is you.. delete.. otherwise fail.
+		th := TenantHandler{}
+		tenants := th.GetTenantsForUser(user.UserID)
+
+		isSafeToDelete := true
+		isSafeToDeleteError := ""
+
+		//Checking for safety
+		for _, tenant := range tenants {
+			//check if admin
+			admins := th.GetTenantAdmin(tenant.TenantID)
+			isAdmin := false
+			//check if im an admin.
+			for _, admin := range admins {
+				if user.EmailAddress == admin["EmailAddress"] {
+					//im an admin
+					isAdmin = true
+					break
+				}
+			}
+
+			if isAdmin {
+				//im an admin.. check if there are any other admins.
+				if len(admins) > 1 {
+					//yes.. don't delete tenant. just remove myself
+					//h.RemoveUserFromTenant(user.UserID, tenant.TenantID)
+				} else {
+					//im the only tenant admin. check if many users.
+					//get users for tenant..
+					users := th.GetUsersForTenant(u, tenant.TenantID)
+					if len(users) == 1 {
+						//safe to delete tenant and remove myself.
+					} else {
+						//have to give tenant ownership to someone.... fail!
+						isSafeToDelete = false
+						isSafeToDeleteError = "Failed to delete user. This user is only Admin to Tenant : " + tenant.TenantID + ". Transfer admin ownership before deleting user."
+						break
+					}
+				}
+			} else {
+				//not an admin.. remove myself from tenant
+				//th.RemoveUserFromTenant(user.UserID, tenant.TenantID)
+			}
+
+		}
+
+		if isSafeToDelete {
+			for _, tenant := range tenants {
+				//check if admin
+				admins := th.GetTenantAdmin(tenant.TenantID)
+				isAdmin := false
+				//check if im an admin.
+				for _, admin := range admins {
+					if user.EmailAddress == admin["EmailAddress"] {
+						//im an admin
+						isAdmin = true
+						break
+					}
+				}
+
+				if isAdmin {
+					//im an admin.. check if there are any other admins.
+					if len(admins) > 1 {
+						//yes.. don't delete tenant. just remove myself
+						th.RemoveUserFromTenant(user.UserID, tenant.TenantID)
+					} else {
+						//im the only tenant admin. check if many users.
+						//get users for tenant..
+						users := th.GetUsersForTenant(u, tenant.TenantID)
+						if len(users) == 1 {
+							//remove myself.
+							th.RemoveUserFromTenant(user.UserID, tenant.TenantID)
+							//delete tenant
+							client.Go("ignore", "com.duosoftware.tenant", "tenants").DeleteObject().WithKeyField("TenantID").AndDeleteObject(tenant).Ok()
+						}
+					}
+				} else {
+					//not an admin.. remove myself from tenant
+					th.RemoveUserFromTenant(user.UserID, tenant.TenantID)
+				}
+
+			}
+
+			//deleting finished..
+			//remove from default tenant.
+			client.Go("ignore", "com.duosoftware.tenant", "defaulttenant").DeleteObject().WithKeyField("UserID").AndDeleteObject(user).Ok()
+			//remove user
+			client.Go("ignore", "com.duosoftware.auth", "users").DeleteObject().WithKeyField("EmailAddress").AndDeleteObject(user).Ok()
+			//clear login sessions
+			loginSession := LoginSessions{}
+			loginSession.Email = user.EmailAddress
+			client.Go("ignore", "com.duosoftware.auth", "loginsessions").DeleteObject().WithKeyField("Email").AndDeleteObject(loginSession).Ok()
+			//clear login attempts
+			attempt := LoginAttemts{}
+			attempt.Email = user.EmailAddress
+			client.Go("ignore", "s.duosoftware.auth", "loginattemts").DeleteObject().WithKeyField("Email").AndDeleteObject(attempt).Ok()
+			//get all sessions
+			bytes, _ := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("Email:" + user.EmailAddress).Ok()
+			var sessions []session.AuthCertificate
+			_ = json.Unmarshal(bytes, &sessions)
+			if len(sessions) > 0 {
+				//drop all sessions
+				for _, session := range sessions {
+					client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(session).Ok()
+				}
+			}
+		} else {
+			err = errors.New(isSafeToDeleteError)
+		}
+
+	} else {
+		err = errors.New("No User Found.")
+	}
+	return
 }

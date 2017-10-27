@@ -3,15 +3,133 @@ package term
 import (
 	"bufio"
 	"duov6.com/config"
-	"duov6.com/updater"
 	"encoding/json"
 	"fmt"
 	"github.com/fatih/color"
 	"os"
-	"os/exec"
 	"reflect"
 	"time"
 )
+
+var Config TerminalConfig
+var currentPlugin TermPlugin
+
+func GetConfig() TerminalConfig {
+	//Initialize Config
+	b, err := config.Get("Terminal")
+	if err == nil {
+		json.Unmarshal(b, &Config)
+	} else {
+		Config = TerminalConfig{}
+		Config.DebugLine = false
+		Config.ErrorLine = true
+		Config.InformationLine = false
+		config.Add(Config, "Terminal")
+	}
+
+	return Config
+}
+
+func SetConfig(c TerminalConfig) {
+	Config = c
+	config.Add(c, "Terminal")
+}
+
+func ToggleConfig() (status string) {
+	if !Config.DebugLine && !Config.InformationLine {
+		Config.InformationLine = true
+		status = "Enabled Information and Warning Logs."
+	} else if !Config.DebugLine && Config.InformationLine {
+		Config.DebugLine = true
+		status = "Enabled Information, Warning and Debug Logs."
+	} else if Config.DebugLine && Config.InformationLine {
+		Config.InformationLine = false
+		Config.DebugLine = false
+		status = "Disabled All Logs other than Error Logs."
+	}
+	SetConfig(Config)
+	return
+}
+
+func Read(Lable string) string {
+	var S string
+	fmt.Printf(FgGreen + Lable + FgMagenta + " LDS$ " + Reset)
+	fmt.Scanln(&S)
+	return S
+}
+
+func Write(data interface{}, mType int) {
+
+	Lable := ""
+	if reflect.TypeOf(data).String() == "string" {
+		Lable = data.(string)
+	} else {
+		byteArray, err := json.Marshal(data)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		Lable = string(byteArray)
+	}
+
+	switch mType {
+	case Error:
+		if Config.ErrorLine {
+			color.Red(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+		}
+	case Information:
+		if Config.InformationLine {
+			color.Cyan(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+		}
+	case Debug:
+		if Config.DebugLine {
+			color.Green(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+		}
+	case Splash:
+		fmt.Println(FgBlack + BgWhite + Lable + Reset)
+	case Blank:
+		if Config.InformationLine {
+			color.Magenta(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+		}
+	case Warning:
+		if Config.InformationLine {
+			color.Yellow(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+		}
+	default:
+		color.Cyan(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
+	}
+
+	// if currentPlugin != nil {
+	// 	currentPlugin.Log(Lable, mType)
+	// }
+}
+
+func SplashScreen(fileName string) {
+
+	file, _ := os.Open(fileName)
+	if file != nil {
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			//split key and value
+			fmt.Println(FgBlack + BgWhite + scanner.Text() + Reset)
+		}
+	}
+
+}
+
+func AddPlugin(t TermPlugin) {
+	currentPlugin = t
+}
+
+func RemovePlugin(t TermPlugin) {
+	currentPlugin = nil
+}
+
+type TerminalConfig struct {
+	DebugLine       bool
+	ErrorLine       bool
+	InformationLine bool
+}
 
 const (
 	Reset      = "\x1b[0m"
@@ -40,212 +158,10 @@ const (
 	BgCyan    = "\x1b[46m"
 	BgWhite   = "\x1b[47m"
 
-	Error       = 1
 	Information = 0
+	Error       = 1
 	Debug       = 2
 	Splash      = 3
 	Blank       = 4
+	Warning     = 5
 )
-
-var Config TerminalConfig
-var currentPlugin TermPlugin
-
-func GetConfig() TerminalConfig {
-	//Disabling Existing code to make Loggin disabled at start.
-	//Toggle Display to Change this behaviour can be found in AuthLib.
-
-	/*b, err := config.Get("Terminal")
-	if err == nil {
-		json.Unmarshal(b, &Config)
-	} else {
-		Config = TerminalConfig{}
-		Config.DebugLine = true
-		Config.ErrorLine = true
-		Config.InformationLine = true
-
-		config.Add(Config, "Terminal")
-	}*/
-
-	Config.DebugLine = false
-	Config.ErrorLine = true
-	Config.InformationLine = false
-	return Config
-}
-
-func ToggleConfig() (status string) {
-	if !Config.DebugLine && !Config.InformationLine {
-		Config.InformationLine = true
-		status = "Enabled Information Logs."
-	} else if !Config.DebugLine && Config.InformationLine {
-		Config.DebugLine = true
-		status = "Enabled Information and Debug Logs."
-	} else if Config.DebugLine && Config.InformationLine {
-		Config.InformationLine = false
-		Config.DebugLine = false
-		status = "Disabled All Logs other than Error Logs."
-	}
-	return
-}
-
-func SetConfig(c TerminalConfig) {
-	Config = c
-	config.Add(c, "Terminal")
-}
-
-func SetupConfig() {
-
-	Config = GetConfig()
-
-	//SplashScreen("setup.art")
-	if Read("Do want to Debug (y/n)") == "y" {
-		Config.DebugLine = true
-	} else {
-
-		Config.DebugLine = false
-	}
-
-	if Read("Do want show Errors (y/n)") == "y" {
-		Config.ErrorLine = true
-	} else {
-		Config.ErrorLine = false
-	}
-
-	if Read("Do want show Information (y/n)") == "y" {
-		Config.InformationLine = true
-	} else {
-		Config.InformationLine = false
-	}
-	SetConfig(Config)
-
-}
-
-func Read(Lable string) string {
-	var S string
-	fmt.Printf(FgGreen + Lable + FgMagenta + " LDS$ " + Reset)
-	fmt.Scanln(&S)
-	//fmt.
-	//BgGreen
-	return S
-}
-
-func Write(data interface{}, mType int) {
-
-	//fmt.Println(data)
-
-	Lable := ""
-	if reflect.TypeOf(data).String() == "string" {
-		Lable = data.(string)
-	} else {
-		byteArray, err := json.Marshal(data)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-		Lable = string(byteArray)
-	}
-
-	switch mType {
-	case Error:
-		if Config.ErrorLine {
-			// 	fmt.Println(time.Now().Format("2006-01-02 15:04:05") + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
-			color.Red(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
-		}
-	case Information:
-		if Config.InformationLine {
-			// 	fmt.Println(FgGreen + time.Now().Format("2006-01-02 15:04:05") + " Information! " + Lable + Reset)
-			color.Yellow(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
-		}
-	case Debug:
-		if Config.DebugLine {
-			// 	fmt.Println(FgBlue + time.Now().Format("2006-01-02 15:04:05") + " Debug! " + Lable + Reset)
-			color.Green(time.Now().Format("2006-01-02 15:04:05") + " : " + Lable)
-		}
-	case Splash:
-		fmt.Println(FgBlack + BgWhite + Lable + Reset)
-	case Blank:
-		if Config.InformationLine {
-			fmt.Println(Lable)
-		}
-	default:
-		fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
-	}
-
-	if currentPlugin != nil {
-		currentPlugin.Log(Lable, mType)
-	}
-}
-
-//ORIGINAL WRITE FUNCTION WITH NO SUPPORT FOR STDOUTing STRUCTURES OTHER THAN STRINGS. DONT DELETE!
-// func Write(Lable string, mType int) {
-// 	//var S string
-// 	switch mType {
-// 	case Error:
-// 		//log.Printf(format, ...)
-// 		if Config.ErrorLine {
-// 			fmt.Println(time.Now().String() + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
-// 		}
-// 	case Information:
-// 		if Config.InformationLine {
-// 			fmt.Println(FgGreen + time.Now().String() + " Information! " + Lable + Reset)
-// 		}
-// 	case Debug:
-// 		//if Config.DebugLine {
-// 		fmt.Println(FgBlue + time.Now().String() + " Debug! " + Lable + Reset)
-// 		//}
-// 	case Splash:
-// 		fmt.Println(FgBlack + BgWhite + Lable + Reset)
-// 	case Blank:
-// 		fmt.Println(Lable)
-// 	default:
-// 		fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
-// 	}
-
-// 	if currentPlugin != nil {
-// 		currentPlugin.Log(Lable, mType)
-// 	}
-// }
-
-func SplashScreen(fileName string) {
-
-	file, _ := os.Open(fileName)
-	if file != nil {
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			//split key and value
-			fmt.Println(FgBlack + BgWhite + scanner.Text() + Reset)
-		}
-	}
-
-}
-
-func StartCommandLine() {
-	s := Read("Command ")
-	for s != "exit" {
-		cmd := exec.Command(s, "")
-		cmd.Start()
-		switch s {
-		case "download":
-			//Write("Invalid command.", Error)
-			updater.DownloadFromUrl(Read("URL"), Read("FileName"))
-		case "config":
-			SetupConfig()
-		default:
-			Write("Invalid command.", Error)
-		}
-		s = Read("Command ")
-	}
-}
-
-func AddPlugin(t TermPlugin) {
-	currentPlugin = t
-}
-
-func RemovePlugin(t TermPlugin) {
-	currentPlugin = nil
-}
-
-type TerminalConfig struct {
-	DebugLine       bool
-	ErrorLine       bool
-	InformationLine bool
-}

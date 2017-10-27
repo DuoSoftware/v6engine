@@ -9,13 +9,14 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"runtime"
+	"time"
 )
 
 func main() {
 	term.GetConfig()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	var isUnitTestMode bool = false
-
+	endpoints.StartTime = time.Now()
 	if isUnitTestMode {
 		unittesting.Start()
 	} else {
@@ -48,8 +49,8 @@ func initialize() {
 	httpServer := endpoints.HTTPService{}
 	go httpServer.Start()
 
-	bulkService := endpoints.BulkTransferService{}
-	go bulkService.Start()
+	//bulkService := endpoints.BulkTransferService{}
+	//go bulkService.Start()
 
 	forever := make(chan bool)
 	<-forever

@@ -6,6 +6,3 @@ This Repository hosts sources for Duo World backend services and middlewares in 
 * Duo ObjectStore
 * Duo Auth
 * Duo Notifier
-* Duo Object Scheduler
-* Duo ETL
-* Duo RecordManager

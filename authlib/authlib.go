@@ -4,12 +4,12 @@ import (
 	//"duov6.com/applib"
 	"encoding/json"
 
+	"duov6.com/cebadapter"
 	"duov6.com/common"
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
 	"duov6.com/objectstore/client"
-	"runtime"
-	//"fmt"
+	"fmt"
 	//"golang.org/x/oauth2"
 	//"crypto/hmac"
 	"duov6.com/session"
@@ -30,38 +30,85 @@ type AuthorizeAppData struct {
 
 type Auth struct {
 	gorest.RestService
-	verify                  gorest.EndPoint `method:"GET" path:"/" output:"string"`
-	login                   gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
-	noPasswordLogin         gorest.EndPoint `method:"GET" path:"/NoPasswordLogin/{OTP:string}" output:"AuthCertificate"`
-	loginOTP                gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}" output:"string"`
-	loginOTPNoPass          gorest.EndPoint `method:"GET" path:"/LoginOTPNoPass/{username:string}/{domain:string}" output:"string"`
-	getLoginSessions        gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
-	authorize               gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
-	getSession              gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
-	getSessionStatic        gorest.EndPoint `method:"GET" path:"/GetSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
-	getSecret               gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
-	getAuthCode             gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
-	autherizeApp            gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
-	updateScope             gorest.EndPoint `method:"POST" path:"/UpdateScope/{SecurityToken:string}/{UserID:string}/{ApplicationID:string}" postdata:"AuthorizeAppData"`
-	addUser                 gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
-	invitedUserRegistration gorest.EndPoint `method:"POST" path:"/InvitedUserRegistration/" postdata:"User"`
-	registerTenantUser      gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
-	userActivation          gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
-	logOut                  gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
-	checkPassword           gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
-	getUser                 gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
-	blockUser               gorest.EndPoint `method:"GET" path:"/BlockUser/{Email:string}" output:"bool"`
-	releaseUser             gorest.EndPoint `method:"GET" path:"/ReleaseUser/{Email:string}/{b4:string}" output:"bool"`
-	getGUID                 gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
-	forgotPassword          gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
-	changePassword          gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
-	arbiterAuthorize        gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
-	getUserByUserId         gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
-	toggleLogs              gorest.EndPoint `method:"GET" path:"/ToggleLogs/" output:"string"`
+	verify                       gorest.EndPoint `method:"GET" path:"/" output:"string"`
+	getConfig                    gorest.EndPoint `method:"GET" path:"/config" output:"string"`
+	login                        gorest.EndPoint `method:"GET" path:"/Login/{username:string}/{password:string}/{domain:string}" output:"AuthCertificate"`
+	noPasswordLogin              gorest.EndPoint `method:"GET" path:"/NoPasswordLogin/{OTP:string}" output:"AuthCertificate"`
+	loginOTP                     gorest.EndPoint `method:"GET" path:"/LoginOTP/{username:string}/{password:string}/{domain:string}" output:"string"`
+	loginOTPNoPass               gorest.EndPoint `method:"GET" path:"/LoginOTPNoPass/{username:string}/{domain:string}" output:"string"`
+	getLoginSessions             gorest.EndPoint `method:"GET" path:"/GetLoginSessions/{UserID:string}" output:"[]AuthCertificate"`
+	authorize                    gorest.EndPoint `method:"GET" path:"/Authorize/{SecurityToken:string}/{ApplicationID:string}" output:"AuthCertificate"`
+	getSession                   gorest.EndPoint `method:"GET" path:"/GetSession/{SecurityToken:string}/{Domain:string}" output:"AuthCertificate"`
+	getSessionStatic             gorest.EndPoint `method:"GET" path:"/GetSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
+	updateSessionStatic          gorest.EndPoint `method:"GET" path:"/UpdateSessionStatic/{SecurityToken:string}" output:"AuthCertificate"`
+	getSecret                    gorest.EndPoint `method:"GET" path:"/GetSecret/{Key:string}" output:"string"`
+	getAuthCode                  gorest.EndPoint `method:"GET" path:"/GetAuthCode/{SecurityToken:string}/{ApplicationID:string}/{URI:string}" output:"string"`
+	autherizeApp                 gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
+	updateScope                  gorest.EndPoint `method:"POST" path:"/UpdateScope/{SecurityToken:string}/{UserID:string}/{ApplicationID:string}" postdata:"AuthorizeAppData"`
+	addUser                      gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
+	invitedUserRegistration      gorest.EndPoint `method:"POST" path:"/InvitedUserRegistration/" postdata:"User"`
+	registerTenantUser           gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
+	userActivation               gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
+	userActivationByAdmin        gorest.EndPoint `method:"GET" path:"/userActivationByAdmin/{emailAddress:string}" output:"bool"`
+	logOut                       gorest.EndPoint `method:"GET" path:"/LogOut/{SecurityToken:string}" output:"bool"`
+	checkPassword                gorest.EndPoint `method:"GET" path:"/Checkpassword/{SecurityToken:string}" output:"bool"`
+	checkLogin                   gorest.EndPoint `method:"GET" path:"/checklogin/{email:string}/{password:string}" output:"bool"`
+	getUser                      gorest.EndPoint `method:"GET" path:"/GetUser/{Email:string}" output:"User"`
+	blockUser                    gorest.EndPoint `method:"GET" path:"/BlockUser/{Email:string}" output:"bool"`
+	releaseUser                  gorest.EndPoint `method:"GET" path:"/ReleaseUser/{Email:string}/{b4:string}" output:"bool"`
+	getGUID                      gorest.EndPoint `method:"GET" path:"/GetGUID/" output:"string"`
+	forgotPassword               gorest.EndPoint `method:"GET" path:"/ForgotPassword/{EmailAddress:string}/{RequestCode:string}" output:"bool"`
+	resetPasswordByTenantAdmin   gorest.EndPoint `method:"GET" path:"/ResetPasswordByTenantAdmin/{EmailAddress:string}" output:"bool"`
+	changePassword               gorest.EndPoint `method:"GET" path:"/ChangePassword/{OldPassword:string}/{NewPassword:string}" output:"bool"`
+	arbiterAuthorize             gorest.EndPoint `method:"POST" path:"/ArbiterAuthorize/" postdata:"map[string]string"`
+	getUserByUserId              gorest.EndPoint `method:"POST" path:"/GetUserByUserID/" postdata:"[]string"`
+	toggleLogs                   gorest.EndPoint `method:"GET" path:"/ToggleLogs/" output:"string"`
+	registerTenantUserWithTenant gorest.EndPoint `method:"POST" path:"/RegisterTenantUserWithTenant/{TenantID:string}" postdata:"User"`
+
+	//Reset Password methods via URL
+	requestResetPassword gorest.EndPoint `method:"GET" path:"/RequestResetPassword/{EmailAddress:string}" output:"AuthResponse"`
+	resetPassword        gorest.EndPoint `method:"GET" path:"/ResetPassword/{Password:string}/{Token:string}" output:"AuthResponse"`
+
+	//resend email methods
+	resendActivationEmail gorest.EndPoint `method:"GET" path:"/ResendActivationEmail/{EmailAddress:string}/" output:"string"`
+
+	//Account deactivation, reactivation and deletion
+	activateAccount   gorest.EndPoint `method:"GET" path:"/ActivateAccount/{EmailAddress:string}/{Password:string}" output:"AuthResponse"`
+	deactivateAccount gorest.EndPoint `method:"GET" path:"/DeactivateAccount/" output:"AuthResponse"`
+	deleteAccount     gorest.EndPoint `method:"GET" path:"/DeleteAccount/" output:"AuthResponse"`
 }
 
 func (A Auth) ToggleLogs() string {
 	return term.ToggleConfig()
+}
+
+func (A Auth) ResendActivationEmail(EmailAddress string) string {
+	//Get user for email address
+	ah := AuthHandler{}
+	user, errString := ah.GetUser(EmailAddress)
+	if errString == "" && user.UserID != "" {
+		Activ := ActivationEmail{}
+		Activ.GUUserID = EmailAddress
+		Activ.Token = common.RandText(10)
+
+		inputParams := make(map[string]string)
+		inputParams["@@email@@"] = EmailAddress
+		inputParams["@@name@@"] = user.Name
+		inputParams["@@CEMAIL@@"] = EmailAddress
+		inputParams["@@CNAME@@"] = user.Name
+		inputParams["@@CODE@@"] = Activ.Token
+
+		//save in db
+		client.Go("ignore", "com.duosoftware.auth", "activation").StoreObject().WithKeyField("Token").AndStoreOne(Activ).Ok()
+		//send email
+		go notifier.Notify("ignore", "Verification", EmailAddress, inputParams, nil)
+		A.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte(common.ErrorJson("Successfully resent the email!")))
+		return "Successfully resent the email!"
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("User not found for this emailaddress.")))
+		return "User not found for this emailaddress."
+	}
+	return "Unknown Error"
 }
 
 //GetClientIP Represent to get ClientIP
@@ -91,6 +138,56 @@ func (A Auth) UserActivation(token string) bool {
 		return false
 	}
 	return false
+}
+
+func (A Auth) UserActivationByAdmin(emailAddress string) bool {
+	//UserActivation By Tenant Admin
+	term.Write("Executing Method : User Activation By Tenant Admin", term.Blank)
+	status := false
+
+	h := newAuthHandler()
+	th := TenantHandler{}
+
+	user, error := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		//check if requester is Admin of his tenant
+		isAdmin := false
+		admins := th.GetTenantAdmin(user.Domain)
+		for _, admin := range admins {
+			fmt.Println("Admin : " + admin["EmailAddress"])
+			if admin["UserID"] == user.UserID {
+				isAdmin = true
+				break
+			}
+		}
+
+		if isAdmin {
+			fmt.Println("Admin...")
+			//check if this user domain matches email domain
+			emailUser, err := h.GetUser(emailAddress)
+			if err == "" {
+				//get default domain for email user
+				defaultTenant := th.GetDefaultTenant(emailUser.UserID)
+				//check if email user domain and requester domain equals
+				fmt.Println("===================")
+				fmt.Println(defaultTenant)
+				fmt.Println(user.Domain)
+				fmt.Println("===================")
+				if defaultTenant.TenantID == user.Domain {
+					fmt.Println("yay")
+					//ACTIVATE
+					h.DirectUserActivation(emailAddress)
+					status = true
+				}
+			} else {
+				fmt.Println(err)
+			}
+		} else {
+			fmt.Println("Not An admin")
+		}
+	}
+
+	return status
 }
 
 func (A Auth) GetLoginSessions(UserID string) []session.AuthCertificate {
@@ -128,6 +225,84 @@ func (A Auth) ForgotPassword(EmailAddress, RequestCode string) bool {
 	term.Write("Executing Method : Forgot Password / Reset Password", term.Blank)
 	h := newAuthHandler()
 	return h.ForgetPassword(EmailAddress)
+}
+
+func (A Auth) RequestResetPassword(EmailAddress string) AuthResponse {
+	//Rest Password. Sends an Email with New password
+	term.Write("Executing Method : Request Reset Password By URL", term.Blank)
+	h := newAuthHandler()
+	return h.RequestResetPassword(EmailAddress)
+}
+
+func (A Auth) ResetPassword(Password, Token string) AuthResponse {
+	//Rest Password. Sends an Email with New password
+	term.Write("Executing Method : Reset Password By TOKEN", term.Blank)
+	h := newAuthHandler()
+	return h.ResetPassword(Password, Token)
+}
+
+// type InviteUsers struct {
+// 	Email         string
+// 	Name          string
+// 	UserID        string
+// 	SecurityLevel string
+// }
+
+func (A Auth) ResetPasswordByTenantAdmin(EmailAddress string) bool {
+	term.Write("Executing Method : Reset Password By Tenant Admin", term.Blank)
+	//Rest Password for any User by only Tenant Admin
+	h := newAuthHandler()
+	fmt.Println("SecurityToken : " + A.Context.Request().Header.Get("Securitytoken"))
+	user, error := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		fmt.Println(user)
+		th := TenantHandler{}
+
+		//Get User for Email
+		ah := AuthHandler{}
+		normalUser, _ := ah.GetUser(EmailAddress)
+		//Get Default Tenant for Normal User
+		defaultTenant := th.GetDefaultTenant(normalUser.UserID)
+		fmt.Println("Default Tenant For User : " + defaultTenant.TenantID)
+		//Get Admin users for that tenant
+		adminUsers := th.GetTenantAdmin(defaultTenant.TenantID)
+		fmt.Println("Admin Users For Default Tenant : ")
+		fmt.Println(adminUsers)
+		//check if requester qalifies
+		isQualify := false
+
+		for _, adminUser := range adminUsers {
+			if adminUser["UserID"] == user.UserID {
+				isQualify = true
+				break
+			}
+		}
+
+		if isQualify {
+			authCert := AuthCertificate{}
+			authCert.Email = EmailAddress
+
+			h := newAuthHandler()
+			password := common.RandText(6)
+
+			status := h.ChangePassword(authCert, password)
+			if status {
+				A.ResponseBuilder().SetResponseCode(200).WriteAndOveride([]byte("Successfully Completed. New Password : " + password))
+				return true
+			} else {
+				A.ResponseBuilder().SetResponseCode(500).WriteAndOveride([]byte(common.ErrorJson("Error occured Resetting Password!")))
+				return false
+			}
+		} else {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Requester Not Qualified as an Admin user for Email Address's Default Tenant.")))
+			return false
+		}
+
+	} else {
+		fmt.Println("Error : " + error)
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Session Not Found!")))
+		return false
+	}
 }
 
 func (A Auth) ChangePassword(OldPassword, NewPassword string) bool {
@@ -254,9 +429,50 @@ func (A Auth) Login(username, password, domain string) (outCrt AuthCertificate) 
 	c, msg := h.CanLogin(username, domain)
 
 	if !c {
-		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(msg)))
-		return
+		//Number of Login Sessions are over.
+		type SessionError struct {
+			Error   bool
+			Message string
+			Data    []string
+		}
+
+		errorObj := SessionError{}
+		errorObj.Error = true
+		errorObj.Message = msg
+
+		//get all sessions for email
+		authcertificates := session.GetRunningSessionByEmail(username)
+		errorObj.Data = make([]string, 0)
+
+		if len(authcertificates) > 0 {
+			for key := 0; key < len(authcertificates); key++ {
+				//check for validity
+				if session.ValidateSession(authcertificates[key].SecurityToken) {
+					errorObj.Data = append(errorObj.Data, authcertificates[key].SecurityToken)
+				} else {
+					session.LogOut(authcertificates[key])
+				}
+
+			}
+		}
+
+		_, err := h.Login(username, password)
+		if err != "" {
+			h.LogFailedAttemts(username, domain, "")
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(err)))
+			return
+		}
+
+		if len(errorObj.Data) == 0 {
+			//Can Proceed with login
+		} else {
+			bytess, _ := json.Marshal(errorObj)
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride(bytess)
+			return
+		}
+
 	}
+
 	u, err := h.Login(username, password)
 
 	if err == "" {
@@ -581,18 +797,7 @@ func (A Auth) GetSession(SecurityToken, Domain string) (a AuthCertificate) {
 	term.Write("Executing Method : Get Session", term.Blank)
 
 	h := newAuthHandler()
-	/*
-		t := new(TenantHandler)
-		//var a AuthCertificate
-		//h.GetSession(key, Domain)
-		if Domain != "nil" {
-			user, _ := h.GetSession(SecurityToken, "nil")
-			x, _ := t.Autherized(Domain, user)
-			if !x {
-				A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(Domain + "Not Authorized"))
-				return
-			}
-		}*/
+
 	c, err := h.GetSession(SecurityToken, Domain)
 
 	if err == "" {
@@ -631,6 +836,29 @@ func (A Auth) GetSessionStatic(SecurityToken string) (a AuthCertificate) {
 		} else {
 			c.ClientIP = A.Context.Request().Header.Get("IP")
 		}
+		h.AddSession(c)
+		a = c
+		return a
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Not Autherized Err:" + err)))
+		return
+	}
+
+}
+
+func (A Auth) UpdateSessionStatic(SecurityToken string) (a AuthCertificate) {
+	//Get One Time Session if not make existing session a one time session and save and return.
+	term.Write("Executing Method : Update Session Static (Update One Time Session by SecurityToken)", term.Blank)
+
+	h := newAuthHandler()
+	c, err := h.GetSession(SecurityToken, "Nil")
+	scope := A.Context.Request().Header.Get("scope")
+
+	//fmt.Println(c)
+	if err == "" && c.Otherdata["OneTimeToken"] == "yes" {
+		payload := common.JWTPayload(c.Domain, c.SecurityToken, c.UserID, c.Email, c.Domain, []byte(scope))
+		c.Otherdata["JWT"] = common.Jwt(h.GetSecretKey(c.Domain), payload)
+		c.Otherdata["Scope"] = strings.Replace(scope, "\"", "`", -1)
 		h.AddSession(c)
 		a = c
 		return a
@@ -713,7 +941,6 @@ func (A Auth) UpdateScope(object AuthorizeAppData, SecurityToken, UserID, Applic
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken, "Nil")
 	if err == "" {
-
 		//Insert Object To Objectore
 		id := common.GetHash(ApplicationID + UserID)
 		data := make(map[string]interface{})
@@ -828,6 +1055,47 @@ func (A Auth) RegisterTenantUser(u User) {
 
 }
 
+func (A Auth) RegisterTenantUserWithTenant(u User, TenantID string) {
+	//Register User and Tenant
+	term.Write("Executing Method : Register Tenant User (With Given Tenant) ", term.Blank)
+
+	h := newAuthHandler()
+	// c, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	// if err == "" {
+	t := TenantHandler{}
+	u, err := h.SaveUser(u, false, "customTenant")
+
+	if err == "" {
+		b, _ := json.Marshal(u)
+		x := t.GetTenant(TenantID)
+		if x.TenantID == "" {
+			A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("No TenantID found : " + TenantID + ". User Registered without an initial tenant."))
+		} else {
+			t.AddUsersToTenant(x.TenantID, x.Name, u.UserID, "User")
+			A.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+		}
+	} else {
+		A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
+	}
+	// } else {
+	// 	A.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("Security Token Incorrect.")))
+	// }
+
+}
+
+func (A Auth) CheckLogin(email, password string) bool {
+	//Check If Can Login
+	term.Write("Executing Method : Check Login (To check if CanLogin)", term.Blank)
+
+	h := newAuthHandler()
+	_, err := h.Login(email, password)
+	if err == "" {
+		return true
+	} else {
+		return false
+	}
+}
+
 func (A Auth) CheckPassword(password string) bool {
 	//Check If Can Login
 	term.Write("Executing Method : Check Password (To check if CanLogin)", term.Blank)
@@ -848,74 +1116,85 @@ func (A Auth) CheckPassword(password string) bool {
 
 }
 
+func (A Auth) ActivateAccount(EmailAddress string, Password string) AuthResponse {
+	//Activate account after a deactivation
+	term.Write("Executing Method : Activate Account", term.Blank)
+	response := AuthResponse{}
+	h := newAuthHandler()
+
+	err := h.ActivateAccount(EmailAddress, Password)
+	if err != nil {
+		response.Status = false
+		response.Message = err.Error()
+		A.ResponseBuilder().SetResponseCode(500)
+	} else {
+		response.Status = true
+		response.Message = "Successfully activated account."
+		A.ResponseBuilder().SetResponseCode(200)
+	}
+
+	return response
+}
+
+func (A Auth) DeactivateAccount() AuthResponse {
+	//Temporary deactivation of account
+	term.Write("Executing Method : Deactivate Account", term.Blank)
+	response := AuthResponse{}
+	h := newAuthHandler()
+	c, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if err == "" {
+		err := h.DeactivateAccount(c)
+		if err != nil {
+			response.Status = false
+			response.Message = err.Error()
+			A.ResponseBuilder().SetResponseCode(500)
+		} else {
+			response.Status = true
+			response.Message = "Successfully deactivated account."
+			A.ResponseBuilder().SetResponseCode(200)
+		}
+	} else {
+		response.Status = false
+		response.Message = "Not Authenticated to perform account deactivation."
+		A.ResponseBuilder().SetResponseCode(401)
+	}
+	return response
+}
+
+func (A Auth) DeleteAccount() AuthResponse {
+	//Deleting user account
+	term.Write("Executing Method : Delete Account", term.Blank)
+	response := AuthResponse{}
+	h := newAuthHandler()
+	c, err := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if err == "" {
+		err := h.DeleteAccount(c)
+		if err != nil {
+			response.Status = false
+			response.Message = err.Error()
+			A.ResponseBuilder().SetResponseCode(500)
+		} else {
+			response.Status = true
+			response.Message = "Successfully deleted account."
+			A.ResponseBuilder().SetResponseCode(200)
+		}
+	} else {
+		response.Status = false
+		response.Message = "Not Authenticated to perform account deletion."
+		A.ResponseBuilder().SetResponseCode(401)
+	}
+	return response
+}
+
 //------------------------ Version Management --------------------------------
 
 func (A Auth) Verify() (output string) {
-	//output = "{\"name\": \"DuoAuth\",\"version\": \"6.0.24-a\",\"Change Log\":\"Added Check for tenant subscription invitation.\",\"author\": {\"name\": \"Duo Software\",\"url\": \"http://www.duosoftware.com/\"},\"repository\": {\"type\": \"git\",\"url\": \"https://github.com/DuoSoftware/v6engine/\"}}"
-	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
-	cpuCount := strconv.Itoa(runtime.NumCPU())
-
-	versionData := make(map[string]interface{})
-	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.1.11"
-
-	changeLogs := make(map[string]interface{})
-
-	changeLogs["6.1.11"] = [...]string{
-		"Fixed few email template issues. JIRA : EX-1085",
-	}
-
-	changeLogs["6.1.10"] = [...]string{
-		"Added Toggle Logs and disabled CMD logs at startup. User /ToggleLogs to cycle through different logs.",
-	}
-
-	changeLogs["6.1.09"] = [...]string{
-		"Added new user email templates for events.",
-	}
-
-	changeLogs["6.1.08"] = [...]string{
-		"Added user deny check",
-		"Added User Deactivate if user has no accesible tenants.",
-	}
-
-	changeLogs["6.1.07"] = [...]string{
-		"Added Activation Skip Endpoint for Registration. <InvitedUserRegistration>",
-	}
-
-	changeLogs["6.1.06"] = [...]string{
-		"Commented SecurityToken from AcceptRequest",
-		"Added response codes for ActivateUser method",
-	}
-
-	changeLogs["6.1.05"] = [...]string{
-		"Added New Login password,username message and Activate message",
-		"Added GetTenantAdmin method for auth",
-		"Removed rating engine check for tenant add.",
-	}
-
-	changeLogs["6.1.04"] = [...]string{
-		"Added Activate User Email Check..",
-		"Added Reset Password Check by checking user activated or not",
-	}
-
-	versionData["Change Logs"] = changeLogs
-
-	gitMap := make(map[string]string)
-	gitMap["Type"] = "git"
-	gitMap["URL"] = "https://github.com/DuoSoftware/v6engine/"
-	versionData["Repository"] = gitMap
-
-	statMap := make(map[string]string)
-	statMap["CPU"] = cpuUsage + " (percentage)"
-	statMap["CPU Cores"] = cpuCount
-	versionData["System Usage"] = statMap
-
-	authorMap := make(map[string]string)
-	authorMap["Name"] = "Duo Software Pvt Ltd"
-	authorMap["URL"] = "http://www.duosoftware.com/"
-	versionData["Project Author"] = authorMap
-
-	byteArray, _ := json.Marshal(versionData)
-	output = string(byteArray)
+	output = Verify()
 	return
+}
+
+func (A Auth) GetConfig() (output string) {
+	configAll := cebadapter.GetGlobalConfig("StoreConfig")
+	byteArray, _ := json.Marshal(configAll)
+	return string(byteArray)
 }

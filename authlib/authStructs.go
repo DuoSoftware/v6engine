@@ -5,6 +5,7 @@ import (
 	"duov6.com/term"
 	"encoding/json"
 	"strconv"
+	"time"
 )
 
 var Config AuthConfig
@@ -12,7 +13,7 @@ var Config AuthConfig
 //var configRead
 
 func NewUser(userID, EmailAddress, Name, Password string) User {
-	return User{userID, EmailAddress, Name, Password, Password, false}
+	return User{userID, EmailAddress, Name, Password, Password, false, true}
 }
 
 func GetConfig() AuthConfig {
@@ -33,7 +34,13 @@ func SetConfig(c AuthConfig) {
 func SetupConfig() {
 
 	Config = GetConfig()
-	if Config.UserName != "" {
+	time.Sleep(1 * time.Second)
+
+	if Config.UserLoginTries != 0 {
+		return
+	}
+
+	/*if Config.UserName != "" {
 		return
 	}
 	term.SplashScreen("setup.art")
@@ -50,12 +57,15 @@ func SetupConfig() {
 	Config.Smtpserver = term.Read("SMTP Server")
 	Config.Smtpusername = term.Read("SMTP Username")
 	Config.Smtppassword = term.Read("SMTP Password")
+	*/
+
 	s, _ := strconv.ParseInt(term.Read("Number of user login Attempts"), 10, 32)
 	x, _ := strconv.ParseInt(term.Read("Number of user login Sessions (0 to Any number of user logins)"), 10, 32)
+	v, _ := strconv.ParseInt(term.Read("Session Timeout Period (hours) : "), 10, 32)
 	Config.UserLoginTries = s
 	Config.NumberOFUserLogins = x
+	Config.SessionTimeout = v
 	SetConfig(Config)
-
 }
 
 type AppScope struct {
@@ -70,6 +80,12 @@ type AppAutherize struct {
 	AppliccatioID string
 	AutherizeKey  string
 	OtherData     map[string]interface{}
+}
+
+type AuthResponse struct {
+	Status    bool
+	Message   string
+	OtherData map[string]interface{}
 }
 
 type AppCertificate struct {
@@ -87,6 +103,7 @@ type User struct {
 	Password        string
 	ConfirmPassword string
 	Active          bool
+	Status          bool
 	//UserName        string
 	//MobileNo        string
 	//OtherData       map[string]string
@@ -105,6 +122,7 @@ type AuthConfig struct { // Auth Config
 	Password           string // Password
 	NumberOFUserLogins int64
 	UserLoginTries     int64
+	SessionTimeout     int64
 	ExpairyTime        int64
 }
 
@@ -114,4 +132,15 @@ type AuthCode struct { // Clas starts here
 	Code          string // Code for authendication
 	UserID        string // User ID of the person who is getting activated
 	URI           string // Auth URI
+}
+
+type ResetPasswordRequests struct {
+	Email             string
+	Timestamp         string
+	ResetRequestCount int
+}
+
+type ResetPasswordToken struct {
+	Email string
+	Token string
 }

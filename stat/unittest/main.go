@@ -15,7 +15,6 @@ func main() {
 	stat.Start()
 	go ErrorMethods()
 	go Informaton()
-	term.StartCommandLine()
 }
 
 func ErrorMethods() {

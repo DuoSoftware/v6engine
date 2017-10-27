@@ -4,6 +4,7 @@ import (
 	"duov6.com/FileServer"
 	FileServerMessaging "duov6.com/FileServer/messaging"
 	"duov6.com/authlib"
+	"duov6.com/cebadapter"
 	"duov6.com/common"
 	"duov6.com/objectstore/JSON_Purifier"
 	"duov6.com/objectstore/backup"
@@ -21,8 +22,7 @@ import (
 	"github.com/martini-contrib/cors"
 	"io/ioutil"
 	"net/http"
-	"runtime"
-	"strconv"
+	"os"
 	"strings"
 )
 
@@ -40,6 +40,14 @@ var isJsonStack bool
 var isFlusherActivated bool
 
 func (h *HTTPService) Start() {
+	if !common.VerifyGlobalConfig() {
+		//GetConfigs from REST...
+		if status := cebadapter.GetGlobalConfigFromREST("StoreConfig"); !status {
+			fmt.Println("Error retrieving configurations from CEB... Exiting...")
+			os.Exit(1)
+		}
+	}
+
 	term.Write("Object Store Listening on Port : 3000", 2)
 	m := martini.Classic()
 	m.Use(cors.Allow(&cors.Options{
@@ -78,6 +86,9 @@ func (h *HTTPService) Start() {
 	//Flush Cache
 	m.Get("/ClearCache", cacheHandler)
 
+	//Get Store Configurations
+	m.Get("/config", getConfigHandler)
+
 	//View All Logs
 	m.Get("/ViewLogs")
 
@@ -91,6 +102,7 @@ func (h *HTTPService) Start() {
 	// m.Get("/crossdomain.xml", Crossdomain)
 	// m.Get("/clientaccesspolicy.xml", Clientaccesspolicy)
 	m.Run()
+
 }
 
 func startKeyFlusher(request *messaging.ObjectRequest) {
@@ -106,8 +118,10 @@ func viewLogHandler(params martini.Params, w http.ResponseWriter, r *http.Reques
 	msg := term.ToggleConfig()
 	if strings.Contains(msg, "Enabled") {
 		isLoggable = true
+		martini.IsOSLogEnabled = true
 	} else {
 		isLoggable = false
+		martini.IsOSLogEnabled = false
 	}
 	fmt.Fprintf(w, msg)
 }
@@ -149,6 +163,12 @@ func logHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, message)
+}
+
+func getConfigHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	configAll := cebadapter.GetGlobalConfig("StoreConfig")
+	byteArray, _ := json.Marshal(configAll)
+	fmt.Fprintf(w, string(byteArray))
 }
 
 func cacheHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
@@ -418,7 +438,6 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 
 			if r.Method != "GET" {
 				rb, rerr := ioutil.ReadAll(r.Body)
-
 				//Clean JSON with escape characters
 				rb = JSON_Purifier.Purify(rb)
 
@@ -559,53 +578,5 @@ func CheckRedisAvailability(request *messaging.ObjectRequest) (status bool) {
 //------------------ Version Management -----------------------
 
 func versionHandler(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	cpuUsage := strconv.Itoa(int(common.GetProcessorUsage()))
-	cpuCount := strconv.Itoa(runtime.NumCPU())
-	//versionDaata := "{\"Name\": \"Objectstore\",\"Version\": \"1.4.4-a\",\"Change Log\":\"Fixed certain alter table issues.\",\"Author\": {\"Name\": \"Duo Software\",\"URL\": \"http://www.duosoftware.com/\"},\"Repository\": {\"Type\": \"git\",\"URL\": \"https://github.com/DuoSoftware/v6engine/\"},\"System Usage\": {\"CPU\": \" " + cpuUsage + " (percentage)\",\"CPU Cores\": \"" + cpuCount + "\"}}"
-	versionData := make(map[string]interface{})
-	versionData["API Name"] = "ObjectStore"
-	versionData["API Version"] = "6.1.05"
-
-	changeLogs := make(map[string]interface{})
-
-	changeLogs["6.1.01"] = [...]string{
-		"Added timezone compatibility",
-	}
-
-	changeLogs["6.1.02"] = [...]string{
-		"Added redis key update clear call",
-	}
-
-	changeLogs["6.1.03"] = [...]string{
-		"Added MySQL JSON store.",
-	}
-
-	changeLogs["6.1.04"] = [...]string{
-		"Removed TimeZone compatability temporarily.",
-	}
-
-	changeLogs["6.1.05"] = [...]string{
-		"Added Toggle Logs and Removed Log header requirement.",
-	}
-
-	versionData["Change Logs"] = changeLogs
-
-	gitMap := make(map[string]string)
-	gitMap["Type"] = "git"
-	gitMap["URL"] = "https://github.com/DuoSoftware/v6engine/"
-	versionData["Repository"] = gitMap
-
-	statMap := make(map[string]string)
-	statMap["CPU"] = cpuUsage + " (percentage)"
-	statMap["CPU Cores"] = cpuCount
-	versionData["System Usage"] = statMap
-
-	authorMap := make(map[string]string)
-	authorMap["Name"] = "Duo Software Pvt Ltd"
-	authorMap["URL"] = "http://www.duosoftware.com/"
-	versionData["Project Author"] = authorMap
-
-	byteArray, _ := json.Marshal(versionData)
-
-	fmt.Fprintf(w, string(byteArray))
+	fmt.Fprintf(w, GetVersion())
 }

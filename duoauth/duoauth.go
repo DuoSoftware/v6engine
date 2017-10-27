@@ -10,12 +10,17 @@ import (
 	"duov6.com/common"
 	"duov6.com/gorest"
 	"duov6.com/pog"
+	"duov6.com/session"
+	"fmt"
+	"io/ioutil"
+	"os"
 	//"duov6.com/stat"
 	"duov6.com/statservice"
 	"duov6.com/term"
 	"encoding/json"
 	"net/http"
 	"runtime"
+	"time"
 )
 
 // A ServiceConfig represents a configuration for galang
@@ -45,6 +50,8 @@ func main() {
 	//runRestFul()
 	//term.Read("Lable")
 	common.VerifyConfigFiles()
+	initializeSettingsFile()
+	authlib.StartTime = time.Now()
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	cebadapter.Attach("DuoAuth", func(s bool) {
@@ -64,6 +71,7 @@ func main() {
 
 	authlib.SetupConfig()
 	term.GetConfig()
+	session.GetConfig()
 
 	//go Bingo()
 	//stat.Start()
@@ -77,7 +85,7 @@ func main() {
 	term.Write("|     Duo v6 Auth Service 6.0                                  |", term.Splash)
 	term.Write("|     New updat		                                   |", term.Splash)
 	term.Write("================================================================", term.Splash)
-	//term.StartCommandLine()
+
 	forever := make(chan bool)
 	<-forever
 
@@ -95,6 +103,14 @@ func webServer() {
 }
 
 func runRestFul() {
+	if !common.VerifyGlobalConfig() {
+		//GetConfigs from REST...
+		if status := cebadapter.GetGlobalConfigFromREST("StoreConfig"); !status {
+			fmt.Println("Error retrieving configurations from CEB... Exiting...")
+			os.Exit(1)
+		}
+	}
+
 	gorest.RegisterService(new(authlib.Auth))
 	gorest.RegisterService(new(authlib.TenantSvc))
 	gorest.RegisterService(new(authlib.UserSVC))
@@ -123,4 +139,28 @@ func runRestFul() {
 		}
 	}
 
+}
+
+func initializeSettingsFile() {
+	From := os.Getenv("SMTP_ADDRESS")
+	content, err := ioutil.ReadFile("settings.config")
+	if err != nil {
+		data := make(map[string]interface{})
+		if From == "" {
+			data["From"] = "DuoWorld.com <mail-noreply@duoworld.com>"
+		} else {
+			data["From"] = From
+		}
+		dataBytes, _ := json.Marshal(data)
+		_ = ioutil.WriteFile("settings.config", dataBytes, 0666)
+	} else {
+		vv := make(map[string]interface{})
+		_ = json.Unmarshal(content, &vv)
+		if From != "" {
+			vv["From"] = From
+		}
+		dataBytes, _ := json.Marshal(vv)
+		_ = ioutil.WriteFile("settings.config", dataBytes, 0666)
+		fmt.Println(vv)
+	}
 }
