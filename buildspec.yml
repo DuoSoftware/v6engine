@@ -13,18 +13,16 @@ phases:
   install:
     commands:
       - apt-get -y update && apt-get install -y python-software-properties
-
-pre_build:
-  commands:
-    - rm -r "pkg" 
-    - mkdir "bin" && mkdir "pkg" && mkdir "src" 
-    - export PATH=$PATH:/usr/local/go/bin;
-    - export GOPATH=$PWD;
-    - git clone https://github.com/DuoSoftware/v6engine-deps $GOPATH/src
+      - echo Build started on `date`
 
 build:
   commands:
+    - echo Compiling the Go code...
     - go build duoauth/duoauth.go
+    
+post_build:
+    commands:
+      - echo Build completed on `date`
 artifacts:
   files:
     - duoauth
