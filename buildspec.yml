@@ -25,5 +25,5 @@ post_build:
       - echo Build completed on `date`
 artifacts:
   files:
-    - duoauth
+    - duoauth/duoauth
 
