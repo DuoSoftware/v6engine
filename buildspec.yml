@@ -16,7 +16,7 @@ phases:
       - echo Build started on `date`
       - pwd
       - ls
-      - mv * duov6.com
+      - mkdir duov6.com && mv * duov6.com
       
       
 
