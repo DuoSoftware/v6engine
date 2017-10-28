@@ -14,10 +14,13 @@ phases:
     commands:
       - apt-get -y update && apt-get install -y python-software-properties
       - echo Build started on `date`
-      - mv v6engine duov6.com
+      - ls
+      
+      
 
 build:
   commands:
+    - mv v6engine duov6.com
     - echo Compiling the Go code...
     - go build duoauth/duoauth.go
     - go install
