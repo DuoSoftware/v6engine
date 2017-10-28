@@ -16,12 +16,12 @@ phases:
       - echo Build started on `date`
       - pwd
       - ls
+      - mv * duov6.com
       
       
 
 build:
   commands:
-    - mv v6engine duov6.com
     - echo Compiling the Go code...
     - go build duoauth/duoauth.go
     - go install
