@@ -12,11 +12,11 @@ environment_variables:
 phases:
   install:
     commands:
-      - apt-get -y update && apt-get install -y python-software-properties
       - echo Build started on `date`
       - pwd
       - ls
-      - mkdir duov6.com && mv * duov6.com
+      - mkdir duov6.com 
+      - mv * duov6.com
       
       
 
