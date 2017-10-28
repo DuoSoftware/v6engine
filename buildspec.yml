@@ -14,6 +14,7 @@ phases:
     commands:
       - apt-get -y update && apt-get install -y python-software-properties
       - echo Build started on `date`
+      - pwd
       - ls
       
       
