@@ -32,3 +32,5 @@ artifacts:
   files:
     - duoauth/bin/duoauth
     - ObjectStore
+    - appspec.yml
+    - buildspec.yml
