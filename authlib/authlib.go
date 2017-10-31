@@ -392,6 +392,7 @@ func (A Auth) ArbiterAuthorize(object map[string]string) {
 	}
 
 	h := AuthHandler{}
+	outCrt.Username = outCrt.Email
 	outCrt.Otherdata["UserAgent"] = A.Context.Request().UserAgent()
 	bytes, _ := client.Go("ignore", outCrt.Domain, "scope").GetOne().ByUniqueKey(outCrt.Domain).Ok() // fetech user autherized
 	//term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
