@@ -35,4 +35,5 @@ artifacts:
     - ObjectStore
     - DuoNotifier
     - appspec.yml
+    - scripts/*
     
