@@ -1,35 +1,34 @@
 version: 0.1
 
 environment_variables:
-   plaintext:
-    GIT_USERNAME: "duobuilduser"
-    GIT_EMAIL: "duobuilduser@duosoftware.com"
-    GIT_PASSWORD: "DuoS1235"
-    GO_VERSION: "1.7.4"
-    GO: "/usr/local/go/bin"
-    BuildOutPath: "$PWD"
-
-phases:
+  plaintext:
+    PACKAGE: "duov6.com"  
+    
+phases: 
   install:
+    commands:      
+      - echo CODEBUILD_SRC_DIR - $CODEBUILD_SRC_DIR
+      - echo GOPATH - $GOPATH   
+      - echo Create dir in GOPATH for sources
+      - mkdir -p ${GOPATH}/${PACKAGE}      
+      - echo Copy source files into GOPATH
+      - echo cp -a ${CODEBUILD_SRC_DIR}/.  ${GOPATH}/${PACKAGE}
+      - cp -a ${CODEBUILD_SRC_DIR}/.  ${GOPATH}/${PACKAGE}
+      - cp -a ${CODEBUILD_SRC_DIR}/.  /go/src/${PACKAGE} 
+      - git clone https://github.com/DuoSoftware/v6engine-deps.git 
+      - cp -a ${CODEBUILD_SRC_DIR}/v6engine-deps/. /go/src/        
+      
+            
+  build:
     commands:
       - echo Build started on `date`
-      - pwd
-      - ls
-      - mkdir duov6.com 
-      - mv * duov6.com
-      
-      
-
-build:
-  commands:
-    - echo Compiling the Go code...
-    - go build duoauth/duoauth.go
-    - go install
-    
-post_build:
+      - go build ${CODEBUILD_SRC_DIR}/auth/duoauth.go
+      - go build ${CODEBUILD_SRC_DIR}/objectstore/ObjectStore.go
+  post_build:
     commands:
       - echo Build completed on `date`
+      
 artifacts:
   files:
     - duoauth
-
+    - ObjectStore
