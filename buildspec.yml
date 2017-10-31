@@ -22,7 +22,7 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - go build -o ${CODEBUILD_SRC_DIR}/duoauth/bin/duoauth ${CODEBUILD_SRC_DIR}/duoauth/duoauth.go 
+      - go build -o ${CODEBUILD_SRC_DIR}/duoauth/duoauth ${CODEBUILD_SRC_DIR}/duoauth/duoauth.go 
       - go build ${CODEBUILD_SRC_DIR}/objectstore/ObjectStore.go 
   post_build:
     commands:
@@ -30,7 +30,7 @@ phases:
       
 artifacts:
   files:
-    - duoauth/bin/duoauth
+    - duoauth/duoauth
     - ObjectStore
     - appspec.yml
     - buildspec.yml
