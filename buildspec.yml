@@ -24,6 +24,7 @@ phases:
       - echo Build started on `date`
       - go build -o ${CODEBUILD_SRC_DIR}/duoauth/duoauth ${CODEBUILD_SRC_DIR}/duoauth/duoauth.go 
       - go build ${CODEBUILD_SRC_DIR}/objectstore/ObjectStore.go 
+      - go build ${CODEBUILD_SRC_DIR}/duonotifier/DuoNotifier.go
   post_build:
     commands:
       - echo Build completed on `date`
@@ -32,5 +33,6 @@ artifacts:
   files:
     - duoauth/duoauth
     - ObjectStore
+    - DuoNotifier
     - appspec.yml
-    - buildspec.yml
+    
