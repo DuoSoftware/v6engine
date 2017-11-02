@@ -28,9 +28,16 @@ func GetConnection(request *messaging.ObjectRequest, database int) (client *gore
 
 	host := request.Configuration.ServerConfiguration["REDIS"]["Host"]
 	port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
+	password := request.Configuration.ServerConfiguration["REDIS"]["Password"]
+
+	urlStart := "tcp://"
+	if password != "" {
+		urlStart += "auth:" + password
+	}
+	urlStart += "@"
 
 	if RedisCacheConnection[database] == nil {
-		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/" + strconv.Itoa(database) + "?timeout=60s&maxidle=60")
+		client, err = goredis.DialURL(urlStart + host + ":" + port + "/" + strconv.Itoa(database) + "?timeout=60s&maxidle=60")
 		if err != nil {
 			return nil, err
 		} else {
@@ -43,7 +50,7 @@ func GetConnection(request *messaging.ObjectRequest, database int) (client *gore
 	} else {
 		if err = RedisCacheConnection[database].Ping(); err != nil {
 			RedisCacheConnection[database] = nil
-			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/" + strconv.Itoa(database) + "?timeout=60s&maxidle=60")
+			client, err = goredis.DialURL(urlStart + host + ":" + port + "/" + strconv.Itoa(database) + "?timeout=60s&maxidle=60")
 			if err != nil {
 				return nil, err
 			} else {

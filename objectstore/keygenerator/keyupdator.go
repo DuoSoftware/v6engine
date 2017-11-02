@@ -28,8 +28,9 @@ func UpdateKeysInDB() {
 
 		host := request.Configuration.ServerConfiguration["REDIS"]["Host"]
 		port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
+		password := request.Configuration.ServerConfiguration["REDIS"]["Password"]
 
-		client, err := GetConnectionTCP(host, port)
+		client, err := GetConnectionTCP(host, port, password)
 
 		if err != nil {
 			fmt.Println(err.Error())
@@ -53,8 +54,9 @@ func GetAllKeyGenKeys() (keys []string) {
 
 	host := configuration.ConfigurationManager{}.Get("ignore", "ignore", "ignore").ServerConfiguration["REDIS"]["Host"]
 	port := configuration.ConfigurationManager{}.Get("ignore", "ignore", "ignore").ServerConfiguration["REDIS"]["Port"]
+	password := configuration.ConfigurationManager{}.Get("ignore", "ignore", "ignore").ServerConfiguration["REDIS"]["Password"]
 
-	client, _ := GetConnectionTCP(host, port)
+	client, _ := GetConnectionTCP(host, port, password)
 	keys, _ = client.Keys(pattern)
 	return
 }

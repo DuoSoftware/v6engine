@@ -172,9 +172,17 @@ var RedisConnection *goredis.Redis
 func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err error) {
 	host := request.Configuration.ServerConfiguration["REDIS"]["Host"]
 	port := request.Configuration.ServerConfiguration["REDIS"]["Port"]
+	password := request.Configuration.ServerConfiguration["REDIS"]["Password"]
+
+	urlStart := "tcp://"
+	if password != "" {
+		urlStart += "auth:" + password
+	}
+	urlStart += "@"
+
 	if RedisConnection == nil {
 		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/5?timeout=60s&maxidle=60")
+		client, err = goredis.DialURL(urlStart + host + ":" + port + "/5?timeout=60s&maxidle=60")
 		if err != nil {
 			return nil, err
 		} else {
@@ -188,7 +196,7 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 		if err = RedisConnection.Ping(); err != nil {
 			RedisConnection = nil
 			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/5?timeout=60s&maxidle=60")
+			client, err = goredis.DialURL(urlStart + host + ":" + port + "/5?timeout=60s&maxidle=60")
 			if err != nil {
 				return nil, err
 			} else {
@@ -207,10 +215,16 @@ func GetConnection(request *messaging.ObjectRequest) (client *goredis.Redis, err
 
 var RedisConnectionTCP *goredis.Redis
 
-func GetConnectionTCP(host string, port string) (client *goredis.Redis, err error) {
+func GetConnectionTCP(host, port, password string) (client *goredis.Redis, err error) {
+	urlStart := "tcp://"
+	if password != "" {
+		urlStart += "auth:" + password
+	}
+	urlStart += "@"
+
 	if RedisConnectionTCP == nil {
 		//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-		client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/5?timeout=60s&maxidle=60")
+		client, err = goredis.DialURL(urlStart + host + ":" + port + "/5?timeout=60s&maxidle=60")
 		if err != nil {
 			return nil, err
 		} else {
@@ -223,7 +237,7 @@ func GetConnectionTCP(host string, port string) (client *goredis.Redis, err erro
 		if err = RedisConnectionTCP.Ping(); err != nil {
 			RedisConnectionTCP = nil
 			//client, err := goredis.Dial(&goredis.DialConfig{"tcp", (host + ":" + port), 1, "", 1 * time.Second, 1})
-			client, err = goredis.DialURL("tcp://@" + host + ":" + port + "/5?timeout=60s&maxidle=60")
+			client, err = goredis.DialURL(urlStart + host + ":" + port + "/5?timeout=60s&maxidle=60")
 			if err != nil {
 				return nil, err
 			} else {
