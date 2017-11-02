@@ -681,6 +681,10 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 				inputParams["@@name@@"] = u.Name
 				go notifier.Notify("ignore", "user_activated", u.EmailAddress, inputParams, nil)
 				break
+			case "registertoken":
+				//When comes from social logins.
+				u.Active = true
+				break
 			case "tenant":
 				inputParams["@@PASSWORD@@"] = password
 				u.Active = true
