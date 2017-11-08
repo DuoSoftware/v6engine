@@ -19,10 +19,11 @@ func Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.2.02i"
+	versionData["API Version"] = "6.2.03"
 
 	changeLogs := make(map[string]interface{})
 
+	changeLogs["6.2.03"] = "Added fedarated login changes and social register email."
 	changeLogs["6.2.02"] = "Added REST CEB configuration retrieval."
 	changeLogs["6.2.01"] = "Added wait for config before starting webservice."
 	changeLogs["6.2.00"] = "Added check login method"

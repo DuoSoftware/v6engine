@@ -684,6 +684,11 @@ func (h *AuthHandler) SaveUser(u User, update bool, regtype string) (User, strin
 			case "registertoken":
 				//When comes from social logins.
 				u.Active = true
+				var inputParams map[string]string
+				inputParams = make(map[string]string)
+				inputParams["@@email@@"] = u.EmailAddress
+				inputParams["@@CNAME@@"] = u.Name
+				go notifier.Notify("ignore", "SocialmediaWelcome", u.EmailAddress, inputParams, nil)
 				break
 			case "tenant":
 				inputParams["@@PASSWORD@@"] = password
