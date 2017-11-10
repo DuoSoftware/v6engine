@@ -14,7 +14,8 @@ type tempRequestGenerator struct {
 }
 
 func (r *tempRequestGenerator) GenerateRequestCode(o map[string]string) string {
-	o["id"] = common.RandText(15)
+	//o["id"] = common.RandText(15)
+	o["id"] = common.GetGUID()
 	nowTime := time.Now().UTC()
 	nowTime = nowTime.Add(5 * time.Minute)
 	o["iat"] = nowTime.Format("2006-01-02 15:04:05")
@@ -23,7 +24,10 @@ func (r *tempRequestGenerator) GenerateRequestCode(o map[string]string) string {
 	for key, value := range o {
 		data[key] = value
 	}
-	client.Go("ignore", "com.duosoftware.auth", "tmprequestcodes").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
+	err := client.Go("ignore", "com.duosoftware.auth", "tmprequestcodes").StoreObject().WithKeyField("id").AndStoreOne(data).Ok()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	return o["id"]
 }
 
