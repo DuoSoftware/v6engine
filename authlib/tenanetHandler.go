@@ -670,6 +670,9 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 		}
 	}
 
+	//returning here because no longer deleting user. just returning him to boarding process.
+	return true
+
 	//since user is out of all tenants assigned to him... Deactivate the user
 	if len(h.GetTenantsForUser(UserID)) == 0 {
 
