@@ -52,7 +52,6 @@ func (g *googlePlusAuth) RegisterToken(object map[string]string) (AuthCertificat
 	}
 
 	if isAuthenticated {
-		var errStr string
 		user, status := h.GetUser(emailAddress)
 		if status != "" {
 			user.EmailAddress = emailAddress
@@ -62,21 +61,12 @@ func (g *googlePlusAuth) RegisterToken(object map[string]string) (AuthCertificat
 			user.Password = randText
 			user.ConfirmPassword = randText
 			user.Active = true
-			//user, _ = h.SaveUser(user, false, "registertoken")
-			user, errStr = h.SaveUser(user, false, "registertoken")
-
-			if errStr == "Already Registered." {
-				//Get default tenant
-				th := TenantHandler{}
-				auth.Domain = th.GetDefaultTenant(user.UserID).TenantID
-			} else {
-				auth.Domain = domain
-			}
+			user, _ = h.SaveUser(user, false, "registertoken")
 		}
 
 		auth.Email = user.EmailAddress
 		auth.SecurityToken = oauthKey
-		//auth.Domain = domain
+		auth.Domain = domain
 		auth.UserID = user.UserID
 		auth.Name = user.Name
 		auth.Otherdata = make(map[string]string)
@@ -126,7 +116,6 @@ func (t *twitterAuth) RegisterToken(object map[string]string) (AuthCertificate, 
 	}
 
 	if isAuthenticated {
-		var errStr string
 		user, status := h.GetUser(emailAddress)
 		if status != "" {
 			user.EmailAddress = emailAddress
@@ -136,21 +125,12 @@ func (t *twitterAuth) RegisterToken(object map[string]string) (AuthCertificate, 
 			user.Password = randText
 			user.ConfirmPassword = randText
 			user.Active = true
-			//user, _ = h.SaveUser(user, false, "registertoken")
-			user, errStr = h.SaveUser(user, false, "registertoken")
-
-			if errStr == "Already Registered." {
-				//Get default tenant
-				th := TenantHandler{}
-				auth.Domain = th.GetDefaultTenant(user.UserID).TenantID
-			} else {
-				auth.Domain = domain
-			}
+			user, _ = h.SaveUser(user, false, "registertoken")
 		}
 
 		auth.Email = user.EmailAddress
 		auth.SecurityToken = oauthToken
-		//auth.Domain = domain
+		auth.Domain = domain
 		auth.UserID = user.UserID
 		auth.Name = user.Name
 		auth.Otherdata = make(map[string]string)
@@ -200,8 +180,6 @@ func (f *facebookAuth) RegisterToken(object map[string]string) (AuthCertificate,
 	}
 
 	if isAuthenticated {
-		var errStr string
-
 		user, status := h.GetUser(email)
 		if status != "" {
 			user.EmailAddress = email
@@ -211,19 +189,12 @@ func (f *facebookAuth) RegisterToken(object map[string]string) (AuthCertificate,
 			user.Password = randText
 			user.ConfirmPassword = randText
 			user.Active = true
-			user, errStr = h.SaveUser(user, false, "registertoken")
-
-			if errStr == "Already Registered." {
-				//Get default tenant
-				th := TenantHandler{}
-				auth.Domain = th.GetDefaultTenant(user.UserID).TenantID
-			} else {
-				auth.Domain = domain
-			}
+			user, _ = h.SaveUser(user, false, "registertoken")
 		}
 
 		auth.Email = user.EmailAddress
 		auth.SecurityToken = access_token
+		auth.Domain = domain
 		auth.UserID = user.UserID
 		auth.Name = user.Name
 		auth.Otherdata = make(map[string]string)

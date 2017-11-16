@@ -406,6 +406,8 @@ func (A Auth) ArbiterAuthorize(object map[string]string) {
 	b, _ := json.Marshal(tlist)
 	outCrt.Otherdata["TenentsAccessible"] = strings.Replace(string(b[:]), "\"", "`", -1)
 
+	outCrt.Domain = tlist[0].TenantID
+
 	h.AddSession(outCrt)
 	var inputParams map[string]string
 	inputParams = make(map[string]string)
