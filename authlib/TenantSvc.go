@@ -370,8 +370,11 @@ func (T TenantSvc) ConsentedTenantDelete(token string) string {
 	if err != nil {
 		response["Status"] = false
 		response["Message"] = err.Error()
+		response["TenantID"] = "Nil"
 	} else {
 		response["Status"] = true
+		response["TenantID"] = tid
+
 		if isAllDeleted {
 			response["Message"] = "All tenant related data successfully removed."
 		} else {
