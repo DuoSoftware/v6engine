@@ -542,7 +542,9 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			}
 
 			if isAlreadyInTenant {
-				T.ResponseBuilder().SetResponseCode(304).WriteAndOveride([]byte(common.ErrorJson("User : " + email + " already a member of Tenant : " + inviter.Domain)))
+				errStr := "User : " + email + " already a member of Tenant : " + inviter.Domain
+				fmt.Println(errStr)
+				T.ResponseBuilder().SetResponseCode(304).WriteAndOveride([]byte(common.ErrorJson(errStr)))
 				return false
 			} else {
 				if strings.EqualFold(addUserType, "invite") {
