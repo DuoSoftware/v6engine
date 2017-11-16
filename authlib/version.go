@@ -19,7 +19,7 @@ func Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.2.04c"
+	versionData["API Version"] = "6.2.04d"
 
 	changeLogs := make(map[string]interface{})
 
