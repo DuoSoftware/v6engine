@@ -916,6 +916,7 @@ func (T TenantSvc) Subciribe(TenantID string) bool {
 		for _, tenant := range tenantsForUser {
 			if tenant.TenantID == TenantID {
 				term.Write(("User : " + user.Email + " is already Subscribed to Tenant : " + TenantID), term.Information)
+				T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("User : " + user.Email + " is already Subscribed to Tenant : " + TenantID))
 				return false
 			}
 		}
