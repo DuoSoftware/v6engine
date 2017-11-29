@@ -680,9 +680,9 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 		//delete from activations
 		activationsObject := make(map[string]interface{})
 		activationsObject["GUUserID"] = deleteUser.EmailAddress
-		client.Go("ignore", "com.duosoftware.auth", "activation").DeleteObject().WithKeyField("EmailAddress").AndDeleteObject(activationsObject).Ok()
+		client.Go("ignore", "com.duosoftware.auth", "activation").DeleteObject().WithKeyField("GUUserID").AndDeleteObject(activationsObject).Ok()
 		//delete from tenant.usertenantmappings
-		client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").DeleteObject().WithKeyField("EmailAddress").AndDeleteObject(deleteUser).Ok()
+		client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").DeleteObject().WithKeyField("UserID").AndDeleteObject(deleteUser).Ok()
 		//delete all session
 		sessionBytes, _ := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("UserID:" + deleteUser.UserID).Ok()
 		var uList []AuthCertificate
