@@ -19,10 +19,11 @@ func Verify() (output string) {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "Duo Auth"
-	versionData["API Version"] = "6.2.04h"
+	versionData["API Version"] = "6.2.05"
 
 	changeLogs := make(map[string]interface{})
 
+	changeLogs["6.2.04"] = "User automatically removed if its the only tenant which is removed"
 	changeLogs["6.2.04"] = "Added check for add tenant user and added remove tenant methods."
 	changeLogs["6.2.03"] = "Added fedarated login changes and social register email."
 	changeLogs["6.2.02"] = "Added REST CEB configuration retrieval."
