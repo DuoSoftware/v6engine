@@ -315,7 +315,7 @@ func (T TenantSvc) ConsentedTenantDelete(token string) string {
 	var err error
 	isAllDeleted := true
 
-	if len(o) != 0 {
+	if len(o["TenantID"]) != 0 {
 		//Get All users for tenant
 		th := TenantHandler{}
 		users := th.GetUsersForTenantInDetail(session.AuthCertificate{}, tid)
