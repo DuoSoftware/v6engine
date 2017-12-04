@@ -32,8 +32,8 @@ phases:
 artifacts:
   files:
     - duoauth/duoauth
-    - objectstore
-    - duonotifier
+    - ObjectStore
+    - DuoNotifier
     - appspec.yml
     - scripts/*
     
