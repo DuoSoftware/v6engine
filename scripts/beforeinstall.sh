@@ -1,3 +1,3 @@
 #!/bin/bash
-cd /home/DUO_V6_OBSTORE
+cd /home/DUO_V6ENGINE
 rm -rf *
