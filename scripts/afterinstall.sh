@@ -1,3 +1,5 @@
+#!/bin/bash
+
 cd /home/DUO_V6ENGINE
 if [ "$DEPLOYMENT_GROUP_NAME" == "staging" ]; then
     cp scripts/staging_agent.config /home/DUO_V6_OBSTORE/agent.config
