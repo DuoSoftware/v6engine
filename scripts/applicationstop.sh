@@ -8,13 +8,15 @@ if [ "$isExistAuth" ]
 then
     docker rm -f duo-auth
     docker rmi duo-auth
-    
-elif [ "$isExistObstore" ]
+fi
+
+if [ "$isExistObstore" ]
 then
   docker rm -f duo-obstore
   docker rmi duo-obstore
+fi
 
-elif [ "$isExistNotifier" ]
+if [ "$isExistNotifier" ]
 then
   docker rm -f duo-notifier
   docker rmi duo-notifier
