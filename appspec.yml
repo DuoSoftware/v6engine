@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/DUO_V6_OBSTORE
+    destination: /home/DUO_V6ENGINE
 hooks:
   BeforeInstall:
     - location: scripts/beforeinstall.sh
