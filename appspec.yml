@@ -2,10 +2,13 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /var/www/html/services/
-    
+    destination: /home/DUO_V6_CEB
 hooks:
   BeforeInstall:
     - location: scripts/beforeinstall.sh
   AfterInstall:
-    - location: scripts/afterinstall.sh
+    - location: scripts/afterinstall.sh 
+  ApplicationStop:
+    - location: scripts/applicationstop.sh
+  ApplicationStart:
+    - location: scripts/applicationstart.sh     
