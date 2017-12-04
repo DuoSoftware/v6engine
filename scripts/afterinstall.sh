@@ -17,7 +17,7 @@ if [ "$DEPLOYMENT_GROUP_NAME" == "staging" ]; then
     cp duoauth/duoauth /home/DUO_V6_AUTH/
     cp DuoNotifier /home/DUO_V6_NOTIFIER/
         
-elif ["$DEPLOYMENT_GROUP_NAME" == "production" ]; then
+elif [ "$DEPLOYMENT_GROUP_NAME" == "production" ]; then
     cp scripts/production_agent.config /home/DUO_V6_OBSTORE/agent.config
     cp scripts/production_agent.config /home/DUO_V6_AUTH/agent.config
     cp scripts/production_agent.config /home/DUO_V6_NOTIFIER/agent.config
