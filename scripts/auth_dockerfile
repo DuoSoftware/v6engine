@@ -1,0 +1,9 @@
+FROM golang
+
+ADD . /home/duo_v6_auth
+
+WORKDIR /home/duo_v6_auth
+
+EXPOSE 3048
+
+CMD ["/home/duo_v6_auth/duoauth"]

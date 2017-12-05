@@ -1,0 +1,14 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /home/DUO_V6ENGINE
+hooks:
+  BeforeInstall:
+    - location: scripts/beforeinstall.sh
+  AfterInstall:
+    - location: scripts/afterinstall.sh 
+  ApplicationStop:
+    - location: scripts/applicationstop.sh
+  ApplicationStart:
+    - location: scripts/applicationstart.sh     

@@ -1,0 +1,39 @@
+version: 0.1
+
+environment_variables:
+  plaintext:
+    PACKAGE: "duov6.com"  
+    
+phases: 
+  install:
+    commands:      
+      - echo CODEBUILD_SRC_DIR - $CODEBUILD_SRC_DIR
+      - echo GOPATH - $GOPATH   
+      - echo Create dir in GOPATH for sources
+      - mkdir -p ${GOPATH}/${PACKAGE}      
+      - echo Copy source files into GOPATH
+      - echo cp -a ${CODEBUILD_SRC_DIR}/.  ${GOPATH}/${PACKAGE}
+      - cp -a ${CODEBUILD_SRC_DIR}/.  ${GOPATH}/${PACKAGE}
+      - cp -a ${CODEBUILD_SRC_DIR}/.  /go/src/${PACKAGE} 
+      - git clone https://github.com/DuoSoftware/v6engine-deps.git 
+      - cp -a ${CODEBUILD_SRC_DIR}/v6engine-deps/. /go/src/        
+      
+            
+  build:
+    commands:
+      - echo Build started on `date`
+      - go build -o ${CODEBUILD_SRC_DIR}/duoauth/duoauth ${CODEBUILD_SRC_DIR}/duoauth/duoauth.go 
+      - go build ${CODEBUILD_SRC_DIR}/objectstore/ObjectStore.go 
+      - go build ${CODEBUILD_SRC_DIR}/duonotifier/DuoNotifier.go
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      
+artifacts:
+  files:
+    - duoauth/duoauth
+    - ObjectStore
+    - DuoNotifier
+    - appspec.yml
+    - scripts/*
+    
