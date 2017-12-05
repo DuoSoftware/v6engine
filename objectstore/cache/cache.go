@@ -17,6 +17,10 @@ const (
 	Log            = 8
 )
 
+func ResetSearchResults(request *messaging.ObjectRequest, database int) {
+	_ = repositories.ResetSearchResultCache(request, database)
+}
+
 func DeleteOne(request *messaging.ObjectRequest, data map[string]interface{}, database int) (err error) {
 	if CheckCacheAvailability(request) {
 		err = repositories.RemoveOneRedis(request, data, database)

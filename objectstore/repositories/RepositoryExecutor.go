@@ -165,5 +165,7 @@ func PushMultipleMapToCache(request *messaging.ObjectRequest, objs []map[string]
 				go cache.StoreMany(request, objs, cache.Data)
 			}
 		}
+	} else {
+		go cache.ResetSearchResults(request, cache.Data)
 	}
 }
