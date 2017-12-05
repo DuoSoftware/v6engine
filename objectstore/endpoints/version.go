@@ -16,7 +16,7 @@ func GetVersion() string {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "ObjectStore"
-	versionData["API Version"] = "6.1.10"
+	versionData["API Version"] = "6.1.12"
 
 	changeLogs := make(map[string]interface{})
 
@@ -30,6 +30,8 @@ func GetVersion() string {
 	changeLogs["6.1.08"] = "Added wait for config before starting webservice."
 	changeLogs["6.1.09"] = "Added Get GUID for special methods"
 	changeLogs["6.1.10"] = "Added REST CEB configuration retrieval."
+	changeLogs["6.1.11"] = "Added password support for REDIS and Username and password support to Mongo."
+	changeLogs["6.1.12"] = "Fixed some redis related minor bugs."
 	versionData["ChangeLogs"] = changeLogs
 
 	statMap := make(map[string]string)

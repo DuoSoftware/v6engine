@@ -18,8 +18,16 @@ func (repository RedisRepository) GetRepositoryName() string {
 
 func getRedisConnection(request *messaging.ObjectRequest) (client *goredis.Redis, isError bool, errorMessage string) {
 
+	password := request.Configuration.ServerConfiguration["REDIS"]["Password"]
+
+	urlStart := "tcp://"
+	if password != "" {
+		urlStart += "auth:" + password
+	}
+	urlStart += "@"
+
 	isError = false
-	client, err := goredis.DialURL("tcp://@" + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/4?timeout=60s&maxidle=60")
+	client, err := goredis.DialURL(urlStart + request.Configuration.ServerConfiguration["REDIS"]["Host"] + ":" + request.Configuration.ServerConfiguration["REDIS"]["Port"] + "/4?timeout=60s&maxidle=60")
 	if err != nil {
 		isError = true
 		errorMessage = err.Error()

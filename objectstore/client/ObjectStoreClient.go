@@ -9,6 +9,18 @@ type ObjectStoreClient struct {
 	Request *messaging.ObjectRequest
 }
 
+func (o *ObjectStoreClient) DeleteNamespace() *DeleteModifier {
+	o.Request.Controls.Operation = "special"
+	o.Request.Body.Special.Type = "dropnamespace"
+	return NewDeleteModifier(o.Request)
+}
+
+func (o *ObjectStoreClient) DeleteClass() *DeleteModifier {
+	o.Request.Controls.Operation = "special"
+	o.Request.Body.Special.Type = "dropclass"
+	return NewDeleteModifier(o.Request)
+}
+
 func (o *ObjectStoreClient) DeleteObject() *DeleteModifier {
 	o.Request.Controls.Multiplicity = "single"
 	return NewDeleteModifier(o.Request)

@@ -670,6 +670,41 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 		}
 	}
 
+	if len(h.GetTenantsForUser(UserID)) == 0 {
+		//Deleting the user
+		//first get the user object
+		ah := AuthHandler{}
+		deleteUser, errString := ah.GetUserByID(UserID)
+		if errString == "" {
+			//delete from users table
+			client.Go("ignore", "com.duosoftware.auth", "users").DeleteObject().WithKeyField("EmailAddress").AndDeleteObject(deleteUser).Ok()
+			//delete from activations
+			activationsObject := make(map[string]interface{})
+			activationsObject["GUUserID"] = deleteUser.EmailAddress
+			client.Go("ignore", "com.duosoftware.auth", "activation").DeleteObject().WithKeyField("GUUserID").AndDeleteObject(activationsObject).Ok()
+			//delete from tenant.usertenantmappings
+			client.Go("ignore", "com.duosoftware.tenant", "userstenantmappings").DeleteObject().WithKeyField("UserID").AndDeleteObject(deleteUser).Ok()
+			//delete all session
+			sessionBytes, _ := client.Go("ignore", "s.duosoftware.auth", "sessions").GetMany().BySearching("UserID:" + deleteUser.UserID).Ok()
+			var uList []AuthCertificate
+			_ = json.Unmarshal(sessionBytes, &uList)
+
+			if len(uList) > 0 {
+				//sessions found.. delete them all
+				term.Write("Found sessions related to deactivated user and now Logging out All sessions.", term.Debug)
+				for _, singleU := range uList {
+					client.Go("ignore", "s.duosoftware.auth", "sessions").DeleteObject().WithKeyField("SecurityToken").AndDeleteObject(singleU).Ok()
+				}
+			}
+			return true
+		} else {
+			return false
+		}
+	} else {
+		return true
+	}
+
+	//FOLLOWING STEPS ARE IGNORED> BUT NOT REMOVED.
 	//since user is out of all tenants assigned to him... Deactivate the user
 	if len(h.GetTenantsForUser(UserID)) == 0 {
 

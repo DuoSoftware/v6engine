@@ -23,7 +23,16 @@ func getMongoConnection(request *messaging.ObjectRequest) (client *mgo.Collectio
 
 	isError = false
 
-	session, err := mgo.Dial(request.Configuration.ServerConfiguration["MONGO"]["Url"])
+	username := request.Configuration.ServerConfiguration["MONGO"]["Username"]
+	password := request.Configuration.ServerConfiguration["MONGO"]["Password"]
+
+	url := request.Configuration.ServerConfiguration["MONGO"]["Url"]
+
+	if username != "" && password != "" {
+		url = "mongodb://" + username + ":" + password + "@" + request.Configuration.ServerConfiguration["MONGO"]["Url"] + ":27017"
+	}
+
+	session, err := mgo.Dial(url)
 	if err != nil {
 		isError = false
 		errorMessage = err.Error()
@@ -39,7 +48,16 @@ func getCustomMongoConnection(request *messaging.ObjectRequest, customNamespace 
 
 	isError = false
 
-	session, err := mgo.Dial(request.Configuration.ServerConfiguration["MONGO"]["Url"])
+	username := request.Configuration.ServerConfiguration["MONGO"]["Username"]
+	password := request.Configuration.ServerConfiguration["MONGO"]["Password"]
+
+	url := request.Configuration.ServerConfiguration["MONGO"]["Url"]
+
+	if username != "" && password != "" {
+		url = "mongodb://" + username + ":" + password + "@" + request.Configuration.ServerConfiguration["MONGO"]["Url"] + ":27017"
+	}
+
+	session, err := mgo.Dial(url)
 	if err != nil {
 		isError = false
 		errorMessage = err.Error()

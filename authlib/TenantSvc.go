@@ -1,13 +1,14 @@
 package authlib
 
 import (
-	"encoding/json"
-
 	"duov6.com/common"
 	notifier "duov6.com/duonotifier/client"
 	"duov6.com/gorest"
+	"duov6.com/objectstore/client"
 	"duov6.com/session"
 	"duov6.com/term"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -37,6 +38,8 @@ type TenantSvc struct {
 	getAllPendingTenantRequests gorest.EndPoint `method:"GET" path:"/tenant/GetAllPendingTenantRequests/" output:"PendingRequests"`
 	cancelAddTenantUser         gorest.EndPoint `method:"GET" path:"/tenant/CancelAddUser/{email:string}/" output:"bool"`
 	validateCode                gorest.EndPoint `method:"GET" path:"/tenant/verifytoken/{token:string}" output:"bool"`
+	initTenantDelete            gorest.EndPoint `method:"GET" path:"/tenant/deleteinit/{tid:string}" output:"string"`
+	consentedTenantDelete       gorest.EndPoint `method:"GET" path:"/tenant/delete/{token:string}" output:"string"`
 }
 
 func (T TenantSvc) GetTenantAdmin(TenantID string) []InviteUsers {
@@ -212,6 +215,194 @@ func (T TenantSvc) GetTenant(TenantID string) Tenant {
 	//}
 }
 
+func (T TenantSvc) InitTenantDelete(tid string) string {
+	//Delete tenant and all associated data
+	term.Write("Executing Method : InitTenantDelete)", term.Blank)
+
+	//Check if requester is tenant admin.
+
+	var err error
+	var code string
+
+	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		auth := AuthHandler{}
+		_, uerr := auth.GetUser(user.Email)
+		if uerr == "" {
+			//check if requester is tenant admin
+			isAdmin := false
+			admins := T.GetTenantAdmin(user.Domain)
+			for _, individualadmin := range admins {
+				if individualadmin.Email == user.Email {
+					isAdmin = true
+					break
+				}
+			}
+
+			if !isAdmin {
+				err = errors.New("Access Denied. Requester must be an admin to perform tenant delete initiation.")
+			} else {
+				//Check if tenant is available to delete.
+				if T.GetTenant(tid).TenantID == "" {
+					err = errors.New("Tenant : " + tid + " not found for delete initiation.")
+				} else {
+					//If all okay send the email.
+					tmp := tempRequestGenerator{}
+					o := make(map[string]string)
+					o["process"] = "InitiateTenantDelete"
+					o["email"] = user.Email
+					o["invitedUserID"] = "none"
+					o["name"] = user.Username
+					o["domain"] = tid
+					o["fromuseremail"] = "none"
+					o["tname"] = tid
+					o["level"] = "none"
+					o["TenantID"] = tid
+					o["inviteeName"] = user.Name
+					code = tmp.GenerateRequestCode(o)
+					fmt.Println(code)
+
+					var inputParams map[string]string
+					inputParams = make(map[string]string)
+					inputParams["@@BIZOWNER_NAME@@"] = user.Name
+					inputParams["@@BIZOWNER_USERNAME@@"] = user.Username
+					inputParams["@@BIZOWNER_EMAIL@@"] = user.Email
+					inputParams["@@BIZ_DOMAIN@@"] = tid
+					inputParams["@@CODE@@"] = code
+					fmt.Println("-----------------------------------------------")
+					fmt.Println("Sending initiation email to delete tenant ..... ")
+					fmt.Println(inputParams)
+					fmt.Println("-----------------------------------------------")
+
+					go notifier.Notify("ignore", "tenant_delete_init", user.Email, inputParams, nil)
+				}
+			}
+
+		} else {
+			err = errors.New(uerr)
+		}
+	} else {
+		err = errors.New(error)
+	}
+
+	response := make(map[string]interface{})
+
+	if err != nil {
+		response["Status"] = false
+		response["Message"] = err.Error()
+	} else {
+		response["Status"] = true
+		response["Message"] = "Concent email sent successfully. Code : " + code
+	}
+
+	b, _ := json.Marshal(response)
+
+	return string(b)
+}
+
+func (T TenantSvc) ConsentedTenantDelete(token string) string {
+	//Delete tenant and all associated data
+	term.Write("Executing Method :  Consented Tenant Delete)", term.Blank)
+
+	tmp := tempRequestGenerator{}
+	o, _ := tmp.GetRequestCode(token)
+
+	tid := o["TenantID"]
+	adminEmail := o["email"]
+	adminName := o["inviteeName"]
+	adminUserName := o["name"]
+
+	var err error
+	isAllDeleted := true
+
+	if len(o["TenantID"]) != 0 {
+		//Get All users for tenant
+		th := TenantHandler{}
+		users := th.GetUsersForTenantInDetail(session.AuthCertificate{}, tid)
+
+		//Remove all users from the tenant.
+		for _, user := range users {
+			status := th.RemoveUserFromTenant(user.UserID, tid)
+			if status {
+				//switch the person if default tenant is this tenant
+				defT := th.GetDefaultTenant(user.UserID)
+				if defT.TenantID == tid {
+					//get all tenants for user
+					allTenants := th.GetTenantsForUser(user.UserID)
+					if len(allTenants) == 0 {
+						//when user have no other tenants. delete default tenant so
+						//boarding process will begin in next login
+						client.Go("ignore", "com.duosoftware.tenant", "defaulttenant").DeleteObject().WithKeyField("UserID").AndDeleteObject(user).Ok()
+					} else {
+						for _, tenant := range allTenants {
+							if tenant.TenantID != tid {
+								//Change the default tenant
+								th.SetDefaultTenant(user.UserID, tenant.TenantID)
+								break
+							}
+						}
+					}
+				}
+			} else {
+				isAllDeleted = false
+			}
+		}
+
+		//delete tenant
+		tObj := make(map[string]interface{})
+		tObj["TenantID"] = tid
+		err = client.Go("ignore", "com.duosoftware.tenant", "tenants").DeleteObject().WithKeyField("TenantID").AndDeleteOne(tObj).Ok()
+
+		//Delete database
+		err = client.Go("ignore", tid, "ignore").DeleteNamespace().Ok()
+
+		//delete token
+		obj := make(map[string]interface{})
+		obj["id"] = o["id"]
+		tmp.Remove(obj)
+
+	} else {
+		err = errors.New("Expired token.")
+	}
+
+	response := make(map[string]interface{})
+
+	if err != nil {
+		response["Status"] = false
+		response["Message"] = err.Error()
+		response["TenantID"] = "Nil"
+	} else {
+		response["Status"] = true
+		response["TenantID"] = tid
+
+		if isAllDeleted {
+			response["Message"] = "All tenant related data successfully removed."
+		} else {
+			response["Message"] = "All tenant related data successfully removed but failed to remove some users."
+		}
+
+		var inputParams map[string]string
+		inputParams = make(map[string]string)
+		inputParams["@@BIZOWNER_NAME@@"] = adminName
+		inputParams["@@BIZOWNER_USERNAME@@"] = adminUserName
+		inputParams["@@BIZOWNER_EMAIL@@"] = adminEmail
+		inputParams["@@BIZ_DOMAIN@@"] = tid
+
+		fmt.Println("-----------------------------------------------")
+		fmt.Println("Sending delete tenant successful email ..... ")
+		fmt.Println(inputParams)
+		fmt.Println("-----------------------------------------------")
+
+		go notifier.Notify("ignore", "tenant_delete_success", adminEmail, inputParams, nil)
+
+	}
+
+	b, _ := json.Marshal(response)
+
+	return string(b)
+
+}
+
 func (T TenantSvc) ValidateCode(token string) bool {
 	//Get Users inside a Tenant
 	term.Write("Executing Method : Validate Code)", term.Blank)
@@ -342,64 +533,82 @@ func (T TenantSvc) AddUser(email, level string) bool {
 			//User already exists in system
 			t := th.GetTenant(inviter.Domain)
 
-			if strings.EqualFold(addUserType, "invite") {
-				//send email to confirm. add to tenant from AcceptRequest
-				tmp := tempRequestGenerator{}
-				o := make(map[string]string)
-				o["process"] = "tenant_invitation_existing_request_consent"
-				o["email"] = email
-				o["invitedUserID"] = inviter.UserID
-				o["name"] = inviter.Name
-				o["domain"] = inviter.Domain
-				o["fromuseremail"] = inviter.Email
-				o["tname"] = t.Name
-				o["level"] = level
-				o["TenantID"] = t.TenantID
-				o["inviteeName"] = invitee.Name
-				//o["userid"] = invitee.UserID
-				code := tmp.GenerateRequestCode(o)
-				var inputParams map[string]string
-				inputParams = make(map[string]string)
-				inputParams["@@EMAIL@@"] = email
-				inputParams["@@INVEMAIL@@"] = inviter.Email
-				inputParams["@@NAME@@"] = inviter.Name
-				inputParams["@@DOMAIN@@"] = inviter.Domain
-				inputParams["@@CODE@@"] = code
+			//check if user already is in that tenant.
+			isAlreadyInTenant := false
+			tenants := th.GetTenantsForUser(invitee.UserID)
 
-				s := PendingUserRequest{}
-				s.UserID = invitee.UserID
-				s.Email = invitee.EmailAddress
-				s.TenantID = t.TenantID
-				s.Name = invitee.Name
-				//s.Code = "Not Available Reason : Tenant_Invitation_Existing"
-				s.Code = code
-				th.SavePendingAddUserRequest(s)
+			for _, singleTenant := range tenants {
+				if singleTenant.TenantID == inviter.Domain {
+					isAlreadyInTenant = true
+					break
+				}
+			}
 
-				fmt.Println("-----------------------------------------------")
-				fmt.Println("Tenant Consent Email to Existing User ..... ")
-				fmt.Println(inputParams)
-				fmt.Println("-----------------------------------------------")
-
-				go notifier.Notify("ignore", "tenant_invitation_existing_request_consent", email, inputParams, nil)
-				return true
+			if isAlreadyInTenant {
+				errStr := "User : " + email + " already a member of Tenant : " + inviter.Domain
+				fmt.Println(errStr)
+				T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson(errStr)))
+				return false
 			} else {
-				//send email and add to tenant without consent
-				var inputParams map[string]string
-				inputParams = make(map[string]string)
-				inputParams["@@EMAIL@@"] = email
-				inputParams["@@INVEMAIL@@"] = inviter.Email
-				inputParams["@@NAME@@"] = inviter.Name
-				inputParams["@@DOMAIN@@"] = inviter.Domain
+				if strings.EqualFold(addUserType, "invite") {
+					//send email to confirm. add to tenant from AcceptRequest
+					tmp := tempRequestGenerator{}
+					o := make(map[string]string)
+					o["process"] = "tenant_invitation_existing_request_consent"
+					o["email"] = email
+					o["invitedUserID"] = inviter.UserID
+					o["name"] = inviter.Name
+					o["domain"] = inviter.Domain
+					o["fromuseremail"] = inviter.Email
+					o["tname"] = t.Name
+					o["level"] = level
+					o["TenantID"] = t.TenantID
+					o["inviteeName"] = invitee.Name
+					//o["userid"] = invitee.UserID
+					code := tmp.GenerateRequestCode(o)
+					var inputParams map[string]string
+					inputParams = make(map[string]string)
+					inputParams["@@EMAIL@@"] = email
+					inputParams["@@INVEMAIL@@"] = inviter.Email
+					inputParams["@@NAME@@"] = inviter.Name
+					inputParams["@@DOMAIN@@"] = inviter.Domain
+					inputParams["@@CODE@@"] = code
 
-				fmt.Println("-----------------------------------------------")
-				fmt.Println("Tenant Invitation Existing ..... ")
-				fmt.Println(inputParams)
-				fmt.Println("-----------------------------------------------")
+					s := PendingUserRequest{}
+					s.UserID = invitee.UserID
+					s.Email = invitee.EmailAddress
+					s.TenantID = t.TenantID
+					s.Name = invitee.Name
+					//s.Code = "Not Available Reason : Tenant_Invitation_Existing"
+					s.Code = code
+					th.SavePendingAddUserRequest(s)
 
-				go notifier.Notify("ignore", "tenant_invitation_existing", email, inputParams, nil)
-				//add user to tenant
-				th.AddUsersToTenant(inviter.Domain, t.Name, invitee.UserID, level)
-				return true
+					fmt.Println("-----------------------------------------------")
+					fmt.Println("Tenant Consent Email to Existing User ..... ")
+					fmt.Println(inputParams)
+					fmt.Println("-----------------------------------------------")
+
+					go notifier.Notify("ignore", "tenant_invitation_existing_request_consent", email, inputParams, nil)
+					return true
+				} else {
+					//send email and add to tenant without consent
+					var inputParams map[string]string
+					inputParams = make(map[string]string)
+					inputParams["@@EMAIL@@"] = email
+					inputParams["@@INVEMAIL@@"] = inviter.Email
+					inputParams["@@NAME@@"] = inviter.Name
+					inputParams["@@DOMAIN@@"] = inviter.Domain
+
+					fmt.Println("-----------------------------------------------")
+					fmt.Println("Tenant Invitation Existing ..... ")
+					fmt.Println(inputParams)
+					fmt.Println("-----------------------------------------------")
+
+					go notifier.Notify("ignore", "tenant_invitation_existing", email, inputParams, nil)
+					//add user to tenant
+					th.AddUsersToTenant(inviter.Domain, t.Name, invitee.UserID, level)
+					return true
+				}
 			}
 		} else {
 			//brand new user
@@ -707,6 +916,7 @@ func (T TenantSvc) Subciribe(TenantID string) bool {
 		for _, tenant := range tenantsForUser {
 			if tenant.TenantID == TenantID {
 				term.Write(("User : " + user.Email + " is already Subscribed to Tenant : " + TenantID), term.Information)
+				T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte("User : " + user.Email + " is already Subscribed to Tenant : " + TenantID))
 				return false
 			}
 		}
