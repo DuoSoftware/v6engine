@@ -1,0 +1,9 @@
+FROM golang
+
+ADD . /home/duo_v6_notifier
+
+WORKDIR /home/duo_v6_notifier
+
+EXPOSE 7000
+
+CMD ["/home/duo_v6_notifier/DuoNotifier"]

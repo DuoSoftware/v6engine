@@ -1,0 +1,9 @@
+FROM golang
+
+ADD . /home/duo_v6_obstore
+
+WORKDIR /home/duo_v6_obstore
+
+EXPOSE 3000 3001
+
+CMD ["/home/duo_v6_obstore/ObjectStore"]
