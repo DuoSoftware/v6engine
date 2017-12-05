@@ -143,6 +143,8 @@ func GetQuery(request *messaging.ObjectRequest, database int) (output []byte) {
 }
 
 func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}, database int) (err error) {
+	_ = ResetSearchResultCache(request, database)
+
 	client, isError, errorMessage := getRedisConnection(request, database)
 	if isError == true {
 		err = errors.New(errorMessage)
@@ -166,8 +168,6 @@ func SetOneRedis(request *messaging.ObjectRequest, data map[string]interface{}, 
 
 		//client.ClosePool()
 	}
-
-	_ = ResetSearchResultCache(request, database)
 
 	return
 }
@@ -213,6 +213,8 @@ func SetQueryRedis(request *messaging.ObjectRequest, data interface{}, database 
 }
 
 func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{}, database int) (err error) {
+	_ = ResetSearchResultCache(request, database)
+
 	client, isError, errorMessage := getRedisConnection(request, database)
 	if isError == true {
 		err = errors.New(errorMessage)

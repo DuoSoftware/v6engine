@@ -31,6 +31,7 @@ func GetVersion() string {
 	changeLogs["6.1.09"] = "Added Get GUID for special methods"
 	changeLogs["6.1.10"] = "Added REST CEB configuration retrieval."
 	changeLogs["6.1.11"] = "Added password support for REDIS and Username and password support to Mongo."
+	changeLogs["6.1.12"] = "Fixed some redis related minor bugs."
 	versionData["ChangeLogs"] = changeLogs
 
 	statMap := make(map[string]string)
