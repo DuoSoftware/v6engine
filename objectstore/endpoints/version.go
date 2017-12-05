@@ -16,7 +16,7 @@ func GetVersion() string {
 
 	versionData := make(map[string]interface{})
 	versionData["API Name"] = "ObjectStore"
-	versionData["API Version"] = "6.1.11"
+	versionData["API Version"] = "6.1.12"
 
 	changeLogs := make(map[string]interface{})
 

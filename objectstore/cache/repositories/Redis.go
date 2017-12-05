@@ -239,8 +239,6 @@ func SetManyRedis(request *messaging.ObjectRequest, data []map[string]interface{
 		//client.ClosePool()
 	}
 
-	_ = ResetSearchResultCache(request, database)
-
 	return
 }
 
