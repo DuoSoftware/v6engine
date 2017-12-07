@@ -151,6 +151,7 @@ func RevertCacheable(request *messaging.ObjectRequest) {
 func PushSingleMapToCache(request *messaging.ObjectRequest, obj map[string]interface{}) {
 	if CheckCacheable(request) {
 		RevertCacheable(request)
+		return //execute nothing under here
 		if cache.GetIncrValue(request, ("RequestCounter."+request.Controls.Namespace+"."+request.Controls.Class), cache.RequestCounter) < 1000 {
 			go cache.StoreOne(request, obj, cache.Data)
 		}
@@ -159,6 +160,7 @@ func PushSingleMapToCache(request *messaging.ObjectRequest, obj map[string]inter
 
 func PushMultipleMapToCache(request *messaging.ObjectRequest, objs []map[string]interface{}) {
 	if len(objs) == 1 {
+		return //execute nothing under here
 		if CheckCacheable(request) {
 			RevertCacheable(request)
 			if cache.GetIncrValue(request, ("RequestCounter."+request.Controls.Namespace+"."+request.Controls.Class), cache.RequestCounter) < 1000 {
