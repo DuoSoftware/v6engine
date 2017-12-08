@@ -11,4 +11,6 @@ hooks:
   ApplicationStop:
     - location: scripts/applicationstop.sh
   ApplicationStart:
-    - location: scripts/applicationstart.sh     
+    - location: scripts/applicationstart.sh  
+  ApplicationStart:
+    - location: scripts/ValidateService.sh
