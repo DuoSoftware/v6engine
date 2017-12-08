@@ -14,12 +14,14 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		if request.Controls.Multiplicity == "single" {
 			response = repository.InsertSingle(request)
 			if response.IsSuccess {
-				PushSingleMapToCache(request, request.Body.Object)
+				cache.ResetSearchResults(request, cache.Data)
+				//PushSingleMapToCache(request, request.Body.Object)
 			}
 		} else {
 			response = repository.InsertMultiple(request)
 			if response.IsSuccess {
-				PushMultipleMapToCache(request, request.Body.Objects)
+				cache.ResetSearchResults(request, cache.Data)
+				//PushMultipleMapToCache(request, request.Body.Objects)
 			}
 		}
 
@@ -149,9 +151,10 @@ func RevertCacheable(request *messaging.ObjectRequest) {
 }
 
 func PushSingleMapToCache(request *messaging.ObjectRequest, obj map[string]interface{}) {
+	go cache.ResetSearchResults(request, cache.Data)
+	return //execute nothing under here
 	if CheckCacheable(request) {
 		RevertCacheable(request)
-		return //execute nothing under here
 		if cache.GetIncrValue(request, ("RequestCounter."+request.Controls.Namespace+"."+request.Controls.Class), cache.RequestCounter) < 1000 {
 			go cache.StoreOne(request, obj, cache.Data)
 		}
@@ -159,6 +162,8 @@ func PushSingleMapToCache(request *messaging.ObjectRequest, obj map[string]inter
 }
 
 func PushMultipleMapToCache(request *messaging.ObjectRequest, objs []map[string]interface{}) {
+	go cache.ResetSearchResults(request, cache.Data)
+	return //execute nothing under here
 	if len(objs) == 1 {
 		return //execute nothing under here
 		if CheckCacheable(request) {
@@ -167,7 +172,5 @@ func PushMultipleMapToCache(request *messaging.ObjectRequest, objs []map[string]
 				go cache.StoreMany(request, objs, cache.Data)
 			}
 		}
-	} else {
-		go cache.ResetSearchResults(request, cache.Data)
 	}
 }

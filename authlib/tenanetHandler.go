@@ -9,6 +9,7 @@ import (
 	"duov6.com/term"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -670,7 +671,14 @@ func (h *TenantHandler) RemoveUserFromTenant(UserID, TenantID string) bool {
 		}
 	}
 
-	if len(h.GetTenantsForUser(UserID)) == 0 {
+	tenantsForUser := h.GetTenantsForUser(UserID)
+
+	fmt.Println("---------------------------------------------------------")
+	fmt.Println("Tenants for User : " + strconv.Itoa(len(tenantsForUser)))
+	fmt.Println(tenantsForUser)
+	fmt.Println("---------------------------------------------------------")
+
+	if len(tenantsForUser) == 0 {
 		//Deleting the user
 		//first get the user object
 		ah := AuthHandler{}
