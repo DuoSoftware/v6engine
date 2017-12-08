@@ -12,8 +12,6 @@ function checkport {
                         docker restart duo-auth
                 elif [ $2 == 7000 ]; then
                         docker restart duo-notifier
-                elif [ $2 == 5000 ]; then
-                        docker restart duo-ceb
                 fi
         fi
 }
@@ -21,5 +19,3 @@ function checkport {
 checkport '127.0.0.1' 3000
 checkport '127.0.0.1' 3048
 checkport '127.0.0.1' 7000
-checkport '127.0.0.1' 5000
-
