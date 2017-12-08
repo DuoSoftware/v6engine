@@ -14,12 +14,14 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		if request.Controls.Multiplicity == "single" {
 			response = repository.InsertSingle(request)
 			if response.IsSuccess {
-				PushSingleMapToCache(request, request.Body.Object)
+				cache.ResetSearchResults(request, cache.Data)
+				//PushSingleMapToCache(request, request.Body.Object)
 			}
 		} else {
 			response = repository.InsertMultiple(request)
 			if response.IsSuccess {
-				PushMultipleMapToCache(request, request.Body.Objects)
+				cache.ResetSearchResults(request, cache.Data)
+				//PushMultipleMapToCache(request, request.Body.Objects)
 			}
 		}
 
