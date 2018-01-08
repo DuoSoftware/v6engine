@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -124,10 +125,17 @@ func (T TenantSvc) CreateTenant(t Tenant) {
 
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
-		th := TenantHandler{}
-		b, _ := json.Marshal(th.CreateTenant(t, user, false))
-		T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
-
+		loweredTenant := t.TenantID
+		match, _ := regexp.MatchString("(app.12thdoor.com|billing.12thdoor.com|staging.12thdoor.com|developer.12thdoor.com|qa.12thdoor.com)", loweredTenant)
+		if match {
+			T.ResponseBuilder().SetResponseCode(500).WriteAndOveride([]byte(common.ErrorJson("Tenant ID not allowed.")))
+			return
+		} else {
+			th := TenantHandler{}
+			b, _ := json.Marshal(th.CreateTenant(t, user, false))
+			T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+			return
+		}
 	} else {
 		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(common.ErrorJson("SecurityToken  not Autherized")))
 		return
