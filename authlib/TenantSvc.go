@@ -126,7 +126,7 @@ func (T TenantSvc) CreateTenant(t Tenant) {
 	user, error := session.GetSession(T.Context.Request().Header.Get("Securitytoken"), "Nil")
 	if error == "" {
 		loweredTenant := t.TenantID
-		match, _ := regexp.MatchString("(app.12thdoor.com|billing.12thdoor.com|staging.12thdoor.com|developer.12thdoor.com|qa.12thdoor.com)", loweredTenant)
+		match, _ := regexp.MatchString("(^app.12thdoor.com|^billing.12thdoor.com|^staging.12thdoor.com|^developer.12thdoor.com|^qa.12thdoor.com)", loweredTenant)
 		if match {
 			T.ResponseBuilder().SetResponseCode(500).WriteAndOveride([]byte(common.ErrorJson("Tenant ID not allowed.")))
 			return
