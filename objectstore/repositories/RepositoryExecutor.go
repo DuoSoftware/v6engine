@@ -107,12 +107,14 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		if request.Controls.Multiplicity == "single" {
 			response = repository.UpdateSingle(request)
 			if response.IsSuccess {
-				PushSingleMapToCache(request, request.Body.Object)
+				cache.ResetSearchResults(request, cache.Data)
+				//PushSingleMapToCache(request, request.Body.Object)
 			}
 		} else {
 			response = repository.UpdateMultiple(request)
 			if response.IsSuccess {
-				PushMultipleMapToCache(request, request.Body.Objects)
+				cache.ResetSearchResults(request, cache.Data)
+				//PushMultipleMapToCache(request, request.Body.Objects)
 			}
 		}
 	case "delete":
@@ -123,6 +125,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 					term.Write(errCache.Error(), term.Debug)
 				}
 			}
+			cache.ResetSearchResults(request, cache.Data)
 		} else {
 			response = repository.DeleteMultiple(request)
 			if response.IsSuccess {
@@ -130,8 +133,10 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 					term.Write(errCache.Error(), term.Debug)
 				}
 			}
+			cache.ResetSearchResults(request, cache.Data)
 		}
 	case "special":
+		cache.ResetSearchResults(request, cache.Data)
 		response = repository.Special(request)
 	}
 

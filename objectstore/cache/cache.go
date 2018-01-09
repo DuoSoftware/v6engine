@@ -210,7 +210,7 @@ func CheckCacheAvailability(request *messaging.ObjectRequest) (status bool) {
 
 func checkValidTenentClassKeywords(request *messaging.ObjectRequest) (status bool) {
 	namespaces := [...]string{}
-	keywords := [...]string{"UTC_TIMESTAMP()"}
+	keywords := [...]string{"UTC_TIMESTAMP()", "SalesMaster", "RecurringLog", "ProfileMaster", "PaymentMaster", "InvoicedProducts"}
 	classes := [...]string{}
 	status = true
 
