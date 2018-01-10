@@ -210,30 +210,34 @@ func CheckCacheAvailability(request *messaging.ObjectRequest) (status bool) {
 
 func checkValidTenentClassKeywords(request *messaging.ObjectRequest) (status bool) {
 	namespaces := [...]string{}
-	keywords := [...]string{"UTC_TIMESTAMP()", "SalesMaster", "RecurringLog", "ProfileMaster", "PaymentMaster", "InvoicedProducts"}
-	classes := [...]string{}
+	keywords := [...]string{"UTC_TIMESTAMP()"}
+	classes := [...]string{"b1", "c1", "SalesMaster", "RecurringLog", "ProfileMaster", "PaymentMaster", "InvoicedProducts"}
 	status = true
 
-	for _, namespace := range namespaces {
-		if strings.ToLower(request.Controls.Namespace) == strings.ToLower(namespace) {
-			term.Write("Invalid Namespace. Wouldn't be saved on Cache", term.Information)
-			status = false
-			return
+	if request.Extras["IgnoreCacheRead"] != nil && request.Extras["IgnoreCacheRead"].(bool) == true {
+		status = true
+	} else {
+		for _, namespace := range namespaces {
+			if strings.ToLower(request.Controls.Namespace) == strings.ToLower(namespace) {
+				term.Write("Invalid Namespace. Wouldn't be saved on Cache", term.Information)
+				status = false
+				return
+			}
 		}
-	}
-	for _, class := range classes {
-		if strings.ToLower(request.Controls.Class) == strings.ToLower(class) {
-			term.Write("Invalid Class. Wouldn't be saved on Cache!", term.Information)
-			status = false
-			return
+		for _, class := range classes {
+			if strings.ToLower(request.Controls.Class) == strings.ToLower(class) {
+				term.Write("Invalid Class. Wouldn't be saved on Cache!", term.Information)
+				status = false
+				return
+			}
 		}
-	}
-	for _, keyword := range keywords {
-		byteArray, _ := json.Marshal(request)
-		if strings.Contains(strings.ToLower(string(byteArray)), strings.ToLower(keyword)) {
-			term.Write("Restrictive Keyword Found. Wouldn't be saved on Cache!", term.Information)
-			status = false
-			return
+		for _, keyword := range keywords {
+			byteArray, _ := json.Marshal(request)
+			if strings.Contains(strings.ToLower(string(byteArray)), strings.ToLower(keyword)) {
+				term.Write("Restrictive Keyword Found. Wouldn't be saved on Cache!", term.Information)
+				status = false
+				return
+			}
 		}
 	}
 

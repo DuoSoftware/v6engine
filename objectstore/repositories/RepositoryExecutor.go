@@ -12,14 +12,18 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 	switch request.Controls.Operation { //CREATE, READ, UPDATE, DELETE, SPECIAL
 	case "insert":
 		if request.Controls.Multiplicity == "single" {
+			request.Extras["IgnoreCacheRead"] = true
 			response = repository.InsertSingle(request)
 			if response.IsSuccess {
+				request.Extras["IgnoreCacheRead"] = false
 				cache.ResetSearchResults(request, cache.Data)
 				//PushSingleMapToCache(request, request.Body.Object)
 			}
 		} else {
+			request.Extras["IgnoreCacheRead"] = true
 			response = repository.InsertMultiple(request)
 			if response.IsSuccess {
+				request.Extras["IgnoreCacheRead"] = false
 				cache.ResetSearchResults(request, cache.Data)
 				//PushMultipleMapToCache(request, request.Body.Objects)
 			}
@@ -29,10 +33,11 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		//check cache
 		result := cache.Search(request, cache.Data)
 		if result == nil {
+			request.Extras["IgnoreCacheRead"] = true
 			request.Log("Debug : Not Available in Cache.. Reading from Repositories...")
 			response = repository.GetAll(request)
-
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
+				request.Extras["IgnoreCacheRead"] = false
 				var data []map[string]interface{}
 				_ = json.Unmarshal(response.Body, &data)
 				if errCache := cache.StoreResult(request, data, cache.Data); errCache != nil {
@@ -48,10 +53,12 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		//check cache
 		result := cache.GetByKey(request, cache.Data)
 		if result == nil {
+			request.Extras["IgnoreCacheRead"] = true
 			request.Log("Debug : Not Available in Cache.. Reading from Repositories...")
 			response = repository.GetByKey(request)
 
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
+				request.Extras["IgnoreCacheRead"] = false
 				var data map[string]interface{}
 				data = make(map[string]interface{})
 				_ = json.Unmarshal(response.Body, &data)
@@ -69,9 +76,11 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		//check cache
 		result := cache.Search(request, cache.Data)
 		if result == nil {
-			//term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
+			request.Extras["IgnoreCacheRead"] = true
+			term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
 			response = repository.GetSearch(request)
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
+				request.Extras["IgnoreCacheRead"] = false
 				var data []map[string]interface{}
 				_ = json.Unmarshal(response.Body, &data)
 				if errCache := cache.StoreResult(request, data, cache.Data); errCache != nil {
@@ -88,9 +97,11 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		//check cache
 		result := cache.Query(request, cache.Data)
 		if result == nil {
-			//term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
+			request.Extras["IgnoreCacheRead"] = true
+			term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
 			response = repository.GetQuery(request)
 			if response.IsSuccess && !checkEmptyByteArray(response.Body) {
+				request.Extras["IgnoreCacheRead"] = false
 				var data []map[string]interface{}
 				_ = json.Unmarshal(response.Body, &data)
 				if errCache := cache.StoreQuery(request, data, cache.Data); errCache != nil {
@@ -118,6 +129,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 			}
 		}
 	case "delete":
+		request.Extras["IgnoreCacheRead"] = true
 		if request.Controls.Multiplicity == "single" {
 			response = repository.DeleteSingle(request)
 			if response.IsSuccess {
@@ -136,6 +148,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 			cache.ResetSearchResults(request, cache.Data)
 		}
 	case "special":
+		request.Extras["IgnoreCacheRead"] = true
 		cache.ResetSearchResults(request, cache.Data)
 		response = repository.Special(request)
 	}
