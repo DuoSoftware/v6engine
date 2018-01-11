@@ -57,6 +57,7 @@ func checkLocalCache(name string) bool {
 }
 
 func GetGlobalConfigFromREST(name string) bool {
+	fmt.Println("Starting to get configurations from REST....")
 	if globalConfigs == nil {
 		globalConfigs = make(map[string][]interface{})
 	}
@@ -87,6 +88,8 @@ func GetGlobalConfigFromREST(name string) bool {
 		fmt.Println(err.Error())
 		return false
 	}
+	fmt.Println("Config from REST : ")
+	fmt.Println(string(body))
 
 	restData := make(map[string]interface{})
 	_ = json.Unmarshal(body, &restData)

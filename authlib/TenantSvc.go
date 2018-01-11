@@ -41,6 +41,9 @@ type TenantSvc struct {
 	validateCode                gorest.EndPoint `method:"GET" path:"/tenant/verifytoken/{token:string}" output:"bool"`
 	initTenantDelete            gorest.EndPoint `method:"GET" path:"/tenant/deleteinit/{tid:string}" output:"string"`
 	consentedTenantDelete       gorest.EndPoint `method:"GET" path:"/tenant/delete/{token:string}" output:"string"`
+
+	//support Methods..
+	bulkTenantDelete gorest.EndPoint `method:"POST" path:"/tenant/bulkdelete/" postdata:"[]string"`
 }
 
 func (T TenantSvc) GetTenantAdmin(TenantID string) []InviteUsers {
@@ -132,6 +135,14 @@ func (T TenantSvc) CreateTenant(t Tenant) {
 			return
 		} else {
 			th := TenantHandler{}
+			if strings.Contains(strings.ToLower(t.TenantID), "12thdoor.com") {
+				//check for tenant count for user
+				if len(th.GetTenantsForUser(user.UserID)) >= 5 {
+					T.ResponseBuilder().SetResponseCode(500).WriteAndOveride([]byte(common.ErrorJson("Maximum allowed tenant count exceeded.")))
+					return
+				}
+			}
+
 			b, _ := json.Marshal(th.CreateTenant(t, user, false))
 			T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
 			return
@@ -409,6 +420,77 @@ func (T TenantSvc) ConsentedTenantDelete(token string) string {
 
 	return string(b)
 
+}
+
+func (T TenantSvc) BulkTenantDelete(tenants []string) {
+	//Delete tenants and all associated data
+	term.Write("Executing Method :  Bulk Tenant Delete)", term.Blank)
+
+	var err error
+	isAllDeleted := true
+
+	for _, tid := range tenants {
+		//Get All users for tenant
+		th := TenantHandler{}
+		users := th.GetUsersForTenantInDetail(session.AuthCertificate{}, tid)
+
+		//Remove all users from the tenant.
+		for _, user := range users {
+			status := th.RemoveUserFromTenant(user.UserID, tid)
+			if status {
+				//switch the person if default tenant is this tenant
+				defT := th.GetDefaultTenant(user.UserID)
+				if defT.TenantID == tid {
+					//get all tenants for user
+					allTenants := th.GetTenantsForUser(user.UserID)
+					if len(allTenants) == 0 {
+						//when user have no other tenants. delete default tenant so
+						//boarding process will begin in next login
+						client.Go("ignore", "com.duosoftware.tenant", "defaulttenant").DeleteObject().WithKeyField("UserID").AndDeleteObject(user).Ok()
+					} else {
+						for _, tenant := range allTenants {
+							if tenant.TenantID != tid {
+								//Change the default tenant
+								th.SetDefaultTenant(user.UserID, tenant.TenantID)
+								break
+							}
+						}
+					}
+				}
+			} else {
+				isAllDeleted = false
+			}
+		}
+
+		//delete tenant
+		tObj := make(map[string]interface{})
+		tObj["TenantID"] = tid
+		err = client.Go("ignore", "com.duosoftware.tenant", "tenants").DeleteObject().WithKeyField("TenantID").AndDeleteOne(tObj).Ok()
+		if err != nil {
+			isAllDeleted = false
+		}
+
+		//Delete database
+		_ = client.Go("ignore", tid, "ignore").DeleteNamespace().Ok()
+	}
+
+	response := make(map[string]interface{})
+
+	if err != nil {
+		response["Status"] = false
+		response["Message"] = err.Error()
+	} else {
+		response["Status"] = true
+		if isAllDeleted {
+			response["Message"] = "All tenants and related data successfully removed."
+		} else {
+			response["Message"] = "Some tenants and related data removal failed."
+		}
+	}
+
+	b, _ := json.Marshal(response)
+	T.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	return
 }
 
 func (T TenantSvc) ValidateCode(token string) bool {
