@@ -14,8 +14,8 @@ import (
 func main() {
 	splash()
 	initializeCEBConfig()
-	httpServer := endpoints.HTTPService{}
-	httpServer.Start()
+	/*httpServer := endpoints.HTTPService{}
+	httpServer.Start()*/
 }
 
 func initializeCEBConfig() {
@@ -49,7 +49,7 @@ func initializeSettingsFile() {
 	}
 }
 
-func inititalizeObjectStoreConfig() {
+/*func inititalizeObjectStoreConfig() {
 	forever := make(chan bool)
 	cebadapter.Attach("DuoNotifier", func(s bool) {
 		cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
@@ -70,6 +70,31 @@ func inititalizeObjectStoreConfig() {
 
 	<-forever
 	return
+}*/
+
+func inititalizeObjectStoreConfig() {
+	cebadapter.Attach("DuoNotifier", func(s bool) {
+		cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
+			fmt.Println()
+			fmt.Println(data)
+			fmt.Println()
+			fmt.Println("Store Configuration Successfully Loaded...")
+			agent := cebadapter.GetAgent()
+
+			agent.Client.OnEvent("globalConfigChanged.StoreConfig", func(from string, name string, data map[string]interface{}, resources map[string]interface{}) {
+				cebadapter.GetLatestGlobalConfig("StoreConfig", func(data []interface{}) {
+					fmt.Println("Store Configuration Successfully Updated...")
+				})
+			})
+		})
+		fmt.Println("Successfully registered DuoNotifier in CEB")
+	})
+
+	httpServer := endpoints.HTTPService{}
+	go httpServer.Start()
+
+	forever := make(chan bool)
+	<-forever
 }
 
 func splash() {
