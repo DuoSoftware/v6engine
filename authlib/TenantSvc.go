@@ -426,6 +426,17 @@ func (T TenantSvc) BulkTenantDelete(tenants []string) {
 	//Delete tenants and all associated data
 	term.Write("Executing Method :  Bulk Tenant Delete)", term.Blank)
 
+	hashVal := common.GetHash("DuoS123@12thdoor")
+
+	if T.Context.Request().Header.Get("Securitytoken") != hashVal {
+		response := make(map[string]interface{})
+		response["Status"] = false
+		response["Message"] = "Not Authorized."
+		b, _ := json.Marshal(response)
+		T.ResponseBuilder().SetResponseCode(401).WriteAndOveride(b)
+		return
+	}
+
 	var err error
 	isAllDeleted := true
 
