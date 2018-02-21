@@ -46,6 +46,7 @@ type Auth struct {
 	autherizeApp                 gorest.EndPoint `method:"POST" path:"/AutherizeApp/{SecurityToken:string}/{Code:string}/{ApplicationID:string}/{AppSecret:string}" postdata:"AuthorizeAppData"`
 	updateScope                  gorest.EndPoint `method:"POST" path:"/UpdateScope/{SecurityToken:string}/{UserID:string}/{ApplicationID:string}" postdata:"AuthorizeAppData"`
 	addUser                      gorest.EndPoint `method:"POST" path:"/UserRegistation/" postdata:"User"`
+	changeUserName               gorest.EndPoint `method:"GET" path:"/UserNameChange/{name:string}" output:"AuthResponse"`
 	invitedUserRegistration      gorest.EndPoint `method:"POST" path:"/InvitedUserRegistration/" postdata:"User"`
 	registerTenantUser           gorest.EndPoint `method:"POST" path:"/RegisterTenantUser/" postdata:"User"`
 	userActivation               gorest.EndPoint `method:"GET" path:"/UserActivation/{token:string}" output:"bool"`
@@ -120,6 +121,33 @@ func GetClientIP() string {
 //GetDataCaps Represent to getting datacaps
 func GetDataCaps(Domain, UserID string) string {
 	return "#" + Domain + "#" + UserID + "#1#2#4"
+}
+
+func (A Auth) ChangeUserName(name string) AuthResponse {
+	response := AuthResponse{}
+	//UserActivation Represent activation of the user account
+	term.Write("Executing Method : Change User Name", term.Blank)
+
+	h := newAuthHandler()
+
+	user, error := h.GetSession(A.Context.Request().Header.Get("Securitytoken"), "Nil")
+	if error == "" {
+		singleUser, _ := h.GetUserByID(user.UserID)
+		if singleUser.EmailAddress != "" && name != "" {
+			singleUser.Name = name
+			client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(singleUser).Ok()
+			response.Status = true
+			response.Message = "Name changed successfully."
+		} else {
+			response.Status = false
+			response.Message = "Name cannot be empty."
+		}
+	} else {
+		response.Status = false
+		response.Message = error
+	}
+
+	return response
 }
 
 func (A Auth) UserActivation(token string) bool {
