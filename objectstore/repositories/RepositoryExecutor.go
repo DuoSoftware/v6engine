@@ -95,7 +95,7 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 		//response = repository.GetSearch(request)
 	case "read-filter":
 		//check cache
-		result := cache.Query(request, cache.Data)
+		/*result := cache.Query(request, cache.Data)
 		if result == nil {
 			request.Extras["IgnoreCacheRead"] = true
 			term.Write("Not Available in Cache.. Reading from Repositories...", term.Debug)
@@ -112,8 +112,8 @@ func Execute(request *messaging.ObjectRequest, repository AbstractRepository) (r
 			response.IsSuccess = true
 			response.Body = result
 
-		}
-		//response = repository.GetQuery(request)
+		}*/
+		response = repository.GetQuery(request)
 	case "update":
 		if request.Controls.Multiplicity == "single" {
 			response = repository.UpdateSingle(request)
