@@ -211,7 +211,8 @@ func CheckCacheAvailability(request *messaging.ObjectRequest) (status bool) {
 func checkValidTenentClassKeywords(request *messaging.ObjectRequest) (status bool) {
 	namespaces := [...]string{}
 	keywords := [...]string{"UTC_TIMESTAMP()"}
-	classes := [...]string{"b1", "c1", "SalesMaster", "RecurringLog", "ProfileMaster", "PaymentMaster", "InvoicedProducts"}
+	classes := [...]string{}
+	//classes := [...]string{"b1", "c1", "SalesMaster", "RecurringLog", "ProfileMaster", "PaymentMaster", "InvoicedProducts"}
 	status = true
 
 	if request.Extras["IgnoreCacheRead"] != nil && request.Extras["IgnoreCacheRead"].(bool) == true {
