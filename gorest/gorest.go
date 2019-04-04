@@ -191,7 +191,7 @@ func (_ manager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		//w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, SecurityToken, Host, Connection, User-Agent, Referer, Accept-Language, Cookie")
+			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, SecurityToken, Host, Connection, User-Agent, Referer, Accept-Language, Cookie, companyInfo")
 	}
 	// Stop here if its Preflighted OPTIONS request
 	if r.Method == "OPTIONS" {
